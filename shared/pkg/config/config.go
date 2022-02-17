@@ -1,7 +1,6 @@
 package config
 
 import (
-	"log/syslog"
 	"time"
 
 	"github.com/knadh/koanf"
@@ -35,9 +34,9 @@ type PostgresStruct struct {
 }
 
 type LoggerOutputConfig struct {
-	Type     string          `koanf:"type"`     // available values: `stdout`, `file`, `syslog`
-	Filepath string          `koanf:"filepath"` // only for file
-	Priority syslog.Priority `koanf:"priority"`
+	Type     string `koanf:"type"`     // available values: `stdout`, `file`, `syslog`
+	Filepath string `koanf:"filepath"` // only for file
+	Facility int    `koanf:"facility"` // only for syslog, available values: `1 - 7` to `LOG_LOCAL0-LOG_LOCAL7`
 }
 
 type LoggerStruct struct {

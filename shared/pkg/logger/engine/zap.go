@@ -88,7 +88,7 @@ func getDefaultEncoderCfg() zapcore.EncoderConfig {
 		MessageKey:     "message",
 		FunctionKey:    zapcore.OmitKey,
 		LineEnding:     zapcore.DefaultLineEnding,
-		EncodeLevel:    zapcore.CapitalColorLevelEncoder,
+		EncodeLevel:    zapcore.LowercaseLevelEncoder,
 		EncodeTime:     zapcore.ISO8601TimeEncoder,
 		EncodeDuration: zapcore.StringDurationEncoder,
 		EncodeCaller:   zapcore.ShortCallerEncoder,
