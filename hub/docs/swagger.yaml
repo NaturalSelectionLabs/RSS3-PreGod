@@ -1,0 +1,53 @@
+definitions:
+  instance.ResponseData:
+    properties:
+      authority:
+        $ref: '#/definitions/rss3_uri.Authority'
+    type: object
+  rss3_uri.Authority:
+    properties:
+      identity:
+        type: string
+      platform:
+        type: string
+      prefix:
+        type: string
+    type: object
+  web.Response:
+    properties:
+      code:
+        type: integer
+      data: {}
+      message:
+        type: string
+    type: object
+info:
+  contact: {}
+paths:
+  /{authority}:
+    get:
+      consumes:
+      - application/json
+      description: get instance information by authority
+      parameters:
+      - description: Authority
+        in: path
+        name: authority
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/web.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/instance.ResponseData'
+              type: object
+      summary: Get instance information
+      tags:
+      - authority
+swagger: "2.0"

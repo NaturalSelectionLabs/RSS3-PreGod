@@ -55,3 +55,12 @@ linters: # https://golangci-lint.run/usage/linters
     - test
     - unused
   fast: true
+
+linters-settings:
+  godot:
+    exclude:
+      - "^@*" # exclude swagger annotations
+  tagliatelle:
+    case:
+      rules:
+        json: snake

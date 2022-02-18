@@ -1,4 +1,4 @@
-package api
+package ping
 
 import (
 	"net/http"

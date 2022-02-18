@@ -10,12 +10,12 @@ type Gin struct {
 }
 
 type Response struct {
-	Code int         `json:"code"`
-	Msg  string      `json:"msg"`
+	Code status.Code `json:"code"`
+	Msg  status.Msg  `json:"message"`
 	Data interface{} `json:"data"`
 }
 
-func (g *Gin) JSONResponse(httpCode, errCode int, data interface{}) {
+func (g *Gin) JSONResponse(httpCode int, errCode status.Code, data interface{}) {
 	g.C.JSON(httpCode, Response{
 		Code: errCode,
 		Msg:  status.GetMsg(errCode),
