@@ -21,7 +21,7 @@
     "prefix_tag": "pregod",
     "engine": "zap",
     "level": "debug",
-    "encoding": "console",
+    "encoding": "json",
     "output": [
       {
         "type": "stdout"
