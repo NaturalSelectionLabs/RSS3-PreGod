@@ -53,7 +53,7 @@ func main() {
 		MaxHeaderBytes: 1 << 20, // 1MB
 	}
 
-	logger.Info("Start http server listening on http://localhost", port)
+	logger.Logger.Info("Start http server listening on http://localhost", port)
 	defer logger.Logger.Sync()
 
 	go server.ListenAndServe()
@@ -66,7 +66,7 @@ func gracefullyExit(server *http.Server) {
 	signal.Notify(quit, syscall.SIGTERM, syscall.SIGQUIT, syscall.SIGINT)
 	sig := <-quit
 
-	logger.Info("Shutdown due to a signal: ", sig)
+	logger.Logger.Info("Shutdown due to a signal: ", sig)
 
 	now := time.Now()
 
@@ -74,8 +74,8 @@ func gracefullyExit(server *http.Server) {
 	defer cancel()
 
 	if err := server.Shutdown(ctx); err != nil {
-		logger.Fatal("Shutdown error:", err)
+		logger.Logger.Fatal("Shutdown error:", err)
 	}
 
-	logger.Info("Shutdown server successfully in ", time.Since(now))
+	logger.Logger.Info("Shutdown server successfully in ", time.Since(now))
 }
