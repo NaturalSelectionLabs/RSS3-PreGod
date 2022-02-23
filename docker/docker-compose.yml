@@ -1,0 +1,61 @@
+version: '3'
+
+services:
+    redis:
+        restart: always
+        image: redis:latest
+        container_name: redis
+        ports:
+            - 6379:6379
+
+    postgres:
+        restart: always
+        image: postgres:latest
+        container_name: postgres
+        ports:
+            - 5432:5432
+
+    mongodb:
+        restart: always
+        image: mongo:latest
+        container_name: mongodb
+        environment:
+            - MONGO_INITDB_DATABASE=rss3-prod
+        ports:
+            - '27017:27017'
+
+    rocketmq.nameserver:
+        restart: always
+        image: registry.digitalocean.com/rss3/rocketmq:latest
+        container_name: mqnameserver
+        environment:
+            - JAVA_OPT_EXT=-server -Xms256m -Xmx256m -Xmn256m
+        ports:
+            - 9876:9876
+        command: sh mqnamesrv
+
+    rocketmq.broker:
+        # restart: always
+        image: registry.digitalocean.com/rss3/rocketmq:latest
+        container_name: mqbroker
+        environment:
+            - NAMESRV_ADDR=rocketmq.nameserver:9876
+            - JAVA_OPTS=-Duser.home=/opt
+            - JAVA_OPT_EXT=-server -Xms512m -Xmx512m -Xmn256m
+        ports:
+            - 10909-10912:10909-10912
+        volumes:
+            - ./config/rocketmq/broker.conf:/home/rocketmq/rocketmq-4.9.2/broker.conf
+        command: sh mqbroker -c /home/rocketmq/rocketmq-4.9.2/broker.conf
+        depends_on:
+            - rocketmq.nameserver
+
+    rocketmq.dashboard:
+        image: apacherocketmq/rocketmq-dashboard:latest
+        container_name: mqdashboard
+        environment:
+            - JAVA_OPTS=-Drocketmq.namesrv.addr=rocketmq.nameserver:9876
+        ports:
+            - '8088:8080'
+        depends_on:
+            - rocketmq.nameserver

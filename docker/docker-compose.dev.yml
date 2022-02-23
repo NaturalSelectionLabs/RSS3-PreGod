@@ -1,0 +1,26 @@
+version: '3'
+
+services:
+    redis:
+        volumes:
+            - ./volume/redis:/data
+
+    postgres:
+        environment:
+            - POSTGRES_USER=rss3
+            - POSTGRES_PASSWORD=rss3rocks
+        volumes:
+            - ./volume/postgres:/var/lib/postgresql/data
+
+    mongodb:
+        volumes:
+            - ./volume/mongodb:/etc/mongo
+
+    rocketmq.nameserver:
+        volumes:
+            - ./volume/rocketmq/logs:/home/rocketmq/logs
+
+    rocketmq.broker:
+        volumes:
+            - ./volume/rocketmq/broker/logs:/home/rocketmq/logs
+            - ./volume/rocketmq/broker/store:/home/rocketmq/store

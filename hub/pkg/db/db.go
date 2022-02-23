@@ -11,7 +11,7 @@ import (
 	"gorm.io/gorm/schema"
 )
 
-var db *gorm.DB
+var DB *gorm.DB
 
 func Setup() error {
 	var err error
@@ -21,7 +21,7 @@ func Setup() error {
 	logger.SetAsDefault()
 
 	// Establish a connection to the database
-	db, err = gorm.Open(postgres.New(postgres.Config{
+	DB, err = gorm.Open(postgres.New(postgres.Config{
 		DSN: config.Config.Postgres.DSN,
 	}), &gorm.Config{
 		SkipDefaultTransaction:                   true,
@@ -36,7 +36,7 @@ func Setup() error {
 	}
 
 	// Ping
-	sqlDB, err := db.DB()
+	sqlDB, err := DB.DB()
 	if err != nil {
 		return err
 	}
@@ -57,7 +57,7 @@ func Setup() error {
 }
 
 func AutoMigrate() error {
-	return db.AutoMigrate(
+	return DB.AutoMigrate(
 		&model.InstanceBase{},
 
 		&model.Account{},
