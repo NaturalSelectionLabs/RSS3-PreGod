@@ -6,6 +6,13 @@ import (
 	"go.uber.org/zap"
 )
 
+/*
+ * Use: If you want to use,
+ * import this package in the corresponding go file and call the corresponding format
+ * var logger = logger.Logger
+ * or
+ * var desugarredLogger = logger.DesugarredLogger
+ */
 var Logger *zap.SugaredLogger
 var DesugarredLogger *zap.Logger
 
