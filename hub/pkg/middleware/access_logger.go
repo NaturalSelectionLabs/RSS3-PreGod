@@ -8,7 +8,7 @@ import (
 	"go.uber.org/zap"
 )
 
-var desugarredLogger = logger.DesugarredLogger
+var desugarredLogger = logger.GetDesugarredLogger()
 
 func Logger() gin.HandlerFunc {
 	return func(c *gin.Context) {

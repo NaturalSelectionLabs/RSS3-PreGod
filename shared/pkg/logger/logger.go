@@ -13,21 +13,29 @@ import (
  * or
  * var desugarredLogger = logger.DesugarredLogger
  */
-var Logger *zap.SugaredLogger
-var DesugarredLogger *zap.Logger
+var logger *zap.SugaredLogger
+var desugarredLogger *zap.Logger
 
 // Some simple encapsulations are made for the upper layer.
 // The Sugared mode of the zap library is used by default.
 // You can customize the encapsulation here to use other log libraries.
 func Setup() error {
 	var err error
-	Logger, err = engine.InitZapLogger(config.Config.Logger)
+	logger, err = engine.InitZapLogger(config.Config.Logger)
 
 	if err != nil {
 		return err
 	}
 
-	DesugarredLogger = Logger.Desugar()
+	desugarredLogger = logger.Desugar()
 
 	return nil
+}
+
+func GetLogger() *zap.SugaredLogger {
+	return logger
+}
+
+func GetDesugarredLogger() *zap.Logger {
+	return desugarredLogger
 }

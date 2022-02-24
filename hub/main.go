@@ -14,16 +14,18 @@ import (
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/pkg/router"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/cache"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/config"
-	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/logger"
+	main_logger "github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/logger"
 	"github.com/gin-gonic/gin"
 )
+
+var logger = main_logger.GetLogger()
 
 func init() {
 	if err := config.Setup(); err != nil {
 		log.Fatalf("config.Setup err: %v", err)
 	}
 
-	if err := logger.Setup(); err != nil {
+	if err := main_logger.Setup(); err != nil {
 		log.Fatalf("config.Setup err: %v", err)
 	}
 
@@ -53,8 +55,8 @@ func main() {
 		MaxHeaderBytes: 1 << 20, // 1MB
 	}
 
-	logger.Logger.Info("Start http server listening on http://localhost", port)
-	defer logger.Logger.Sync()
+	logger.Info("Start http server listening on http://localhost", port)
+	defer logger.Sync()
 
 	go server.ListenAndServe()
 
@@ -66,7 +68,7 @@ func gracefullyExit(server *http.Server) {
 	signal.Notify(quit, syscall.SIGTERM, syscall.SIGQUIT, syscall.SIGINT)
 	sig := <-quit
 
-	logger.Logger.Info("Shutdown due to a signal: ", sig)
+	logger.Info("Shutdown due to a signal: ", sig)
 
 	now := time.Now()
 
@@ -74,8 +76,8 @@ func gracefullyExit(server *http.Server) {
 	defer cancel()
 
 	if err := server.Shutdown(ctx); err != nil {
-		logger.Logger.Fatal("Shutdown error:", err)
+		logger.Fatal("Shutdown error:", err)
 	}
 
-	logger.Logger.Info("Shutdown server successfully in ", time.Since(now))
+	logger.Info("Shutdown server successfully in ", time.Since(now))
 }
