@@ -14,18 +14,16 @@ import (
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/pkg/router"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/cache"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/config"
-	main_logger "github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/logger"
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/logger"
 	"github.com/gin-gonic/gin"
 )
-
-var logger = main_logger.GetLogger()
 
 func init() {
 	if err := config.Setup(); err != nil {
 		log.Fatalf("config.Setup err: %v", err)
 	}
 
-	if err := main_logger.Setup(); err != nil {
+	if err := logger.Setup(); err != nil {
 		log.Fatalf("config.Setup err: %v", err)
 	}
 
@@ -56,7 +54,7 @@ func main() {
 	}
 
 	logger.Info("Start http server listening on http://localhost", port)
-	defer logger.Sync()
+	defer logger.Logger.Sync()
 
 	go server.ListenAndServe()
 

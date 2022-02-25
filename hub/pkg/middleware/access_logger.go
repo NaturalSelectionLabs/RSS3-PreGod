@@ -8,8 +8,6 @@ import (
 	"go.uber.org/zap"
 )
 
-var desugarredLogger = logger.GetDesugarredLogger()
-
 func Logger() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		t := time.Now()
@@ -25,7 +23,7 @@ func Logger() gin.HandlerFunc {
 		switch {
 		case statusCode >= 400 && statusCode <= 499:
 			{
-				desugarredLogger.Warn("[ACCESS]",
+				logger.DesugarWarn("[ACCESS]",
 					zap.Int("statusCode", statusCode),
 					zap.String("latency", latency.String()),
 					zap.String("clientIP", clientIP),
@@ -36,7 +34,7 @@ func Logger() gin.HandlerFunc {
 			}
 		case statusCode >= 500:
 			{
-				desugarredLogger.Error("[ACCESS]",
+				logger.DesugarError("[ACCESS]",
 					zap.Int("statusCode", statusCode),
 					zap.String("latency", latency.String()),
 					zap.String("clientIP", clientIP),
@@ -46,7 +44,7 @@ func Logger() gin.HandlerFunc {
 				)
 			}
 		default:
-			desugarredLogger.Info("[ACCESS]",
+			logger.DesugarInfo("[ACCESS]",
 				zap.Int("statusCode", statusCode),
 				zap.String("latency", latency.String()),
 				zap.String("clientIP", clientIP),
