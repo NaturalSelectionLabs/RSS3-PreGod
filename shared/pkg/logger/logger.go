@@ -16,7 +16,7 @@ func Setup() error {
 	Logger, err = engine.InitZapLogger(config.Config.Logger)
 
 	ShortcutLogger = Logger.Desugar().WithOptions(zap.AddCallerSkip(1)).Sugar() // to skip the caller of this function.
-	DesugarredLogger = Logger.Desugar()
+	DesugarredLogger = Logger.Desugar().WithOptions(zap.AddCallerSkip(1))
 
 	if err != nil {
 		return err
