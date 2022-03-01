@@ -8,6 +8,8 @@ import (
 	"github.com/knadh/koanf/providers/file"
 )
 
+// Golbal Config
+
 type ProtocolStruct struct {
 	Version string `koanf:"version"`
 }
@@ -59,18 +61,7 @@ type LoggerStruct struct {
 	Output []LoggerOutputConfig `koanf:"output"`
 }
 
-type KeyStruct struct {
-	string
-}
-
-type ConfigStruct struct {
-	Protocol  ProtocolStruct  `koanf:"protocol"`
-	HubServer HubServerStruct `koanf:"hub_server"`
-	Redis     RedisStruct     `koanf:"redis"`
-	Postgres  PostgresStruct  `koanf:"postgres"`
-	Logger    LoggerStruct    `koanf:"logger"`
-	Indexer   IndexerStruct   `koanf:"indexer"`
-}
+// Indexer Struct Config
 
 type MiscStruct struct {
 	UserAgent string `koanf:"user_agent"`
@@ -84,9 +75,23 @@ type JikeStruct struct {
 	AppVersion        string `koanf:"app_version" json:"appVersion"`
 }
 
+type TwitterStruct struct {
+	keys []string `koanf:"keys"`
+}
+
 type IndexerStruct struct {
-	Misc MiscStruct `koanf:"misc"`
-	Jike JikeStruct `koanf:"jike"`
+	Misc    MiscStruct    `koanf:"misc"`
+	Jike    JikeStruct    `koanf:"jike"`
+	Twitter TwitterStruct `koanf:"twitter"`
+}
+
+type ConfigStruct struct {
+	Protocol  ProtocolStruct  `koanf:"protocol"`
+	HubServer HubServerStruct `koanf:"hub_server"`
+	Redis     RedisStruct     `koanf:"redis"`
+	Postgres  PostgresStruct  `koanf:"postgres"`
+	Logger    LoggerStruct    `koanf:"logger"`
+	Indexer   IndexerStruct   `koanf:"indexer"`
 }
 
 var (
