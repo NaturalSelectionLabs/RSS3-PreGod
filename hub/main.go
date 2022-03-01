@@ -28,15 +28,15 @@ func init() {
 	}
 
 	if err := cache.Setup(); err != nil {
-		log.Fatalf("cache.Setup err: %v", err)
+		logger.Fatalf("cache.Setup err: %v", err)
 	}
 
 	if err := db.Setup(); err != nil {
-		log.Fatalf("db.Setup err: %v", err)
+		logger.Fatalf("db.Setup err: %v", err)
 	}
 
 	if err := db.AutoMigrate(); err != nil {
-		log.Fatalf("db.AutoMigrate err: %v", err)
+		logger.Fatalf("db.AutoMigrate err: %v", err)
 	}
 }
 

@@ -22,6 +22,9 @@ linters-settings:
     locale: US
     ignore-words:
       - someword
+  funlen:
+    lines: 80
+    statements: 50
 
 linters: # https://golangci-lint.run/usage/linters
   disable:

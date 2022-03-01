@@ -29,3 +29,5 @@ tmp_data/
 .vscode/
 
 docker/volume
+
+config/config.local.json

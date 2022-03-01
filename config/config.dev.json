@@ -27,5 +27,16 @@
         "type": "stdout"
       }
     ]
+  },
+  "indexer": {
+    "misc": {
+      "user_agent": "RSS3-PreGod"
+    },
+    "jike": {
+      "area_code": "+1",
+      "mobile_phone_number": "",
+      "password": "",
+      "app_version": "7.27.1"
+    }
   }
 }
