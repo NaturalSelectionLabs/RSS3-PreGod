@@ -59,6 +59,10 @@ type LoggerStruct struct {
 	Output []LoggerOutputConfig `koanf:"output"`
 }
 
+type KeyStruct struct {
+	string
+}
+
 type ConfigStruct struct {
 	Protocol  ProtocolStruct  `koanf:"protocol"`
 	HubServer HubServerStruct `koanf:"hub_server"`
@@ -91,3 +95,23 @@ func Setup() error {
 
 	return nil
 }
+
+func initEnv() error {
+	setEnvKeyInMap("SENTRY_ENDPOINT")
+	return nil
+}
+
+// func setEnvKeyInMap(key string, default_value string) error {
+// 	value := os.Getenv(key)
+// 	if value == "" {
+// 		value = default_value
+// 	}
+
+// 	if len(value) == 0 {
+// 		err := fmt.Errorf("[%s] value is empty", key)
+// 		return err
+// 	}
+
+// 	envMap[key] = value
+// 	return nil
+// }

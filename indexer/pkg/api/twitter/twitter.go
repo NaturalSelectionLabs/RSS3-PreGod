@@ -8,15 +8,11 @@ import (
 
 const endpoint = "https://api.twitter.com/1.1"
 
-func GetFields() {
-
-}
-
 func GetTimeline() {
 
 }
 
-func userShow(name string) (string, error) {
+func GetFields(name string) (string, error) {
 	key := util.GotKey("round-robin", "Twitter")
 	authorization := fmt.Sprintf("Bearer %s", key)
 
@@ -24,12 +20,17 @@ func userShow(name string) (string, error) {
 		"accept":        "application/json",
 		"Authorization": authorization,
 	}
+
 	url := fmt.Sprintf("%s/users/show.json?screen_name=%s", endpoint, name)
 
 	response, err := util.Get(url, headers)
 	if err != nil {
 		return nil, err
 	}
+
+	// 这里缺一个转化函数，response转化为struct结构体
+
+	return nil, nil
 
 }
 
