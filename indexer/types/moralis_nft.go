@@ -1,12 +1,15 @@
 package types
 
-import "fmt"
+import (
+	"fmt"
+	"time"
+)
 
 // MoralisNFTItem store all indexed NFTs from moralis api.
 type MoralisNFTItem struct {
 	TokenAddress      string `json:"token_address"`
 	TokenId           string `json:"token_id"`
-	BLockNumberMinted string `json:"block_number_minted"`
+	BlockNumberMinted string `json:"block_number_minted"`
 	OwnerOf           string `json:"owner_of"`
 	BlockNumber       string `json:"block_number"`
 	Amount            string `json:"amount"`
@@ -66,4 +69,20 @@ type MoralisNFTTransferResult struct {
 func (i MoralisNFTTransferItem) String() string {
 	return fmt.Sprintf(`From: %s, To: %s, TokenAddress: %s, ContractType: %s, TokenId: %s`,
 		i.FromAddress, i.ToAddress, i.TokenAddress, i.ContractType, i.TokenId)
+}
+
+func (i MoralisNFTTransferItem) EqualsToToken(nft MoralisNFTItem) bool {
+	return i.TokenAddress == nft.TokenAddress && i.TokenId == nft.TokenId
+}
+
+func (i MoralisNFTItem) GetUid() string {
+	return fmt.Sprintf("%s.%s", i.TokenAddress, i.TokenId)
+}
+
+func (i MoralisNFTTransferItem) GetUid() string {
+	return fmt.Sprintf("%s.%s", i.TokenAddress, i.TokenId)
+}
+
+func (i MoralisNFTTransferItem) GetTsp() (time.Time, error) {
+	return time.Parse(time.RFC3339, i.BlockTimestamp)
 }

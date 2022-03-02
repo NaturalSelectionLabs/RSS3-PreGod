@@ -35,6 +35,10 @@ dev_go_hub:
 	@echo "  >  \033[32mHappy coding! 😄😄😄 \033[0m "
 	go run hub/main.go
 
+dev_go_indexer:
+	@echo "  >  \033[32mHappy coding! 😄😄😄 \033[0m "
+	go run indexer/main.go
+
 build:
 	make build_go
 

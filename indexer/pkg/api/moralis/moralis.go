@@ -22,7 +22,7 @@ func GetMoralisApiKey() string {
 	return os.Getenv("MoralisApiKey")
 }
 
-func GetNFTs(userAddress string, chainType string, apiKey string) (types.MoralisNFTResult, error) {
+func GetNFTs(userAddress string, chainType MoralisChainType, apiKey string) (types.MoralisNFTResult, error) {
 	var headers = map[string]string{
 		"accept":    "application/json",
 		"X-API-Key": apiKey,
@@ -43,7 +43,7 @@ func GetNFTs(userAddress string, chainType string, apiKey string) (types.Moralis
 	return *res, nil
 }
 
-func GetNFTTransfers(userAddress string, chainType string, apiKey string) (types.MoralisNFTTransferResult, error) {
+func GetNFTTransfers(userAddress string, chainType MoralisChainType, apiKey string) (types.MoralisNFTTransferResult, error) {
 	var headers = map[string]string{
 		"accept":    "application/json",
 		"X-API-Key": apiKey,

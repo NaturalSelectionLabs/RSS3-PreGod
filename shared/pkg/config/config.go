@@ -33,6 +33,13 @@ type PostgresStruct struct {
 	ConnMaxLifetime time.Duration `koanf:"conn_max_lifetime"`
 }
 
+type MongoStruct struct {
+	URI         string `koanf:"uri"`
+	DB          string `koanf:"db"`
+	MaxPoolSize int    `koanf:"max_pool_size"`
+	MinPoolSize int    `koanf:"min_pool_size"`
+}
+
 /*
  * File module：You can simply make the log print to a file
  * example:
@@ -64,6 +71,7 @@ type ConfigStruct struct {
 	HubServer HubServerStruct `koanf:"hub_server"`
 	Redis     RedisStruct     `koanf:"redis"`
 	Postgres  PostgresStruct  `koanf:"postgres"`
+	Mongo     MongoStruct     `koanf:"mongo"`
 	Logger    LoggerStruct    `koanf:"logger"`
 	Indexer   IndexerStruct   `koanf:"indexer"`
 }
