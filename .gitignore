@@ -26,8 +26,14 @@ dist/
 # DB Data
 tmp_data/
 
+
 .vscode/
 
+# docker volume
 docker/volume
 
+import_data/
+
+# Config
 config/config.local.json
+

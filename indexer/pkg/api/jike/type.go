@@ -1,4 +1,4 @@
-package types
+package jike
 
 //nolint:tagliatelle // format is required by Jike API
 type UserProfileStruct struct {

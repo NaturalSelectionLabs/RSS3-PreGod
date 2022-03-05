@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/util"
-	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/types"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/config"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/logger"
 	jsoniter "github.com/json-iterator/go"
@@ -75,7 +74,7 @@ func RefreshJikeToken() error {
 		return err
 	}
 
-	token := new(types.RefreshTokenStruct)
+	token := new(RefreshTokenStruct)
 
 	err = jsoni.Unmarshal(response, &token)
 
@@ -97,7 +96,7 @@ func RefreshJikeToken() error {
 	}
 }
 
-func GetUserProfile(name string) (*types.UserProfileStruct, error) {
+func GetUserProfile(name string) (*UserProfileStruct, error) {
 	refreshErr := RefreshJikeToken()
 
 	if refreshErr != nil {
@@ -128,7 +127,7 @@ func GetUserProfile(name string) (*types.UserProfileStruct, error) {
 		return nil, err
 	}
 
-	profile := new(types.UserProfileStruct)
+	profile := new(UserProfileStruct)
 
 	parsedObject := parsedJson.GetObject("user")
 
@@ -138,7 +137,8 @@ func GetUserProfile(name string) (*types.UserProfileStruct, error) {
 	return profile, err
 }
 
-func GetUserTimeline(name string) ([]types.TimelineStruct, error) {
+// nolint:funlen // format is required by Jike API
+func GetUserTimeline(name string) ([]TimelineStruct, error) {
 	refreshErr := RefreshJikeToken()
 
 	if refreshErr != nil {
@@ -152,13 +152,101 @@ func GetUserTimeline(name string) ([]types.TimelineStruct, error) {
 		"cookie": "fetchRankedUpdate=" + strconv.FormatInt(time.Now().UnixNano(), 10) + "; x-jike-access-token=" + AccessToken + "; x-jike-refresh-token=" + RefreshToken,
 	}
 
-	data := new(types.TimelineRequestStruct)
+	data := new(TimelineRequestStruct)
 
 	data.OperationName = "UserFeeds"
 	data.Variables.Username = name
 
-	// nolint:lll // format is required by Jike API
-	data.Query = "query UserFeeds($username: String!, $loadMoreKey: JSON) {  userProfile(username: $username) {    username    feeds(loadMoreKey: $loadMoreKey) {      ...BasicFeedItem      __typename    }    __typename  }}fragment BasicFeedItem on FeedsConnection {  pageInfo {    loadMoreKey    hasNextPage    __typename  }  nodes {    ... on ReadSplitBar {      id      type      text      __typename    }    ... on MessageEssential {      ...FeedMessageFragment      __typename    }    ... on UserAction {      id      type      action      actionTime      ... on UserFollowAction {        users {          ...TinyUserFragment          ...TinyUserFragment          ...TinyUserFragment          ...TinyUserFragment          ...TinyUserFragment          ...TinyUserFragment          ...TinyUserFragment          ...TinyUserFragment          __typename        }        allTargetUsers {          ...TinyUserFragment          following          statsCount {            followedCount            __typename          }          ...TinyUserFragment          ...TinyUserFragment          ...TinyUserFragment          ...TinyUserFragment          ...TinyUserFragment          ...TinyUserFragment          ...TinyUserFragment          __typename        }        __typename      }      ... on UserRespectAction {        users {          ...TinyUserFragment          ...TinyUserFragment          ...TinyUserFragment          ...TinyUserFragment          ...TinyUserFragment          ...TinyUserFragment          ...TinyUserFragment          ...TinyUserFragment          __typename        }        targetUsers {          ...TinyUserFragment          ...TinyUserFragment          ...TinyUserFragment          ...TinyUserFragment          ...TinyUserFragment          ...TinyUserFragment          ...TinyUserFragment          ...TinyUserFragment          __typename        }        content        __typename      }      __typename    }    __typename  }  __typename}fragment FeedMessageFragment on MessageEssential {  ...EssentialFragment  ... on OriginalPost {    ...LikeableFragment    ...CommentableFragment    ...RootMessageFragment    ...UserPostFragment    ...MessageInfoFragment    pinned {      personalUpdate      __typename    }    __typename  }  ... on Repost {    ...LikeableFragment    ...CommentableFragment    ...UserPostFragment    ...RepostFragment    pinned {      personalUpdate      __typename    }    __typename  }  ... on Question {    ...UserPostFragment    __typename  }  ... on OfficialMessage {    ...LikeableFragment    ...CommentableFragment    ...MessageInfoFragment    ...RootMessageFragment    __typename  }  __typename}fragment EssentialFragment on MessageEssential {  id  type  content  shareCount  repostCount  createdAt  collected  pictures {    format    watermarkPicUrl    picUrl    thumbnailUrl    smallPicUrl    width    height    __typename  }  urlsInText {    url    originalUrl    title    __typename  }  __typename}fragment LikeableFragment on LikeableMessage {  liked  likeCount  __typename}fragment CommentableFragment on CommentableMessage {  commentCount  __typename}fragment RootMessageFragment on RootMessage {  topic {    id    content    __typename  }  __typename}fragment UserPostFragment on MessageUserPost {  readTrackInfo  user {    ...TinyUserFragment    __typename  }  __typename}fragment TinyUserFragment on UserInfo {  avatarImage {    thumbnailUrl    smallPicUrl    picUrl    __typename  }  isSponsor  username  screenName  briefIntro  __typename}fragment MessageInfoFragment on MessageInfo {  video {    title    type    image {      picUrl      __typename    }    __typename  }  linkInfo {    originalLinkUrl    linkUrl    title    pictureUrl    linkIcon    audio {      title      type      image {        thumbnailUrl        picUrl        __typename      }      author      __typename    }    video {      title      type      image {        picUrl        __typename      }      __typename    }    __typename  }  __typename}fragment RepostFragment on Repost {  target {    ...RepostTargetFragment    __typename  }  targetType  __typename}fragment RepostTargetFragment on RepostTarget {  ... on OriginalPost {    id    type    content    pictures {      thumbnailUrl      __typename    }    topic {      id      content      __typename    }    user {      ...TinyUserFragment      __typename    }    __typename  }  ... on Repost {    id    type    content    pictures {      thumbnailUrl      __typename    }    user {      ...TinyUserFragment      __typename    }    __typename  }  ... on Question {    id    type    content    pictures {      thumbnailUrl      __typename    }    user {      ...TinyUserFragment      __typename    }    __typename  }  ... on Answer {    id    type    content    pictures {      thumbnailUrl      __typename    }    user {      ...TinyUserFragment      __typename    }    __typename  }  ... on OfficialMessage {    id    type    content    pictures {      thumbnailUrl      __typename    }    __typename  }  ... on DeletedRepostTarget {    status    __typename  }  __typename}"
+	data.Query = `query UserFeeds($username: String!) {
+					userProfile(username: $username) {
+						screenName
+						briefIntro
+						feeds {
+						...BasicFeedItem
+						}
+					}
+				}
+
+				fragment BasicFeedItem on FeedsConnection {
+					nodes {
+						... on ReadSplitBar {
+							id
+							type
+							text
+						}
+						... on MessageEssential {
+							...FeedMessageFragment
+						}
+					}
+				}
+
+				fragment FeedMessageFragment on MessageEssential {
+					...EssentialFragment
+					... on OriginalPost {
+						...MessageInfoFragment
+					}
+					... on Repost {
+						...RepostFragment
+					}
+				}
+
+				fragment EssentialFragment on MessageEssential {
+					id
+					type
+					content
+					createdAt
+					pictures {
+						format
+						picUrl
+						thumbnailUrl
+					}
+				}
+
+				fragment TinyUserFragment on UserInfo {
+					screenName
+				}
+
+				fragment MessageInfoFragment on MessageInfo {
+					video {
+						title
+						type
+						image {
+							picUrl
+						}
+					}
+				}
+
+				fragment RepostFragment on Repost {
+					target {
+						...RepostTargetFragment
+					}
+				}
+
+				fragment RepostTargetFragment on RepostTarget {
+					... on OriginalPost {
+						id
+						type
+						content
+						pictures {
+							thumbnailUrl
+						}
+						user {
+							...TinyUserFragment
+						}
+					}
+					... on Repost {
+						id
+						type
+						content
+						pictures {
+							thumbnailUrl
+						}
+					}
+					... on DeletedRepostTarget {
+						status
+					}
+				}
+`
 
 	url := "https://web-api.okjike.com/api/graphql"
 
@@ -176,7 +264,7 @@ func GetUserTimeline(name string) ([]types.TimelineStruct, error) {
 
 	parsedObject := parsedJson.GetArray("data", "userProfile", "feeds", "nodes")
 
-	result := make([]types.TimelineStruct, len(parsedObject))
+	result := make([]TimelineStruct, len(parsedObject))
 
 	for i, node := range parsedObject {
 		t, timeErr := time.Parse(time.RFC3339, trimQuote(node.Get("createdAt").String()))

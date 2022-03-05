@@ -1,11 +1,11 @@
-package types
+package arweave
 
 import "fmt"
 
 // MirrorArticle stores all indexed articles from arweave.
 type MirrorArticle struct {
 	Title          string
-	TimeStamp      uint64
+	TimeStamp      int64
 	Content        string
 	Author         string
 	Link           string

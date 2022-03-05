@@ -5,13 +5,13 @@ import (
 	"gorm.io/datatypes"
 )
 
-// `link_metadata` model.
-type LinkMetadata struct {
+// `link_list` model.
+type LinkList struct {
 	Base BaseModel `gorm:"embedded"`
 
-	LinkMetadataID string `gorm:"primaryKey;type:text;column:link_metadata_id"`
+	LinkListID string `gorm:"primaryKey;type:text;column:link_list_id"`
 
-	RSS3ID string `gorm:"type:text;column:rss3_id"`
+	RSS3ID string `gorm:"type:text;column:rss3_id"` // owner id
 
 	LinkType constants.LinkTypeID `gorm:"type:int"`
 

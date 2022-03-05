@@ -1,0 +1,17 @@
+{
+    "cSpell.words": [
+        "arweave",
+        "AVAX",
+        "bson",
+        "gorm",
+        "Jike",
+        "jsoni",
+        "nolint",
+        "Repost",
+        "resty"
+    ],
+    "go.lintTool": "golangci-lint",
+    "go.lintFlags": [
+        "--fast"
+    ],
+}

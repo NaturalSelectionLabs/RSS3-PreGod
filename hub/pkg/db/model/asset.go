@@ -4,6 +4,6 @@ package model
 type Asset struct {
 	Base BaseModel `gorm:"embedded"`
 
-	AssetID string `gorm:"primaryKey;type:text;column:asset_id"`
-	ItemID  string `gorm:"type:text;column:item_id"`
+	AssetID string `gorm:"primaryKey;type:uuid;column:asset_id"` // uuid
+	ItemID  string `gorm:"type:uuid;column:item_id"`             // uuid
 }

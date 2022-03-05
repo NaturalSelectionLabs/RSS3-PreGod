@@ -69,7 +69,7 @@ func AutoMigrate() error {
 		&model.Note{},
 
 		&model.Link{},
-		&model.LinkMetadata{},
+		&model.LinkList{},
 
 		&model.ThirdPartyStorage{},
 

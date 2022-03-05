@@ -17,6 +17,12 @@
     "conn_max_idle_time": -1,
     "conn_max_life_time": -1
   },
+  "mongo": {
+    "uri": "mongodb://localhost:27017",
+    "db": "pregod",
+    "max_pool_size": 200,
+    "min_pool_size": 50
+  },
   "logger": {
     "prefix_tag": "pregod",
     "engine": "zap",
@@ -32,6 +38,9 @@
     "misc": {
       "user_agent": "RSS3-PreGod"
     },
+    "moralis": {
+      "api_key": "+1"
+    }
     "jike": {
       "area_code": "+1",
       "mobile_phone_number": "",

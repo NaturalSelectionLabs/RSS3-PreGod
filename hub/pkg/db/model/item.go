@@ -10,7 +10,7 @@ import (
 type Item struct {
 	Base BaseModel `gorm:"embedded"`
 
-	ItemID string `gorm:"primaryKey;type:text;column:item_id"`
+	ItemID string `gorm:"primaryKey;type:uuid;column:item_id"` // uuid
 
 	ObjectID string `gorm:"type:text;column:object_id"`
 

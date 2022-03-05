@@ -47,6 +47,8 @@ linters: # https://golangci-lint.run/usage/linters
     - varcheck # no unused global vars
     - nolintlint
     - misspell # finds commonly misspelled English words in comments
+    - funlen
+    - lll # reports long lines
 
   presets:
     - bugs

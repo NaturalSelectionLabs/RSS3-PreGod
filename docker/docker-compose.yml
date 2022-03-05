@@ -19,8 +19,6 @@ services:
         restart: always
         image: mongo:latest
         container_name: mongodb
-        environment:
-            - MONGO_INITDB_DATABASE=rss3-prod
         ports:
             - '27017:27017'
 
@@ -36,7 +34,7 @@ services:
 
     rocketmq.broker:
         # restart: always
-        image: registry.digitalocean.com/rss3/rocketmq:latest
+        image: rss3/rocketmq:latest
         container_name: mqbroker
         environment:
             - NAMESRV_ADDR=rocketmq.nameserver:9876

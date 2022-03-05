@@ -4,6 +4,6 @@ package model
 type Note struct {
 	Base BaseModel `gorm:"embedded"`
 
-	NoteID string `gorm:"primaryKey;type:text;column:note_id"`
-	ItemID string `gorm:"type:text;column:item_id"`
+	NoteID string `gorm:"primaryKey;type:uuid;column:note_id"` // uuid
+	ItemID string `gorm:"type:uuid;column:item_id"`            // uuid
 }

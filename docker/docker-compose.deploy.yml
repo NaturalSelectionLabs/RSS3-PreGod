@@ -2,17 +2,22 @@ version: '3'
 
 services:
     redis:
+        command: redis-server --requirepass Pa33WoRD
         volumes:
             - /home/data/redis:/data
 
     postgres:
         environment:
-            - POSTGRES_USER=rss3
-            - POSTGRES_PASSWORD=rss3rocks
+            - POSTGRES_USER=U33RNaME
+            - POSTGRES_PASSWORD=Pa33WoRD
         volumes:
             - /home/data/postgres:/var/lib/postgresql/data
 
     mongodb:
+        environment:
+            - MONGO_INITDB_DATABASE=rss3-prod
+            - MONGO_INITDB_ROOT_USERNAME=U33RNaME
+            - MONGO_INITDB_ROOT_PASSWORD=Pa33WoRD
         volumes:
             - /home/data/mongodb:/etc/mongodb
 

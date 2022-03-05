@@ -4,17 +4,12 @@ import (
 	"fmt"
 
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/util"
-	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/types"
 	"github.com/valyala/fastjson"
 )
 
 const arweaveEndpoint string = "https://arweave.net"
 const arweaveGraphqlEndpoint string = "https://arweave.net/graphql"
 const mirrorHost = "https://mirror.xyz/"
-
-type (
-	MirrorArticle = types.MirrorArticle
-)
 
 // GetLatestBlockHeight gets the latest block height for arweave
 func GetLatestBlockHeight() (int64, error) {
@@ -135,7 +130,7 @@ func parseGraphqlNode(node string) (MirrorArticle, error) {
 	// title
 	article.Title = string(parsedJson.GetStringBytes("content", "title"))
 	// timestamp
-	article.TimeStamp = parsedJson.GetUint64("content", "timestamp")
+	article.TimeStamp = parsedJson.GetInt64("content", "timestamp")
 	// content
 	article.Content = string(parsedJson.GetStringBytes("content", "body")) // timestamp
 

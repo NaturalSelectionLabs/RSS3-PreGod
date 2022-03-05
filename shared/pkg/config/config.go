@@ -1,8 +1,11 @@
 package config
 
 import (
+	"os"
+	"path/filepath"
 	"time"
 
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/util"
 	"github.com/knadh/koanf"
 	"github.com/knadh/koanf/parsers/json"
 	"github.com/knadh/koanf/providers/file"
@@ -35,6 +38,13 @@ type PostgresStruct struct {
 	ConnMaxLifetime time.Duration `koanf:"conn_max_lifetime"`
 }
 
+type MongoStruct struct {
+	URI         string `koanf:"uri"`
+	DB          string `koanf:"db"`
+	MaxPoolSize int    `koanf:"max_pool_size"`
+	MinPoolSize int    `koanf:"min_pool_size"`
+}
+
 /*
  * File module：You can simply make the log print to a file
  * example:
@@ -63,6 +73,10 @@ type LoggerStruct struct {
 
 // Indexer Struct Config
 
+type MoralisStruct struct {
+	ApiKey string `koanf:"api_key"`
+}
+
 type MiscStruct struct {
 	UserAgent string `koanf:"user_agent"`
 }
@@ -82,6 +96,7 @@ type TwitterStruct struct {
 type IndexerStruct struct {
 	Misc    MiscStruct    `koanf:"misc"`
 	Jike    JikeStruct    `koanf:"jike"`
+	Moralis MoralisStruct `koanf:"moralis"`
 	Twitter TwitterStruct `koanf:"twitter"`
 }
 
@@ -103,7 +118,12 @@ var (
 
 func Setup() error {
 	// Read user config
-	if err := k.Load(file.Provider("config/config.dev.json"), json.Parser()); err != nil {
+	fp, err := getConfigFilePath()
+	if err != nil {
+		return err
+	}
+
+	if err := k.Load(file.Provider(fp), json.Parser()); err != nil {
 		return err
 	}
 
@@ -120,22 +140,24 @@ func Setup() error {
 	return nil
 }
 
-func initEnv() error {
-	setEnvKeyInMap("SENTRY_ENDPOINT")
-	return nil
+// Gets config file path.
+// Config files are located at `config/config.*.json`.
+// The wildcard part is specified with an env var `CONFIG_ENV`.
+// The default `CONFIG_ENV` is `dev`; that is, the default config file is `config/config.dev.json`.
+func getConfigFilePath() (string, error) {
+	ce := os.Getenv("CONFIG_ENV")
+	if ce == "" {
+		os.Setenv("CONFIG_ENV", "dev")
+
+		ce = "dev"
+	}
+
+	dirname, err := util.Dirname()
+	if err != nil {
+		return "", err
+	}
+
+	fp := filepath.Join(dirname, "..", "..", "..", "config", "config."+ce+".json")
+
+	return fp, nil
 }
-
-// func setEnvKeyInMap(key string, default_value string) error {
-// 	value := os.Getenv(key)
-// 	if value == "" {
-// 		value = default_value
-// 	}
-
-// 	if len(value) == 0 {
-// 		err := fmt.Errorf("[%s] value is empty", key)
-// 		return err
-// 	}
-
-// 	envMap[key] = value
-// 	return nil
-// }
