@@ -61,5 +61,5 @@ func GetInstance(c *gin.Context) {
 		}
 	}
 
-	c.JSON(http.StatusOK, account)
+	c.JSON(http.StatusOK, status.Data(account))
 }
