@@ -23,6 +23,9 @@
     "max_pool_size": 200,
     "min_pool_size": 50
   },
+  "network": {
+    "proxy": "http://192.168.2.7:7890"
+  },
   "logger": {
     "prefix_tag": "pregod",
     "engine": "zap",
@@ -40,12 +43,21 @@
     },
     "moralis": {
       "api_key": "+1"
-    }
+    },
     "jike": {
       "area_code": "+1",
       "mobile_phone_number": "",
       "password": "",
       "app_version": "7.27.1"
+    },
+    "twitter": {
+      "break_down_tokens":[
+        "AAAAAAAAAAAAAAAAAAAAAOFWUgEAAAAAmjqmjuQj9JnDic89npODpCj7Bgo%3DoA4AmypC4gVbyyEpXfbARfvIyIFX6RDWO3nFQ8LkvPtctNAdo7",
+        "AAAAAAAAAAAAAAAAAAAAAFIVywAAAAAAW2tMfd3vB6CMlPv%2FGb2QRdE72is%3DvwPKkVlu0BYiulN75A35RFlmsKDDDCXcnFBZyd3f5TXFJq9WWy",
+        "AAAAAAAAAAAAAAAAAAAAADh01AAAAAAAxna3Hru2KPaE3MZaHF09hhZVsWk%3D0vd20thafx4rc7WnSU0neovWZIAvWnmUaOFEx8tldB7ZaWgd3r",
+        "AAAAAAAAAAAAAAAAAAAAAPc4UgEAAAAANZbjHu2%2B3d8fBRFQVQZnfhE1rb4%3DlglTHTS0cgdFUXrNqoIjz092G7Q5he4CLuZ6NCheUIiYwhvEBz",
+        "AAAAAAAAAAAAAAAAAAAAALBkJwEAAAAAyAcfkep6yiBTg9sqPi4052dncUI%3D1bJbFrtpL78MK1fZDbGM1jEhdNmHNKMyn3d0ppy5zm9lY9ZdPP"
+      ]
     }
   }
 }

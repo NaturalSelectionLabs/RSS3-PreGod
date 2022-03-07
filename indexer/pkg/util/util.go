@@ -3,12 +3,18 @@ package util
 import (
 	"time"
 
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/config"
 	"github.com/go-resty/resty/v2"
 )
 
 func Get(url string, headers map[string]string) ([]byte, error) {
 	// Create a Resty Client
 	client := resty.New()
+
+	if len(config.Config.Network.Proxy) != 0 {
+		client.SetProxy(config.Config.Network.Proxy)
+	}
+
 	client.SetTimeout(1 * time.Second * 10)
 
 	if headers != nil {
@@ -26,6 +32,11 @@ func Get(url string, headers map[string]string) ([]byte, error) {
 func Post(url string, headers map[string]string, data string) ([]byte, error) {
 	// Create a Resty Client
 	client := resty.New()
+
+	if len(config.Config.Network.Proxy) != 0 {
+		client.SetProxy(config.Config.Network.Proxy)
+	}
+
 	client.SetTimeout(1 * time.Second * 10)
 
 	if headers != nil {
@@ -68,17 +79,20 @@ func GotKey(strategy string, indexer_id string, keys []string) string {
 	if len(strategy) == 0 {
 		strategy = "round-robin"
 	}
+
 	if len(indexer_id) == 0 {
 		indexer_id = "."
 	}
 
 	var offset int
+
 	var key string
+
+	keyOffset := make(map[string]int)
 
 	if strategy == "first-always" {
 		key = "Bearer " + indexer_id
 	} else {
-
 		count, ok := keyOffset[indexer_id]
 
 		if !ok {

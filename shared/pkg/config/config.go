@@ -71,6 +71,10 @@ type LoggerStruct struct {
 	Output []LoggerOutputConfig `koanf:"output"`
 }
 
+type NetWorkStruct struct {
+	Proxy string `koanf:"proxy"`
+}
+
 // Indexer Struct Config
 
 type MoralisStruct struct {
@@ -90,7 +94,7 @@ type JikeStruct struct {
 }
 
 type TwitterStruct struct {
-	keys []string `koanf:"keys"`
+	Tokens []string `koanf:"break_down_tokens"`
 }
 
 type IndexerStruct struct {
@@ -106,6 +110,7 @@ type ConfigStruct struct {
 	Redis     RedisStruct     `koanf:"redis"`
 	Postgres  PostgresStruct  `koanf:"postgres"`
 	Logger    LoggerStruct    `koanf:"logger"`
+	Network   NetWorkStruct   `koanf:"network"`
 	Indexer   IndexerStruct   `koanf:"indexer"`
 }
 
