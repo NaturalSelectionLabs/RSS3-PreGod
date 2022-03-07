@@ -9,7 +9,7 @@ import (
 type Instance interface {
 	fmt.Stringer
 
-	GetPrefix() string
+	GetPrefix() constants.PrefixName
 	GetIdentity() string
 	GetSuffix() string
 }
@@ -25,8 +25,8 @@ type PlatformInstance struct {
 	Platform constants.PlatformSymbol `json:"platform"`
 }
 
-func (p *PlatformInstance) GetPrefix() string {
-	return string(p.Prefix)
+func (p *PlatformInstance) GetPrefix() constants.PrefixName {
+	return p.Prefix
 }
 
 func (p *PlatformInstance) GetIdentity() string {
@@ -47,8 +47,8 @@ type NetworkInstance struct {
 	Network  constants.NetworkSymbol `json:"network"`
 }
 
-func (n *NetworkInstance) GetPrefix() string {
-	return string(n.Prefix)
+func (n *NetworkInstance) GetPrefix() constants.PrefixName {
+	return n.Prefix
 }
 
 func (n *NetworkInstance) GetIdentity() string {

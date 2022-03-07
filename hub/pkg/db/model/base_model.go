@@ -7,7 +7,7 @@ import (
 )
 
 type BaseModel struct {
-	CreatedAt time.Time      `gorm:"autoCreateTime;not null;default:now()"`
-	UpdatedAt time.Time      `gorm:"autoUpdateTime;not null;default:now()"`
-	DeletedAt gorm.DeletedAt `gorm:"index"`
+	CreatedAt time.Time      `gorm:"autoCreateTime;not null;default:now()" json:"created_at"`
+	UpdatedAt time.Time      `gorm:"autoUpdateTime;not null;default:now()" json:"updated_at"`
+	DeletedAt gorm.DeletedAt `gorm:"index" json:"-"`
 }

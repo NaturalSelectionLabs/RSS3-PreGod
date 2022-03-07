@@ -8,6 +8,7 @@ import (
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/pkg/router/doc"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/pkg/router/monitor"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/pkg/router/ping"
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/pkg/status"
 	"github.com/gin-gonic/gin"
 )
 
@@ -22,6 +23,14 @@ func InitRouter() *gin.Engine {
 	// Apply middlewares
 	r.Use(gin.Recovery())
 
+	r.NoRoute(func(c *gin.Context) {
+		c.JSON(http.StatusNotFound, status.Error(status.ErrorNotFound))
+	})
+
+	r.NoMethod(func(c *gin.Context) {
+		c.JSON(http.StatusMethodNotAllowed, status.Error(status.ErrorMethodNotAllowed))
+	})
+
 	// === APIs ===
 
 	// instance
@@ -29,12 +38,12 @@ func InitRouter() *gin.Engine {
 	apis.Use(middleware.Logger())
 	{
 		// Instance
-		apis.GET("/:authority", api.GetInstance)
+		apis.GET("/:instance", api.GetInstance)
 
 		// items
-		r.GET("/:authority/:item_type/:item_uuid", api.GetItem)
-		r.GET("/:authority/list/:item_type/:page_index", api.GetItemPagedList)
-		// r.GET("/:authority/list/:item_type", api.GetItemList)
+		apis.GET("/:instance/:item_type/:item_uuid", api.GetItem)
+		apis.GET("/:instance/list/:item_type/:page_index", api.GetItemPagedList)
+		//r.GET("/:authority/list/:item_type", api.GetItemList)
 
 		// // links
 		// r.GET("/:authority/list/links/:link_type/:page_index", api.GetLinkList)

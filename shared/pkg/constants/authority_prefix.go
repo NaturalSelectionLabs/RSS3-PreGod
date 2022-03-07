@@ -28,6 +28,10 @@ var (
 type PrefixName string
 type PrefixID int32
 
+func (p PrefixName) String() string {
+	return string(p)
+}
+
 func (id PrefixID) String() PrefixName {
 	value, has := prefixNameMap[id]
 	if has && value != PrefixNameUnknown {

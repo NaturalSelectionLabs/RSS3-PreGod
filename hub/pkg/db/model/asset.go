@@ -5,5 +5,5 @@ type Asset struct {
 	AssetID string `gorm:"primaryKey;type:uuid;column:asset_id"` // uuid
 	ItemID  string `gorm:"type:uuid;column:item_id"`             // uuid
 
-	Base BaseModel `gorm:"embedded"`
+	BaseModel `gorm:"embedded"`
 }

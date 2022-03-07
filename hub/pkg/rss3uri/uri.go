@@ -29,7 +29,7 @@ type URI struct {
 func (u *URI) String() string {
 	value := url.URL{
 		Scheme: Scheme,
-		User:   url.UserPassword(u.Instance.GetPrefix(), u.Instance.GetIdentity()),
+		User:   url.UserPassword(u.Instance.GetPrefix().String(), u.Instance.GetIdentity()),
 		Path:   u.Instance.GetSuffix(),
 	}
 

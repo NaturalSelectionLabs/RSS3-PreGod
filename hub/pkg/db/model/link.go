@@ -16,5 +16,5 @@ type Link struct {
 
 	PageIndex int `gorm:"type:int"`
 
-	Base BaseModel `gorm:"embedded"`
+	BaseModel `gorm:"embedded"`
 }

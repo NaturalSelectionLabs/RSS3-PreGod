@@ -1,20 +1,21 @@
 package instance
 
 import (
+	"errors"
+	"fmt"
 	"net/http"
 
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/pkg/db"
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/pkg/db/model"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/pkg/rss3uri"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/pkg/status"
-	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/pkg/web"
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/constants"
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 )
 
 type GetInstanceRequestUri struct {
-	Authority string `uri:"authority" binding:"required"`
-}
-
-type GetInstanceResponseData struct {
-	Authority rss3uri.Instance `json:"authority"`
+	Instance string `uri:"instance" binding:"required"`
 }
 
 // GetInstance returns the instance information for the given authority.
@@ -28,27 +29,37 @@ type GetInstanceResponseData struct {
 // @Success      200        {object}  web.Response{data=GetInstanceResponseData}
 // @Router       /{authority} [get]
 func GetInstance(c *gin.Context) {
-	w := web.Gin{C: c}
-
-	// validate uri
 	var uri GetInstanceRequestUri
 	if err := c.ShouldBindUri(&uri); err != nil {
-		w.JSONResponse(http.StatusBadRequest, status.CodeInvalidParams, "invalid uri")
+		c.JSON(http.StatusBadRequest, status.Error(status.ErrorInvalidURI))
 
 		return
 	}
 
-	// parse uri
-	authority, err := rss3uri.ParseInstance(uri.Authority)
+	instance, err := rss3uri.ParseInstance(uri.Instance)
 	if err != nil {
-		w.JSONResponse(http.StatusBadRequest, status.CodeInvalidParams, "invalid uri: "+err.Error())
+		c.JSON(http.StatusBadRequest, status.Error(status.ErrorInvalidURI))
 
 		return
 	}
 
-	// TODO: get instance from db
+	// TODO Development environment has only account data
+	if instance.GetPrefix() != constants.PrefixNameAccount {
+		c.JSON(http.StatusAccepted, status.Error(errors.New("not an account")))
 
-	w.JSONResponse(http.StatusOK, status.CodeSuccess, gin.H{
-		"authority": authority,
-	})
+		return
+	}
+
+	accountID := fmt.Sprintf("%s@%s", instance.GetIdentity(), instance.GetSuffix())
+	account := model.Account{}
+
+	if err := db.DB.Where("account_id = ?", accountID).First(&account).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			c.JSON(http.StatusNotFound, status.Error(status.ErrorAccountNotFound))
+
+			return
+		}
+	}
+
+	c.JSON(http.StatusOK, account)
 }

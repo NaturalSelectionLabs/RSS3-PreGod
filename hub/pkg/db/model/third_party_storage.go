@@ -14,5 +14,5 @@ type ThirdPartyStorage struct {
 	Value       datatypes.JSON `gorm:"type:jsonb"`
 	Description string         `gorm:"type:text"`
 
-	Base BaseModel `gorm:"embedded"`
+	BaseModel `gorm:"embedded"`
 }

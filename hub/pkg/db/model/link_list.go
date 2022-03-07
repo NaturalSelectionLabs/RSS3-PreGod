@@ -15,5 +15,5 @@ type LinkList struct {
 
 	Metadata datatypes.JSON `gorm:"type:jsonb"`
 
-	Base BaseModel `gorm:"embedded"`
+	BaseModel `gorm:"embedded"`
 }

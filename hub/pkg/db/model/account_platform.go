@@ -8,5 +8,5 @@ type AccountPlatform struct {
 	PlatformID        constants.PlatformID `gorm:"type:int;column:platform_id"`
 	PlatformAccountID string               `gorm:"type:text;column:platform_account_id"` // account ID on the platform
 
-	Base BaseModel `gorm:"embedded"`
+	BaseModel `gorm:"embedded"`
 }

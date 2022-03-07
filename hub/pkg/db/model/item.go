@@ -18,5 +18,5 @@ type Item struct {
 
 	PlatformCreatedAt time.Time `gorm:"index"` // create time on the platform
 
-	Base BaseModel `gorm:"embedded"`
+	BaseModel `gorm:"embedded"`
 }

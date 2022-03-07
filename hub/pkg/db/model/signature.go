@@ -11,5 +11,5 @@ type Signature struct {
 	Signature string         `gorm:"type:text"`
 	Agents    datatypes.JSON `gorm:"type:jsonb"`
 
-	Base BaseModel `gorm:"embedded"`
+	BaseModel `gorm:"embedded"`
 }

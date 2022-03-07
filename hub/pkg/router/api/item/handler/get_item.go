@@ -4,8 +4,6 @@ import (
 	"net/http"
 
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/pkg/rss3uri"
-	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/pkg/status"
-	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/pkg/web"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/constants"
 	"github.com/gin-gonic/gin"
 )
@@ -21,7 +19,5 @@ type GetItemResponseData struct {
 }
 
 func GetItem(c *gin.Context) {
-	w := web.Gin{C: c}
-
-	w.JSONResponse(http.StatusOK, status.CodeSuccess, gin.H{})
+	c.JSON(http.StatusOK, gin.H{})
 }

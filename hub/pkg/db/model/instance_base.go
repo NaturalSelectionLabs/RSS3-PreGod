@@ -11,5 +11,5 @@ type InstanceBase struct {
 	ControllerAddress string                   `gorm:"type:text"`
 	InstanceTypeID    constants.InstanceTypeID `gorm:"type:int;column:instance_type_id"`
 
-	Base BaseModel `gorm:"embedded"`
+	BaseModel `gorm:"embedded"`
 }
