@@ -10,9 +10,9 @@ type Gin struct {
 }
 
 type Response struct {
-	Code status.Code `json:"code"`
-	Msg  status.Msg  `json:"message"`
-	Data interface{} `json:"data"`
+	Code status.Code    `json:"code"`
+	Msg  status.Message `json:"message"`
+	Data interface{}    `json:"data"`
 }
 
 func (g *Gin) JSONResponse(httpCode int, errCode status.Code, data interface{}) {

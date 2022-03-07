@@ -11,5 +11,5 @@ import (
 func Ping(c *gin.Context) {
 	w := web.Gin{C: c}
 
-	w.JSONResponse(http.StatusOK, status.SUCCESS, "pong")
+	w.JSONResponse(http.StatusOK, status.CodeSuccess, "pong")
 }

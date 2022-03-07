@@ -33,7 +33,7 @@ func GetInstance(c *gin.Context) {
 	// validate uri
 	var uri GetInstanceRequestUri
 	if err := c.ShouldBindUri(&uri); err != nil {
-		w.JSONResponse(http.StatusBadRequest, status.INVALID_PARAMS, "invalid uri")
+		w.JSONResponse(http.StatusBadRequest, status.CodeInvalidParams, "invalid uri")
 
 		return
 	}
@@ -41,14 +41,14 @@ func GetInstance(c *gin.Context) {
 	// parse uri
 	authority, err := rss3uri.ParseInstance(uri.Authority)
 	if err != nil {
-		w.JSONResponse(http.StatusBadRequest, status.INVALID_PARAMS, "invalid uri: "+err.Error())
+		w.JSONResponse(http.StatusBadRequest, status.CodeInvalidParams, "invalid uri: "+err.Error())
 
 		return
 	}
 
 	// TODO: get instance from db
 
-	w.JSONResponse(http.StatusOK, status.SUCCESS, gin.H{
+	w.JSONResponse(http.StatusOK, status.CodeSuccess, gin.H{
 		"authority": authority,
 	})
 }

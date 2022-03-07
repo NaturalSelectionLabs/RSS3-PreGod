@@ -23,5 +23,5 @@ type GetItemPagedListResponseData struct {
 func GetItemPagedList(c *gin.Context) {
 	w := web.Gin{C: c}
 
-	w.JSONResponse(http.StatusOK, status.SUCCESS, gin.H{})
+	w.JSONResponse(http.StatusOK, status.CodeSuccess, gin.H{})
 }
