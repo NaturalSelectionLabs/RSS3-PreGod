@@ -4,8 +4,6 @@ import "github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/constants"
 
 // `link` model.
 type Link struct {
-	Base BaseModel `gorm:"embedded"`
-
 	LinkID     string `gorm:"primaryKey;type:text;column:link_id"`
 	LinkListID string `gorm:"type:text;column:link_list_id"`
 
@@ -17,4 +15,6 @@ type Link struct {
 	TargetPlatformID constants.PlatformID `gorm:"type:int;column:target_platform_id"`
 
 	PageIndex int `gorm:"type:int"`
+
+	Base BaseModel `gorm:"embedded"`
 }

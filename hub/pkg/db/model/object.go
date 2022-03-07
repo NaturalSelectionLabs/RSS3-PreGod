@@ -8,8 +8,6 @@ import (
 
 // `object` model.
 type Object struct {
-	BaseModel `gorm:"embedded"`
-
 	ObjectID string `gorm:"primaryKey;type:text;column:object_id"` // uuid
 	AlterID  string `gorm:"type:text;column:alter_id"`             // alternative readable id for item
 
@@ -21,4 +19,6 @@ type Object struct {
 
 	NetworkID       constants.NetworkID `gorm:"type:int;column:network_id"`
 	NetworkObjectID string              `gorm:"type:text;column:network_object_id"` // object ID on the network
+
+	BaseModel `gorm:"embedded"`
 }

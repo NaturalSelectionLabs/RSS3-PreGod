@@ -6,8 +6,6 @@ import (
 
 // `item` model.
 type Item struct {
-	Base BaseModel `gorm:"embedded"`
-
 	ItemID string `gorm:"primaryKey;type:uuid;column:item_id"` // uuid
 
 	ObjectID string `gorm:"type:text;column:object_id"`
@@ -19,4 +17,6 @@ type Item struct {
 	PageIndex int    `gorm:"type:int"`
 
 	PlatformCreatedAt time.Time `gorm:"index"` // create time on the platform
+
+	Base BaseModel `gorm:"embedded"`
 }

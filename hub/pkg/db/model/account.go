@@ -7,8 +7,6 @@ import (
 
 // `account` model.
 type Account struct {
-	Base BaseModel `gorm:"embedded"`
-
 	AccountID string         `gorm:"primaryKey;type:text;column:account_id"`
 	Name      string         `gorm:"type:text"`
 	Bio       string         `gorm:"type:text"`
@@ -21,4 +19,6 @@ type Account struct {
 
 	InstanceBase    InstanceBase      `gorm:"foreignkey:AccountID"` // belongs to
 	AccountPlatform []AccountPlatform `gorm:"foreignkey:AccountID"` // has many
+
+	Base BaseModel `gorm:"embedded"`
 }
