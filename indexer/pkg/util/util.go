@@ -61,3 +61,7 @@ func PostRaw(url string, headers map[string]string, data string) (*resty.Respons
 func SetCommonHeader(headers map[string]string) {
 	headers["User-Agent"] = "RSS3-PreGod"
 }
+
+func TrimQuote(s string) string {
+	return s[1 : len(s)-1]
+}
