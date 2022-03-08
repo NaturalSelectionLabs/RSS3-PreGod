@@ -45,7 +45,7 @@ func (mc *misskeyCrawler) Work(userAddress string, networkId constants.NetworkID
 			constants.ItemTagsMisskeyNote,
 			[]string{note.Author},
 			"",
-			note.Text,
+			note.Summary,
 			note.Attachments,
 			note.CreatedAt,
 		)

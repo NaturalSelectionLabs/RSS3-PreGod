@@ -19,7 +19,7 @@ type TimelineRequest struct {
 type Note struct {
 	Id          string
 	CreatedAt   time.Time
-	Text        string
+	Summary     string
 	Author      string
 	Attachments []model.Attachment
 	Link        string

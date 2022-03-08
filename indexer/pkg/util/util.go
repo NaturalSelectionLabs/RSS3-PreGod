@@ -1,6 +1,7 @@
 package util
 
 import (
+	"net/http"
 	"time"
 
 	"github.com/go-resty/resty/v2"
@@ -56,6 +57,21 @@ func PostRaw(url string, headers map[string]string, data string) (*resty.Respons
 	resp, err := request.Post(url)
 
 	return resp, err
+}
+
+func Head(url string) (http.Header, error) {
+	client := resty.New()
+	client.SetTimeout(1 * time.Second * 10)
+
+	headers := make(map[string]string)
+
+	SetCommonHeader(headers)
+
+	request := client.R().EnableTrace()
+
+	resp, err := request.Head(url)
+
+	return resp.Header(), err
 }
 
 func SetCommonHeader(headers map[string]string) {
