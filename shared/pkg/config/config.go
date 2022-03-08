@@ -73,6 +73,10 @@ type MoralisStruct struct {
 	ApiKey string `koanf:"api_key"`
 }
 
+type ArbitrumStruct struct {
+	ApiKey string `koanf:"arbiscan_key"`
+}
+
 type ConfigStruct struct {
 	Protocol  ProtocolStruct  `koanf:"protocol"`
 	HubServer HubServerStruct `koanf:"hub_server"`
@@ -96,9 +100,10 @@ type JikeStruct struct {
 }
 
 type IndexerStruct struct {
-	Misc    MiscStruct    `koanf:"misc"`
-	Jike    JikeStruct    `koanf:"jike"`
-	Moralis MoralisStruct `koanf:"moralis"`
+	Misc     MiscStruct     `koanf:"misc"`
+	Jike     JikeStruct     `koanf:"jike"`
+	Moralis  MoralisStruct  `koanf:"moralis"`
+	Aribtrum ArbitrumStruct `koanf:"arbitrum"`
 }
 
 var (

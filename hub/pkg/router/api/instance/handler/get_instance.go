@@ -3,9 +3,9 @@ package instance
 import (
 	"net/http"
 
-	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/pkg/rss3uri"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/pkg/status"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/pkg/web"
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/rss3uri"
 	"github.com/gin-gonic/gin"
 )
 

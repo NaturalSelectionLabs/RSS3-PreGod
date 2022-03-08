@@ -73,3 +73,7 @@ func IsValidNetworkName(value string) bool {
 
 	return false
 }
+
+func (id NetworkSymbol) GetID() NetworkID {
+	return networkIDMap[NetworkSymbol(id)]
+}

@@ -65,6 +65,7 @@ func GetZksToken(id int64) Token {
 		Kind:     "ERC20",
 		IsNFT:    false,
 	}
+
 	return token
 }
 

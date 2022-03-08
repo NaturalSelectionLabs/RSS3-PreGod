@@ -7,11 +7,11 @@
   },
   "redis": {
     "addr": "localhost:6379",
-    "password": "",
+    "password": "Pa33WoRD",
     "db": 0
   },
   "postgres": {
-    "dsn": "host=localhost port=5432 user=rss3 password=rss3rocks dbname=pregod sslmode=disable TimeZone=UTC",
+    "dsn": "host=localhost port=5432 user=rss3 password=Pa33WoRD dbname=pregod sslmode=disable TimeZone=UTC",
     "max_open_conns": 100,
     "max_idle_conns": 20,
     "conn_max_idle_time": -1,
@@ -40,6 +40,9 @@
     },
     "moralis": {
       "api_key": "+1"
+    },
+    "arbitrum": {
+      "arbiscan_key": "+1"
     },
     "jike": {
       "area_code": "+1",

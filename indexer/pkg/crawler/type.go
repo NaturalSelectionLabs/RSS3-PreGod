@@ -6,14 +6,13 @@ import (
 )
 
 type CrawlerResult struct {
-	Assets  []*model.ItemId
-	Notes   []*model.ItemId
-	Items   []*model.Item
-	Objects []*model.Object
+	Assets []*model.ItemId
+	Notes  []*model.ItemId
+	Items  []*model.Item
 }
 
 type Crawler interface {
-	Work(string, constants.NetworkName) error
-	// GetResult return &{Assets, Notes, Items, Objects}
+	Work(string, constants.NetworkID) error
+	// GetResult return &{Assets, Notes, Items}
 	GetResult() *CrawlerResult
 }

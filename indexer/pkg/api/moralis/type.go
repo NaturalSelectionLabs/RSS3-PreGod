@@ -19,37 +19,37 @@ const (
 	Fantom  ChainType = "fantom"
 )
 
-func GetChainType(network constants.NetworkName) ChainType {
+func GetChainType(network constants.NetworkID) ChainType {
 	switch network {
-	case constants.NetworkName_Ethereum:
+	case constants.NetworkIDEthereumMainnet:
 		return ETH
-	case constants.NetworkName_BNB:
+	case constants.NetworkIDBNBChain:
 		return BSC
-	case constants.NetworkName_Polygon:
+	case constants.NetworkIDPolygon:
 		return Polygon
-	case constants.NetworkName_Avalanche:
+	case constants.NetworkIDAvalanche:
 		return AVAX
-	case constants.NetworkName_Fantom:
+	case constants.NetworkIDFantom:
 		return Fantom
 	default:
 		return Unknown
 	}
 }
 
-func (mt ChainType) GetNFTItemTypeID() constants.ItemTypeID {
+func (mt ChainType) GetNetworkSymbol() constants.NetworkSymbol {
 	switch mt {
 	case "ETH":
-		return constants.ItemType_Ethereum_Nft
+		return constants.NetworkSymbolEthereumMainnet
 	case "BSC":
-		return constants.ItemType_Bsc_Nft
+		return constants.NetworkSymbolBNBChain
 	case "Polygon":
-		return constants.ItemType_Polygon_Nft
+		return constants.NetworkSymbolPolygon
 	case "AVAX":
-		return constants.ItemType_Avax_Nft
+		return constants.NetworkSymbolAvalanche
 	case "Fantom":
-		return constants.ItemType_Fantom_Nft
+		return constants.NetworkSymbolFantom
 	default:
-		return constants.ItemType_Unknown
+		return constants.NetworkSymbolUnknown
 	}
 }
 
@@ -149,7 +149,7 @@ type GetLogsItem struct {
 }
 
 func (i GetLogsItem) String() string {
-	return fmt.Sprintf(`TransactionHash: %s, Address: %s, Data: %s, Topic0: %s, Topic1: %s, Topic2:%s, Topic3: %s`,
+	return fmt.Sprintf(`TransactionHash: %s, TokenAddress: %s, Data: %s, Topic0: %s, Topic1: %s, Topic2:%s, Topic3: %s`,
 		i.TransactionHash, i.Address, i.Data, i.Topic0, i.Topic1, i.Topic2, i.Topic3)
 }
 
