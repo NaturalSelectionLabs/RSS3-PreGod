@@ -1,9 +1,13 @@
 package misskey
 
-import "time"
+import (
+	"time"
+
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/db/model"
+)
 
 //nolint:tagliatelle // format is required by Misskey API
-type TimelineRequestStruct struct {
+type TimelineRequest struct {
 	UserId         string `json:"userId"`
 	IncludeReplies bool   `json:"includeReplies"`
 	Renote         bool   `json:"renote"`
@@ -12,9 +16,11 @@ type TimelineRequestStruct struct {
 	ExcludeNsfw    bool   `json:"excludeNsfw"`
 }
 
-type NoteStruct struct {
-	Id        string
-	CreatedAt time.Time
-	Text      string
-	Author    string
+type Note struct {
+	Id          string
+	CreatedAt   time.Time
+	Text        string
+	Author      string
+	Attachments []model.Attachment
+	Link        string
 }

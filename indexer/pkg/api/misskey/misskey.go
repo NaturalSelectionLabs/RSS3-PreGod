@@ -36,7 +36,7 @@ func GetUserId(accountInfo []string) (string, error) {
 	return util.TrimQuote(parsedJson.Get("id").String()), nil
 }
 
-func GetUserNoteList(address string, count int, tsp time.Time) ([]NoteStruct, error) {
+func GetUserNoteList(address string, count int, tsp time.Time) ([]Note, error) {
 	accountInfo, err := formatUserAccount(address)
 
 	if err == nil {
@@ -48,7 +48,7 @@ func GetUserNoteList(address string, count int, tsp time.Time) ([]NoteStruct, er
 
 		url := "https://" + accountInfo[1] + "/api/users/notes"
 
-		request := new(TimelineRequestStruct)
+		request := new(TimelineRequest)
 
 		request.UserId = userId
 		request.Limit = count
@@ -73,16 +73,17 @@ func GetUserNoteList(address string, count int, tsp time.Time) ([]NoteStruct, er
 
 		parsedObject := parsedJson.GetArray()
 
-		var noteList []NoteStruct
+		noteList := make([]Note, len(parsedObject))
 
 		for _, note := range parsedObject {
-			ns := new(NoteStruct)
+			ns := new(Note)
 
 			ns.Text = util.TrimQuote(note.Get("text").String())
 			formatContent(note, ns)
 
 			ns.Id = util.TrimQuote(note.Get("id").String())
 			ns.Author = util.TrimQuote(note.Get("userId").String())
+			ns.Link = fmt.Sprintf("https://%s/notes/%s", accountInfo[1], ns.Id)
 
 			t, timeErr := time.Parse(time.RFC3339, util.TrimQuote(note.Get("createdAt").String()))
 
@@ -101,7 +102,7 @@ func GetUserNoteList(address string, count int, tsp time.Time) ([]NoteStruct, er
 	return nil, err
 }
 
-func formatContent(note *fastjson.Value, ns *NoteStruct) {
+func formatContent(note *fastjson.Value, ns *Note) {
 	// add emojis into text
 	if len(note.GetArray("emojis")) > 0 {
 		formatEmoji(note.GetArray("emojis"), ns)
@@ -124,16 +125,18 @@ func formatContent(note *fastjson.Value, ns *NoteStruct) {
 	}
 }
 
-func formatEmoji(emojiList []*fastjson.Value, ns *NoteStruct) {
+func formatEmoji(emojiList []*fastjson.Value, ns *Note) {
 	for _, emoji := range emojiList {
 		name := util.TrimQuote(emoji.Get("name").String())
 		url := util.TrimQuote(emoji.Get("url").String())
 
 		ns.Text = strings.Replace(ns.Text, name, fmt.Sprintf("<img class=\"emoji\" src=\"%s\" alt=\":%s:\">", url, name), -1)
+
+		// TODO: add attachments
 	}
 }
 
-func formatImage(imageList []*fastjson.Value, ns *NoteStruct) {
+func formatImage(imageList []*fastjson.Value, ns *Note) {
 	for _, image := range imageList {
 		_type := util.TrimQuote(image.Get("type").String())
 
@@ -141,15 +144,17 @@ func formatImage(imageList []*fastjson.Value, ns *NoteStruct) {
 			url := util.TrimQuote(image.Get("url").String())
 
 			ns.Text += fmt.Sprintf("<img class=\"media\" src=\"%s\">", url)
+
 		}
 	}
 }
 
+// returns [username, instance]
 func formatUserAccount(address string) ([]string, error) {
 	res := strings.Split(address, "@")
 
 	if len(res) < 2 {
-		err := fmt.Errorf("invalid address: %s", address)
+		err := fmt.Errorf("invalid misskey address: %s", address)
 		logger.Errorf("%v", err)
 
 		return nil, err
