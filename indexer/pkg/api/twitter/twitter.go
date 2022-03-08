@@ -13,15 +13,10 @@ const endpoint = "https://api.twitter.com/1.1"
 
 var parser fastjson.Parser
 
-func GetTimeline() {
-
-}
-
-func GetUsersShow(name string) (string, error) {
+func GetUsersShow(name string) (*UserShow, error) {
 	key := util.GotKey("round-robin", "Twitter", config.Config.Indexer.Twitter.Tokens)
 	authorization := fmt.Sprintf("Bearer %s", key)
 	logger.Infof("authorization: %s", authorization)
-	var result string
 
 	var headers = map[string]string{
 		"Authorization": authorization,
@@ -31,23 +26,46 @@ func GetUsersShow(name string) (string, error) {
 
 	response, err := util.Get(url, headers)
 	if err != nil {
-		return result, err
+		return nil, err
 	}
-
-	userShow = new(UserShow)
 
 	parsedJson, err := parser.Parse(string(response))
 
 	if err != nil {
-		return result, err
+		return nil, err
 	}
 
-	userShow.Name = parsedJson.GetObject("name").GetString("name")
+	userShow := new(UserShow)
 
-	// 这里缺一个转化函数，response转化为struct结构体
+	userShow.Name = string(parsedJson.GetStringBytes("name"))
+	userShow.ScreenName = string(parsedJson.GetStringBytes("screen_name"))
+	userShow.Description = string(parsedJson.GetStringBytes("description"))
 
-	return result, nil
+	return userShow, nil
+}
 
+func GetTimeline(name string, count uint32) (*ContentInfo, error) {
+	key := util.GotKey("round-robin", "Twitter", config.Config.Indexer.Twitter.Tokens)
+	authorization := fmt.Sprintf("Bearer %s", key)
+	logger.Infof("authorization: %s", authorization)
+
+	var headers = map[string]string{
+		"Authorization": authorization,
+	}
+
+	url := fmt.Sprintf("%s/statuses/user_timeline.json?screen_name=%scount=%d&exclude_replies=true", endpoint, name, count)
+	logger.Infof("url: %s", url)
+
+	response, err := util.Get(url, headers)
+	if err != nil {
+		return nil, err
+	}
+
+	logger.Infof("response: %s", string(response))
+
+	ContentInfo := new(ContentInfo)
+
+	return ContentInfo, nil
 }
 
 // func userTimeline(name string, count int, useCache bool) {

@@ -73,7 +73,7 @@ func SetCommonHeader(headers map[string]string) {
 	headers["User-Agent"] = "RSS3-PreGod"
 }
 
-var keyOffset map[string]int
+var keyOffset = make(map[string]int)
 
 func GotKey(strategy string, indexer_id string, keys []string) string {
 	if len(strategy) == 0 {
@@ -87,8 +87,6 @@ func GotKey(strategy string, indexer_id string, keys []string) string {
 	var offset int
 
 	var key string
-
-	keyOffset := make(map[string]int)
 
 	if strategy == "first-always" {
 		key = "Bearer " + indexer_id
