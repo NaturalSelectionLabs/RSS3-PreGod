@@ -8,6 +8,7 @@ import (
 
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/db/model"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/util"
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/util/httpx"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/logger"
 	jsoniter "github.com/json-iterator/go"
 	"github.com/valyala/fastjson"
@@ -23,7 +24,7 @@ func GetUserId(accountInfo []string) (string, error) {
 
 	username := fmt.Sprintf(`{"username":"%s"}`, accountInfo[0])
 
-	response, requestErr := util.Post(url, nil, username)
+	response, requestErr := httpx.Post(url, nil, username)
 
 	if requestErr != nil {
 		return "", requestErr
@@ -61,7 +62,7 @@ func GetUserNoteList(address string, count int, tsp time.Time) ([]Note, error) {
 
 		json, _ := jsoni.MarshalToString(request)
 
-		response, requestErr := util.Post(url, nil, json)
+		response, requestErr := httpx.Post(url, nil, json)
 
 		if requestErr != nil {
 			return nil, requestErr
@@ -165,7 +166,7 @@ func formatImage(imageList []*fastjson.Value, ns *Note) {
 
 			ns.Summary += fmt.Sprintf("<img class=\"media\" src=\"%s\">", url)
 
-			res, err := util.Head(url)
+			res, err := httpx.Head(url)
 
 			if err == nil {
 				sizeInBytes, _ = strconv.Atoi(res.Get("Content-Length"))
