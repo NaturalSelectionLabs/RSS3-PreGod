@@ -23,7 +23,7 @@ func GetLinkListHandlerFunc(c *gin.Context) {
 	request := GetLinkListRequest{}
 	if err := c.ShouldBindUri(&request); err != nil {
 		w := web.Gin{C: c}
-		w.JSONResponse(http.StatusBadRequest, status.INVALID_PARAMS, nil)
+		w.JSONResponse(http.StatusBadRequest, status.CodeInvalidParams, nil)
 
 		return
 	}
@@ -31,7 +31,7 @@ func GetLinkListHandlerFunc(c *gin.Context) {
 	instance, err := rss3uri.ParseInstance(request.Instance)
 	if err != nil {
 		w := web.Gin{C: c}
-		w.JSONResponse(http.StatusBadRequest, status.INVALID_PARAMS, nil)
+		w.JSONResponse(http.StatusBadRequest, status.CodeInvalidParams, nil)
 
 		return
 	}
@@ -60,7 +60,7 @@ func GetLinkListHandlerFunc(c *gin.Context) {
 		request.PageIndex,
 	).Find(&links).Error; err != nil {
 		w := web.Gin{C: c}
-		w.JSONResponse(http.StatusInternalServerError, status.ERROR, nil)
+		w.JSONResponse(http.StatusInternalServerError, status.CodeError, nil)
 
 		return
 	}

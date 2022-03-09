@@ -24,7 +24,7 @@ func GetIndexHandlerFunc(c *gin.Context) {
 	request := GetIndexRequest{}
 	if err := c.ShouldBindUri(&request); err != nil {
 		w := web.Gin{C: c}
-		w.JSONResponse(http.StatusBadRequest, status.INVALID_PARAMS, nil)
+		w.JSONResponse(http.StatusBadRequest, status.CodeInvalidParams, nil)
 
 		return
 	}
@@ -32,7 +32,7 @@ func GetIndexHandlerFunc(c *gin.Context) {
 	instance, err := rss3uri.ParseInstance(request.Instance)
 	if err != nil {
 		w := web.Gin{C: c}
-		w.JSONResponse(http.StatusBadRequest, status.INVALID_PARAMS, nil)
+		w.JSONResponse(http.StatusBadRequest, status.CodeInvalidParams, nil)
 
 		return
 	}
@@ -40,14 +40,14 @@ func GetIndexHandlerFunc(c *gin.Context) {
 	accountInstance, ok := instance.(*rss3uri.PlatformInstance)
 	if !ok {
 		w := web.Gin{C: c}
-		w.JSONResponse(http.StatusBadRequest, status.INVALID_PARAMS, nil)
+		w.JSONResponse(http.StatusBadRequest, status.CodeInvalidParams, nil)
 
 		return
 	}
 
 	if accountInstance.Prefix != constants.PrefixNameAccount || accountInstance.Platform != constants.PlatformSymbolEthereum {
 		w := web.Gin{C: c}
-		w.JSONResponse(http.StatusBadRequest, status.INVALID_PARAMS, nil)
+		w.JSONResponse(http.StatusBadRequest, status.CodeInvalidParams, nil)
 
 		return
 	}
@@ -61,7 +61,7 @@ func GetIndexHandlerFunc(c *gin.Context) {
 		//if errors.Is(err, gorm.ErrRecordNotFound) {
 		//}
 		w := web.Gin{C: c}
-		w.JSONResponse(http.StatusInternalServerError, status.ERROR, nil)
+		w.JSONResponse(http.StatusInternalServerError, status.CodeError, nil)
 
 		return
 	}
@@ -88,7 +88,7 @@ func GetIndexHandlerFunc(c *gin.Context) {
 	var accountPlatforms []model.AccountPlatform
 	if err := db.DB.Where("account_id = ?", account.AccountID).Find(&accountPlatforms).Error; err != nil {
 		w := web.Gin{C: c}
-		w.JSONResponse(http.StatusInternalServerError, status.ERROR, nil)
+		w.JSONResponse(http.StatusInternalServerError, status.CodeError, nil)
 
 		return
 	}

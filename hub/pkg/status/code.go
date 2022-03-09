@@ -1,22 +1,33 @@
 package status
 
-type Code uint16
-type Msg string
-
-const (
-	SUCCESS        Code = 200
-	ERROR          Code = 500
-	INVALID_PARAMS Code = 400
+type (
+	Code    uint
+	Message string
 )
 
 const (
-	SUCCESS_MSG        Msg = "Ok"
-	ERROR_MSG          Msg = "Error"
-	INVALID_PARAMS_MSG Msg = "Invalid params"
+	CodeSuccess       Code = 200
+	CodeError         Code = 500
+	CodeInvalidParams Code = 400
 )
 
-var MsgFlags = map[Code]Msg{
-	SUCCESS:        SUCCESS_MSG,
-	ERROR:          ERROR_MSG,
-	INVALID_PARAMS: INVALID_PARAMS_MSG,
+const (
+	MessageSuccess       Message = "ok"
+	MessageError         Message = "error"
+	MessageInvalidParams Message = "invalid params"
+)
+
+var messageMap = map[Code]Message{
+	CodeSuccess:       MessageSuccess,
+	CodeError:         MessageError,
+	CodeInvalidParams: MessageInvalidParams,
+}
+
+func GetMessage(code Code) Message {
+	message, ok := messageMap[code]
+	if ok {
+		return message
+	}
+
+	return messageMap[CodeError]
 }
