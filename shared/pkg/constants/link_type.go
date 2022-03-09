@@ -3,21 +3,21 @@ package constants
 type LinkTypeID int32
 
 const (
-	LinkType_Unknown LinkTypeID = 0
+	LinkTypeUnknown LinkTypeID = 0
 
-	LinkType_Following  LinkTypeID = 1
-	LinkType_Comment    LinkTypeID = 2
-	LinkType_Like       LinkTypeID = 3
-	LinkType_Collection LinkTypeID = 4
+	LinkTypeFollowing  LinkTypeID = 1
+	LinkTypeComment    LinkTypeID = 2
+	LinkTypeLike       LinkTypeID = 3
+	LinkTypeCollection LinkTypeID = 4
 )
 
 var LinkTypeMap = map[LinkTypeID]string{
-	LinkType_Unknown: "unknown",
+	LinkTypeUnknown: "unknown",
 
-	LinkType_Following:  "following",
-	LinkType_Comment:    "comment",
-	LinkType_Like:       "like",
-	LinkType_Collection: "collection",
+	LinkTypeFollowing:  "following",
+	LinkTypeComment:    "comment",
+	LinkTypeLike:       "like",
+	LinkTypeCollection: "collection",
 }
 
 // Converts LinkTypeID to string.
@@ -33,5 +33,5 @@ func StringToLinkTypeID(LinkType string) LinkTypeID {
 		}
 	}
 
-	return LinkType_Unknown
+	return LinkTypeUnknown
 }

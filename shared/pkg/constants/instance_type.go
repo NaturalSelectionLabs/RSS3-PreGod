@@ -3,21 +3,21 @@ package constants
 type InstanceTypeID int32
 
 const (
-	InstanceType_Unknown InstanceTypeID = 0
+	InstanceTypeUnknown InstanceTypeID = 0
 
-	InstanceType_Account InstanceTypeID = 1
-	InstanceType_Object  InstanceTypeID = 2
-	InstanceType_Asset   InstanceTypeID = 3
-	InstanceType_Note    InstanceTypeID = 4
+	InstanceTypeAccount InstanceTypeID = 1
+	InstanceTypeObject  InstanceTypeID = 2
+	InstanceTypeAsset   InstanceTypeID = 3
+	InstanceTypeNote    InstanceTypeID = 4
 )
 
 var InstanceTypeMap = map[InstanceTypeID]string{
-	InstanceType_Unknown: "unknown",
+	InstanceTypeUnknown: "unknown",
 
-	InstanceType_Account: "account",
-	InstanceType_Object:  "object",
-	InstanceType_Asset:   "asset",
-	InstanceType_Note:    "note",
+	InstanceTypeAccount: "account",
+	InstanceTypeObject:  "object",
+	InstanceTypeAsset:   "asset",
+	InstanceTypeNote:    "note",
 }
 
 // Converts InstanceTypeID to string.
@@ -33,5 +33,5 @@ func StringToInstanceTypeID(instanceType string) InstanceTypeID {
 		}
 	}
 
-	return InstanceType_Unknown
+	return InstanceTypeUnknown
 }

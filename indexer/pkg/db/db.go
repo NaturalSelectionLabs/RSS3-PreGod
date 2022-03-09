@@ -3,6 +3,7 @@ package db
 import (
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/db/model"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/config"
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/constants"
 	"github.com/kamva/mgm/v3"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -17,11 +18,14 @@ func Setup() error {
 }
 
 // SetAssets refresh users' all assets by network
-func SetAssets(instance string, assets []*model.ItemId) {
-	//TODO: refresh by network
+func SetAssets(instance string, assets []*model.ItemId, refreshBy constants.NetworkID) {
 	mgm.Coll(&model.AccountItemList{}).FindOneAndUpdate(
 		mgm.Ctx(), bson.M{"account_instance": instance},
-		bson.M{"$set": bson.M{"assets": assets}},
+		bson.M{"$pull": bson.M{"assets.network_id": refreshBy}},
+	)
+	mgm.Coll(&model.AccountItemList{}).FindOneAndUpdate(
+		mgm.Ctx(), bson.M{"account_instance": instance},
+		bson.M{"$addToSet": bson.M{"assets": bson.M{"$each": assets}}},
 		options.FindOneAndUpdate().SetUpsert(true),
 	)
 }
@@ -43,21 +47,10 @@ func AppendNotes(instance string, notes []*model.ItemId) {
 
 // TODO: getter
 
-func InsertObjectDoc(object *model.Object) *mongo.SingleResult {
-	return mgm.Coll(&model.Object{}).FindOneAndReplace(
-		mgm.Ctx(),
-		bson.M{"uid": object.Uid, "item_type_id": object.ItemTypeID},
-		object,
-		options.FindOneAndReplace().SetUpsert(true),
-	)
-}
-
-// TODO: getter
-
 func InsertItemDoc(item *model.Item) *mongo.SingleResult {
 	return mgm.Coll(&model.Item{}).FindOneAndReplace(
 		mgm.Ctx(),
-		bson.M{"item_id.item_type_id": item.ItemId.ItemTypeID, "item_id.proof": item.ItemId.Proof},
+		bson.M{"item_id.network_id": item.ItemId.NetworkId, "item_id.proof": item.ItemId.Proof},
 		item,
 		options.FindOneAndReplace().SetUpsert(true),
 	)

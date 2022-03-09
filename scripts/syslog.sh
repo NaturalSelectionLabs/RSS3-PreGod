@@ -1,5 +1,5 @@
 #!/bin/sh
- 
+
 parentDir="/etc/rsyslog.d"
 fileName="pregod_syslog.conf"
 dirAndName="$parentDir/$fileName"
@@ -8,7 +8,7 @@ mkdir $parentDir
 fi
 
 cd $parentDir
- 
+
 if [ ! -f "$dirAndName" ];then
 cat>$dirAndName<<EOF
 local0.* action(type="omfwd"

@@ -1,16 +1,24 @@
 package jike
 
+import (
+	"time"
+
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/db/model"
+)
+
 //nolint:tagliatelle // format is required by Jike API
-type UserProfileStruct struct {
+type UserProfile struct {
 	ScreenName string `json:"screenName"`
 	Bio        string `json:"bio"`
 }
 
-type TimelineStruct struct {
-	Hash       string `json:"hash"`
-	Timestamp  string `json:"timestamp"`
-	PreContent string `json:"pre_content"`
-	Link       string `json:"link"`
+type Timeline struct {
+	Id          string
+	Timestamp   time.Time
+	Summary     string
+	Author      string
+	Attachments []model.Attachment
+	Link        string
 }
 
 //nolint:tagliatelle // format is required by Jike API
@@ -21,7 +29,7 @@ type RefreshTokenStruct struct {
 }
 
 //nolint:tagliatelle // format is required by Jike API
-type TimelineRequestStruct struct {
+type TimelineRequest struct {
 	OperationName string `json:"operationName"`
 	Variables     struct {
 		Username string `json:"username"`

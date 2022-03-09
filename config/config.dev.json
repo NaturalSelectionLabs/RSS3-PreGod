@@ -7,11 +7,11 @@
   },
   "redis": {
     "addr": "localhost:6379",
-    "password": "",
+    "password": "Pa33WoRD",
     "db": 0
   },
   "postgres": {
-    "dsn": "host=localhost port=5432 user=rss3 password=rss3rocks dbname=pregod sslmode=disable TimeZone=UTC",
+    "dsn": "host=localhost port=5432 user=rss3 password=Pa33WoRD dbname=pregod sslmode=disable TimeZone=UTC",
     "max_open_conns": 100,
     "max_idle_conns": 20,
     "conn_max_idle_time": -1,
@@ -44,6 +44,9 @@
     "moralis": {
       "api_key": "+1"
     },
+    "arbitrum": {
+      "arbiscan_key": "+1"
+    },
     "jike": {
       "area_code": "+1",
       "mobile_phone_number": "",
@@ -52,11 +55,7 @@
     },
     "twitter": {
       "break_down_tokens":[
-        "AAAAAAAAAAAAAAAAAAAAAOFWUgEAAAAAmjqmjuQj9JnDic89npODpCj7Bgo%3DoA4AmypC4gVbyyEpXfbARfvIyIFX6RDWO3nFQ8LkvPtctNAdo7",
-        "AAAAAAAAAAAAAAAAAAAAAFIVywAAAAAAW2tMfd3vB6CMlPv%2FGb2QRdE72is%3DvwPKkVlu0BYiulN75A35RFlmsKDDDCXcnFBZyd3f5TXFJq9WWy",
-        "AAAAAAAAAAAAAAAAAAAAADh01AAAAAAAxna3Hru2KPaE3MZaHF09hhZVsWk%3D0vd20thafx4rc7WnSU0neovWZIAvWnmUaOFEx8tldB7ZaWgd3r",
-        "AAAAAAAAAAAAAAAAAAAAAPc4UgEAAAAANZbjHu2%2B3d8fBRFQVQZnfhE1rb4%3DlglTHTS0cgdFUXrNqoIjz092G7Q5he4CLuZ6NCheUIiYwhvEBz",
-        "AAAAAAAAAAAAAAAAAAAAALBkJwEAAAAAyAcfkep6yiBTg9sqPi4052dncUI%3D1bJbFrtpL78MK1fZDbGM1jEhdNmHNKMyn3d0ppy5zm9lY9ZdPP"
+        "xxx"
       ]
     }
   }

@@ -12,22 +12,22 @@ import (
 	"gorm.io/gorm"
 )
 
-func getAccountPlatform(platform string) constants.PlatformNameID {
+func getAccountPlatform(platform string) constants.PlatformID {
 	switch strings.ToLower(platform) {
 	case "evm+":
-		return constants.PlatformNameID_Evm
+		return constants.PlatformIDEthereum
 	case "solana":
-		return constants.PlatformNameID_Solana
+		return constants.PlatformIDSolana
 	case "flow":
-		return constants.PlatformNameID_Flow
+		return constants.PlatformIDFlow
 	case "twitter":
-		return constants.PlatformNameID_Twitter
+		return constants.PlatformIDTwitter
 	case "misskey":
-		return constants.PlatformNameID_Misskey
+		return constants.PlatformIDMisskey
 	case "jike":
-		return constants.PlatformNameID_Jike
+		return constants.PlatformIDJike
 	default:
-		return constants.PlatformNameID_Unknown
+		return constants.PlatformIDUnknown
 	}
 }
 
@@ -49,7 +49,7 @@ func MainIndex(content bson.D) error {
 
 	var instanceBase model.InstanceBase
 
-	newID := mainIndex.ID + "@" + string(constants.PlatformName_Evm)
+	newID := mainIndex.ID + "@" + string(constants.PlatformSymbolEthereum)
 
 	CreatedAt, err := time.Parse("2006-01-02T15:04:05.000Z", mainIndex.DateCreated)
 	if err != nil {
@@ -69,9 +69,9 @@ func MainIndex(content bson.D) error {
 	// New instance
 	instanceBase = model.InstanceBase{
 		RSS3ID:         newID,
-		PrefixID:       constants.PrefixID_Account,
-		InstanceTypeID: constants.InstanceType_Account,
-		Base: model.BaseModel{
+		PrefixID:       constants.PrefixIDAccount,
+		InstanceTypeID: constants.InstanceTypeAccount,
+		BaseModel: model.BaseModel{
 			CreatedAt: CreatedAt,
 			UpdatedAt: UpdatedAt,
 		},
@@ -81,9 +81,9 @@ func MainIndex(content bson.D) error {
 	accounts := []model.AccountPlatform{
 		{
 			AccountID:         newID,
-			PlatformNameID:    constants.PlatformNameID_Evm,
+			PlatformID:        constants.PlatformIDEthereum,
 			PlatformAccountID: mainIndex.ID,
-			Base: model.BaseModel{
+			BaseModel: model.BaseModel{
 				CreatedAt: CreatedAt,
 				UpdatedAt: UpdatedAt,
 			},
@@ -95,9 +95,9 @@ func MainIndex(content bson.D) error {
 
 		accounts = append(accounts, model.AccountPlatform{
 			AccountID:         splits[0] + "@" + splits[1],
-			PlatformNameID:    getAccountPlatform(splits[0]),
+			PlatformID:        getAccountPlatform(splits[0]),
 			PlatformAccountID: splits[1],
-			Base: model.BaseModel{
+			BaseModel: model.BaseModel{
 				CreatedAt: CreatedAt,
 				UpdatedAt: UpdatedAt,
 			},
@@ -114,7 +114,7 @@ func MainIndex(content bson.D) error {
 		InstanceBase:    instanceBase,
 		AccountPlatform: accounts,
 
-		Base: model.BaseModel{
+		BaseModel: model.BaseModel{
 			CreatedAt: CreatedAt,
 			UpdatedAt: UpdatedAt,
 		},

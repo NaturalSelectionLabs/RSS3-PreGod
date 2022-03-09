@@ -20,8 +20,14 @@ type Profile struct {
 }
 
 type Links struct {
-	Identifiers    []string `json:"identifiers,omitempty"`
-	IdentifierBack string   `json:"identifier_back,omitempty"`
+	Identifiers    []LinkIdentifier `json:"identifiers,omitempty"`
+	IdentifierBack string           `json:"identifier_back,omitempty"`
+}
+
+type LinkIdentifier struct {
+	Type             string `json:"type"`
+	IdentifierCustom string `json:"identifier_custom"`
+	Identifier       string `json:"identifier"`
 }
 
 type Items struct {
@@ -40,6 +46,6 @@ type Assets struct {
 }
 
 type Account struct {
-	Account   string `json:"account"`
-	Signature string `json:"signature,omitempty"` // Signature of `[RSS3] I am adding ${SignableAccount} to my RSS3 instance ${InstanceURI}`
+	Identifier string `json:"identifier"`
+	Signature  string `json:"signature,omitempty"` // Signature of `[RSS3] I am adding ${SignableAccount} to my RSS3 instance ${InstanceURI}`
 }

@@ -12,7 +12,7 @@ type Token struct {
 }
 
 func (t Token) String() string {
-	return fmt.Sprintf(`Id: %d, Address: %s, Symbol: %s, Decimals: %d, Kind: %s, IsNFT: %v`,
+	return fmt.Sprintf(`Id: %d, TokenAddress: %s, Symbol: %s, Decimals: %d, Kind: %s, IsNFT: %v`,
 		t.Id, t.Address, t.Symbol, t.Decimals, t.Kind, t.IsNFT)
 }
 

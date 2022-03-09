@@ -23,6 +23,7 @@ require (
 	golang.org/x/net v0.0.0-20220127200216-cd36cc0744dd
 	gorm.io/datatypes v1.0.5
 	gorm.io/driver/postgres v1.2.3
+	gorm.io/driver/sqlite v1.2.6
 	gorm.io/gorm v1.22.5
 )
 
@@ -65,6 +66,7 @@ require (
 	github.com/leodido/go-urn v1.2.1 // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect
 	github.com/mattn/go-isatty v0.0.14 // indirect
+	github.com/mattn/go-sqlite3 v1.14.9 // indirect
 	github.com/mitchellh/copystructure v1.2.0 // indirect
 	github.com/mitchellh/mapstructure v1.4.3 // indirect
 	github.com/mitchellh/reflectwalk v1.0.2 // indirect
@@ -92,7 +94,6 @@ require (
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b // indirect
 	gorm.io/driver/mysql v1.2.3 // indirect
-	gorm.io/driver/sqlite v1.2.6 // indirect
 	gorm.io/driver/sqlserver v1.2.1 // indirect
 	stathat.com/c/consistent v1.0.0 // indirect
 )

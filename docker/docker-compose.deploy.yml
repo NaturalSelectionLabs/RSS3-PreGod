@@ -1,31 +1,31 @@
-version: '3'
+version: "3"
 
 services:
-    redis:
-        command: redis-server --requirepass Pa33WoRD
-        volumes:
-            - /home/data/redis:/data
+  redis:
+    command: redis-server --requirepass Pa33WoRD
+    volumes:
+      - /home/data/redis:/data
 
-    postgres:
-        environment:
-            - POSTGRES_USER=U33RNaME
-            - POSTGRES_PASSWORD=Pa33WoRD
-        volumes:
-            - /home/data/postgres:/var/lib/postgresql/data
+  postgres:
+    environment:
+      - POSTGRES_USER=U33RNaME
+      - POSTGRES_PASSWORD=Pa33WoRD
+    volumes:
+      - /home/data/postgres:/var/lib/postgresql/data
 
-    mongodb:
-        environment:
-            - MONGO_INITDB_DATABASE=rss3-prod
-            - MONGO_INITDB_ROOT_USERNAME=U33RNaME
-            - MONGO_INITDB_ROOT_PASSWORD=Pa33WoRD
-        volumes:
-            - /home/data/mongodb:/etc/mongodb
+  mongodb:
+    environment:
+      - MONGO_INITDB_DATABASE=rss3-prod
+      - MONGO_INITDB_ROOT_USERNAME=U33RNaME
+      - MONGO_INITDB_ROOT_PASSWORD=Pa33WoRD
+    volumes:
+      - /home/data/mongodb:/etc/mongodb
 
-    rocketmq.nameserver:
-        volumes:
-            - /home/data/rocketmq/logs:/home/rocketmq/logs
+  rocketmq.nameserver:
+    volumes:
+      - /home/data/rocketmq/logs:/home/rocketmq/logs
 
-    rocketmq.broker:
-        volumes:
-            - /home/data/rocketmq/broker/logs:/home/rocketmq/logs
-            - /home/data/rocketmq/broker/store:/home/rocketmq/store
+  rocketmq.broker:
+    volumes:
+      - /home/data/rocketmq/broker/logs:/home/rocketmq/logs
+      - /home/data/rocketmq/broker/store:/home/rocketmq/store

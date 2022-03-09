@@ -3,7 +3,7 @@ package arweave
 import (
 	"fmt"
 
-	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/util"
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/util/httpx"
 	"github.com/valyala/fastjson"
 )
 
@@ -13,7 +13,7 @@ const mirrorHost = "https://mirror.xyz/"
 
 // GetLatestBlockHeight gets the latest block height for arweave
 func GetLatestBlockHeight() (int64, error) {
-	response, err := util.Get(arweaveEndpoint, nil)
+	response, err := httpx.Get(arweaveEndpoint, nil)
 	if err != nil {
 		return 0, nil
 	}
@@ -37,7 +37,7 @@ func GetContentByTxHash(hash string) ([]byte, error) {
 		"Referer": "https://viewblock.io",
 	}
 
-	return util.Get(arweaveEndpoint+"/"+hash, headers)
+	return httpx.Get(arweaveEndpoint+"/"+hash, headers)
 }
 
 // GetTransactions gets all transactions using filters.
@@ -57,7 +57,7 @@ func GetTransactions(from, to uint64, owner string) ([]byte, error) {
 			"}\"}"
 	data := fmt.Sprintf(queryVariables, from, to, owner)
 
-	return util.Post(arweaveGraphqlEndpoint, headers, data)
+	return httpx.Post(arweaveGraphqlEndpoint, headers, data)
 }
 
 // GetArticles gets all articles from arweave using filters.

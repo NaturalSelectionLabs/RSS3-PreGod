@@ -1,61 +1,53 @@
 package constants
 
+const (
+	PrefixIDUnknown  PrefixID = 0
+	PrefixIDAccount  PrefixID = 1
+	PrefixIDInstance PrefixID = 2
+	PrefixIDNote     PrefixID = 3
+	PrefixIDAsset    PrefixID = 4
+
+	PrefixNameUnknown  PrefixName = "unknown"
+	PrefixNameAccount  PrefixName = "account"
+	PrefixNameInstance PrefixName = "instance"
+	PrefixNameNote     PrefixName = "note"
+	PrefixNameAsset    PrefixName = "asset"
+)
+
+var (
+	prefixNameMap = map[PrefixID]PrefixName{}
+	prefixIDMap   = map[PrefixName]PrefixID{
+		PrefixNameUnknown:  PrefixIDUnknown,
+		PrefixNameAccount:  PrefixIDAccount,
+		PrefixNameInstance: PrefixIDInstance,
+		PrefixNameNote:     PrefixIDNote,
+		PrefixNameAsset:    PrefixIDAsset,
+	}
+)
+
 type PrefixName string
 type PrefixID int32
 
-const (
-	PrefixID_Unknown PrefixID = 0
+func (id PrefixID) String() PrefixName {
+	value, has := prefixNameMap[id]
+	if has && value != PrefixNameUnknown {
+		return value
+	}
 
-	PrefixID_Account  PrefixID = 1
-	PrefixID_Instance PrefixID = 2
-	PrefixID_Note     PrefixID = 3
-	PrefixID_Asset    PrefixID = 4
-)
-
-const (
-	PrefixName_Unknown PrefixName = "unknown"
-
-	PrefixName_Account  PrefixName = "account"
-	PrefixName_Instance PrefixName = "instance"
-	PrefixName_Note     PrefixName = "note"
-	PrefixName_Asset    PrefixName = "asset"
-)
-
-var PrefixMap = map[PrefixID]PrefixName{
-	PrefixID_Unknown: PrefixName_Unknown,
-
-	PrefixID_Account:  PrefixName_Account,
-	PrefixID_Instance: PrefixName_Instance,
-	PrefixID_Note:     PrefixName_Note,
-	PrefixID_Asset:    PrefixName_Asset,
+	return PrefixNameUnknown
 }
 
-func IsValidPrefix(prefix string) bool {
-	switch PrefixName(prefix) {
-	case PrefixName_Account, PrefixName_Instance, PrefixName_Note, PrefixName_Asset:
+func IsValidPrefix(value string) bool {
+	id, has := prefixIDMap[PrefixName(value)]
+	if has && id != PrefixIDUnknown {
 		return true
 	}
 
 	return false
 }
 
-// Converts PrefixID to string.
-func (id PrefixID) String() PrefixName {
-	v, ok := PrefixMap[id]
-	if !ok {
-		return PrefixName_Unknown
+func init() {
+	for name, id := range prefixIDMap {
+		prefixNameMap[id] = name
 	}
-
-	return v
-}
-
-// Converts PrefixName to PrefixID.
-func StringToPrefixID(prefix string) PrefixID {
-	for k, v := range PrefixMap {
-		if string(v) == prefix {
-			return k
-		}
-	}
-
-	return PrefixID_Unknown
 }

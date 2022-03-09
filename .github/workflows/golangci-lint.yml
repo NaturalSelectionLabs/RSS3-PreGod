@@ -50,4 +50,3 @@ jobs:
           webhook: ${{ secrets.DISCORD_WEBHOOK }}
           title: "GolangCI - Lint"
           username: 'GitHub Actions'
-          avatar_url: 'https://github.githubassets.com/images/modules/site/features/actions-icon-actions.svg'

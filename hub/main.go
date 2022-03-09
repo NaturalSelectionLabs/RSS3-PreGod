@@ -2,11 +2,12 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"log"
+	"net"
 	"net/http"
 	"os"
 	"os/signal"
+	"strconv"
 	"syscall"
 	"time"
 
@@ -43,17 +44,17 @@ func init() {
 func main() {
 	gin.SetMode(config.Config.HubServer.RunMode)
 
-	port := fmt.Sprintf(":%d", config.Config.HubServer.HttpPort)
+	addr := net.JoinHostPort("localhost", strconv.Itoa(config.Config.HubServer.HttpPort))
 
 	server := &http.Server{
-		Addr:           port,
+		Addr:           addr,
 		Handler:        router.InitRouter(),
 		ReadTimeout:    config.Config.HubServer.ReadTimeout,
 		WriteTimeout:   config.Config.HubServer.WriteTimeout,
 		MaxHeaderBytes: 1 << 20, // 1MB
 	}
 
-	logger.Info("Start http server listening on http://localhost", port)
+	logger.Infof("Start http server listening on http://%s", addr)
 	defer logger.Logger.Sync()
 
 	go server.ListenAndServe()

@@ -81,6 +81,10 @@ type MoralisStruct struct {
 	ApiKey string `koanf:"api_key"`
 }
 
+type ArbitrumStruct struct {
+	ApiKey string `koanf:"arbiscan_key"`
+}
+
 type MiscStruct struct {
 	UserAgent string `koanf:"user_agent"`
 }
@@ -98,10 +102,11 @@ type TwitterStruct struct {
 }
 
 type IndexerStruct struct {
-	Misc    MiscStruct    `koanf:"misc"`
-	Jike    JikeStruct    `koanf:"jike"`
-	Moralis MoralisStruct `koanf:"moralis"`
-	Twitter TwitterStruct `koanf:"twitter"`
+	Misc     MiscStruct     `koanf:"misc"`
+	Jike     JikeStruct     `koanf:"jike"`
+	Moralis  MoralisStruct  `koanf:"moralis"`
+	Twitter  TwitterStruct  `koanf:"twitter"`
+	Aribtrum ArbitrumStruct `koanf:"arbitrum"`
 }
 
 type ConfigStruct struct {
@@ -109,6 +114,7 @@ type ConfigStruct struct {
 	HubServer HubServerStruct `koanf:"hub_server"`
 	Redis     RedisStruct     `koanf:"redis"`
 	Postgres  PostgresStruct  `koanf:"postgres"`
+	Mongo     MongoStruct     `koanf:"mongo"`
 	Logger    LoggerStruct    `koanf:"logger"`
 	Network   NetWorkStruct   `koanf:"network"`
 	Indexer   IndexerStruct   `koanf:"indexer"`

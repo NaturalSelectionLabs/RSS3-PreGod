@@ -8,7 +8,8 @@
         "jsoni",
         "nolint",
         "Repost",
-        "resty"
+        "resty",
+        "valyala"
     ],
     "go.lintTool": "golangci-lint",
     "go.lintFlags": [
