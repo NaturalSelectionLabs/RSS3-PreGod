@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/config"
 	"github.com/go-resty/resty/v2"
 )
 
@@ -70,6 +71,11 @@ func Head(url string) (http.Header, error) {
 
 func getClient() *resty.Client {
 	client := resty.New()
+
+	if len(config.Config.Network.Proxy) != 0 {
+		client.SetProxy(config.Config.Network.Proxy)
+	}
+
 	client.SetTimeout(1 * time.Second * 10)
 
 	return client

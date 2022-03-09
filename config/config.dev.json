@@ -24,7 +24,7 @@
     "min_pool_size": 50
   },
   "network": {
-    "proxy": "http://192.168.2.7:7890"
+    "proxy": "http://localhost:7890"
   },
   "logger": {
     "prefix_tag": "pregod",
