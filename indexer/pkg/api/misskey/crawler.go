@@ -12,7 +12,7 @@ import (
 type misskeyCrawler struct {
 	rss3Items []*model.Item
 
-	rss3Assets, rss3Notes []*model.ItemId
+	rss3Notes []*model.ItemId
 }
 
 func NewmisskeyCrawler() crawler.Crawler {
@@ -62,8 +62,7 @@ func (mc *misskeyCrawler) Work(userAddress string, networkId constants.NetworkID
 
 func (mc *misskeyCrawler) GetResult() *crawler.CrawlerResult {
 	return &crawler.CrawlerResult{
-		Assets: mc.rss3Assets,
-		Notes:  mc.rss3Notes,
-		Items:  mc.rss3Items,
+		Notes: mc.rss3Notes,
+		Items: mc.rss3Items,
 	}
 }

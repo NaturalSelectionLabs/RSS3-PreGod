@@ -9,7 +9,7 @@ import (
 type jikeCrawler struct {
 	rss3Items []*model.Item
 
-	rss3Assets, rss3Notes []*model.ItemId
+	rss3Notes []*model.ItemId
 }
 
 func NewJikeCrawler() crawler.Crawler {
@@ -54,8 +54,7 @@ func (mc *jikeCrawler) Work(userAddress string, networkId constants.NetworkID) e
 
 func (mc *jikeCrawler) GetResult() *crawler.CrawlerResult {
 	return &crawler.CrawlerResult{
-		Assets: mc.rss3Assets,
-		Notes:  mc.rss3Notes,
-		Items:  mc.rss3Items,
+		Notes: mc.rss3Notes,
+		Items: mc.rss3Items,
 	}
 }
