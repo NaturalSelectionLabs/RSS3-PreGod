@@ -72,8 +72,6 @@ func GetIndexHandlerFunc(c *gin.Context) {
 			Avatars: account.Avatars,
 			Bio:     account.Bio,
 		},
-		Links: protocol.Links{},
-		Items: protocol.Items{},
 	}
 
 	var accountPlatforms []model.AccountPlatform
@@ -95,11 +93,20 @@ func GetIndexHandlerFunc(c *gin.Context) {
 		index.Profile.Accounts = append(index.Profile.Accounts, account)
 	}
 
+	// Query the max page index
+	var pageIndex int
+	if err := db.DB.Table("link").Select("max(page_index)").Where("rss3_id = ?", platformInstance.Identity).Row().Scan(&pageIndex); err != nil {
+		w := web.Gin{C: c}
+		w.JSONResponse(http.StatusInternalServerError, status.CodeError, nil)
+
+		return
+	}
+
 	index.Links.Identifiers = append(index.Links.Identifiers, protocol.LinkIdentifier{
 		Type: constants.LinkTypeFollowing.String(),
 		// TODO Refine rss3uri package
 		// TODO Max page index
-		IdentifierCustom: fmt.Sprintf("%s/list/link/following/1", rss3uri.New(platformInstance).String()),
+		IdentifierCustom: fmt.Sprintf("%s/list/link/following/%d", rss3uri.New(platformInstance).String(), pageIndex),
 		Identifier:       fmt.Sprintf("%s/list/link/following", rss3uri.New(platformInstance).String()),
 	})
 
