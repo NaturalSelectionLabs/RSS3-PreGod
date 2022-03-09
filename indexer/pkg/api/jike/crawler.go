@@ -19,8 +19,8 @@ func NewJikeCrawler() crawler.Crawler {
 	}
 }
 
-func (mc *jikeCrawler) Work(userAddress string, networkId constants.NetworkID) error {
-	timeline, err := GetUserTimeline(userAddress)
+func (mc *jikeCrawler) Work(param crawler.WorkParam) error {
+	timeline, err := GetUserTimeline(param.UserAddress)
 
 	if err != nil {
 		return err
@@ -28,7 +28,7 @@ func (mc *jikeCrawler) Work(userAddress string, networkId constants.NetworkID) e
 
 	for _, item := range timeline {
 		ni := model.NewItem(
-			networkId,
+			param.NetworkId,
 			item.Link,
 			model.Metadata{
 				"network": constants.NetworkSymbolJike,
@@ -44,7 +44,7 @@ func (mc *jikeCrawler) Work(userAddress string, networkId constants.NetworkID) e
 		mc.rss3Items = append(mc.rss3Items, ni)
 
 		mc.rss3Notes = append(mc.rss3Notes, &model.ItemId{
-			NetworkId: networkId,
+			NetworkId: param.NetworkId,
 			Proof:     item.Link,
 		})
 	}

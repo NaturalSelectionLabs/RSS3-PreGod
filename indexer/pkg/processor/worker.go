@@ -48,6 +48,11 @@ func (w *worker) processTask(t *Task) error {
 
 	var r *crawler.CrawlerResult
 
+	var workerParam = crawler.WorkParam{
+		UserAddress: t.Identity,
+		NetworkId:   t.Network,
+	}
+
 	instance := rss3uri.NewAccountInstance(t.Identity, t.PlatformID.Symbol())
 
 	c = makeCrawlers(t.Network)
@@ -57,7 +62,7 @@ func (w *worker) processTask(t *Task) error {
 		goto RETURN
 	}
 
-	err = c.Work(t.Identity, t.Network)
+	err = c.Work(workerParam)
 
 	if err != nil {
 		err = fmt.Errorf("crawler fails while working: %s", err)

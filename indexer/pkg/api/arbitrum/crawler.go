@@ -25,13 +25,13 @@ func NewArbitrumCrawler() crawler.Crawler {
 }
 
 //nolint:funlen // disable line length check
-func (ac *abCrawler) Work(userAddress string, network constants.NetworkID) error {
-	nftTransfers, err := GetNFTTransfers(userAddress)
+func (ac *abCrawler) Work(param crawler.WorkParam) error {
+	nftTransfers, err := GetNFTTransfers(param.UserAddress)
 	if err != nil {
 		return err
 	}
 
-	assets, err := GetNFTs(userAddress)
+	assets, err := GetNFTs(param.UserAddress)
 	if err != nil {
 		return err
 	}

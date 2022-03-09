@@ -31,8 +31,8 @@ const (
 	Gnosis ChainType = "Gnosis"
 )
 
-func (pc *poapCrawler) Work(userAddress string, itemType constants.NetworkID) error {
-	if itemType != constants.NetworkIDGnosisMainnet {
+func (pc *poapCrawler) Work(param crawler.WorkParam) error {
+	if param.NetworkId != constants.NetworkIDGnosisMainnet {
 		return fmt.Errorf("network is not gnosis")
 	}
 
@@ -40,14 +40,14 @@ func (pc *poapCrawler) Work(userAddress string, itemType constants.NetworkID) er
 
 	networkId := networkSymbol.GetID()
 
-	poapResps, err := GetActions(userAddress)
+	poapResps, err := GetActions(param.UserAddress)
 	if err != nil {
 		logger.Error(err)
 
 		return err
 	}
 
-	author, err := rss3uri.NewInstance("account", userAddress, string(constants.PlatformSymbolEthereum))
+	author, err := rss3uri.NewInstance("account", param.UserAddress, string(constants.PlatformSymbolEthereum))
 	if err != nil {
 		logger.Error(err)
 

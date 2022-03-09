@@ -26,22 +26,22 @@ func NewMoralisCrawler() crawler.Crawler {
 }
 
 //nolint:funlen // disable line length check
-func (mc *moralisCrawler) Work(userAddress string, network constants.NetworkID) error {
-	chainType := GetChainType(network)
+func (mc *moralisCrawler) Work(param crawler.WorkParam) error {
+	chainType := GetChainType(param.NetworkId)
 	if chainType == Unknown {
 		return fmt.Errorf("unsupported network: %s", chainType)
 	}
 
 	networkSymbol := chainType.GetNetworkSymbol()
 	networkId := networkSymbol.GetID()
-	nftTransfers, err := GetNFTTransfers(userAddress, chainType, GetApiKey())
+	nftTransfers, err := GetNFTTransfers(param.UserAddress, chainType, GetApiKey())
 
 	if err != nil {
 		return err
 	}
 
 	//TODO: tsp
-	assets, err := GetNFTs(userAddress, chainType, GetApiKey())
+	assets, err := GetNFTs(param.UserAddress, chainType, GetApiKey())
 	if err != nil {
 		return err
 	}
@@ -83,7 +83,7 @@ func (mc *moralisCrawler) Work(userAddress string, network constants.NetworkID) 
 			tsp = time.Now()
 		}
 
-		author := rss3uri.NewAccountInstance(userAddress, constants.PlatformSymbolEthereum)
+		author := rss3uri.NewAccountInstance(param.UserAddress, constants.PlatformSymbolEthereum)
 
 		hasObject := false
 

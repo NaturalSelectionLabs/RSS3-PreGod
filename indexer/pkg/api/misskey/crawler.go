@@ -1,8 +1,6 @@
 package misskey
 
 import (
-	"time"
-
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/crawler"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/db/model"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/constants"
@@ -22,21 +20,18 @@ func NewmisskeyCrawler() crawler.Crawler {
 	}
 }
 
-func (mc *misskeyCrawler) Work(userAddress string, networkId constants.NetworkID) error {
-	count := 100
-	tsp := time.Now()
-
-	noteList, err := GetUserNoteList(userAddress, count, tsp)
+func (mc *misskeyCrawler) Work(param crawler.WorkParam) error {
+	noteList, err := GetUserNoteList(param.UserAddress, param.Limit, param.Timestamp)
 
 	if err != nil {
-		logger.Errorf("%v : unable to retrieve misskey note list for %s", err, userAddress)
+		logger.Errorf("%v : unable to retrieve misskey note list for %s", err, param.UserAddress)
 
 		return err
 	}
 
 	for _, note := range noteList {
 		ni := model.NewItem(
-			networkId,
+			param.NetworkId,
 			note.Link,
 			model.Metadata{
 				"network": constants.NetworkSymbolMisskey,
@@ -52,7 +47,7 @@ func (mc *misskeyCrawler) Work(userAddress string, networkId constants.NetworkID
 		mc.rss3Items = append(mc.rss3Items, ni)
 
 		mc.rss3Notes = append(mc.rss3Notes, &model.ItemId{
-			NetworkId: networkId,
+			NetworkId: param.NetworkId,
 			Proof:     note.Link,
 		})
 	}
