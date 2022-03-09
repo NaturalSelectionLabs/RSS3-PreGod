@@ -63,6 +63,12 @@ func (n *NetworkInstance) String() string {
 	return fmt.Sprintf("%s:%s@%s", n.Prefix, n.Identity, n.Network)
 }
 
+func NewAccountInstance(identity string, platform constants.PlatformSymbol) Instance {
+	r, _ := NewInstance("account", identity, string(platform))
+
+	return r
+}
+
 func NewInstance(prefix, identity, platform string) (Instance, error) {
 	if !constants.IsValidPrefix(prefix) {
 		return nil, ErrInvalidPrefix

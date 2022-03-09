@@ -77,3 +77,15 @@ func IsValidNetworkName(value string) bool {
 func (id NetworkSymbol) GetID() NetworkID {
 	return networkIDMap[NetworkSymbol(id)]
 }
+
+func GetEthereumPlatformNetworks() []NetworkID {
+	return []NetworkID{
+		NetworkIDEthereumMainnet,
+		NetworkIDPolygon,
+		NetworkIDBNBChain,
+		NetworkIDArbitrum,
+		NetworkIDAvalanche,
+		NetworkIDFantom,
+		NetworkIDGnosisMainnet,
+	}
+}

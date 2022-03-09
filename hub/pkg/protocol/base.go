@@ -1,5 +1,9 @@
 package protocol
 
+const (
+	Version = "v0.4.0"
+)
+
 type Base struct {
 	Version     string `json:"version"`      // Proposal version for current file. It should be like `v1.0.0`
 	Identifier  string `json:"identifier"`   // RSS3 URI

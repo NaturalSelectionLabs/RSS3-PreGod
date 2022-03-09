@@ -89,3 +89,20 @@ func init() {
 		platformIDMap[symbol] = id
 	}
 }
+
+func (p PlatformID) GetNetwork() []NetworkID {
+	switch p {
+	case PlatformIDEthereum:
+		return append(GetEthereumPlatformNetworks(), NetworkIDArweaveMainnet)
+	case PlatformIDArweave:
+		return []NetworkID{NetworkIDArweaveMainnet}
+	case PlatformIDTwitter:
+		return []NetworkID{NetworkIDTwitter}
+	case PlatformIDMisskey:
+		return []NetworkID{NetworkIDMisskey}
+	case PlatformIDJike:
+		return []NetworkID{NetworkIDJike}
+	default:
+		return nil
+	}
+}

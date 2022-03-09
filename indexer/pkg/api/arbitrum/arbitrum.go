@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/util"
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/util/httpx"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/config"
 	jsoniter "github.com/json-iterator/go"
 	"github.com/valyala/fastjson"
@@ -31,7 +31,7 @@ func GetNFTTxs(owner string) ([]byte, error) {
 	apiKey := GetApiKey()
 	url := fmt.Sprintf("%s/api?module=account&action=tokennfttx&address=%s&startblock=0&endblock=999999999&sort=asc&apikey=%s", endpoint, owner, apiKey)
 
-	response, err := util.Get(url, nil)
+	response, err := httpx.Get(url, nil)
 	if err != nil {
 		return nil, err
 	}

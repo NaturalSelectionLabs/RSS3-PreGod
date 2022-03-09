@@ -22,23 +22,38 @@ func InitRouter() *gin.Engine {
 	// Apply middlewares
 	r.Use(gin.Recovery())
 
+	// === Error handler ===
+	r.NoRoute(func(c *gin.Context) {
+		c.JSON(http.StatusNotFound, gin.H{
+			"message": "not found",
+		})
+	})
+
+	r.NoMethod(func(c *gin.Context) {
+		c.JSON(http.StatusMethodNotAllowed, gin.H{
+			"message": "method not allowed",
+		})
+	})
+
 	// === APIs ===
-
-	// instance
-	apis := r.Group(API_PATH)
-	apis.Use(middleware.Logger())
+	apiRouter := r.Group(API_PATH)
+	apiRouter.Use(middleware.Logger())
 	{
-		// Instance
-		apis.GET("/:authority", api.GetInstance)
+		// Index File
+		// rss3://account:0xC8b960D09C0078c18Dcbe7eB9AB9d816BcCa8944@ethereum
+		apiRouter.GET("/:instance", api.GetIndexHandlerFunc)
 
-		// items
-		r.GET("/:authority/:item_type/:item_uuid", api.GetItem)
-		r.GET("/:authority/list/:item_type/:page_index", api.GetItemPagedList)
-		// r.GET("/:authority/list/:item_type", api.GetItemList)
+		// Link List File
+		// rss3://account:0xC8b960D09C0078c18Dcbe7eB9AB9d816BcCa8944@ethereum/list/link/following/1
+		apiRouter.GET("/:instance/list/link/:link_type/:page_index", api.GetLinkListHandlerFunc)
 
-		// // links
-		// r.GET("/:authority/list/links/:link_type/:page_index", api.GetLinkList)
-		// r.GET("/:authority/list/backlinks/:link_type", api.GetBacklinkList)
+		// Asset List File
+		// rss3://account:0xC8b960D09C0078c18Dcbe7eB9AB9d816BcCa8944@ethereum/list/asset/0
+		apiRouter.GET("/:instance/list/asset/:page_index", api.GetAssetListRequestHandlerFunc)
+
+		// Note List File
+		// rss3://account:0xC8b960D09C0078c18Dcbe7eB9AB9d816BcCa8944@ethereum/list/note/0
+		apiRouter.GET("/:instance/list/note/:page_index", api.GetNoteListRequestHandlerFunc)
 	}
 
 	// === Monitor ===

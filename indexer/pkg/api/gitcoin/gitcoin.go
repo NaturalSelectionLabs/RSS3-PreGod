@@ -5,7 +5,7 @@ import (
 
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/api/moralis"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/api/zksync"
-	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/util"
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/util/httpx"
 	"github.com/valyala/fastjson"
 )
 
@@ -86,7 +86,7 @@ var token = map[string]tokenMeta{
 
 // GetGrantsInfo returns grant info from gitcoin
 func GetGrantsInfo() ([]GrantInfo, error) {
-	content, err := util.Get(grantUrl, nil)
+	content, err := httpx.Get(grantUrl, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -116,10 +116,10 @@ func GetProjectsInfo(adminAddress string, title string) (ProjectInfo, error) {
 	var project ProjectInfo
 
 	headers := make(map[string]string)
-	util.SetCommonHeader(headers)
+	httpx.SetCommonHeader(headers)
 
 	url := grantsApi + "?admin_address=" + adminAddress
-	content, err := util.Get(url, headers)
+	content, err := httpx.Get(url, headers)
 
 	if err != nil {
 		return project, nil

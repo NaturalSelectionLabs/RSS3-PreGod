@@ -3,7 +3,7 @@ package zksync
 import (
 	"fmt"
 
-	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/util"
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/util/httpx"
 	"github.com/valyala/fastjson"
 )
 
@@ -11,7 +11,7 @@ const endpoint = "https://api.zksync.io"
 
 func GetLatestBlockHeight() (int64, error) {
 	url := endpoint + "/api/v0.1/status"
-	response, err := util.Get(url, nil)
+	response, err := httpx.Get(url, nil)
 
 	if err != nil {
 		return 0, err
@@ -31,7 +31,7 @@ func GetLatestBlockHeight() (int64, error) {
 
 func GetTokens() ([]Token, error) {
 	url := endpoint + "/api/v0.1/tokens"
-	response, err := util.Get(url, nil)
+	response, err := httpx.Get(url, nil)
 
 	if err != nil {
 		return nil, err
@@ -77,7 +77,7 @@ func InactiveAdminAddress(adminAddress string) bool {
 
 func GetTxsByBlock(blockHeight int64) ([]ZKTransaction, error) {
 	url := fmt.Sprintf("%s/api/v0.1/blocks/%d/transactions", endpoint, blockHeight)
-	response, err := util.Get(url, nil)
+	response, err := httpx.Get(url, nil)
 
 	if err != nil {
 		return nil, err
