@@ -6,15 +6,16 @@ import (
 
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/pkg/db"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/pkg/db/model"
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/pkg/middleware"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/pkg/protocol"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/pkg/status"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/pkg/web"
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/constants"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/rss3uri"
 	"github.com/gin-gonic/gin"
 )
 
 type GetLinkListRequest struct {
-	Instance  string `uri:"instance" binding:"required"`
 	LinkType  string `uri:"link_type" binding:"required"`
 	PageIndex int    `uri:"page_index" binding:"required"`
 }
@@ -28,8 +29,23 @@ func GetLinkListHandlerFunc(c *gin.Context) {
 		return
 	}
 
-	instance, err := rss3uri.ParseInstance(request.Instance)
-	if err != nil {
+	value, exists := c.Get(middleware.KeyInstance)
+	if !exists {
+		w := web.Gin{C: c}
+		w.JSONResponse(http.StatusBadRequest, status.CodeInvalidParams, nil)
+
+		return
+	}
+
+	platformInstance, ok := value.(*rss3uri.PlatformInstance)
+	if !ok {
+		w := web.Gin{C: c}
+		w.JSONResponse(http.StatusBadRequest, status.CodeInvalidParams, nil)
+
+		return
+	}
+
+	if platformInstance.Prefix != constants.PrefixNameAccount || platformInstance.Platform != constants.PlatformSymbolEthereum {
 		w := web.Gin{C: c}
 		w.JSONResponse(http.StatusBadRequest, status.CodeInvalidParams, nil)
 
@@ -43,7 +59,7 @@ func GetLinkListHandlerFunc(c *gin.Context) {
 			Base: protocol.Base{
 				Version: protocol.Version,
 				// TODO Refine rss3uri package
-				Identifier: fmt.Sprintf("%s/list/link/following/%d", rss3uri.New(instance).String(), request.PageIndex),
+				Identifier: fmt.Sprintf("%s/list/link/following/%d", rss3uri.New(platformInstance).String(), request.PageIndex),
 				// TODO IdentifierNext
 				// TODO No test data available
 				// DateCreated: "",
@@ -56,7 +72,7 @@ func GetLinkListHandlerFunc(c *gin.Context) {
 	var links []model.Link
 	if err := db.DB.Where(
 		"rss3_id = ? and page_index = ?",
-		fmt.Sprintf("%s@%s", instance.GetIdentity(), instance.GetSuffix()),
+		fmt.Sprintf("%s@%s", platformInstance.GetIdentity(), platformInstance.GetSuffix()),
 		request.PageIndex,
 	).Find(&links).Error; err != nil {
 		w := web.Gin{C: c}

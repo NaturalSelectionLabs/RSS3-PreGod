@@ -7,6 +7,7 @@ import (
 
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/pkg/db"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/pkg/db/model"
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/pkg/middleware"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/pkg/protocol"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/pkg/status"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/pkg/web"
@@ -15,29 +16,19 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-type GetIndexRequest struct {
-	Instance string `uri:"instance" binding:"required"`
-}
+type GetIndexRequest struct{}
 
 //nolint:funlen // SQL logic will be wrapped up later
 func GetIndexHandlerFunc(c *gin.Context) {
-	request := GetIndexRequest{}
-	if err := c.ShouldBindUri(&request); err != nil {
+	value, exists := c.Get(middleware.KeyInstance)
+	if !exists {
 		w := web.Gin{C: c}
 		w.JSONResponse(http.StatusBadRequest, status.CodeInvalidParams, nil)
 
 		return
 	}
 
-	instance, err := rss3uri.ParseInstance(request.Instance)
-	if err != nil {
-		w := web.Gin{C: c}
-		w.JSONResponse(http.StatusBadRequest, status.CodeInvalidParams, nil)
-
-		return
-	}
-
-	accountInstance, ok := instance.(*rss3uri.PlatformInstance)
+	platformInstance, ok := value.(*rss3uri.PlatformInstance)
 	if !ok {
 		w := web.Gin{C: c}
 		w.JSONResponse(http.StatusBadRequest, status.CodeInvalidParams, nil)
@@ -45,7 +36,7 @@ func GetIndexHandlerFunc(c *gin.Context) {
 		return
 	}
 
-	if accountInstance.Prefix != constants.PrefixNameAccount || accountInstance.Platform != constants.PlatformSymbolEthereum {
+	if platformInstance.Prefix != constants.PrefixNameAccount || platformInstance.Platform != constants.PlatformSymbolEthereum {
 		w := web.Gin{C: c}
 		w.JSONResponse(http.StatusBadRequest, status.CodeInvalidParams, nil)
 
@@ -55,7 +46,7 @@ func GetIndexHandlerFunc(c *gin.Context) {
 	account := model.Account{}
 	if err := db.DB.Where(
 		"account_id = ?",
-		fmt.Sprintf("%s@%s", instance.GetIdentity(), instance.GetSuffix()),
+		fmt.Sprintf("%s@%s", platformInstance.GetIdentity(), platformInstance.GetSuffix()),
 	).First(&account).Error; err != nil {
 		// TODO Account not found
 		//if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -70,7 +61,7 @@ func GetIndexHandlerFunc(c *gin.Context) {
 		SignedBase: protocol.SignedBase{
 			Base: protocol.Base{
 				Version:     protocol.Version,
-				Identifier:  rss3uri.New(instance).String(),
+				Identifier:  rss3uri.New(platformInstance).String(),
 				DateCreated: account.CreatedAt.Format(time.RFC3339),
 				DateUpdated: account.UpdatedAt.Format(time.RFC3339),
 			},
@@ -107,16 +98,17 @@ func GetIndexHandlerFunc(c *gin.Context) {
 	index.Links.Identifiers = append(index.Links.Identifiers, protocol.LinkIdentifier{
 		Type: constants.LinkTypeFollowing.String(),
 		// TODO Refine rss3uri package
-		IdentifierCustom: fmt.Sprintf("%s/list/link/following/1", rss3uri.New(accountInstance).String()),
-		Identifier:       fmt.Sprintf("%s/list/link/following", rss3uri.New(accountInstance).String()),
+		// TODO Max page index
+		IdentifierCustom: fmt.Sprintf("%s/list/link/following/1", rss3uri.New(platformInstance).String()),
+		Identifier:       fmt.Sprintf("%s/list/link/following", rss3uri.New(platformInstance).String()),
 	})
 
 	index.Items.Notes = protocol.Notes{
-		Identifier: fmt.Sprintf("%s/list/notes", rss3uri.New(accountInstance).String()),
+		Identifier: fmt.Sprintf("%s/list/notes", rss3uri.New(platformInstance).String()),
 	}
 
 	index.Items.Assets = protocol.Assets{
-		Identifier: fmt.Sprintf("%s/list/assets", rss3uri.New(accountInstance).String()),
+		Identifier: fmt.Sprintf("%s/list/assets", rss3uri.New(platformInstance).String()),
 	}
 
 	c.JSON(http.StatusOK, index)

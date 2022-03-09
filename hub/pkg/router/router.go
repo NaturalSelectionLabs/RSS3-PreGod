@@ -38,6 +38,7 @@ func InitRouter() *gin.Engine {
 	// === APIs ===
 	apiRouter := r.Group(API_PATH)
 	apiRouter.Use(middleware.Logger())
+	apiRouter.Use(middleware.Instance())
 	{
 		// Index File
 		// rss3://account:0xC8b960D09C0078c18Dcbe7eB9AB9d816BcCa8944@ethereum
