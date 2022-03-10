@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/pkg/util/ethers"
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/pkg/verify/ethers"
 )
 
 func TestVerifyMessage(t *testing.T) {
