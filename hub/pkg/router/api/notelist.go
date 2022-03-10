@@ -1,9 +1,12 @@
 package api
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/pkg/middleware"
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/pkg/protocol"
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/pkg/protocol/file"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/pkg/status"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/pkg/web"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/constants"
@@ -12,7 +15,7 @@ import (
 )
 
 type GetNoteListRequest struct {
-	PageIndex string `uri:"page_index" binding:"required"`
+	PageIndex int `uri:"page_index"`
 }
 
 func GetNoteListRequestHandlerFunc(c *gin.Context) {
@@ -47,7 +50,20 @@ func GetNoteListRequestHandlerFunc(c *gin.Context) {
 		return
 	}
 
-	// TODO Query data from database
+	identifier := rss3uri.New(platformInstance).String()
+
+	noteListFile := file.NoteList{
+		SignedBase: protocol.SignedBase{
+			Base: protocol.Base{
+				Version:    protocol.Version,
+				Identifier: fmt.Sprintf("%s/list/note/%d", identifier, request.PageIndex),
+			},
+		},
+	}
+
 	// TODO No test data available
-	c.JSON(http.StatusOK, request)
+
+	noteListFile.Total = len(noteListFile.List)
+
+	c.JSON(http.StatusOK, &noteListFile)
 }
