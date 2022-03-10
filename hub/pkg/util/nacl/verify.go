@@ -1,7 +1,6 @@
 package nacl
 
 import (
-	"bytes"
 	"fmt"
 
 	"golang.org/x/crypto/nacl/sign"
@@ -19,14 +18,12 @@ func Verify(msg, sig, pubkey []byte) (bool, error) {
 
 	var pubkeyBytes [cryptoSignPubkeyBytes]byte
 
-	copy(pubkeyBytes[:], pubkey[cryptoSignPubkeyBytes:])
+	copy(pubkeyBytes[:], pubkey[:cryptoSignPubkeyBytes])
 
-	message, ok := sign.Open(nil, sig, &pubkeyBytes)
+	_, ok := sign.Open(nil, append(sig, msg...), &pubkeyBytes)
 	if !ok {
 		return false, fmt.Errorf("signature nacl verification failed")
 	}
 
-	success := bytes.Equal(msg, message)
-
-	return success, nil
+	return ok, nil
 }
