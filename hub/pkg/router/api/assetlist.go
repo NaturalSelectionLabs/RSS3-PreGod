@@ -1,9 +1,12 @@
 package api
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/pkg/middleware"
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/pkg/protocol"
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/pkg/protocol/file"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/pkg/status"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/pkg/web"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/constants"
@@ -12,7 +15,7 @@ import (
 )
 
 type GetAssetListRequest struct {
-	PageIndex string `uri:"page_index" binding:"required"`
+	PageIndex int `uri:"page_index"`
 }
 
 func GetAssetListRequestHandlerFunc(c *gin.Context) {
@@ -44,7 +47,20 @@ func GetAssetListRequestHandlerFunc(c *gin.Context) {
 		return
 	}
 
-	// TODO Query data from database
+	identifier := rss3uri.New(platformInstance).String()
+
+	assetListFile := file.AssetList{
+		SignedBase: protocol.SignedBase{
+			Base: protocol.Base{
+				Version:    protocol.Version,
+				Identifier: fmt.Sprintf("%s/list/asset/%d", identifier, request.PageIndex),
+			},
+		},
+	}
+
 	// TODO No test data available
-	c.JSON(http.StatusOK, request)
+
+	assetListFile.Total = len(assetListFile.List)
+
+	c.JSON(http.StatusOK, &assetListFile)
 }
