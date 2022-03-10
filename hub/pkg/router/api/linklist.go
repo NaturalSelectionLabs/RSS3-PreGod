@@ -9,6 +9,7 @@ import (
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/pkg/db/model"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/pkg/middleware"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/pkg/protocol"
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/pkg/protocol/file"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/pkg/status"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/pkg/web"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/constants"
@@ -19,7 +20,7 @@ import (
 
 type GetLinkListRequest struct {
 	LinkType  string `uri:"link_type" binding:"required"`
-	PageIndex *int   `uri:"page_index" binding:"required"`
+	PageIndex int    `uri:"page_index"`
 }
 
 //nolint:funlen // SQL logic will be wrapped up later
@@ -65,12 +66,13 @@ func GetLinkListHandlerFunc(c *gin.Context) {
 
 	// TODO Check if the account exists
 
-	linkListFile := protocol.LinkListFile{
+	identifier := rss3uri.New(platformInstance).String()
+
+	linkListFile := file.LinkList{
 		SignedBase: protocol.SignedBase{
 			Base: protocol.Base{
-				Version: protocol.Version,
-				// TODO Refine rss3uri package
-				Identifier: fmt.Sprintf("%s/list/link/following/%d", rss3uri.New(platformInstance).String(), request.PageIndex),
+				Version:    protocol.Version,
+				Identifier: fmt.Sprintf("%s/list/link/following/%d", identifier, request.PageIndex),
 				// TODO IdentifierNext
 				// TODO No test data available
 				// DateCreated: "",
@@ -97,7 +99,7 @@ func GetLinkListHandlerFunc(c *gin.Context) {
 	}
 
 	for _, link := range links {
-		linkListFile.List = append(linkListFile.List, protocol.LinkListFileItem{
+		linkListFile.List = append(linkListFile.List, file.LinkListItem{
 			Type: constants.LinkTypeFollowing.String(),
 			// TODO  Maybe it's an asset or a note
 			IdentifierTarget: rss3uri.New(&rss3uri.PlatformInstance{
@@ -110,5 +112,5 @@ func GetLinkListHandlerFunc(c *gin.Context) {
 
 	linkListFile.Total = len(linkListFile.List)
 
-	c.JSON(http.StatusOK, linkListFile)
+	c.JSON(http.StatusOK, &linkListFile)
 }
