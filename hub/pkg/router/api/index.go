@@ -3,12 +3,12 @@ package api
 import (
 	"fmt"
 	"net/http"
-	"time"
 
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/pkg/db"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/pkg/db/model"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/pkg/middleware"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/pkg/protocol"
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/pkg/protocol/file"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/pkg/status"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/pkg/web"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/constants"
@@ -57,20 +57,56 @@ func GetIndexHandlerFunc(c *gin.Context) {
 		return
 	}
 
-	index := protocol.IndexFile{
+	// Query the max page index
+	var followingPageIndex int
+	if err := db.DB.Table("link").Select("max(page_index)").Where("rss3_id = ?", platformInstance.Identity).Row().Scan(&followingPageIndex); err != nil {
+		w := web.Gin{C: c}
+		w.JSONResponse(http.StatusInternalServerError, status.CodeError, nil)
+
+		return
+	}
+
+	// TODO Redesign database table
+	var (
+		notePageIndex  int
+		assetPageIndex int
+	)
+
+	identifier := rss3uri.New(platformInstance).String()
+
+	indexFile := file.Index{
 		SignedBase: protocol.SignedBase{
 			Base: protocol.Base{
-				Version:     protocol.Version,
-				Identifier:  rss3uri.New(platformInstance).String(),
-				DateCreated: account.CreatedAt.Format(time.RFC3339),
-				DateUpdated: account.UpdatedAt.Format(time.RFC3339),
+				Version:    protocol.Version,
+				Identifier: identifier,
 			},
 		},
-		Agent: protocol.Agent{},
-		Profile: protocol.Profile{
+		Profile: file.IndexProfile{
 			Name:    account.Name,
 			Avatars: account.Avatars,
 			Bio:     account.Bio,
+			// TODO No data available
+			// Attachments: nil,
+		},
+		Links: file.IndexLinks{
+			Identifiers: []file.IndexLinkIdentifier{
+				{
+					Type:             "following",
+					IdentifierCustom: fmt.Sprintf("%s/list/link/following/%d", identifier, followingPageIndex),
+					Identifier:       fmt.Sprintf("%s/list/link/following", identifier),
+				},
+			},
+			IdentifierBack: fmt.Sprintf("%s/list/backlink", identifier),
+		},
+		Items: file.IndexItems{
+			Notes: file.IndexItemsNotes{
+				IdentifierCustom: fmt.Sprintf("%s/list/note/%d", identifier, notePageIndex),
+				Identifier:       fmt.Sprintf("%s/list/note", identifier),
+			},
+			Assets: file.IndexItemsAssets{
+				IdentifierCustom: fmt.Sprintf("%s/list/asset/%d", identifier, assetPageIndex),
+				Identifier:       fmt.Sprintf("%s/list/asset", identifier),
+			},
 		},
 	}
 
@@ -82,41 +118,15 @@ func GetIndexHandlerFunc(c *gin.Context) {
 		return
 	}
 
-	for _, platform := range accountPlatforms {
-		account := protocol.Account{
+	for _, accountPlatform := range accountPlatforms {
+		indexFile.Profile.Accounts = append(indexFile.Profile.Accounts, file.IndexAccount{
 			Identifier: rss3uri.New(&rss3uri.PlatformInstance{
 				Prefix:   constants.PrefixNameAccount,
-				Identity: platform.PlatformAccountID,
-				Platform: constants.PlatformSymbolEthereum,
+				Identity: accountPlatform.PlatformAccountID,
+				Platform: accountPlatform.PlatformID.Symbol(),
 			}).String(),
-		}
-		index.Profile.Accounts = append(index.Profile.Accounts, account)
+		})
 	}
 
-	// Query the max page index
-	var pageIndex int
-	if err := db.DB.Table("link").Select("max(page_index)").Where("rss3_id = ?", platformInstance.Identity).Row().Scan(&pageIndex); err != nil {
-		w := web.Gin{C: c}
-		w.JSONResponse(http.StatusInternalServerError, status.CodeError, nil)
-
-		return
-	}
-
-	index.Links.Identifiers = append(index.Links.Identifiers, protocol.LinkIdentifier{
-		Type: constants.LinkTypeFollowing.String(),
-		// TODO Refine rss3uri package
-		// TODO Max page index
-		IdentifierCustom: fmt.Sprintf("%s/list/link/following/%d", rss3uri.New(platformInstance).String(), pageIndex),
-		Identifier:       fmt.Sprintf("%s/list/link/following", rss3uri.New(platformInstance).String()),
-	})
-
-	index.Items.Notes = protocol.Notes{
-		Identifier: fmt.Sprintf("%s/list/notes", rss3uri.New(platformInstance).String()),
-	}
-
-	index.Items.Assets = protocol.Assets{
-		Identifier: fmt.Sprintf("%s/list/assets", rss3uri.New(platformInstance).String()),
-	}
-
-	c.JSON(http.StatusOK, index)
+	c.JSON(http.StatusOK, &indexFile)
 }
