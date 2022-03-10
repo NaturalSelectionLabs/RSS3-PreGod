@@ -2,16 +2,17 @@ package twitter
 
 import (
 	"fmt"
+	"regexp"
+	"strings"
 
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/util"
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/util/httpx"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/config"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/logger"
 	"github.com/valyala/fastjson"
 )
 
 const endpoint = "https://api.twitter.com/1.1"
-
-var parser fastjson.Parser
 
 func GetUsersShow(name string) (*UserShow, error) {
 	key := util.GotKey("round-robin", "Twitter", config.Config.Indexer.Twitter.Tokens)
@@ -24,11 +25,12 @@ func GetUsersShow(name string) (*UserShow, error) {
 
 	url := fmt.Sprintf("%s/users/show.json?screen_name=%s", endpoint, name)
 
-	response, err := util.Get(url, headers)
+	response, err := httpx.Get(url, headers)
 	if err != nil {
 		return nil, err
 	}
 
+	var parser fastjson.Parser
 	parsedJson, err := parser.Parse(string(response))
 
 	if err != nil {
@@ -44,7 +46,7 @@ func GetUsersShow(name string) (*UserShow, error) {
 	return userShow, nil
 }
 
-func GetTimeline(name string, count uint32) (*ContentInfo, error) {
+func GetTimeline(name string, count uint32) ([]*ContentInfo, error) {
 	key := util.GotKey("round-robin", "Twitter", config.Config.Indexer.Twitter.Tokens)
 	authorization := fmt.Sprintf("Bearer %s", key)
 	logger.Infof("authorization: %s", authorization)
@@ -53,25 +55,92 @@ func GetTimeline(name string, count uint32) (*ContentInfo, error) {
 		"Authorization": authorization,
 	}
 
-	url := fmt.Sprintf("%s/statuses/user_timeline.json?screen_name=%scount=%d&exclude_replies=true", endpoint, name, count)
+	url := fmt.Sprintf("%s/statuses/user_timeline.json?screen_name=%s&count=%d&exclude_replies=true", endpoint, name, count)
 	logger.Infof("url: %s", url)
 
-	response, err := util.Get(url, headers)
+	response, err := httpx.Get(url, headers)
 	if err != nil {
 		return nil, err
 	}
 
 	logger.Infof("response: %s", string(response))
 
-	ContentInfo := new(ContentInfo)
+	contentInfos := make([]*ContentInfo, 100)
 
-	return ContentInfo, nil
+	var parser fastjson.Parser
+
+	parsedJson, err := parser.Parse(string(response))
+	if err != nil {
+		return nil, err
+	}
+
+	contentArray, err := parsedJson.Array()
+	if err != nil {
+		return contentInfos, err
+	}
+	logger.Infof("len(contentArray): %d", len(contentArray))
+
+	for _, contentValue := range contentArray {
+		contentInfo := new(ContentInfo)
+		contentInfo.Timestamp = string(contentValue.GetStringBytes("created_at"))
+		contentInfo.Hash = string(contentValue.GetStringBytes("id_str"))
+		contentInfo.Link = fmt.Sprintf("https://twitter.com/%s/status/%s", name, contentInfo.Hash)
+		contentInfo.PreContent, err = formatTweetText(contentValue)
+
+		if err != nil {
+			logger.Errorf("format tweet text error: %s", err)
+
+			continue
+		}
+
+		logger.Debugf("contentInfo: %+v", contentInfo)
+		contentInfos = append(contentInfos, contentInfo)
+	}
+
+	return contentInfos, nil
 }
 
-// func userTimeline(name string, count int, useCache bool) {
-// 	url := fmt.Sprintf("%s/statuses/user_timeline.json?screen_name=%s&count=%d&exclude_replies=true", endpoint, name, count)
-// }
+func formatTweetText(contentValue *fastjson.Value) (string, error) {
+	var text = contentValue.GetStringBytes("text")
 
-// func formatTweetText(tweet *Tweet) string {
-// 	return fmt.Sprintf("%s: %s", tweet.User.Name, tweet.Text)
-// }
+	matched, err := regexp.Match("(https://t.co/[a-zA-Z0-9]+)$", text)
+	if err != nil {
+		return "", err
+	}
+
+	if matched == true {
+		index := strings.Index(string(text), "https://t.co")
+		text = text[:index]
+	}
+
+	extendedEntitiesValue := contentValue.Get("extended_entities")
+	if extendedEntitiesValue != nil {
+		media := extendedEntitiesValue.GetArray("media")
+		if len(media) > 0 {
+			for _, mediaItem := range media {
+				mediaUrl := mediaItem.GetStringBytes("media_url_https")
+				imageStr := fmt.Sprintf("<img class=\"media\" src=%s", mediaUrl)
+				text = append(text, imageStr...)
+			}
+		}
+	}
+
+	quotedStatusValue := contentValue.Get("quoted_status")
+	if quotedStatusValue != nil {
+		userValue := quotedStatusValue.Get("user")
+		if userValue != nil {
+			screenName := userValue.GetStringBytes("screen_name")
+			formatTweetStr, err := formatTweetText(quotedStatusValue)
+
+			if err != nil {
+				return "", err
+			}
+
+			quotedStatusStr := fmt.Sprintf("\nRT @%s:%s ", screenName, formatTweetStr)
+			text = append(text, quotedStatusStr...)
+		}
+
+	}
+
+	return string(text), nil
+}

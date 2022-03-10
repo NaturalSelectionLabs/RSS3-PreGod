@@ -25,12 +25,6 @@ func NewPoapCrawler() crawler.Crawler {
 	}
 }
 
-type ChainType string
-
-const (
-	Gnosis ChainType = "Gnosis"
-)
-
 func (pc *poapCrawler) Work(userAddress string, itemType constants.NetworkID) error {
 	if itemType != constants.NetworkIDGnosisMainnet {
 		return fmt.Errorf("network is not gnosis")

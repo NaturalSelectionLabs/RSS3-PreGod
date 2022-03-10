@@ -1,5 +1,7 @@
 package twitter
 
+import "time"
+
 type UserShow struct {
 	Name        string
 	Description string
@@ -7,9 +9,13 @@ type UserShow struct {
 }
 
 type ContentInfo struct {
-	Title      string
 	PreContent string
 	Timestamp  string
 	Hash       string
 	Link       string
+	Created    string
+}
+
+func (i ContentInfo) GetTsp() (time.Time, error) {
+	return time.Parse(time.RubyDate, i.Created)
 }
