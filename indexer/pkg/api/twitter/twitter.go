@@ -17,7 +17,6 @@ const endpoint = "https://api.twitter.com/1.1"
 func GetUsersShow(name string) (*UserShow, error) {
 	key := util.GotKey("round-robin", "Twitter", config.Config.Indexer.Twitter.Tokens)
 	authorization := fmt.Sprintf("Bearer %s", key)
-	logger.Infof("authorization: %s", authorization)
 
 	var headers = map[string]string{
 		"Authorization": authorization,
@@ -49,21 +48,17 @@ func GetUsersShow(name string) (*UserShow, error) {
 func GetTimeline(name string, count uint32) ([]*ContentInfo, error) {
 	key := util.GotKey("round-robin", "Twitter", config.Config.Indexer.Twitter.Tokens)
 	authorization := fmt.Sprintf("Bearer %s", key)
-	logger.Infof("authorization: %s", authorization)
 
 	var headers = map[string]string{
 		"Authorization": authorization,
 	}
 
 	url := fmt.Sprintf("%s/statuses/user_timeline.json?screen_name=%s&count=%d&exclude_replies=true", endpoint, name, count)
-	logger.Infof("url: %s", url)
 
 	response, err := httpx.Get(url, headers)
 	if err != nil {
 		return nil, err
 	}
-
-	logger.Infof("response: %s", string(response))
 
 	contentInfos := make([]*ContentInfo, 0, 100)
 
@@ -92,7 +87,6 @@ func GetTimeline(name string, count uint32) ([]*ContentInfo, error) {
 			continue
 		}
 
-		logger.Debugf("contentInfo: %+v", contentInfo)
 		contentInfos = append(contentInfos, contentInfo)
 	}
 

@@ -64,7 +64,6 @@ func (tc *twitterCrawler) Work(userAddress string, itemType constants.NetworkID)
 			[]model.Attachment{},
 			tsp,
 		)
-		logger.Debugf("twitter item: %v", ni)
 
 		tc.Items = append(tc.Items, ni)
 	}
