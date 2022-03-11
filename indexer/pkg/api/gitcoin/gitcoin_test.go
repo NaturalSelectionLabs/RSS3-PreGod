@@ -43,7 +43,11 @@ func TestGetEthDonations(t *testing.T) {
 func TestGetZkSyncDonations(t *testing.T) {
 	t.Parallel()
 
-	res, err := gitcoin.GetZkSyncDonations(1000, 1001)
+	gc := gitcoin.NewGitcoinCrawler()
+	err := gc.UpdateZksToken()
+	assert.Nil(t, err)
+
+	res, err := gc.GetZkSyncDonations(1000, 1001)
 	assert.Nil(t, err)
 	assert.NotEmpty(t, res)
 }
