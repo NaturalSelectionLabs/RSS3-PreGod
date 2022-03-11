@@ -13,7 +13,7 @@ type misskeyCrawler struct {
 	rss3Notes []*model.ItemId
 }
 
-func NewmisskeyCrawler() crawler.Crawler {
+func NewMisskeyCrawler() crawler.Crawler {
 	return &misskeyCrawler{
 		rss3Items: []*model.Item{},
 		rss3Notes: []*model.ItemId{},
@@ -21,17 +21,17 @@ func NewmisskeyCrawler() crawler.Crawler {
 }
 
 func (mc *misskeyCrawler) Work(param crawler.WorkParam) error {
-	noteList, err := GetUserNoteList(param.UserAddress, param.Limit, param.Timestamp)
+	noteList, err := GetUserNoteList(param.Identity, param.Limit, param.TimeStamp)
 
 	if err != nil {
-		logger.Errorf("%v : unable to retrieve misskey note list for %s", err, param.UserAddress)
+		logger.Errorf("%v : unable to retrieve misskey note list for %s", err, param.Identity)
 
 		return err
 	}
 
 	for _, note := range noteList {
 		ni := model.NewItem(
-			param.NetworkId,
+			param.NetworkID,
 			note.Link,
 			model.Metadata{
 				"network": constants.NetworkSymbolMisskey,
@@ -47,7 +47,7 @@ func (mc *misskeyCrawler) Work(param crawler.WorkParam) error {
 		mc.rss3Items = append(mc.rss3Items, ni)
 
 		mc.rss3Notes = append(mc.rss3Notes, &model.ItemId{
-			NetworkId: param.NetworkId,
+			NetworkID: param.NetworkID,
 			Proof:     note.Link,
 		})
 	}

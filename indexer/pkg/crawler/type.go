@@ -14,14 +14,21 @@ type CrawlerResult struct {
 }
 
 type WorkParam struct {
-	UserAddress string
-	NetworkId   constants.NetworkID
-	Limit       int // aka Count, limit the number of items to be crawled
-	Timestamp   time.Time
+	Identity   string
+	NetworkID  constants.NetworkID
+	PlatformID constants.PlatformID // optional
+	Limit      int                  // optional, aka Count, limit the number of items to be crawled
+
+	TimeStamp   time.Time // optional
+	BlockHeight int64     // optional
 }
 
 type Crawler interface {
 	Work(WorkParam) error
 	// GetResult return &{Assets, Notes, Items}
 	GetResult() *CrawlerResult
+}
+
+func NewTaskQueue() chan *WorkParam {
+	return make(chan *WorkParam)
 }

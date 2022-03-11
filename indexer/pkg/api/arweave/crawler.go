@@ -36,7 +36,7 @@ func (ar *arCrawler) Work(param crawler.WorkParam) error {
 		return err
 	}
 
-	articles, err := GetArticles(startBlockHeight, latestBlockHeight, param.UserAddress)
+	articles, err := GetArticles(startBlockHeight, latestBlockHeight, param.Identity)
 	if err != nil {
 		logger.Error(err)
 

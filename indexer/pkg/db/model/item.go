@@ -8,7 +8,7 @@ import (
 )
 
 type ItemId struct {
-	NetworkId constants.NetworkID `json:"network_id" bson:"network_id"`
+	NetworkID constants.NetworkID `json:"network_id" bson:"network_id"`
 	Proof     string              `json:"proof" bson:"proof"`
 }
 type Attachment struct {
@@ -51,7 +51,7 @@ func NewItem(networkId constants.NetworkID, proof string, metadata Metadata,
 	attachments []Attachment, platformCreatedAt time.Time) *Item {
 	return &Item{
 		ItemId: ItemId{
-			NetworkId: networkId,
+			NetworkID: networkId,
 			Proof:     proof,
 		},
 		Metadata:          metadata,

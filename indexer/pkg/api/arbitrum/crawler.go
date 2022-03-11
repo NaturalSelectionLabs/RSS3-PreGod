@@ -26,12 +26,12 @@ func NewArbitrumCrawler() crawler.Crawler {
 
 //nolint:funlen // disable line length check
 func (ac *abCrawler) Work(param crawler.WorkParam) error {
-	nftTransfers, err := GetNFTTransfers(param.UserAddress)
+	nftTransfers, err := GetNFTTransfers(param.Identity)
 	if err != nil {
 		return err
 	}
 
-	assets, err := GetNFTs(param.UserAddress)
+	assets, err := GetNFTs(param.Identity)
 	if err != nil {
 		return err
 	}
@@ -41,7 +41,7 @@ func (ac *abCrawler) Work(param crawler.WorkParam) error {
 	// parse notes
 	for _, v := range nftTransfers {
 		ac.Notes = append(ac.Notes, &model.ItemId{
-			NetworkId: networkId,
+			NetworkID: networkId,
 			Proof:     v.Hash,
 		})
 	}
@@ -55,7 +55,7 @@ func (ac *abCrawler) Work(param crawler.WorkParam) error {
 				hasProof = true
 
 				ac.Assets = append(ac.Assets, &model.ItemId{
-					NetworkId: networkId,
+					NetworkID: networkId,
 					Proof:     nftTransfer.Hash,
 				})
 			}

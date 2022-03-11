@@ -4,6 +4,7 @@ import (
 	"log"
 	"time"
 
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/crawler"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/db"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/processor"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/cache"
@@ -30,18 +31,18 @@ func init() {
 	}
 }
 
-func dispatchTasks(q chan *processor.Task, ti time.Duration) {
+func dispatchTasks(q chan *crawler.WorkParam, ti time.Duration) {
 	// TODO: Get all accounts
 	instances := []rss3uri.PlatformInstance{}
 	for _, i := range instances {
 		for _, n := range i.Platform.ID().GetNetwork() {
 			time.Sleep(ti)
-			q <- &processor.Task{Identity: i.Identity, PlatformID: i.Platform.ID(), Network: n}
+			q <- &crawler.WorkParam{Identity: i.Identity, PlatformID: i.Platform.ID(), NetworkID: n}
 		}
 	}
 }
 
-func pollTasks(q chan *processor.Task) {
+func pollTasks(q chan *crawler.WorkParam) {
 	for {
 		dispatchTasks(q, time.Minute)
 		time.Sleep(24 * time.Hour)
@@ -49,10 +50,10 @@ func pollTasks(q chan *processor.Task) {
 }
 
 func main() {
-	lowQ := processor.NewTaskQueue()
-	highQ := processor.NewTaskQueue()
+	lowQ := crawler.NewTaskQueue()
+	highQ := crawler.NewTaskQueue()
 
-	w := processor.NewWorker(lowQ, highQ)
+	w := processor.NewProcessor(lowQ, highQ)
 	go w.ListenAndServe()
 
 	// TODO: listen tasks from mq
