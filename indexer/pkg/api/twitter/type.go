@@ -13,9 +13,8 @@ type ContentInfo struct {
 	Timestamp  string
 	Hash       string
 	Link       string
-	Created    string
 }
 
 func (i ContentInfo) GetTsp() (time.Time, error) {
-	return time.Parse(time.RubyDate, i.Created)
+	return time.Parse(time.RubyDate, i.Timestamp)
 }

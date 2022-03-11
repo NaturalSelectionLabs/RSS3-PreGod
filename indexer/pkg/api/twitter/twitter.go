@@ -65,7 +65,7 @@ func GetTimeline(name string, count uint32) ([]*ContentInfo, error) {
 
 	logger.Infof("response: %s", string(response))
 
-	contentInfos := make([]*ContentInfo, 100)
+	contentInfos := make([]*ContentInfo, 0, 100)
 
 	var parser fastjson.Parser
 
@@ -78,7 +78,6 @@ func GetTimeline(name string, count uint32) ([]*ContentInfo, error) {
 	if err != nil {
 		return contentInfos, err
 	}
-	logger.Infof("len(contentArray): %d", len(contentArray))
 
 	for _, contentValue := range contentArray {
 		contentInfo := new(ContentInfo)
@@ -108,7 +107,7 @@ func formatTweetText(contentValue *fastjson.Value) (string, error) {
 		return "", err
 	}
 
-	if matched == true {
+	if matched {
 		index := strings.Index(string(text), "https://t.co")
 		text = text[:index]
 	}
@@ -119,7 +118,7 @@ func formatTweetText(contentValue *fastjson.Value) (string, error) {
 		if len(media) > 0 {
 			for _, mediaItem := range media {
 				mediaUrl := mediaItem.GetStringBytes("media_url_https")
-				imageStr := fmt.Sprintf("<img class=\"media\" src=%s", mediaUrl)
+				imageStr := fmt.Sprintf("<img class=\"media\" src=\"%s\">", mediaUrl)
 				text = append(text, imageStr...)
 			}
 		}
@@ -139,7 +138,6 @@ func formatTweetText(contentValue *fastjson.Value) (string, error) {
 			quotedStatusStr := fmt.Sprintf("\nRT @%s:%s ", screenName, formatTweetStr)
 			text = append(text, quotedStatusStr...)
 		}
-
 	}
 
 	return string(text), nil

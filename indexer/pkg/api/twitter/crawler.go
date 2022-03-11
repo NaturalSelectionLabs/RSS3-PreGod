@@ -24,7 +24,7 @@ func NewTwitterCrawler() crawler.Crawler {
 	}
 }
 
-const DefaultTwitterCount = 50
+const DefaultTwitterCount = 200
 
 func (tc *twitterCrawler) Work(userAddress string, itemType constants.NetworkID) error {
 	if itemType != constants.NetworkIDTwitter {
