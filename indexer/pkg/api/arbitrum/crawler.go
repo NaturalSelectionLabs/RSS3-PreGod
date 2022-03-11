@@ -96,8 +96,9 @@ func (ac *abCrawler) Work(userAddress string, network constants.NetworkID) error
 			networkId,
 			v.Hash,
 			model.Metadata{
-				"from": v.From,
-				"to":   v.To,
+				"network": constants.NetworkSymbolArbitrum,
+				"from":    v.From,
+				"to":      v.To,
 			},
 			constants.ItemTagsNFT,
 			[]string{author.String()},

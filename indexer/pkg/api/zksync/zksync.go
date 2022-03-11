@@ -55,26 +55,6 @@ func GetTokens() ([]Token, error) {
 	return tokens, nil
 }
 
-// GetZksToken returns Token by tokenId
-func GetZksToken(id int64) Token {
-	// TODO: get Token from db
-	token := Token{Id: 0,
-		Address:  "0x0000000000000000000000000000000000000000",
-		Symbol:   "ETH",
-		Decimals: 18,
-		Kind:     "ERC20",
-		IsNFT:    false,
-	}
-
-	return token
-}
-
-// InactiveAdminAddress checks an admin address is active or not
-func InactiveAdminAddress(adminAddress string) bool {
-	// TODO: check from db
-	return false
-}
-
 func GetTxsByBlock(blockHeight int64) ([]ZKTransaction, error) {
 	url := fmt.Sprintf("%s/api/v0.1/blocks/%d/transactions", endpoint, blockHeight)
 	response, err := httpx.Get(url, nil)

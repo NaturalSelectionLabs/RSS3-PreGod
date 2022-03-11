@@ -48,7 +48,7 @@ func (w *worker) processTask(t *Task) error {
 
 	var r *crawler.CrawlerResult
 
-	instance := rss3uri.NewAccountInstance(t.Identity, t.PlatformID.Symbol()).String()
+	instance := rss3uri.NewAccountInstance(t.Identity, t.PlatformID.Symbol())
 
 	c = makeCrawlers(t.Network)
 	if c == nil {
@@ -68,7 +68,7 @@ func (w *worker) processTask(t *Task) error {
 	r = c.GetResult()
 	if r.Items != nil {
 		for _, item := range r.Items {
-			db.InsertItemDoc(item)
+			db.InsertItem(item)
 		}
 	}
 
