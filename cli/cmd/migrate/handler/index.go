@@ -14,14 +14,16 @@ func MigrateIndex(db *gorm.DB, file mongomodel.File) error {
 	return db.Transaction(func(tx *gorm.DB) error {
 		// Migrate signature
 		if file.Content.Signature != "" {
-			tx.Create(&model.Signature{
+			if err := tx.Create(&model.Signature{
 				FileURI:   file.Path,
 				Signature: file.Content.Signature,
 				Table: common.Table{
 					CreatedAt: file.Content.DateCreated,
 					UpdatedAt: file.Content.DateUpdated,
 				},
-			})
+			}).Error; err != nil {
+				return err
+			}
 		}
 
 		// Migrate ethereum account
@@ -49,7 +51,7 @@ func MigrateIndex(db *gorm.DB, file mongomodel.File) error {
 			}
 
 			accountID := splits[1]
-			tx.Create(&model.AccountPlatform{
+			if err := tx.Create(&model.AccountPlatform{
 				AccountID:         file.Content.ID,
 				AccountPlatformID: int(constants.PlatformIDEthereum),
 				PlatformAccountID: strings.Trim(strings.Trim(accountID, "@"), "\\"),
@@ -58,7 +60,9 @@ func MigrateIndex(db *gorm.DB, file mongomodel.File) error {
 					CreatedAt: file.Content.DateCreated,
 					UpdatedAt: file.Content.DateUpdated,
 				},
-			})
+			}).Error; err != nil {
+				return err
+			}
 		}
 
 		return nil

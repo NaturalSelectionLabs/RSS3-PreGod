@@ -15,14 +15,16 @@ func MigrateLinkList(db *gorm.DB, file mongomodel.File) error {
 	return db.Transaction(func(tx *gorm.DB) error {
 		// Migrate signature
 		if file.Content.Signature != "" {
-			tx.Create(&model.Signature{
+			if err := tx.Create(&model.Signature{
 				FileURI:   strings.ReplaceAll(strings.ReplaceAll(file.Path, "-", "/"), ".", "/"),
 				Signature: file.Content.Signature,
 				Table: common.Table{
 					CreatedAt: file.Content.DateCreated,
 					UpdatedAt: file.Content.DateUpdated,
 				},
-			})
+			}).Error; err != nil {
+				return err
+			}
 		}
 
 		splits := strings.Split(file.Path, "-")
