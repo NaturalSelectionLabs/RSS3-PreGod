@@ -1,11 +1,12 @@
 package api
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 
-	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/pkg/db"
-	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/pkg/db/model"
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/database"
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/database/model"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/pkg/protocol"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/pkg/status"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/pkg/web"
@@ -54,7 +55,7 @@ func GetLinkListHandlerFunc(c *gin.Context) {
 	}
 
 	var links []model.Link
-	if err := db.DB.Where(
+	if err := database.GetInstance().DB(context.Background()).Where(
 		"rss3_id = ? and page_index = ?",
 		fmt.Sprintf("%s@%s", instance.GetIdentity(), instance.GetSuffix()),
 		request.PageIndex,

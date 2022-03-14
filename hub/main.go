@@ -3,7 +3,6 @@ package main
 import (
 	"log"
 
-	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/pkg/db"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/pkg/router"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/cache"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/config"
@@ -22,14 +21,6 @@ func init() {
 
 	if err := cache.Setup(); err != nil {
 		logger.Fatalf("cache.Setup err: %v", err)
-	}
-
-	if err := db.Setup(); err != nil {
-		logger.Fatalf("db.Setup err: %v", err)
-	}
-
-	if err := db.AutoMigrate(); err != nil {
-		logger.Fatalf("db.AutoMigrate err: %v", err)
 	}
 }
 

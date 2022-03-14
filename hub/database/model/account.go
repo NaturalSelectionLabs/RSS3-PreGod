@@ -1,0 +1,25 @@
+package model
+
+import (
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/database/common"
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/database/datatype"
+	"github.com/lib/pq"
+	"gorm.io/gorm/schema"
+)
+
+var _ schema.Tabler = &Account{}
+
+type Account struct {
+	ID          string               `gorm:"column:id;index:account_idx;primaryKey"`
+	Platform    int                  `gorm:"column:platform;index:account_idx"`
+	Name        string               `gorm:"column:name"`
+	Bio         string               `gorm:"column:bio"`
+	Avatars     pq.StringArray       `gorm:"column:avatars;type:text[]"`
+	Attachments datatype.Attachments `gorm:"column:attachments;type:jsonb"`
+
+	common.Table
+}
+
+func (a *Account) TableName() string {
+	return "account"
+}

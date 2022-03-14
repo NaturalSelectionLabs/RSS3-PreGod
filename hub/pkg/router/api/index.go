@@ -1,12 +1,13 @@
 package api
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"time"
 
-	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/pkg/db"
-	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/pkg/db/model"
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/database"
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/database/model"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/pkg/protocol"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/pkg/status"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/pkg/web"
@@ -53,8 +54,8 @@ func GetIndexHandlerFunc(c *gin.Context) {
 	}
 
 	account := model.Account{}
-	if err := db.DB.Where(
-		"account_id = ?",
+	if err := database.GetInstance().DB(context.Background()).Where(
+		"id = ?",
 		fmt.Sprintf("%s@%s", instance.GetIdentity(), instance.GetSuffix()),
 	).First(&account).Error; err != nil {
 		// TODO Account not found
@@ -86,7 +87,7 @@ func GetIndexHandlerFunc(c *gin.Context) {
 	}
 
 	var accountPlatforms []model.AccountPlatform
-	if err := db.DB.Where("account_id = ?", account.AccountID).Find(&accountPlatforms).Error; err != nil {
+	if err := database.GetInstance().DB(context.Background()).Where("account_id = ?", account.ID).Find(&accountPlatforms).Error; err != nil {
 		w := web.Gin{C: c}
 		w.JSONResponse(http.StatusInternalServerError, status.ERROR, nil)
 
