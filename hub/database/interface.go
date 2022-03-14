@@ -2,8 +2,6 @@ package database
 
 import (
 	"context"
-	"log"
-	"sync"
 	"time"
 
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/database/logger"
@@ -15,8 +13,7 @@ import (
 )
 
 var (
-	instance Database
-	locker   sync.Mutex
+	Instance Database
 )
 
 type Database interface {
@@ -24,51 +21,43 @@ type Database interface {
 	Tx(ctx context.Context) *gorm.DB
 }
 
-func GetInstance() Database {
-	// nolint:nestif // Must use nesting of if statements to ensure it is a single
-	if instance == nil {
-		locker.Lock()
-		defer locker.Unlock()
+func Setup() error {
+	db, err := gorm.Open(postgres.New(postgres.Config{
+		// TODO Refactor config package
+		DSN: config.Config.Postgres.DSN,
+	}), &gorm.Config{
+		SkipDefaultTransaction:                   true,
+		NamingStrategy:                           schema.NamingStrategy{SingularTable: true},
+		NowFunc:                                  func() time.Time { return time.Now().UTC() },
+		DisableForeignKeyConstraintWhenMigrating: true,
+		Logger:                                   logger.New(),
+	})
 
-		if instance == nil {
-			db, err := gorm.Open(postgres.New(postgres.Config{
-				// TODO Refactor config package
-				DSN: config.Config.Postgres.DSN,
-			}), &gorm.Config{
-				SkipDefaultTransaction:                   true,
-				NamingStrategy:                           schema.NamingStrategy{SingularTable: true},
-				NowFunc:                                  func() time.Time { return time.Now().UTC() },
-				DisableForeignKeyConstraintWhenMigrating: true,
-				Logger:                                   logger.New(),
-			})
-
-			if err != nil {
-				log.Fatalln(err)
-			}
-
-			// Install uuid extension for postgres
-			if err := db.Exec("CREATE EXTENSION IF NOT EXISTS \"uuid-ossp\";").Error; err != nil {
-				log.Fatalln(err)
-			}
-
-			if err := db.AutoMigrate(
-				&model.Account{},
-				&model.AccountPlatform{},
-				&model.Instance{},
-				&model.LinkList{},
-				&model.Link{},
-				&model.Signature{},
-				&model.Asset{},
-				&model.Note{},
-			); err != nil {
-				log.Fatalln(err)
-			}
-
-			instance = &database{
-				db: db,
-			}
-		}
+	if err != nil {
+		return err
 	}
 
-	return instance
+	// Install uuid extension for postgres
+	if err := db.Exec("CREATE EXTENSION IF NOT EXISTS \"uuid-ossp\";").Error; err != nil {
+		return err
+	}
+
+	if err := db.AutoMigrate(
+		&model.Account{},
+		&model.AccountPlatform{},
+		&model.Instance{},
+		&model.LinkList{},
+		&model.Link{},
+		&model.Signature{},
+		&model.Asset{},
+		&model.Note{},
+	); err != nil {
+		return err
+	}
+
+	Instance = &database{
+		db: db,
+	}
+
+	return nil
 }

@@ -55,7 +55,7 @@ func GetLinkListHandlerFunc(c *gin.Context) {
 	}
 
 	var links []model.Link
-	if err := database.GetInstance().DB(context.Background()).Where(
+	if err := database.Instance.DB(context.Background()).Where(
 		"rss3_id = ? and page_index = ?",
 		fmt.Sprintf("%s@%s", instance.GetIdentity(), instance.GetSuffix()),
 		request.PageIndex,

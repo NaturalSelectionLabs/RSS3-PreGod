@@ -3,6 +3,7 @@ package main
 import (
 	"log"
 
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/database"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/pkg/router"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/cache"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/config"
@@ -21,6 +22,10 @@ func init() {
 
 	if err := cache.Setup(); err != nil {
 		logger.Fatalf("cache.Setup err: %v", err)
+	}
+
+	if err := database.Setup(); err != nil {
+		logger.Fatalf("database.Setup err: %v", err)
 	}
 }
 

@@ -54,7 +54,7 @@ func GetIndexHandlerFunc(c *gin.Context) {
 	}
 
 	account := model.Account{}
-	if err := database.GetInstance().DB(context.Background()).Where(
+	if err := database.Instance.DB(context.Background()).Where(
 		"id = ?",
 		fmt.Sprintf("%s@%s", instance.GetIdentity(), instance.GetSuffix()),
 	).First(&account).Error; err != nil {
@@ -87,7 +87,7 @@ func GetIndexHandlerFunc(c *gin.Context) {
 	}
 
 	var accountPlatforms []model.AccountPlatform
-	if err := database.GetInstance().DB(context.Background()).Where("account_id = ?", account.ID).Find(&accountPlatforms).Error; err != nil {
+	if err := database.Instance.DB(context.Background()).Where("account_id = ?", account.ID).Find(&accountPlatforms).Error; err != nil {
 		w := web.Gin{C: c}
 		w.JSONResponse(http.StatusInternalServerError, status.ERROR, nil)
 
