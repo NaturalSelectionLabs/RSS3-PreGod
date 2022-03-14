@@ -2,12 +2,12 @@ package migrate
 
 import (
 	"context"
+	"log"
 	"strings"
 
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/cli/cmd"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/cli/cmd/migrate/handler"
 	mongomodel "github.com/NaturalSelectionLabs/RSS3-PreGod/cli/cmd/migrate/model"
-	"github.com/sirupsen/logrus"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -41,7 +41,7 @@ func (m *Migrate) Initialize() error {
 
 	m.mongoClient = mongoClient
 
-	logrus.Infoln("Connected to Mongo")
+	log.Println("INFO", "Connected to Mongo")
 
 	// Initialize Postgres
 	postgresClient, err := gorm.Open(postgres.New(postgres.Config{
@@ -55,7 +55,7 @@ func (m *Migrate) Initialize() error {
 
 	m.postgresClient = postgresClient
 
-	logrus.Infoln("Connected to Postgres")
+	log.Println("INFO", "Connected to Postgres")
 
 	return nil
 }
@@ -65,7 +65,7 @@ func (m *Migrate) Run() error {
 
 	fileCollection := m.mongoClient.Database("rss3").Collection("files")
 
-	logrus.Infoln("Begin pulling files")
+	log.Println("INFO", "Begin pulling files")
 
 	cursor, err := fileCollection.Find(ctx, bson.D{})
 	if err != nil {
@@ -76,7 +76,7 @@ func (m *Migrate) Run() error {
 	for cursor.Next(ctx) { // nolint:wsl // This should be a bug with lint
 		var file mongomodel.File
 		if err = cursor.Decode(&file); err != nil {
-			logrus.Errorln(err)
+			log.Println("ERROR", err)
 
 			continue
 		}
@@ -84,7 +84,7 @@ func (m *Migrate) Run() error {
 		files = append(files, file)
 	}
 
-	logrus.Infoln("Begin importing files")
+	log.Println("INFO", "Begin importing files")
 
 	for _, file := range files {
 		// Deprecated
@@ -94,14 +94,14 @@ func (m *Migrate) Run() error {
 
 		if strings.Contains(file.Path, "-list-links.following") {
 			if err := handler.MigrateLinkList(m.postgresClient, file); err != nil {
-				logrus.Errorln(err)
+				log.Println("ERROR", err)
 			}
 
 			continue
 		}
 
 		if err := handler.MigrateIndex(m.postgresClient, file); err != nil {
-			logrus.Errorln(err)
+			log.Println("ERROR", err)
 
 			continue
 		}

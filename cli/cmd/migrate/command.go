@@ -1,7 +1,8 @@
 package migrate
 
 import (
-	"github.com/sirupsen/logrus"
+	"log"
+
 	"github.com/spf13/cobra"
 )
 
@@ -16,10 +17,10 @@ func NewMigrateCommand() *cobra.Command {
 		Use: "migrate",
 		Run: func(cmd *cobra.Command, args []string) {
 			if err := migrate.Initialize(); err != nil {
-				logrus.Fatalln(err)
+				log.Fatalln(err)
 			}
 			if err := migrate.Run(); err != nil {
-				logrus.Fatalln(err)
+				log.Fatalln(err)
 			}
 		},
 	}
