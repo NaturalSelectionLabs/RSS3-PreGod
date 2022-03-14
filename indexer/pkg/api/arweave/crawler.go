@@ -24,7 +24,7 @@ func NewArCrawler() crawler.Crawler {
 	}
 }
 
-func (ar *arCrawler) Work(owner string, network constants.NetworkID) error {
+func (ar *arCrawler) Work(param crawler.WorkParam) error {
 	networkId := constants.NetworkSymbolArweaveMainnet.GetID()
 
 	startBlockHeight := int64(1)
@@ -36,7 +36,7 @@ func (ar *arCrawler) Work(owner string, network constants.NetworkID) error {
 		return err
 	}
 
-	articles, err := GetArticles(startBlockHeight, latestBlockHeight, owner)
+	articles, err := GetArticles(startBlockHeight, latestBlockHeight, param.Identity)
 	if err != nil {
 		logger.Error(err)
 

@@ -76,7 +76,7 @@ func GetUserNoteList(address string, count int, tsp time.Time) ([]Note, error) {
 
 		parsedObject := parsedJson.GetArray()
 
-		noteList := make([]Note, len(parsedObject))
+		var noteList []Note
 
 		for _, note := range parsedObject {
 			ns := new(Note)

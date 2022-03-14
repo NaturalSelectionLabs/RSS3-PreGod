@@ -100,7 +100,7 @@ func getAccountItems(instance rss3uri.Instance, t constants.InstanceTypeID) (*[]
 func InsertItem(item *model.Item) *mongo.SingleResult {
 	return mgm.Coll(&model.Item{}).FindOneAndReplace(
 		mgm.Ctx(),
-		bson.M{"item_id.network_id": item.ItemId.NetworkId, "item_id.proof": item.ItemId.Proof},
+		bson.M{"item_id.network_id": item.ItemId.NetworkID, "item_id.proof": item.ItemId.Proof},
 		item,
 		options.FindOneAndReplace().SetUpsert(true),
 	)

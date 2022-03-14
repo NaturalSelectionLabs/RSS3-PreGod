@@ -29,19 +29,6 @@ func NewGitcoinCrawler() gitcoinCrawler {
 	}
 }
 
-func NewCrawler() crawler.Crawler {
-	return &gitcoinCrawler{
-		crawler.CrawlerResult{
-			Assets: []*model.ItemId{},
-			Notes:  []*model.ItemId{},
-			Items:  []*model.Item{},
-		},
-		make(map[int64]zksync.Token),
-		make(map[string]bool),
-		make(map[string]ProjectInfo),
-	}
-}
-
 // UpdateZksToken update Token by tokenId
 func (gc *gitcoinCrawler) UpdateZksToken() error {
 	tokens, err := zksync.GetTokens()

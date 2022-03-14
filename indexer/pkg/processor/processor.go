@@ -12,18 +12,18 @@ import (
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/rss3uri"
 )
 
-type worker struct {
-	lowQ, highQ chan *Task
+type processor struct {
+	lowQ, highQ chan *crawler.WorkParam
 }
 
-type Worker interface {
-	processTask(t *Task) error
+type Processor interface {
+	processTask(t *crawler.WorkParam) error
 
 	ListenAndServe()
 }
 
-func NewWorker(lq, hq chan *Task) Worker {
-	return &worker{lq, hq}
+func NewProcessor(lq, hq chan *crawler.WorkParam) Processor {
+	return &processor{lq, hq}
 }
 
 func makeCrawlers(network constants.NetworkID) crawler.Crawler {
@@ -41,23 +41,28 @@ func makeCrawlers(network constants.NetworkID) crawler.Crawler {
 	}
 }
 
-func (w *worker) processTask(t *Task) error {
+func (w *processor) processTask(t *crawler.WorkParam) error {
 	var err error
 
 	var c crawler.Crawler
 
 	var r *crawler.CrawlerResult
 
+	var processorParam = crawler.WorkParam{
+		Identity:  t.Identity,
+		NetworkID: t.NetworkID,
+	}
+
 	instance := rss3uri.NewAccountInstance(t.Identity, t.PlatformID.Symbol())
 
-	c = makeCrawlers(t.Network)
+	c = makeCrawlers(t.NetworkID)
 	if c == nil {
-		err = fmt.Errorf("unsupported network id: %d", t.Network)
+		err = fmt.Errorf("unsupported network id: %d", t.NetworkID)
 
 		goto RETURN
 	}
 
-	err = c.Work(t.Identity, t.Network)
+	err = c.Work(processorParam)
 
 	if err != nil {
 		err = fmt.Errorf("crawler fails while working: %s", err)
@@ -73,7 +78,7 @@ func (w *worker) processTask(t *Task) error {
 	}
 
 	if r.Assets != nil {
-		db.SetAssets(instance, r.Assets, t.Network)
+		db.SetAssets(instance, r.Assets, t.NetworkID)
 	}
 
 	if r.Notes != nil {
@@ -90,7 +95,7 @@ RETURN:
 	}
 }
 
-func (w *worker) ListenAndServe() {
+func (w *processor) ListenAndServe() {
 	select {
 	case t := <-w.highQ:
 		w.processTask(t)
