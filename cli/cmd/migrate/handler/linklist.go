@@ -3,8 +3,10 @@ package handler
 import (
 	"strconv"
 	"strings"
+	"sync/atomic"
 
 	mongomodel "github.com/NaturalSelectionLabs/RSS3-PreGod/cli/cmd/migrate/model"
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/cli/cmd/migrate/stats"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/database/common"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/database/model"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/constants"
@@ -25,6 +27,8 @@ func MigrateLinkList(db *gorm.DB, file mongomodel.File) error {
 			}).Error; err != nil {
 				return err
 			}
+
+			atomic.AddInt64(&stats.SignatureNumber, 1)
 		}
 
 		splits := strings.Split(file.Path, "-")
@@ -50,6 +54,8 @@ func MigrateLinkList(db *gorm.DB, file mongomodel.File) error {
 			}).Error; err != nil {
 				return err
 			}
+
+			atomic.AddInt64(&stats.LinkNumber, 1)
 		}
 
 		return nil

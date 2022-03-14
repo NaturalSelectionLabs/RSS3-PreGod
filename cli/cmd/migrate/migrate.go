@@ -8,6 +8,7 @@ import (
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/cli/cmd"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/cli/cmd/migrate/handler"
 	mongomodel "github.com/NaturalSelectionLabs/RSS3-PreGod/cli/cmd/migrate/model"
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/cli/cmd/migrate/stats"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -85,6 +86,8 @@ func (m *Migrate) Run() error {
 	}
 
 	log.Println("INFO", "Begin importing files")
+
+	go stats.Run()
 
 	for _, file := range files {
 		// Deprecated

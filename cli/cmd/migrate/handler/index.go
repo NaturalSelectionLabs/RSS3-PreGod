@@ -2,8 +2,10 @@ package handler
 
 import (
 	"strings"
+	"sync/atomic"
 
 	mongomodel "github.com/NaturalSelectionLabs/RSS3-PreGod/cli/cmd/migrate/model"
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/cli/cmd/migrate/stats"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/database/common"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/database/model"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/constants"
@@ -24,6 +26,8 @@ func MigrateIndex(db *gorm.DB, file mongomodel.File) error {
 			}).Error; err != nil {
 				return err
 			}
+
+			atomic.AddInt64(&stats.SignatureNumber, 1)
 		}
 
 		// Migrate ethereum account
@@ -40,6 +44,8 @@ func MigrateIndex(db *gorm.DB, file mongomodel.File) error {
 		}).Error; err != nil {
 			return err
 		}
+
+		atomic.AddInt64(&stats.AccountNumber, 1)
 
 		// Migrate platform account
 		for _, account := range file.Content.Profile.Accounts {
@@ -63,6 +69,8 @@ func MigrateIndex(db *gorm.DB, file mongomodel.File) error {
 			}).Error; err != nil {
 				return err
 			}
+
+			atomic.AddInt64(&stats.AccountPlatformNumber, 1)
 		}
 
 		return nil
