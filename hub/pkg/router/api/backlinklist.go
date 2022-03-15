@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"strconv"
 	"time"
 
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/database"
@@ -21,26 +20,20 @@ import (
 	"gorm.io/gorm"
 )
 
-type GetBackLinkListRequest struct{}
+type GetBackLinkListRequest struct {
+	Limit        int    `form:"limit"`
+	Instance     string `form:"instance"`
+	LastInstance string `form:"last_instance"`
+}
 
 //nolint:funlen // SQL logic will be wrapped up later
 func GetBackLinkListHandlerFunc(c *gin.Context) {
-	var (
-		limit        = 0
-		instance     = c.Query("instance")
-		lastInstance = c.Query("lastInstance")
-	)
+	request := GetBackLinkListRequest{}
+	if err := c.ShouldBindQuery(&request); err != nil {
+		w := web.Gin{C: c}
+		w.JSONResponse(http.StatusBadRequest, status.CodeInvalidParams, nil)
 
-	if c.Query("limit") != "" {
-		var err error
-
-		limit, err = strconv.Atoi(c.Query("limit"))
-		if err != nil {
-			w := web.Gin{C: c}
-			w.JSONResponse(http.StatusBadRequest, status.CodeInvalidParams, nil)
-
-			return
-		}
+		return
 	}
 
 	value, exists := c.Get(middleware.KeyInstance)
@@ -103,7 +96,7 @@ func GetBackLinkListHandlerFunc(c *gin.Context) {
 	}
 
 	// TODO Define following type id
-	links, err := database.Instance.QueryLinksByTarget(tx, 1, account.ID, account.Platform, limit, instance, lastInstance)
+	links, err := database.Instance.QueryLinksByTarget(tx, 1, account.ID, account.Platform, request.Limit, request.Instance, request.LastInstance)
 	if err != nil {
 		w := web.Gin{C: c}
 		if errors.Is(err, gorm.ErrRecordNotFound) {
