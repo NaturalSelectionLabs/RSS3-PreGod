@@ -1,25 +1,20 @@
 package main
 
 import (
-	"flag"
+	"log"
 
-	"github.com/NaturalSelectionLabs/RSS3-PreGod/cli/pkg/data_migration"
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/cli/cmd/migrate"
+	"github.com/spf13/cobra"
 )
-
-var (
-	isDataMigrationCmd bool
-)
-
-func init() {
-	flag.BoolVar(&isDataMigrationCmd, "data-mig", false, "Use Data Migration Command")
-}
 
 func main() {
-	flag.Parse()
+	command := &cobra.Command{
+		Use: "pregod-cli",
+	}
 
-	if isDataMigrationCmd {
-		data_migration.Start()
-	} else {
-		flag.PrintDefaults()
+	command.AddCommand(migrate.NewMigrateCommand())
+
+	if err := command.Execute(); err != nil {
+		log.Fatalln(err)
 	}
 }

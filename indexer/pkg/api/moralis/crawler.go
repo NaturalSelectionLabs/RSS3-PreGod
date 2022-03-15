@@ -2,7 +2,6 @@ package moralis
 
 import (
 	"fmt"
-	"log"
 	"time"
 
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/crawler"
@@ -41,7 +40,6 @@ func (mc *moralisCrawler) Work(userAddress string, network constants.NetworkID) 
 		return err
 	}
 
-	log.Println(nftTransfers.Total)
 	//TODO: tsp
 	assets, err := GetNFTs(userAddress, chainType, GetApiKey())
 	if err != nil {
@@ -74,6 +72,14 @@ func (mc *moralisCrawler) Work(userAddress string, network constants.NetworkID) 
 			logger.Errorf("Asset doesn't has proof.")
 		}
 	}
+
+	author, err := rss3uri.NewInstance("account", userAddress, string(constants.PlatformSymbolEthereum))
+
+	if err != nil {
+		// TODO
+		logger.Error(err)
+	}
+
 	// make the item list complete
 	for _, nftTransfer := range nftTransfers.Result {
 		// TODO: make attachments
@@ -84,14 +90,7 @@ func (mc *moralisCrawler) Work(userAddress string, network constants.NetworkID) 
 			tsp = time.Now()
 		}
 
-		author, err := rss3uri.NewInstance("account", nftTransfer.FromAddress, string(networkSymbol))
-		if err != nil {
-			// TODO
-			logger.Error(tsp, err)
-		}
-
 		hasObject := false
-		attachments := []model.Attachment{}
 
 		for _, asset := range assets.Result {
 			if nftTransfer.EqualsToToken(asset) && asset.MetaData != "" {
@@ -115,7 +114,7 @@ func (mc *moralisCrawler) Work(userAddress string, network constants.NetworkID) 
 			[]string{author.String()},
 			"",
 			"",
-			attachments,
+			[]model.Attachment{},
 			tsp,
 		)
 		mc.Items = append(mc.Items, ni)

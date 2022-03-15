@@ -2,6 +2,7 @@ package cache
 
 import (
 	"context"
+	"crypto/tls"
 	"errors"
 	"time"
 
@@ -18,10 +19,16 @@ var (
 func Setup() error {
 	ctx := context.Background()
 
+	var tlsConfig *tls.Config
+	if config.Config.Redis.TLSEnabled { // In AWS if a Redis has a password, it must use TLS
+		tlsConfig = &tls.Config{MinVersion: tls.VersionTLS12}
+	}
+
 	rdb = redis.NewClient(&redis.Options{
-		Addr:     config.Config.Redis.Addr,
-		Password: config.Config.Redis.Password,
-		DB:       config.Config.Redis.DB,
+		Addr:      config.Config.Redis.Addr,
+		Password:  config.Config.Redis.Password,
+		DB:        config.Config.Redis.DB,
+		TLSConfig: tlsConfig,
 	})
 
 	if _, err := rdb.Ping(ctx).Result(); err != nil {

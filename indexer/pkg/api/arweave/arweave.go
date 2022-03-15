@@ -3,7 +3,7 @@ package arweave
 import (
 	"fmt"
 
-	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/util/httpx"
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/httpx"
 	"github.com/valyala/fastjson"
 )
 

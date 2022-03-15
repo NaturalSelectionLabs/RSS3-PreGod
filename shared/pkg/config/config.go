@@ -26,6 +26,8 @@ type RedisStruct struct {
 	Addr     string `koanf:"addr"`
 	Password string `koanf:"password"`
 	DB       int    `koanf:"db"`
+
+	TLSEnabled bool `koanf:"tls_enabled"`
 }
 
 type PostgresStruct struct {
@@ -99,7 +101,16 @@ type JikeStruct struct {
 	AppVersion        string `koanf:"app_version" json:"appVersion"`
 }
 
+type IndexerServerStruct struct {
+	RunMode      string        `koanf:"run_mode"`
+	HttpPort     int           `koanf:"http_port"`
+	ReadTimeout  time.Duration `koanf:"read_timeout"`
+	WriteTimeout time.Duration `koanf:"write_timeout"`
+}
+
 type IndexerStruct struct {
+	Server IndexerServerStruct `koanf:"server"`
+
 	Misc     MiscStruct     `koanf:"misc"`
 	Jike     JikeStruct     `koanf:"jike"`
 	Moralis  MoralisStruct  `koanf:"moralis"`
