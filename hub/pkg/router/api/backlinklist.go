@@ -5,7 +5,6 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"log"
 	"net/http"
 	"strconv"
 	"time"
@@ -31,8 +30,6 @@ func GetBackLinkListHandlerFunc(c *gin.Context) {
 		instance     = c.Query("instance")
 		lastInstance = c.Query("lastInstance")
 	)
-
-	log.Println(limit)
 
 	if c.Query("limit") != "" {
 		var err error
