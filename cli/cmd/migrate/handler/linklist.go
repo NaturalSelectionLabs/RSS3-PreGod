@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"fmt"
 	"strconv"
 	"strings"
 	"sync/atomic"
@@ -15,10 +16,17 @@ import (
 
 func MigrateLinkList(db *gorm.DB, file mongomodel.File) error {
 	return db.Transaction(func(tx *gorm.DB) error {
+		// Field format update
+		fileURI := strings.ReplaceAll(strings.ReplaceAll(strings.ReplaceAll(file.Path, "-", "/"), ".", "/"), "links", "link")
+
 		// Migrate signature
 		if file.Content.Signature != "" {
+			// Field format update
+			identity := strings.Split(fileURI, "/")[0]
+			fileURI = strings.ReplaceAll(fileURI, identity, fmt.Sprintf("%s@ethereum", identity))
+
 			if err := tx.Create(&model.Signature{
-				FileURI:   strings.ReplaceAll(strings.ReplaceAll(file.Path, "-", "/"), ".", "/"),
+				FileURI:   fileURI,
 				Signature: file.Content.Signature,
 				Table: common.Table{
 					CreatedAt: file.Content.DateCreated,

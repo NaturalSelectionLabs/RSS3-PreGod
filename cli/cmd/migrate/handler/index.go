@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"fmt"
 	"strings"
 	"sync/atomic"
 
@@ -16,8 +17,12 @@ func MigrateIndex(db *gorm.DB, file mongomodel.File) error {
 	return db.Transaction(func(tx *gorm.DB) error {
 		// Migrate signature
 		if file.Content.Signature != "" {
+			// Field format update
+			identity := strings.Split(file.Path, "/")[0]
+			fileURI := strings.ReplaceAll(file.Path, identity, fmt.Sprintf("%s@ethereum", identity))
+
 			if err := tx.Create(&model.Signature{
-				FileURI:   file.Path,
+				FileURI:   fileURI,
 				Signature: file.Content.Signature,
 				Table: common.Table{
 					CreatedAt: file.Content.DateCreated,
