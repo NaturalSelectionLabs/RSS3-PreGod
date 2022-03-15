@@ -3,8 +3,8 @@ package file
 import "github.com/NaturalSelectionLabs/RSS3-PreGod/hub/pkg/protocol"
 
 type LinkList struct {
-	protocol.SignedBase
-	// TODO Define identifier_next
+	protocol.ListSignedBase
+
 	Total int            `json:"total"`
 	List  []LinkListItem `json:"list"`
 }

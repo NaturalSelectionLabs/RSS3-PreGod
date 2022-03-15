@@ -2,9 +2,12 @@ package api
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"fmt"
+	"log"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/database"
@@ -19,27 +22,28 @@ import (
 	"gorm.io/gorm"
 )
 
-type GetLinkListRequest struct {
-	LinkType  string `uri:"link_type" binding:"required"`
-	PageIndex int    `uri:"page_index"`
-}
+type GetBackLinkListRequest struct{}
 
 //nolint:funlen // SQL logic will be wrapped up later
-func GetLinkListHandlerFunc(c *gin.Context) {
-	request := GetLinkListRequest{}
-	if err := c.ShouldBindUri(&request); err != nil {
-		w := web.Gin{C: c}
-		w.JSONResponse(http.StatusBadRequest, status.CodeInvalidParams, nil)
+func GetBackLinkListHandlerFunc(c *gin.Context) {
+	var (
+		limit        = 0
+		instance     = c.Query("instance")
+		lastInstance = c.Query("lastInstance")
+	)
 
-		return
-	}
+	log.Println(limit)
 
-	// TODO Handle other types of requests
-	if request.LinkType != "following" {
-		w := web.Gin{C: c}
-		w.JSONResponse(http.StatusBadRequest, status.CodeInvalidParams, nil)
+	if c.Query("limit") != "" {
+		var err error
 
-		return
+		limit, err = strconv.Atoi(c.Query("limit"))
+		if err != nil {
+			w := web.Gin{C: c}
+			w.JSONResponse(http.StatusBadRequest, status.CodeInvalidParams, nil)
+
+			return
+		}
 	}
 
 	value, exists := c.Get(middleware.KeyInstance)
@@ -90,26 +94,19 @@ func GetLinkListHandlerFunc(c *gin.Context) {
 
 	identifier := rss3uri.New(platformInstance).String()
 
-	linkListFile := file.LinkList{
-		ListSignedBase: protocol.ListSignedBase{
-			SignedBase: protocol.SignedBase{
+	backLinkListFile := file.BackLinkList{
+		ListUnsignedBase: protocol.ListUnsignedBase{
+			UnsignedBase: protocol.UnsignedBase{
 				Base: protocol.Base{
 					Version:    protocol.Version,
-					Identifier: fmt.Sprintf("%s/list/link/following/%d", identifier, request.PageIndex),
+					Identifier: fmt.Sprintf("%s/list/backlink", identifier),
 				},
 			},
-			IdentifierNext: func() string {
-				if request.PageIndex == 0 {
-					return ""
-				}
-
-				return fmt.Sprintf("%s/list/link/following/%d", identifier, request.PageIndex-1)
-			}(),
 		},
 	}
 
 	// TODO Define following type id
-	links, err := database.Instance.QueryLinks(tx, 1, account.ID, account.Platform, request.PageIndex)
+	links, err := database.Instance.QueryLinksByTarget(tx, 1, account.ID, account.Platform, limit, instance, lastInstance)
 	if err != nil {
 		w := web.Gin{C: c}
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -121,27 +118,30 @@ func GetLinkListHandlerFunc(c *gin.Context) {
 		return
 	}
 
+	var (
+		dateCreated sql.NullTime
+		dateUpdated sql.NullTime
+	)
+
 	for _, link := range links {
-		linkListFile.List = append(linkListFile.List, file.LinkListItem{
+		if !dateCreated.Valid || link.CreatedAt.After(dateCreated.Time) {
+			dateCreated.Time = link.CreatedAt
+		}
+
+		if !dateUpdated.Valid || link.CreatedAt.After(dateCreated.Time) {
+			dateUpdated.Time = link.UpdatedAt
+		}
+
+		backLinkListFile.List = append(backLinkListFile.List, file.LinkListItem{
 			Type: constants.LinkTypeFollowing.String(),
 			// TODO  Maybe it's an asset or a note
 			IdentifierTarget: rss3uri.New(&rss3uri.PlatformInstance{
-				Prefix:   constants.PrefixNameAccount,
-				Identity: link.TargetIdentity,
-				Platform: constants.PlatformSymbolEthereum,
+				Prefix:   constants.PrefixID(link.PrefixID).String(),
+				Identity: link.Identity,
+				Platform: constants.PlatformID(link.SuffixID).Symbol(),
 			}).String(),
 		})
 	}
-
-	signature, err := database.Instance.QuerySignature(
-		tx,
-		fmt.Sprintf(
-			"%s@%s/list/link/following/%d",
-			platformInstance.GetIdentity(),
-			constants.PlatformSymbol(platformInstance.GetSuffix()),
-			request.PageIndex,
-		),
-	)
 
 	if err != nil {
 		w := web.Gin{C: c}
@@ -157,11 +157,9 @@ func GetLinkListHandlerFunc(c *gin.Context) {
 		return
 	}
 
-	linkListFile.Signature = signature.Signature
-	linkListFile.Base.DateCreated = signature.CreatedAt.Format(time.RFC3339)
-	linkListFile.Base.DateUpdated = signature.UpdatedAt.Format(time.RFC3339)
+	backLinkListFile.Total = len(backLinkListFile.List)
+	backLinkListFile.DateCreated = dateCreated.Time.Format(time.RFC3339)
+	backLinkListFile.DateUpdated = dateUpdated.Time.Format(time.RFC3339)
 
-	linkListFile.Total = len(linkListFile.List)
-
-	c.JSON(http.StatusOK, &linkListFile)
+	c.JSON(http.StatusOK, &backLinkListFile)
 }

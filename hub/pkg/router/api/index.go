@@ -2,11 +2,13 @@ package api
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/database"
-	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/database/model"
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/pkg/middleware"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/pkg/protocol"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/pkg/protocol/file"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/pkg/status"
@@ -14,6 +16,7 @@ import (
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/constants"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/rss3uri"
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 )
 
 type GetIndexRequest struct{}
@@ -43,14 +46,23 @@ func GetIndexHandlerFunc(c *gin.Context) {
 		return
 	}
 
-	account := model.Account{}
-	if err := database.Instance.DB(context.Background()).Where(
-		"id = ?",
-		fmt.Sprintf("%s@%s", instance.GetIdentity(), instance.GetSuffix()),
-	).First(&account).Error; err != nil {
-		// TODO Account not found
-		//if errors.Is(err, gorm.ErrRecordNotFound) {
-		//}
+	// Begin a transaction
+	tx := database.Instance.Tx(context.Background())
+	defer tx.Rollback()
+
+	account, err := database.Instance.QueryAccount(
+		tx,
+		platformInstance.GetIdentity(),
+		int(constants.PlatformSymbol(platformInstance.GetSuffix()).ID()),
+	)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			w := web.Gin{C: c}
+			w.JSONResponse(http.StatusNotFound, status.CodeError, nil)
+
+			return
+		}
+
 		w := web.Gin{C: c}
 		w.JSONResponse(http.StatusInternalServerError, status.CodeError, nil)
 
@@ -58,15 +70,15 @@ func GetIndexHandlerFunc(c *gin.Context) {
 	}
 
 	// Query the max page index
-	var followingPageIndex int
-	if err := db.DB.Table("link").Select("max(page_index)").Where("rss3_id = ?", platformInstance.Identity).Row().Scan(&followingPageIndex); err != nil {
+	followingMaxPageIndex, err := database.Instance.QueryLinkWithMaxPageIndex(tx, 1, account.ID, account.Platform)
+	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
 		w := web.Gin{C: c}
 		w.JSONResponse(http.StatusInternalServerError, status.CodeError, nil)
 
 		return
 	}
 
-	// TODO Redesign database table
+	// TODO No test data available
 	var (
 		notePageIndex  int
 		assetPageIndex int
@@ -92,7 +104,7 @@ func GetIndexHandlerFunc(c *gin.Context) {
 			Identifiers: []file.IndexLinkIdentifier{
 				{
 					Type:             "following",
-					IdentifierCustom: fmt.Sprintf("%s/list/link/following/%d", identifier, followingPageIndex),
+					IdentifierCustom: fmt.Sprintf("%s/list/link/following/%d", identifier, followingMaxPageIndex),
 					Identifier:       fmt.Sprintf("%s/list/link/following", identifier),
 				},
 			},
@@ -110,8 +122,8 @@ func GetIndexHandlerFunc(c *gin.Context) {
 		},
 	}
 
-	var accountPlatforms []model.AccountPlatform
-	if err := database.Instance.DB(context.Background()).Where("account_id = ?", account.ID).Find(&accountPlatforms).Error; err != nil {
+	accountPlatforms, err := database.Instance.QueryAccountPlatforms(tx, account.ID, account.Platform)
+	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
 		w := web.Gin{C: c}
 		w.JSONResponse(http.StatusInternalServerError, status.CodeError, nil)
 
@@ -123,10 +135,33 @@ func GetIndexHandlerFunc(c *gin.Context) {
 			Identifier: rss3uri.New(&rss3uri.PlatformInstance{
 				Prefix:   constants.PrefixNameAccount,
 				Identity: accountPlatform.PlatformAccountID,
-				Platform: accountPlatform.PlatformID.Symbol(),
+				Platform: constants.PlatformID(accountPlatform.PlatformID).Symbol(),
 			}).String(),
 		})
 	}
+
+	signature, err := database.Instance.QuerySignature(
+		tx,
+		fmt.Sprintf("%s@%s", account.ID, constants.PlatformID(account.Platform).Symbol()),
+	)
+
+	if err != nil {
+		w := web.Gin{C: c}
+		w.JSONResponse(http.StatusInternalServerError, status.CodeError, nil)
+
+		return
+	}
+
+	if err := tx.Commit().Error; err != nil {
+		w := web.Gin{C: c}
+		w.JSONResponse(http.StatusInternalServerError, status.CodeError, nil)
+
+		return
+	}
+
+	indexFile.Signature = signature.Signature
+	indexFile.Base.DateCreated = signature.CreatedAt.Format(time.RFC3339)
+	indexFile.Base.DateUpdated = signature.UpdatedAt.Format(time.RFC3339)
 
 	c.JSON(http.StatusOK, &indexFile)
 }

@@ -19,6 +19,16 @@ var (
 type Database interface {
 	DB(ctx context.Context) *gorm.DB
 	Tx(ctx context.Context) *gorm.DB
+
+	QueryAccount(db *gorm.DB, id string, platformID int) (*model.Account, error)
+
+	QueryAccountPlatforms(db *gorm.DB, id string, platformID int) ([]model.AccountPlatform, error)
+
+	QueryLinks(db *gorm.DB, _type int, identity string, suffixID, pageIndex int) ([]model.Link, error)
+	QueryLinksByTarget(db *gorm.DB, _type int, targetIdentity string, targetSuffixID, limit int, instance, lastInstance string) ([]model.Link, error)
+	QueryLinkWithMaxPageIndex(db *gorm.DB, _type int, identity string, suffixID int) (int, error)
+
+	QuerySignature(db *gorm.DB, fileURI string) (*model.Signature, error)
 }
 
 func Setup() error {

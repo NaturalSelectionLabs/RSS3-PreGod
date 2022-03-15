@@ -5,13 +5,13 @@ package protocol
 type ListSignedBase struct {
 	SignedBase
 
-	IdentifierNext string `json:"identifier_next"`
+	IdentifierNext string `json:"identifier_next,omitempty"`
 }
 
 type ListUnsignedBase struct {
 	UnsignedBase
 
-	IdentifierNext string `json:"identifier_next"`
+	IdentifierNext string `json:"identifier_next,omitempty"`
 }
 
 type ItemPageList struct {
