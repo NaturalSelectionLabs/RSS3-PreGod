@@ -1,9 +1,8 @@
-package file
-
-import "github.com/NaturalSelectionLabs/RSS3-PreGod/hub/pkg/protocol"
+package protocol
 
 type NoteList struct {
-	protocol.SignedBase
+	SignedBase
+
 	Total int            `json:"total"`
 	List  []NoteListItem `json:"list"`
 }

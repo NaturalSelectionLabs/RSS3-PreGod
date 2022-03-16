@@ -6,7 +6,6 @@ import (
 
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/pkg/middleware"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/pkg/protocol"
-	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/pkg/protocol/file"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/pkg/status"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/pkg/web"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/constants"
@@ -52,7 +51,7 @@ func GetNoteListRequestHandlerFunc(c *gin.Context) {
 
 	identifier := rss3uri.New(platformInstance).String()
 
-	noteListFile := file.NoteList{
+	noteListFile := protocol.NoteList{
 		SignedBase: protocol.SignedBase{
 			Base: protocol.Base{
 				Version:    protocol.Version,

@@ -10,7 +10,6 @@ import (
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/database"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/pkg/middleware"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/pkg/protocol"
-	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/pkg/protocol/file"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/pkg/status"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/pkg/web"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/constants"
@@ -86,22 +85,22 @@ func GetIndexHandlerFunc(c *gin.Context) {
 
 	identifier := rss3uri.New(platformInstance).String()
 
-	indexFile := file.Index{
+	indexFile := protocol.Index{
 		SignedBase: protocol.SignedBase{
 			Base: protocol.Base{
 				Version:    protocol.Version,
 				Identifier: identifier,
 			},
 		},
-		Profile: file.IndexProfile{
+		Profile: protocol.IndexProfile{
 			Name:    account.Name,
 			Avatars: account.Avatars,
 			Bio:     account.Bio,
 			// TODO No data available
 			// Attachments: nil,
 		},
-		Links: file.IndexLinks{
-			Identifiers: []file.IndexLinkIdentifier{
+		Links: protocol.IndexLinks{
+			Identifiers: []protocol.IndexLinkIdentifier{
 				{
 					Type:             "following",
 					IdentifierCustom: fmt.Sprintf("%s/list/link/following/%d", identifier, followingMaxPageIndex),
@@ -110,12 +109,12 @@ func GetIndexHandlerFunc(c *gin.Context) {
 			},
 			IdentifierBack: fmt.Sprintf("%s/list/backlink", identifier),
 		},
-		Items: file.IndexItems{
-			Notes: file.IndexItemsNotes{
+		Items: protocol.IndexItems{
+			Notes: protocol.IndexItemsNotes{
 				IdentifierCustom: fmt.Sprintf("%s/list/note/%d", identifier, notePageIndex),
 				Identifier:       fmt.Sprintf("%s/list/note", identifier),
 			},
-			Assets: file.IndexItemsAssets{
+			Assets: protocol.IndexItemsAssets{
 				IdentifierCustom: fmt.Sprintf("%s/list/asset/%d", identifier, assetPageIndex),
 				Identifier:       fmt.Sprintf("%s/list/asset", identifier),
 			},
@@ -131,7 +130,7 @@ func GetIndexHandlerFunc(c *gin.Context) {
 	}
 
 	for _, accountPlatform := range accountPlatforms {
-		indexFile.Profile.Accounts = append(indexFile.Profile.Accounts, file.IndexAccount{
+		indexFile.Profile.Accounts = append(indexFile.Profile.Accounts, protocol.IndexAccount{
 			Identifier: rss3uri.New(&rss3uri.PlatformInstance{
 				Prefix:   constants.PrefixNameAccount,
 				Identity: accountPlatform.PlatformAccountID,

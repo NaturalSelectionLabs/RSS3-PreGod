@@ -6,7 +6,6 @@ import (
 
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/pkg/middleware"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/pkg/protocol"
-	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/pkg/protocol/file"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/pkg/status"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/pkg/web"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/constants"
@@ -49,7 +48,7 @@ func GetAssetListRequestHandlerFunc(c *gin.Context) {
 
 	identifier := rss3uri.New(platformInstance).String()
 
-	assetListFile := file.AssetList{
+	assetListFile := protocol.AssetList{
 		SignedBase: protocol.SignedBase{
 			Base: protocol.Base{
 				Version:    protocol.Version,

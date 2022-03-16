@@ -11,7 +11,6 @@ import (
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/database"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/pkg/middleware"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/pkg/protocol"
-	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/pkg/protocol/file"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/pkg/status"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/pkg/web"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/constants"
@@ -84,7 +83,7 @@ func GetBackLinkListHandlerFunc(c *gin.Context) {
 
 	identifier := rss3uri.New(platformInstance).String()
 
-	backLinkListFile := file.BackLinkList{
+	backLinkListFile := protocol.BackLinkList{
 		ListUnsignedBase: protocol.ListUnsignedBase{
 			UnsignedBase: protocol.UnsignedBase{
 				Base: protocol.Base{
@@ -122,7 +121,7 @@ func GetBackLinkListHandlerFunc(c *gin.Context) {
 			dateUpdated.Time = link.UpdatedAt
 		}
 
-		backLinkListFile.List = append(backLinkListFile.List, file.LinkListItem{
+		backLinkListFile.List = append(backLinkListFile.List, protocol.LinkListItem{
 			Type: constants.LinkTypeFollowing.String(),
 			// TODO  Maybe it's an asset or a note
 			IdentifierTarget: rss3uri.New(&rss3uri.PlatformInstance{

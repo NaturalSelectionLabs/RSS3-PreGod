@@ -10,7 +10,6 @@ import (
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/database"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/pkg/middleware"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/pkg/protocol"
-	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/pkg/protocol/file"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/pkg/status"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/pkg/web"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/constants"
@@ -90,7 +89,7 @@ func GetLinkListHandlerFunc(c *gin.Context) {
 
 	identifier := rss3uri.New(platformInstance).String()
 
-	linkListFile := file.LinkList{
+	linkListFile := protocol.LinkList{
 		ListSignedBase: protocol.ListSignedBase{
 			SignedBase: protocol.SignedBase{
 				Base: protocol.Base{
@@ -122,7 +121,7 @@ func GetLinkListHandlerFunc(c *gin.Context) {
 	}
 
 	for _, link := range links {
-		linkListFile.List = append(linkListFile.List, file.LinkListItem{
+		linkListFile.List = append(linkListFile.List, protocol.LinkListItem{
 			Type: constants.LinkTypeFollowing.String(),
 			// TODO  Maybe it's an asset or a note
 			IdentifierTarget: rss3uri.New(&rss3uri.PlatformInstance{
