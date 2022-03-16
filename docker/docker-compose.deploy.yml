@@ -20,12 +20,3 @@ services:
       - MONGO_INITDB_ROOT_PASSWORD=Pa33WoRD
     volumes:
       - /home/data/mongodb:/etc/mongodb
-
-  rocketmq.nameserver:
-    volumes:
-      - /home/data/rocketmq/logs:/home/rocketmq/logs
-
-  rocketmq.broker:
-    volumes:
-      - /home/data/rocketmq/broker/logs:/home/rocketmq/logs
-      - /home/data/rocketmq/broker/store:/home/rocketmq/store

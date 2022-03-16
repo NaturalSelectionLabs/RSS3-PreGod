@@ -22,38 +22,9 @@ services:
     ports:
       - "27017:27017"
 
-  rocketmq.nameserver:
+  rabbitmq:
     restart: always
-    image: rss3/rocketmq:latest
-    container_name: mqnameserver
-    environment:
-      - JAVA_OPT_EXT=-server -Xms256m -Xmx256m -Xmn256m
+    image: rabbitmq:latest
+    container_name: rabbitmq
     ports:
-      - 9876:9876
-    command: sh mqnamesrv
-
-  rocketmq.broker:
-    # restart: always
-    image: rss3/rocketmq:latest
-    container_name: mqbroker
-    environment:
-      - NAMESRV_ADDR=rocketmq.nameserver:9876
-      - JAVA_OPTS=-Duser.home=/opt
-      - JAVA_OPT_EXT=-server -Xms512m -Xmx512m -Xmn256m
-    ports:
-      - 10909-10912:10909-10912
-    volumes:
-      - ./config/rocketmq/broker.conf:/home/rocketmq/rocketmq-4.9.2/broker.conf
-    command: sh mqbroker -c /home/rocketmq/rocketmq-4.9.2/broker.conf
-    depends_on:
-      - rocketmq.nameserver
-
-  rocketmq.dashboard:
-    image: apacherocketmq/rocketmq-dashboard:latest
-    container_name: mqdashboard
-    environment:
-      - JAVA_OPTS=-Drocketmq.namesrv.addr=rocketmq.nameserver:9876
-    ports:
-      - "8088:8080"
-    depends_on:
-      - rocketmq.nameserver
+      - '5672:5672'
