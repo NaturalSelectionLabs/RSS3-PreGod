@@ -6,24 +6,13 @@ import (
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/constants"
 )
 
-type jikeCrawler struct {
-	rss3Items []*model.Item
+func Crawl(param crawler.WorkParam) (crawler.CrawlerResult, error) {
+	var result crawler.CrawlerResult
 
-	rss3Notes []*model.ItemId
-}
-
-func NewJikeCrawler() crawler.Crawler {
-	return &jikeCrawler{
-		rss3Items: []*model.Item{},
-		rss3Notes: []*model.ItemId{},
-	}
-}
-
-func (mc *jikeCrawler) Work(param crawler.WorkParam) error {
 	timeline, err := GetUserTimeline(param.Identity)
 
 	if err != nil {
-		return err
+		return result, err
 	}
 
 	for _, item := range timeline {
@@ -41,20 +30,13 @@ func (mc *jikeCrawler) Work(param crawler.WorkParam) error {
 			item.Attachments,
 			item.Timestamp,
 		)
-		mc.rss3Items = append(mc.rss3Items, ni)
+		result.Items = append(result.Items, ni)
 
-		mc.rss3Notes = append(mc.rss3Notes, &model.ItemId{
+		result.Notes = append(result.Notes, &model.ItemId{
 			NetworkID: param.NetworkID,
 			Proof:     item.Link,
 		})
 	}
 
-	return nil
-}
-
-func (mc *jikeCrawler) GetResult() *crawler.CrawlerResult {
-	return &crawler.CrawlerResult{
-		Notes: mc.rss3Notes,
-		Items: mc.rss3Items,
-	}
+	return result, nil
 }

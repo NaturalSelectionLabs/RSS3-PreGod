@@ -11,25 +11,13 @@ import (
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/rss3uri"
 )
 
-type moralisCrawler struct {
-	crawler.CrawlerResult
-}
-
-func NewMoralisCrawler() crawler.Crawler {
-	return &moralisCrawler{
-		crawler.CrawlerResult{
-			Items:  []*model.Item{},
-			Assets: []*model.ItemId{},
-			Notes:  []*model.ItemId{},
-		},
-	}
-}
-
 //nolint:funlen // disable line length check
-func (mc *moralisCrawler) Work(param crawler.WorkParam) error {
+func Crawl(param crawler.WorkParam) (crawler.CrawlerResult, error) {
+	var result crawler.CrawlerResult
+
 	chainType := GetChainType(param.NetworkID)
 	if chainType == Unknown {
-		return fmt.Errorf("unsupported network: %s", chainType)
+		return result, fmt.Errorf("unsupported network: %s", chainType)
 	}
 
 	networkSymbol := chainType.GetNetworkSymbol()
@@ -37,17 +25,17 @@ func (mc *moralisCrawler) Work(param crawler.WorkParam) error {
 	nftTransfers, err := GetNFTTransfers(param.Identity, chainType, GetApiKey())
 
 	if err != nil {
-		return err
+		return result, err
 	}
 
 	//TODO: tsp
 	assets, err := GetNFTs(param.Identity, chainType, GetApiKey())
 	if err != nil {
-		return err
+		return result, err
 	}
 	//parser
 	for _, nftTransfer := range nftTransfers.Result {
-		mc.Notes = append(mc.Notes, &model.ItemId{
+		result.Notes = append(result.Notes, &model.ItemId{
 			NetworkID: networkId,
 			Proof:     nftTransfer.TransactionHash,
 		})
@@ -60,7 +48,7 @@ func (mc *moralisCrawler) Work(param crawler.WorkParam) error {
 			if nftTransfer.EqualsToToken(asset) {
 				hasProof = true
 
-				mc.Assets = append(mc.Assets, &model.ItemId{
+				result.Assets = append(result.Assets, &model.ItemId{
 					NetworkID: networkId,
 					Proof:     nftTransfer.TransactionHash,
 				})
@@ -112,16 +100,8 @@ func (mc *moralisCrawler) Work(param crawler.WorkParam) error {
 			[]model.Attachment{},
 			tsp,
 		)
-		mc.Items = append(mc.Items, ni)
+		result.Items = append(result.Items, ni)
 	}
 
-	return nil
-}
-
-func (mc *moralisCrawler) GetResult() *crawler.CrawlerResult {
-	return &crawler.CrawlerResult{
-		Assets: mc.Assets,
-		Notes:  mc.Notes,
-		Items:  mc.Items,
-	}
+	return result, nil
 }

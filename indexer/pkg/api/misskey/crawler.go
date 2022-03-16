@@ -7,26 +7,15 @@ import (
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/logger"
 )
 
-type misskeyCrawler struct {
-	rss3Items []*model.Item
+func Crawl(param crawler.WorkParam) (crawler.CrawlerResult, error) {
+	var result crawler.CrawlerResult
 
-	rss3Notes []*model.ItemId
-}
-
-func NewMisskeyCrawler() crawler.Crawler {
-	return &misskeyCrawler{
-		rss3Items: []*model.Item{},
-		rss3Notes: []*model.ItemId{},
-	}
-}
-
-func (mc *misskeyCrawler) Work(param crawler.WorkParam) error {
 	noteList, err := GetUserNoteList(param.Identity, param.Limit, param.TimeStamp)
 
 	if err != nil {
 		logger.Errorf("%v : unable to retrieve misskey note list for %s", err, param.Identity)
 
-		return err
+		return result, err
 	}
 
 	for _, note := range noteList {
@@ -44,20 +33,13 @@ func (mc *misskeyCrawler) Work(param crawler.WorkParam) error {
 			note.Attachments,
 			note.CreatedAt,
 		)
-		mc.rss3Items = append(mc.rss3Items, ni)
+		result.Items = append(result.Items, ni)
 
-		mc.rss3Notes = append(mc.rss3Notes, &model.ItemId{
+		result.Notes = append(result.Notes, &model.ItemId{
 			NetworkID: param.NetworkID,
 			Proof:     note.Link,
 		})
 	}
 
-	return nil
-}
-
-func (mc *misskeyCrawler) GetResult() *crawler.CrawlerResult {
-	return &crawler.CrawlerResult{
-		Notes: mc.rss3Notes,
-		Items: mc.rss3Items,
-	}
+	return result, nil
 }

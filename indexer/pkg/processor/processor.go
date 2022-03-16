@@ -1,110 +1,92 @@
 package processor
 
 import (
-	"fmt"
-
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/api/jike"
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/api/misskey"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/api/moralis"
-	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/crawler"
-	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/db"
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/api/twitter"
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/config"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/constants"
-	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/logger"
-	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/rss3uri"
+	"github.com/RichardKnop/machinery/v1"
+	"github.com/RichardKnop/machinery/v1/backends/result"
+	machineryConfig "github.com/RichardKnop/machinery/v1/config"
+	"github.com/RichardKnop/machinery/v1/tasks"
 )
 
-type processor struct {
-	lowQ, highQ chan *crawler.WorkParam
+type Processor struct {
+	server  *machinery.Server
+	workers []*machinery.Worker
 }
 
-type Processor interface {
-	processTask(t *crawler.WorkParam) error
+var (
+	processor Processor
+)
 
-	ListenAndServe()
-}
-
-func NewProcessor(lq, hq chan *crawler.WorkParam) Processor {
-	return &processor{lq, hq}
-}
-
-func makeCrawlers(network constants.NetworkID) crawler.Crawler {
-	switch network {
-	case constants.NetworkIDEthereumMainnet,
-		constants.NetworkIDBNBChain,
-		constants.NetworkIDAvalanche,
-		constants.NetworkIDFantom,
-		constants.NetworkIDPolygon:
-		return moralis.NewMoralisCrawler()
-	case constants.NetworkIDJike:
-		return jike.NewJikeCrawler()
-	default:
-		return nil
-	}
-}
-
-func (w *processor) processTask(t *crawler.WorkParam) error {
-	var err error
-
-	var c crawler.Crawler
-
-	var r *crawler.CrawlerResult
-
-	var processorParam = crawler.WorkParam{
-		Identity:  t.Identity,
-		NetworkID: t.NetworkID,
+func Setup() error {
+	cnf := &machineryConfig.Config{
+		Broker:          config.Config.RabbitMQ.Addr,
+		DefaultQueue:    "indexer_queue",
+		ResultBackend:   config.Config.RabbitMQ.Addr,
+		ResultsExpireIn: 3600,
+		AMQP: &machineryConfig.AMQPConfig{
+			Exchange:      "indexer_exchange",
+			ExchangeType:  "direct",
+			BindingKey:    "indexer_task",
+			PrefetchCount: 3,
+		},
 	}
 
-	instance := rss3uri.NewAccountInstance(t.Identity, t.PlatformID.Symbol())
-
-	c = makeCrawlers(t.NetworkID)
-	if c == nil {
-		err = fmt.Errorf("unsupported network id: %d", t.NetworkID)
-
-		goto RETURN
-	}
-
-	err = c.Work(processorParam)
-
+	server, err := machinery.NewServer(cnf)
 	if err != nil {
-		err = fmt.Errorf("crawler fails while working: %s", err)
-
-		goto RETURN
-	}
-
-	r = c.GetResult()
-	if r.Items != nil {
-		for _, item := range r.Items {
-			db.InsertItem(item)
-		}
-	}
-
-	if r.Assets != nil {
-		db.SetAssets(instance, r.Assets, t.NetworkID)
-	}
-
-	if r.Notes != nil {
-		db.AppendNotes(instance, r.Notes)
-	}
-
-RETURN:
-	if err != nil {
-		logger.Error(err)
-
 		return err
-	} else {
-		return nil
 	}
-}
 
-func (w *processor) ListenAndServe() {
-	select {
-	case t := <-w.highQ:
-		w.processTask(t)
-	default:
-		select {
-		case t := <-w.highQ:
-			w.processTask(t)
-		case t := <-w.lowQ:
-			w.processTask(t)
+	processor.server = server
+
+	// Register tasks
+	tasks := make(map[string]interface{})
+
+	for _, networkId := range constants.NetworkIDMap {
+		var crawler interface{}
+
+		switch networkId {
+		case constants.NetworkIDEthereumMainnet,
+			constants.NetworkIDBNBChain,
+			constants.NetworkIDAvalanche,
+			constants.NetworkIDFantom,
+			constants.NetworkIDPolygon:
+			crawler = moralis.Crawl
+		case constants.NetworkIDMisskey:
+			crawler = misskey.Crawl
+		case constants.NetworkIDJike:
+			crawler = jike.Crawl
+		case constants.NetworkIDTwitter:
+			crawler = twitter.Crawl
+		default:
+			crawler = nil
+		}
+
+		if crawler != nil {
+			tasks[string(networkId)] = crawler
 		}
 	}
+
+	return server.RegisterTasks(tasks)
+}
+
+func NewWorker(queueName string, consumerName string, concurrency int) error {
+	worker := processor.server.NewWorker(consumerName, concurrency)
+	worker.Queue = queueName
+	processor.workers = append(processor.workers, worker)
+
+	return worker.Launch()
+}
+
+func SendTask(task tasks.Signature) (*result.AsyncResult, error) {
+	asyncResult, err := processor.server.SendTask(&task)
+	if err != nil {
+		return nil, err
+	}
+
+	return asyncResult, nil
 }

@@ -1,17 +1,25 @@
 {
   "cSpell.words": [
+    "AMQP",
+    "arbitrum",
     "arweave",
     "AVAX",
     "bson",
     "gorm",
+    "Infof",
     "Jike",
     "jsoni",
     "nolint",
+    "poap",
     "pregod",
+    "rabbitmq",
     "Repost",
     "resty",
-    "valyala"
+    "valyala",
+    "zksync"
   ],
   "go.lintTool": "golangci-lint",
-  "go.lintFlags": ["--fast"]
+  "go.lintFlags": [
+    "--fast"
+  ]
 }

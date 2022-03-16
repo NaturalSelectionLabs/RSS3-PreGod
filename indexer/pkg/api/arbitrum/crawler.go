@@ -10,37 +10,25 @@ import (
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/rss3uri"
 )
 
-type abCrawler struct {
-	crawler.CrawlerResult
-}
-
-func NewArbitrumCrawler() crawler.Crawler {
-	return &abCrawler{
-		crawler.CrawlerResult{
-			Assets: []*model.ItemId{},
-			Notes:  []*model.ItemId{},
-			Items:  []*model.Item{},
-		},
-	}
-}
-
 //nolint:funlen // disable line length check
-func (ac *abCrawler) Work(param crawler.WorkParam) error {
+func Crawl(param crawler.WorkParam) (crawler.CrawlerResult, error) {
+	var result crawler.CrawlerResult
+
 	nftTransfers, err := GetNFTTransfers(param.Identity)
 	if err != nil {
-		return err
+		return result, err
 	}
 
 	assets, err := GetNFTs(param.Identity)
 	if err != nil {
-		return err
+		return result, err
 	}
 
 	networkId := constants.NetworkSymbolArbitrum.GetID()
 
 	// parse notes
 	for _, v := range nftTransfers {
-		ac.Notes = append(ac.Notes, &model.ItemId{
+		result.Notes = append(result.Notes, &model.ItemId{
 			NetworkID: networkId,
 			Proof:     v.Hash,
 		})
@@ -54,7 +42,7 @@ func (ac *abCrawler) Work(param crawler.WorkParam) error {
 			if nftTransfer.EqualsToToken(v) {
 				hasProof = true
 
-				ac.Assets = append(ac.Assets, &model.ItemId{
+				result.Assets = append(result.Assets, &model.ItemId{
 					NetworkID: networkId,
 					Proof:     nftTransfer.Hash,
 				})
@@ -107,16 +95,8 @@ func (ac *abCrawler) Work(param crawler.WorkParam) error {
 			attachments,
 			tsp,
 		)
-		ac.Items = append(ac.Items, item)
+		result.Items = append(result.Items, item)
 	}
 
-	return nil
-}
-
-func (ac *abCrawler) GetResult() *crawler.CrawlerResult {
-	return &crawler.CrawlerResult{
-		Assets: ac.Assets,
-		Notes:  ac.Notes,
-		Items:  ac.Items,
-	}
+	return result, nil
 }

@@ -13,6 +13,7 @@ import (
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/logger"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/rss3uri"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/web"
+	"github.com/RichardKnop/machinery/v1/tasks"
 )
 
 func init() {
@@ -31,37 +32,37 @@ func init() {
 	if err := db.Setup(); err != nil {
 		log.Fatalf("db.Setup err: %v", err)
 	}
+
+	if err := processor.Setup(); err != nil {
+		log.Fatalf("processor.Setup err: %v", err)
+	}
 }
 
-func dispatchTasks(q chan *crawler.WorkParam, ti time.Duration) {
+func dispatchTasks(ti time.Duration) {
 	// TODO: Get all accounts
 	instances := []rss3uri.PlatformInstance{}
 	for _, i := range instances {
 		for _, n := range i.Platform.ID().GetNetwork() {
 			time.Sleep(ti)
-			q <- &crawler.WorkParam{Identity: i.Identity, PlatformID: i.Platform.ID(), NetworkID: n}
+
+			param := crawler.WorkParam{Identity: i.Identity, PlatformID: i.Platform.ID(), NetworkID: n}
+
+			crawlerTask := tasks.Signature{
+				Name: "add",
+				Args: []tasks.Arg{
+					{
+						Type:  "crawler.WorkParam",
+						Value: param,
+					},
+				},
+			}
+
+			processor.SendTask(crawlerTask)
 		}
 	}
 }
 
-func pollTasks(q chan *crawler.WorkParam) {
-	for {
-		dispatchTasks(q, time.Minute)
-		time.Sleep(24 * time.Hour)
-	}
-}
-
 func main() {
-	lowQ := crawler.NewTaskQueue()
-	highQ := crawler.NewTaskQueue()
-
-	w := processor.NewProcessor(lowQ, highQ)
-	go w.ListenAndServe()
-
-	// TODO: listen tasks from mq
-	// TODO: gracefully exit
-	go pollTasks(lowQ)
-
 	srv := &web.Server{
 		RunMode:      config.Config.Indexer.Server.RunMode,
 		HttpPort:     config.Config.Indexer.Server.HttpPort,
@@ -74,4 +75,7 @@ func main() {
 
 	logger.Infof("Start http server listening on http://%s", addr)
 	defer logger.Logger.Sync()
+
+	// TODO: adjust interval
+	dispatchTasks(time.Minute)
 }

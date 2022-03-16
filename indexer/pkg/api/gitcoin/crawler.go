@@ -18,7 +18,8 @@ type gitcoinCrawler struct {
 	hostingProjectsCache map[string]ProjectInfo
 }
 
-func NewGitcoinCrawler() gitcoinCrawler {
+// TODO: update to use machinery queue
+func NewCrawler() gitcoinCrawler {
 	return gitcoinCrawler{
 		crawler.CrawlerResult{
 			Assets: []*model.ItemId{},

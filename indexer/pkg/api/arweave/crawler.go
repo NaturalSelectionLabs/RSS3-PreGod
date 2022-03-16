@@ -10,33 +10,18 @@ import (
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/logger"
 )
 
-type arCrawler struct {
-	crawler.CrawlerResult
-	fromHeight int64
-	toHeight   int64
-}
+func Crawl(param crawler.WorkParam) (crawler.CrawlerResult, error) {
+	var result crawler.CrawlerResult
 
-func NewArCrawler() crawler.Crawler {
-	return &arCrawler{
-		crawler.CrawlerResult{
-			Assets: []*model.ItemId{},
-			Notes:  []*model.ItemId{},
-			Items:  []*model.Item{},
-		},
-		0,
-		0,
-	}
-}
-
-func (ar *arCrawler) Work(param crawler.WorkParam) error {
 	startBlockHeight := int64(1)
 	step := param.Step
 	tempDelay := param.SleepInterval
 
+	// TODO: why is this loop never ending?
 	for {
 		latestBlockHeight, err := GetLatestBlockHeight()
 		if err != nil {
-			return err
+			return result, err
 		}
 
 		endBlockHeight := startBlockHeight + step
@@ -45,18 +30,22 @@ func (ar *arCrawler) Work(param crawler.WorkParam) error {
 
 			latestBlockHeight, err = GetLatestBlockHeight()
 			if err != nil {
-				return err
+				return result, err
 			}
 
 			endBlockHeight = latestBlockHeight
 			step = 10
 		}
 
-		ar.getArticles(startBlockHeight, endBlockHeight, param.Identity)
+		err = getArticles(&result, startBlockHeight, endBlockHeight, param.Identity)
+
+		if err != nil {
+			return result, err
+		}
 	}
 }
 
-func (ar *arCrawler) getArticles(from, to int64, owner string) error {
+func getArticles(result *crawler.CrawlerResult, from int64, to int64, owner string) error {
 	articles, err := GetArticles(from, to, owner)
 	if err != nil {
 		return err
@@ -91,16 +80,8 @@ func (ar *arCrawler) getArticles(from, to int64, owner string) error {
 			tsp,
 		)
 
-		ar.Items = append(ar.Items, ni)
+		result.Items = append(result.Items, ni)
 	}
 
 	return nil
-}
-
-func (ar *arCrawler) GetResult() *crawler.CrawlerResult {
-	return &crawler.CrawlerResult{
-		Assets: ar.Assets,
-		Notes:  ar.Notes,
-		Items:  ar.Items,
-	}
 }

@@ -27,11 +27,5 @@ type WorkParam struct {
 }
 
 type Crawler interface {
-	Work(WorkParam) error
-	// GetResult return &{Assets, Notes, Items}
-	GetResult() *CrawlerResult
-}
-
-func NewTaskQueue() chan *WorkParam {
-	return make(chan *WorkParam)
+	Work(WorkParam) (*CrawlerResult, error)
 }
