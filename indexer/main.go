@@ -14,7 +14,10 @@ import (
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/rss3uri"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/web"
 	"github.com/RichardKnop/machinery/v1/tasks"
+	jsoniter "github.com/json-iterator/go"
 )
+
+var jsoni = jsoniter.ConfigCompatibleWithStandardLibrary
 
 func init() {
 	if err := config.Setup(); err != nil {
@@ -45,13 +48,20 @@ func dispatchTasks(ti time.Duration) {
 		for _, n := range i.Platform.ID().GetNetwork() {
 			time.Sleep(ti)
 
-			param := crawler.WorkParam{Identity: i.Identity, PlatformID: i.Platform.ID(), NetworkID: n}
+			// marshal WorkParam to string so it's supported by machinery
+			param, err := jsoni.MarshalToString(crawler.WorkParam{Identity: i.Identity, PlatformID: i.Platform.ID(), NetworkID: n})
+
+			if err != nil {
+				logger.Errorf("dispatchTasks WorkParam mashalling error: %v", err)
+
+				return
+			}
 
 			crawlerTask := tasks.Signature{
-				Name: "add",
+				Name: string(n),
 				Args: []tasks.Arg{
 					{
-						Type:  "crawler.WorkParam",
+						Type:  "string",
 						Value: param,
 					},
 				},

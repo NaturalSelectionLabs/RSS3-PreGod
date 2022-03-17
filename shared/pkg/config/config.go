@@ -47,7 +47,7 @@ type MongoStruct struct {
 	MinPoolSize int    `koanf:"min_pool_size"`
 }
 
-type RabbitMQStruct struct {
+type BrokerStruct struct {
 	Addr string `koanf:"addr"`
 }
 
@@ -138,7 +138,7 @@ type ConfigStruct struct {
 	Redis     RedisStruct     `koanf:"redis"`
 	Postgres  PostgresStruct  `koanf:"postgres"`
 	Mongo     MongoStruct     `koanf:"mongo"`
-	RabbitMQ  RabbitMQStruct  `koanf:"rabbitmq"`
+	Broker    BrokerStruct    `koanf:"broker"`
 	Logger    LoggerStruct    `koanf:"logger"`
 	Network   NetWorkStruct   `koanf:"network"`
 	Indexer   IndexerStruct   `koanf:"indexer"`

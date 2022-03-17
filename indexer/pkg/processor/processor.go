@@ -1,12 +1,7 @@
 package processor
 
 import (
-	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/api/jike"
-	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/api/misskey"
-	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/api/moralis"
-	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/api/twitter"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/config"
-	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/constants"
 	"github.com/RichardKnop/machinery/v1"
 	"github.com/RichardKnop/machinery/v1/backends/result"
 	machineryConfig "github.com/RichardKnop/machinery/v1/config"
@@ -24,9 +19,9 @@ var (
 
 func Setup() error {
 	cnf := &machineryConfig.Config{
-		Broker:          config.Config.RabbitMQ.Addr,
+		Broker:          config.Config.Broker.Addr,
 		DefaultQueue:    "indexer_queue",
-		ResultBackend:   config.Config.RabbitMQ.Addr,
+		ResultBackend:   config.Config.Broker.Addr,
 		ResultsExpireIn: 3600,
 		AMQP: &machineryConfig.AMQPConfig{
 			Exchange:      "indexer_exchange",
@@ -44,31 +39,8 @@ func Setup() error {
 	processor.server = server
 
 	// Register tasks
-	tasks := make(map[string]interface{})
-
-	for _, networkId := range constants.NetworkIDMap {
-		var crawler interface{}
-
-		switch networkId {
-		case constants.NetworkIDEthereumMainnet,
-			constants.NetworkIDBNBChain,
-			constants.NetworkIDAvalanche,
-			constants.NetworkIDFantom,
-			constants.NetworkIDPolygon:
-			crawler = moralis.Crawl
-		case constants.NetworkIDMisskey:
-			crawler = misskey.Crawl
-		case constants.NetworkIDJike:
-			crawler = jike.Crawl
-		case constants.NetworkIDTwitter:
-			crawler = twitter.Crawl
-		default:
-			crawler = nil
-		}
-
-		if crawler != nil {
-			tasks[string(networkId)] = crawler
-		}
+	tasks := map[string]interface{}{
+		"dispatch": Dispatch,
 	}
 
 	return server.RegisterTasks(tasks)

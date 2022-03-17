@@ -35,5 +35,6 @@ docker/volume
 import_data/
 
 # Config
-config/config.local.json
+config.local.json
+config.dev.json
 
