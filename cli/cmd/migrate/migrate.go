@@ -9,6 +9,7 @@ import (
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/cli/cmd/migrate/handler"
 	mongomodel "github.com/NaturalSelectionLabs/RSS3-PreGod/cli/cmd/migrate/model"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/cli/cmd/migrate/stats"
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/database/model"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -57,6 +58,24 @@ func (m *Migrate) Initialize() error {
 	m.postgresClient = postgresClient
 
 	log.Println("INFO", "Connected to Postgres")
+
+	// Install uuid extension for postgres
+	if err := m.postgresClient.Exec("CREATE EXTENSION IF NOT EXISTS \"uuid-ossp\";").Error; err != nil {
+		return err
+	}
+
+	if err := m.postgresClient.AutoMigrate(
+		&model.Account{},
+		&model.AccountPlatform{},
+		&model.Instance{},
+		&model.LinkList{},
+		&model.Link{},
+		&model.Signature{},
+		&model.Asset{},
+		&model.Note{},
+	); err != nil {
+		return err
+	}
 
 	return nil
 }
