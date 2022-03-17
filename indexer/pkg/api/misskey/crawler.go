@@ -7,15 +7,13 @@ import (
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/logger"
 )
 
-func Crawl(param crawler.WorkParam) (crawler.CrawlerResult, error) {
-	var result crawler.CrawlerResult
-
+func Crawl(param *crawler.WorkParam, result *crawler.CrawlerResult) (crawler.CrawlerResult, error) {
 	noteList, err := GetUserNoteList(param.Identity, param.Limit, param.TimeStamp)
 
 	if err != nil {
 		logger.Errorf("%v : unable to retrieve misskey note list for %s", err, param.Identity)
 
-		return result, err
+		return *result, err
 	}
 
 	for _, note := range noteList {
@@ -41,5 +39,5 @@ func Crawl(param crawler.WorkParam) (crawler.CrawlerResult, error) {
 		})
 	}
 
-	return result, nil
+	return *result, nil
 }

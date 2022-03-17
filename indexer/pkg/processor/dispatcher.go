@@ -15,7 +15,7 @@ import (
 var jsoni = jsoniter.ConfigCompatibleWithStandardLibrary
 
 func Dispatch(args ...string) (crawler.CrawlerResult, error) {
-	var empty crawler.CrawlerResult
+	var result crawler.CrawlerResult
 
 	param := new(crawler.WorkParam)
 
@@ -23,7 +23,7 @@ func Dispatch(args ...string) (crawler.CrawlerResult, error) {
 	err := jsoni.UnmarshalFromString(args[0], &param)
 
 	if err != nil {
-		return empty, err
+		return result, err
 	}
 
 	switch param.NetworkID {
@@ -32,14 +32,14 @@ func Dispatch(args ...string) (crawler.CrawlerResult, error) {
 		constants.NetworkIDAvalanche,
 		constants.NetworkIDFantom,
 		constants.NetworkIDPolygon:
-		return moralis.Crawl(*param)
+		return moralis.Crawl(param, &result)
 	case constants.NetworkIDMisskey:
-		return misskey.Crawl(*param)
+		return misskey.Crawl(param, &result)
 	case constants.NetworkIDJike:
-		return jike.Crawl(*param)
+		return jike.Crawl(param, &result)
 	case constants.NetworkIDTwitter:
-		return twitter.Crawl(*param)
+		return twitter.Crawl(param, &result)
 	default:
-		return empty, fmt.Errorf("unknown network id")
+		return result, fmt.Errorf("unknown network id")
 	}
 }

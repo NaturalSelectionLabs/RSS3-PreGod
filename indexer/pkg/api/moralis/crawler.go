@@ -12,12 +12,10 @@ import (
 )
 
 //nolint:funlen // disable line length check
-func Crawl(param crawler.WorkParam) (crawler.CrawlerResult, error) {
-	var result crawler.CrawlerResult
-
+func Crawl(param *crawler.WorkParam, result *crawler.CrawlerResult) (crawler.CrawlerResult, error) {
 	chainType := GetChainType(param.NetworkID)
 	if chainType == Unknown {
-		return result, fmt.Errorf("unsupported network: %s", chainType)
+		return *result, fmt.Errorf("unsupported network: %s", chainType)
 	}
 
 	networkSymbol := chainType.GetNetworkSymbol()
@@ -25,13 +23,13 @@ func Crawl(param crawler.WorkParam) (crawler.CrawlerResult, error) {
 	nftTransfers, err := GetNFTTransfers(param.Identity, chainType, GetApiKey())
 
 	if err != nil {
-		return result, err
+		return *result, err
 	}
 
 	//TODO: tsp
 	assets, err := GetNFTs(param.Identity, chainType, GetApiKey())
 	if err != nil {
-		return result, err
+		return *result, err
 	}
 	//parser
 	for _, nftTransfer := range nftTransfers.Result {
@@ -103,5 +101,5 @@ func Crawl(param crawler.WorkParam) (crawler.CrawlerResult, error) {
 		result.Items = append(result.Items, ni)
 	}
 
-	return result, nil
+	return *result, nil
 }

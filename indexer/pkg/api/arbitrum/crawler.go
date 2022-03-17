@@ -11,17 +11,15 @@ import (
 )
 
 //nolint:funlen // disable line length check
-func Crawl(param crawler.WorkParam) (crawler.CrawlerResult, error) {
-	var result crawler.CrawlerResult
-
+func Crawl(param *crawler.WorkParam, result *crawler.CrawlerResult) (crawler.CrawlerResult, error) {
 	nftTransfers, err := GetNFTTransfers(param.Identity)
 	if err != nil {
-		return result, err
+		return *result, err
 	}
 
 	assets, err := GetNFTs(param.Identity)
 	if err != nil {
-		return result, err
+		return *result, err
 	}
 
 	networkId := constants.NetworkSymbolArbitrum.GetID()
@@ -98,5 +96,5 @@ func Crawl(param crawler.WorkParam) (crawler.CrawlerResult, error) {
 		result.Items = append(result.Items, item)
 	}
 
-	return result, nil
+	return *result, nil
 }

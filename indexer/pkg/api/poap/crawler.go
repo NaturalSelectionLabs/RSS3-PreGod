@@ -11,11 +11,9 @@ import (
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/rss3uri"
 )
 
-func Crawl(param crawler.WorkParam) (crawler.CrawlerResult, error) {
-	var result crawler.CrawlerResult
-
+func Crawl(param *crawler.WorkParam, result *crawler.CrawlerResult) (crawler.CrawlerResult, error) {
 	if param.NetworkID != constants.NetworkIDGnosisMainnet {
-		return result, fmt.Errorf("network is not gnosis")
+		return *result, fmt.Errorf("network is not gnosis")
 	}
 
 	networkSymbol := constants.NetworkSymbolGnosisMainnet
@@ -26,14 +24,14 @@ func Crawl(param crawler.WorkParam) (crawler.CrawlerResult, error) {
 	if err != nil {
 		logger.Error(err)
 
-		return result, err
+		return *result, err
 	}
 
 	author, err := rss3uri.NewInstance("account", param.Identity, string(constants.PlatformSymbolEthereum))
 	if err != nil {
 		logger.Error(err)
 
-		return result, err
+		return *result, err
 	}
 
 	//TODO: Since we are getting the full amount of interfaces,
@@ -64,5 +62,5 @@ func Crawl(param crawler.WorkParam) (crawler.CrawlerResult, error) {
 		result.Items = append(result.Items, ni)
 	}
 
-	return result, nil
+	return *result, nil
 }

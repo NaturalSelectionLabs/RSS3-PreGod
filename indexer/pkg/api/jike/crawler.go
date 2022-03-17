@@ -6,13 +6,11 @@ import (
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/constants"
 )
 
-func Crawl(param crawler.WorkParam) (crawler.CrawlerResult, error) {
-	var result crawler.CrawlerResult
-
+func Crawl(param *crawler.WorkParam, result *crawler.CrawlerResult) (crawler.CrawlerResult, error) {
 	timeline, err := GetUserTimeline(param.Identity)
 
 	if err != nil {
-		return result, err
+		return *result, err
 	}
 
 	for _, item := range timeline {
@@ -38,5 +36,5 @@ func Crawl(param crawler.WorkParam) (crawler.CrawlerResult, error) {
 		})
 	}
 
-	return result, nil
+	return *result, nil
 }

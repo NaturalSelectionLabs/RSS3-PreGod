@@ -10,9 +10,7 @@ import (
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/logger"
 )
 
-func Crawl(param crawler.WorkParam) (crawler.CrawlerResult, error) {
-	var result crawler.CrawlerResult
-
+func Crawl(param *crawler.WorkParam, result *crawler.CrawlerResult) (crawler.CrawlerResult, error) {
 	startBlockHeight := int64(1)
 	step := param.Step
 	tempDelay := param.SleepInterval
@@ -21,7 +19,7 @@ func Crawl(param crawler.WorkParam) (crawler.CrawlerResult, error) {
 	for {
 		latestBlockHeight, err := GetLatestBlockHeight()
 		if err != nil {
-			return result, err
+			return *result, err
 		}
 
 		endBlockHeight := startBlockHeight + step
@@ -30,17 +28,17 @@ func Crawl(param crawler.WorkParam) (crawler.CrawlerResult, error) {
 
 			latestBlockHeight, err = GetLatestBlockHeight()
 			if err != nil {
-				return result, err
+				return *result, err
 			}
 
 			endBlockHeight = latestBlockHeight
 			step = 10
 		}
 
-		err = getArticles(&result, startBlockHeight, endBlockHeight, param.Identity)
+		err = getArticles(result, startBlockHeight, endBlockHeight, param.Identity)
 
 		if err != nil {
-			return result, err
+			return *result, err
 		}
 	}
 }

@@ -13,11 +13,9 @@ import (
 
 const DefaultTwitterCount = 200
 
-func Crawl(param crawler.WorkParam) (crawler.CrawlerResult, error) {
-	var result crawler.CrawlerResult
-
+func Crawl(param *crawler.WorkParam, result *crawler.CrawlerResult) (crawler.CrawlerResult, error) {
 	if param.NetworkID != constants.NetworkIDTwitter {
-		return result, fmt.Errorf("network is not twitter")
+		return *result, fmt.Errorf("network is not twitter")
 	}
 
 	networkSymbol := constants.NetworkSymbolTwitter
@@ -26,12 +24,12 @@ func Crawl(param crawler.WorkParam) (crawler.CrawlerResult, error) {
 
 	contentInfos, err := GetTimeline(param.Identity, DefaultTwitterCount)
 	if err != nil {
-		return result, err
+		return *result, err
 	}
 
 	author, err := rss3uri.NewInstance("account", param.Identity, string(constants.PlatformSymbolTwitter))
 	if err != nil {
-		return result, err
+		return *result, err
 	}
 
 	for _, contentInfo := range contentInfos {
@@ -57,5 +55,5 @@ func Crawl(param crawler.WorkParam) (crawler.CrawlerResult, error) {
 		result.Items = append(result.Items, ni)
 	}
 
-	return result, nil
+	return *result, nil
 }
