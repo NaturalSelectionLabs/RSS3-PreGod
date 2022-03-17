@@ -10,8 +10,8 @@ import (
 var _ schema.Tabler = &Instance{}
 
 type Instance struct {
-	ID         string         `gorm:"column:id;index:instance_idx;primaryKey;default:uuid_generate_v4()"`
-	Platform   int            `gorm:"column:platform"`
+	ID         string         `gorm:"column:id;index:instance_idx"`
+	PrefixID   int            `gorm:"column:prefix_id"`
 	Controller sql.NullString `gorm:"column:controller"`
 
 	common.Table

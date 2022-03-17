@@ -20,8 +20,8 @@ type LinkList struct {
 	PrefixID int    `gorm:"column:prefix_id;not null;index"`
 	SuffixID int    `gorm:"column:suffix_id;not null;index"`
 
-	ItemCount    int `json:"item_count"`
-	MaxPageIndex int `json:"max_page_index"`
+	ItemCount    int `gorm:"item_count"`
+	MaxPageIndex int `gorm:"max_page_index"`
 
 	common.Table
 }
