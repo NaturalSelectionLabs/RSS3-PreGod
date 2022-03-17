@@ -64,8 +64,9 @@ func MigrateLinkList(db *gorm.DB, file mongomodel.File) error {
 			return err
 		}
 
+		links := make([]model.Link, len(file.Content.Links))
 		for _, targetIdentity := range file.Content.List {
-			if err := tx.Create(&model.Link{
+			links = append(links, model.Link{
 				Type:           1,         // Following
 				Identity:       splits[0], // Ethereum wallet address
 				PrefixID:       int(constants.PrefixIDAccount),
@@ -79,11 +80,12 @@ func MigrateLinkList(db *gorm.DB, file mongomodel.File) error {
 					CreatedAt: file.Content.DateCreated,
 					UpdatedAt: file.Content.DateUpdated,
 				},
-			}).Error; err != nil {
+			})
+			if err := tx.CreateInBatches(links, 1024).Error; err != nil {
 				return err
 			}
 
-			atomic.AddInt64(&stats.LinkNumber, 1)
+			atomic.AddInt64(&stats.LinkNumber, int64(len(links)))
 		}
 
 		return nil
