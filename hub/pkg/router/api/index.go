@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
 	"net/http"
 	"time"
 
@@ -95,8 +94,6 @@ func GetIndexHandlerFunc(c *gin.Context) {
 	if account.Bio.Valid {
 		bio = &account.Bio.String
 	}
-
-	log.Println(name, bio)
 
 	indexFile := protocol.Index{
 		SignedBase: protocol.SignedBase{
