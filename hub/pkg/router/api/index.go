@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log"
 	"net/http"
 	"time"
 
@@ -68,12 +69,9 @@ func GetIndexHandlerFunc(c *gin.Context) {
 		return
 	}
 
-	// Query the max page index
-	followingMaxPageIndex, err := database.Instance.QueryLinkWithMaxPageIndex(tx, 1, account.ID, account.Platform)
-	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
-		w := web.Gin{C: c}
-		w.JSONResponse(http.StatusInternalServerError, status.CodeError, nil)
-
+	// Query link list
+	linkList, err := database.Instance.QueryLinkList(tx, 1, account.ID, int(constants.PrefixIDAccount), account.Platform)
+	if err != nil {
 		return
 	}
 
@@ -85,6 +83,21 @@ func GetIndexHandlerFunc(c *gin.Context) {
 
 	identifier := rss3uri.New(platformInstance).String()
 
+	var (
+		name *string = nil
+		bio  *string = nil
+	)
+
+	if account.Name.Valid {
+		name = &account.Name.String
+	}
+
+	if account.Bio.Valid {
+		bio = &account.Bio.String
+	}
+
+	log.Println(name, bio)
+
 	indexFile := protocol.Index{
 		SignedBase: protocol.SignedBase{
 			Base: protocol.Base{
@@ -93,9 +106,9 @@ func GetIndexHandlerFunc(c *gin.Context) {
 			},
 		},
 		Profile: protocol.IndexProfile{
-			Name:    account.Name,
+			Name:    name,
 			Avatars: account.Avatars,
-			Bio:     account.Bio,
+			Bio:     bio,
 			// TODO No data available
 			// Attachments: nil,
 		},
@@ -103,7 +116,7 @@ func GetIndexHandlerFunc(c *gin.Context) {
 			Identifiers: []protocol.IndexLinkIdentifier{
 				{
 					Type:             "following",
-					IdentifierCustom: fmt.Sprintf("%s/list/link/following/%d", identifier, followingMaxPageIndex),
+					IdentifierCustom: fmt.Sprintf("%s/list/link/following/%d", identifier, linkList.MaxPageIndex),
 					Identifier:       fmt.Sprintf("%s/list/link/following", identifier),
 				},
 			},

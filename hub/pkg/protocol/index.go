@@ -9,10 +9,10 @@ type Index struct {
 }
 
 type IndexProfile struct {
-	Name        string            `json:"name"`
+	Name        *string           `json:"name"`
 	Avatars     []string          `json:"avatars"`
-	Bio         string            `json:"bio"`
-	Attachments []IndexAttachment `json:"attachment,omitempty"`
+	Bio         *string           `json:"bio"`
+	Attachments []IndexAttachment `json:"attachment"`
 	Accounts    []IndexAccount    `json:"accounts"`
 }
 
@@ -46,21 +46,21 @@ type IndexItems struct {
 type IndexItemsNotes struct {
 	IdentifierCustom string                  `json:"identifier_custom"`
 	Identifier       string                  `json:"identifier"`
-	Filters          *IndexItemsNotesFilters `json:"filters,omitempty"`
+	Filters          *IndexItemsNotesFilters `json:"filters"`
 }
 
 type IndexItemsNotesFilters struct {
-	AllowList []string `json:"allowlist,omitempty"`
-	BlockList []string `json:"blocklist,omitempty"`
+	AllowList []string `json:"allowlist"`
+	BlockList []string `json:"blocklist"`
 }
 
 type IndexItemsAssets struct {
 	IdentifierCustom string                   `json:"identifier_custom"`
 	Identifier       string                   `json:"identifier"`
-	Filters          *IndexItemsAssetsFilters `json:"filters,omitempty"`
+	Filters          *IndexItemsAssetsFilters `json:"filters"`
 }
 
 type IndexItemsAssetsFilters struct {
-	AllowList []string `json:"allowlist,omitempty"`
-	BlockList []string `json:"blocklist,omitempty"`
+	AllowList []string `json:"allowlist"`
+	BlockList []string `json:"blocklist"`
 }

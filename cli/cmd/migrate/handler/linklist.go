@@ -12,6 +12,7 @@ import (
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/database/model"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/constants"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 func MigrateLinkList(db *gorm.DB, file mongomodel.File) error {
@@ -45,6 +46,24 @@ func MigrateLinkList(db *gorm.DB, file mongomodel.File) error {
 			return err
 		}
 
+		linkList := model.LinkList{
+			Type:         1, // Following
+			Identity:     splits[0],
+			PrefixID:     int(constants.PrefixIDAccount),
+			SuffixID:     int(constants.PlatformIDEthereum),
+			ItemCount:    len(file.Content.List),
+			MaxPageIndex: 0, // TODO Page break
+			Table: common.Table{
+				CreatedAt: file.Content.DateCreated,
+				UpdatedAt: file.Content.DateUpdated,
+			},
+		}
+
+		// Returning all fields
+		if err := tx.Clauses(clause.Returning{}).Create(&linkList).Error; err != nil {
+			return err
+		}
+
 		for _, targetIdentity := range file.Content.List {
 			if err := tx.Create(&model.Link{
 				Type:           1,         // Following
@@ -54,6 +73,7 @@ func MigrateLinkList(db *gorm.DB, file mongomodel.File) error {
 				TargetIdentity: targetIdentity,
 				TargetPrefixID: int(constants.PrefixIDAccount),
 				TargetSuffixID: int(constants.PlatformIDEthereum),
+				LinkListID:     linkList.ID,
 				PageIndex:      pageIndex,
 				Table: common.Table{
 					CreatedAt: file.Content.DateCreated,
