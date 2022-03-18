@@ -58,7 +58,8 @@ func dispatchTasks(ti time.Duration) {
 			}
 
 			crawlerTask := tasks.Signature{
-				Name: string(n),
+				// the name is defined by RegisterTasks() in processor/processor.go
+				Name: "dispatch",
 				Args: []tasks.Arg{
 					{
 						Type:  "string",
