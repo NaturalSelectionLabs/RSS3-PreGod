@@ -81,12 +81,13 @@ func MigrateLinkList(db *gorm.DB, file mongomodel.File) error {
 					UpdatedAt: file.Content.DateUpdated,
 				},
 			})
-			if err := tx.CreateInBatches(links, 1024).Error; err != nil {
-				return err
-			}
-
-			atomic.AddInt64(&stats.LinkNumber, int64(len(links)))
 		}
+
+		if err := tx.CreateInBatches(links, 1024).Error; err != nil {
+			return err
+		}
+
+		atomic.AddInt64(&stats.LinkNumber, int64(len(links)))
 
 		return nil
 	})
