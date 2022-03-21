@@ -66,7 +66,7 @@ func (ar *arCrawler) run() error {
 
 			latestBlockHeight, err = GetLatestBlockHeight()
 			if err != nil {
-				return *result, err
+				return err
 			}
 
 			latestConfirmedBlockHeight = latestBlockHeight - ar.confirmations
@@ -77,7 +77,7 @@ func (ar *arCrawler) run() error {
 	}
 }
 
-func getArticles(result *crawler.CrawlerResult, from int64, to int64, owner string) error {
+func (ar *arCrawler) getArticles(from, to int64, owner string) error {
 	articles, err := GetArticles(from, to, owner)
 	if err != nil {
 		return err
