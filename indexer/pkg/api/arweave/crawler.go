@@ -1,29 +1,67 @@
 package arweave
 
 import (
+	"errors"
+	"os"
+	"os/signal"
 	"strconv"
 	"time"
 
-	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/crawler"
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/db"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/db/model"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/constants"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/logger"
 )
 
-func Crawl(param *crawler.WorkParam, result *crawler.CrawlerResult) (crawler.CrawlerResult, error) {
-	startBlockHeight := int64(1)
-	step := param.Step
-	tempDelay := param.SleepInterval
+var ErrTimeout = errors.New("received timeout")
+var ErrInterrupt = errors.New("received interrupt")
 
-	// TODO: why is this loop never ending?
+type arCrawler struct {
+	fromHeight    int64
+	confirmations int64
+	step          int64
+	minStep       int64
+	sleepInterval time.Duration
+	identity      string
+	interrupt     chan os.Signal
+	complete      chan error
+}
+
+func NewArCrawler(fromHeight, step, minStep, confirmatioins, sleepInterval int64, identity string) *arCrawler {
+	return &arCrawler{
+		fromHeight,
+		confirmatioins,
+		step,
+		minStep,
+		time.Duration(sleepInterval),
+		identity,
+		make(chan os.Signal, 1),
+		make(chan error),
+	}
+}
+
+func (ar *arCrawler) run() error {
+	startBlockHeight := ar.fromHeight
+	step := ar.step
+	tempDelay := ar.sleepInterval
+
+	// get latest block height
+	latestBlockHeight, err := GetLatestBlockHeight()
+	if err != nil {
+		return err
+	}
+
+	latestConfirmedBlockHeight := latestBlockHeight - ar.confirmations
+
 	for {
-		latestBlockHeight, err := GetLatestBlockHeight()
-		if err != nil {
-			return *result, err
+		// handle interrupt
+		if ar.gotInterrupt() {
+			return ErrInterrupt
 		}
 
+		// get articles
 		endBlockHeight := startBlockHeight + step
-		if latestBlockHeight <= endBlockHeight {
+		if latestConfirmedBlockHeight <= endBlockHeight {
 			time.Sleep(tempDelay)
 
 			latestBlockHeight, err = GetLatestBlockHeight()
@@ -31,15 +69,11 @@ func Crawl(param *crawler.WorkParam, result *crawler.CrawlerResult) (crawler.Cra
 				return *result, err
 			}
 
-			endBlockHeight = latestBlockHeight
+			latestConfirmedBlockHeight = latestBlockHeight - ar.confirmations
 			step = 10
 		}
 
-		err = getArticles(result, startBlockHeight, endBlockHeight, param.Identity)
-
-		if err != nil {
-			return *result, err
-		}
+		ar.getArticles(startBlockHeight, latestConfirmedBlockHeight, ar.identity)
 	}
 }
 
@@ -48,6 +82,8 @@ func getArticles(result *crawler.CrawlerResult, from int64, to int64, owner stri
 	if err != nil {
 		return err
 	}
+
+	items := make([]*model.Item, 0)
 
 	for _, article := range articles {
 		attachment := model.Attachment{
@@ -78,8 +114,42 @@ func getArticles(result *crawler.CrawlerResult, from int64, to int64, owner stri
 			tsp,
 		)
 
-		result.Items = append(result.Items, ni)
+		items = append(items, ni)
 	}
 
+	setDB(items)
+
 	return nil
+}
+
+func setDB(items []*model.Item) {
+	for _, item := range items {
+		db.InsertItem(item)
+	}
+}
+
+func (ar *arCrawler) Start() error {
+	signal.Notify(ar.interrupt, os.Interrupt)
+
+	go func() {
+		ar.complete <- ar.run()
+	}()
+
+	select {
+	case err := <-ar.complete:
+		return err
+	default:
+		return nil
+	}
+}
+
+func (ar *arCrawler) gotInterrupt() bool {
+	select {
+	case <-ar.interrupt:
+		signal.Stop(ar.interrupt)
+
+		return true
+	default:
+		return false
+	}
 }

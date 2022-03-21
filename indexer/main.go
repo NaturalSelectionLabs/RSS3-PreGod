@@ -4,6 +4,8 @@ import (
 	"log"
 	"time"
 
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/api/arweave"
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/api/gitcoin"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/crawler"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/db"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/processor"
@@ -85,6 +87,47 @@ func main() {
 	addr := srv.Start()
 
 	logger.Infof("Start http server listening on http://%s", addr)
+
+	// arweave crawler
+	ar := arweave.NewArCrawler(
+		1,
+		500,
+		10,
+		2,
+		600,
+		"Ky1c1Kkt-jZ9sY1hvLF5nCf6WWdBhIU5Un_BMYh-t3c")
+	ar.Start()
+
+	// gitcoin crawler
+	ethParam := gitcoin.Param{
+		FromHeight:    1,
+		Step:          10000,
+		MinStep:       10,
+		Confirmations: 10,
+		SleepInterval: 600,
+	}
+
+	polygonParam := gitcoin.Param{
+		FromHeight:    1,
+		Step:          10000,
+		MinStep:       10,
+		Confirmations: 10,
+		SleepInterval: 600,
+	}
+
+	zkParam := gitcoin.Param{
+		FromHeight:    1,
+		Step:          10000,
+		MinStep:       10,
+		Confirmations: 10,
+		SleepInterval: 600,
+	}
+	gc := gitcoin.NewGitcoinCrawler(ethParam, polygonParam, zkParam)
+
+	gc.PolygonStart()
+	gc.EthStart()
+	gc.ZkStart()
+
 	defer logger.Logger.Sync()
 
 	// TODO: adjust interval
