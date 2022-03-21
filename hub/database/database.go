@@ -75,23 +75,18 @@ func (d *database) QueryLinksByTarget(
 	return links, nil
 }
 
-func (d *database) QueryLinkWithMaxPageIndex(db *gorm.DB, _type int, identity string, suffixID int) (int, error) {
-	maxPageIndex := 0
-	row := db.Table("link").
-		Select("max(page_index)").
-		Where(
-			"type = ? and identity = ? and suffix_id = ?",
-			_type,
-			identity,
-			suffixID,
-		).
-		Row()
-
-	if err := row.Scan(&maxPageIndex); err != nil {
-		return maxPageIndex, err
+func (d *database) QueryLinkList(db *gorm.DB, _type int, identity string, prefixID, suffixID int) (*model.LinkList, error) {
+	linkList := model.LinkList{
+		Type:     _type,
+		Identity: identity,
+		PrefixID: prefixID,
+		SuffixID: suffixID,
+	}
+	if err := db.First(&linkList).Error; err != nil {
+		return nil, err
 	}
 
-	return maxPageIndex, nil
+	return &linkList, nil
 }
 
 func (d *database) QuerySignature(db *gorm.DB, fileURI string) (*model.Signature, error) {

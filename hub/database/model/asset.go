@@ -9,7 +9,7 @@ import (
 var _ schema.Tabler = &Asset{}
 
 type Asset struct {
-	ID     uuid.UUID `gorm:"type:uuid;primaryKey"`
+	ID     uuid.UUID `gorm:"type:uuid;primaryKey;default:uuid_generate_v4()"`
 	ItemID uuid.UUID `gorm:"type:uuid"`
 
 	common.Table

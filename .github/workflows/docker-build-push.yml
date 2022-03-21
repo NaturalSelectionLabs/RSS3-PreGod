@@ -11,6 +11,8 @@ on:
 
 env:
   AWS_REGION: us-west-2
+  IMAGE_NAME_HUB: rss3/pregod-hub
+  IMAGE_NAME_INDEXER: rss3/pregod-indexer
 
 jobs:
   build-hub:
@@ -19,17 +21,11 @@ jobs:
       -
         name: Checkout
         uses: actions/checkout@v2
-      - name: Docker meta
+      - name: docker meta
         id: meta
         uses: docker/metadata-action@v3
         with:
-          images: rss3/pregod-hub
-          tags: |
-            type=ref,event=tag
-            type=ref,event=branch
-            type=semver,pattern={{version}}
-            type=semver,pattern={{major}}.{{minor}}
-            type=semver,pattern={{major}}
+          images: ${{ env.IMAGE_NAME_HUB }}
       -
         name: Set up QEMU
         uses: docker/setup-qemu-action@v1
@@ -68,21 +64,11 @@ jobs:
       -
         name: Checkout
         uses: actions/checkout@v2
-      -
-        name: Docker meta
+      - name: docker meta
         id: meta
         uses: docker/metadata-action@v3
         with:
-          # list of Docker images to use as base name for tags
-          images: |
-            rss3/pregod-indexer
-          # generate Docker tags based on the following events/attributes
-          tags: |
-            type=ref,event=tag
-            type=ref,event=branch
-            type=semver,pattern={{version}}
-            type=semver,pattern={{major}}.{{minor}}
-            type=semver,pattern={{major}}
+          images: ${{ env.IMAGE_NAME_INDEXER }}
       -
         name: Set up QEMU
         uses: docker/setup-qemu-action@v1
@@ -121,17 +107,11 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v2
-      - name: Docker meta
+      - name: docker meta
         id: meta
         uses: docker/metadata-action@v3
         with:
-          images: rss3/pregod-hub
-          tags: |
-            type=ref,event=tag
-            type=ref,event=branch
-            type=semver,pattern={{version}}
-            type=semver,pattern={{major}}.{{minor}}
-            type=semver,pattern={{major}}
+          images: ${{ env.IMAGE_NAME_HUB }}
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v1
         with:
@@ -141,10 +121,12 @@ jobs:
       - name: Replace image field
         uses: mikefarah/yq@master
         with:
-          cmd: yq -i '.spec.template.spec.containers[0].image = "${{ steps.meta.outputs.tags }}"' ./deploy/dev/deploy.yaml
+          cmd: yq -i '.spec.template.spec.containers[0].image = "${{ env.IMAGE_NAME_HUB }}:${{ steps.meta.outputs.version }}"' ./deploy/dev/deploy.yaml
       - run: aws eks update-kubeconfig --region us-west-2 --name development
-      - run: kubectl apply -f deploy/dev
-      - run: kubectl -n pregod rollout restart deploy pregod-hub
+      - run: |
+          kubectl apply -f deploy/dev
+          kubectl -n pregod rollout restart deploy pregod-hub
+          kubectl -n pregod rollout status deploy pregod-hub
 
   deploy-prod:
     if: startsWith(github.ref, 'refs/tags/v')
@@ -153,17 +135,11 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v2
-      - name: Docker meta
+      - name: docker meta
         id: meta
         uses: docker/metadata-action@v3
         with:
-          images: rss3/pregod-hub
-          tags: |
-            type=ref,event=tag
-            type=ref,event=branch
-            type=semver,pattern={{version}}
-            type=semver,pattern={{major}}.{{minor}}
-            type=semver,pattern={{major}}
+          images: ${{ env.IMAGE_NAME_HUB }}
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v1
         with:
@@ -173,6 +149,8 @@ jobs:
       - name: Replace image field
         uses: mikefarah/yq@master
         with:
-          cmd: yq -i '.spec.template.spec.containers[0].image = "${{ steps.meta.outputs.tags }}"' ./deploy/prod/deploy.yaml
+          cmd: yq -i '.spec.template.spec.containers[0].image = "${{ env.IMAGE_NAME_HUB }}:${{ steps.meta.outputs.version }}"' ./deploy/prod/deploy.yaml
       - run: aws eks update-kubeconfig --region us-west-2 --name production
-      - run: kubectl apply -f deploy/prod
+      - run: |
+          kubectl apply -f deploy/prod
+          kubectl -n pregod rollout status deploy pregod-hub

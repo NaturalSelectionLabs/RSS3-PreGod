@@ -1,0 +1,14 @@
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRoute
+metadata:
+  name: pregod-hub
+  namespace: pregod
+spec:
+  entryPoints:
+  - web
+  routes:
+  - kind: Rule
+    match: Host(`pregod.rss3.dev`) && PathPrefix(`/`)
+    services:
+    - name: pregod-hub-api
+      port: 8080

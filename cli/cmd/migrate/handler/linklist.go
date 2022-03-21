@@ -12,6 +12,7 @@ import (
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/database/model"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/constants"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 func MigrateLinkList(db *gorm.DB, file mongomodel.File) error {
@@ -45,8 +46,27 @@ func MigrateLinkList(db *gorm.DB, file mongomodel.File) error {
 			return err
 		}
 
+		linkList := model.LinkList{
+			Type:         1, // Following
+			Identity:     splits[0],
+			PrefixID:     int(constants.PrefixIDAccount),
+			SuffixID:     int(constants.PlatformIDEthereum),
+			ItemCount:    len(file.Content.List),
+			MaxPageIndex: 0, // TODO Page break
+			Table: common.Table{
+				CreatedAt: file.Content.DateCreated,
+				UpdatedAt: file.Content.DateUpdated,
+			},
+		}
+
+		// Returning all fields
+		if err := tx.Clauses(clause.Returning{}).Create(&linkList).Error; err != nil {
+			return err
+		}
+
+		links := make([]model.Link, len(file.Content.Links))
 		for _, targetIdentity := range file.Content.List {
-			if err := tx.Create(&model.Link{
+			links = append(links, model.Link{
 				Type:           1,         // Following
 				Identity:       splits[0], // Ethereum wallet address
 				PrefixID:       int(constants.PrefixIDAccount),
@@ -54,17 +74,20 @@ func MigrateLinkList(db *gorm.DB, file mongomodel.File) error {
 				TargetIdentity: targetIdentity,
 				TargetPrefixID: int(constants.PrefixIDAccount),
 				TargetSuffixID: int(constants.PlatformIDEthereum),
+				LinkListID:     linkList.ID,
 				PageIndex:      pageIndex,
 				Table: common.Table{
 					CreatedAt: file.Content.DateCreated,
 					UpdatedAt: file.Content.DateUpdated,
 				},
-			}).Error; err != nil {
-				return err
-			}
-
-			atomic.AddInt64(&stats.LinkNumber, 1)
+			})
 		}
+
+		if err := tx.CreateInBatches(links, 1024).Error; err != nil {
+			return err
+		}
+
+		atomic.AddInt64(&stats.LinkNumber, int64(len(links)))
 
 		return nil
 	})

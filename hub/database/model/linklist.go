@@ -10,8 +10,18 @@ import (
 var _ schema.Tabler = &LinkList{}
 
 type LinkList struct {
-	ID       uuid.UUID         `gorm:"type:uuid;primaryKey"`
+	ID uuid.UUID `gorm:"type:uuid;primaryKey;default:uuid_generate_v4()"`
+
 	Metadata datatypes.JSONMap `gorm:"type:jsonb"`
+
+	Type int `gorm:"column:type;not null;index"`
+
+	Identity string `gorm:"column:identity;not null;index"`
+	PrefixID int    `gorm:"column:prefix_id;not null;index"`
+	SuffixID int    `gorm:"column:suffix_id;not null;index"`
+
+	ItemCount    int `gorm:"item_count"`
+	MaxPageIndex int `gorm:"max_page_index"`
 
 	common.Table
 }

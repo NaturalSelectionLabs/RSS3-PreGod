@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"database/sql"
 	"fmt"
 	"strings"
 	"sync/atomic"
@@ -39,8 +40,8 @@ func MigrateIndex(db *gorm.DB, file mongomodel.File) error {
 		if err := tx.Create(&model.Account{
 			ID:       file.Path,
 			Platform: int(constants.PlatformIDEthereum),
-			Name:     file.Content.Profile.Name,
-			Bio:      file.Content.Profile.Bio,
+			Name:     wrapNullString(file.Content.Profile.Name),
+			Bio:      wrapNullString(file.Content.Profile.Bio),
 			Avatars:  file.Content.Profile.Avatar,
 			Table: common.Table{
 				CreatedAt: file.Content.DateCreated,
@@ -80,4 +81,15 @@ func MigrateIndex(db *gorm.DB, file mongomodel.File) error {
 
 		return nil
 	})
+}
+
+func wrapNullString(str string) sql.NullString {
+	if str == "" {
+		return sql.NullString{}
+	}
+
+	return sql.NullString{
+		String: str,
+		Valid:  true,
+	}
 }
