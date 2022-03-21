@@ -27,10 +27,10 @@ type arCrawler struct {
 	complete      chan error
 }
 
-func NewArCrawler(fromHeight, step, minStep, confirmatioins, sleepInterval int64, identity string) *arCrawler {
+func NewArCrawler(fromHeight, step, minStep, confirmations, sleepInterval int64, identity string) *arCrawler {
 	return &arCrawler{
 		fromHeight,
-		confirmatioins,
+		confirmations,
 		step,
 		minStep,
 		time.Duration(sleepInterval),
