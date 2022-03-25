@@ -1,8 +1,10 @@
 package api
 
 import (
+	"context"
 	"net/http"
 
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/autoupdater"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/crawler"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/crawler_handler"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/db"
@@ -44,7 +46,7 @@ func GetItemHandlerFunc(c *gin.Context) {
 		itemsResult{},
 	}
 
-	dbResult, err := getItemsFromDB(request)
+	dbResult, err := getItemsFromDB(c, request)
 	if err != nil {
 		logger.Errorf("get items from db error: %s", err.Error())
 	}
@@ -83,7 +85,7 @@ func GetItemHandlerFunc(c *gin.Context) {
 	c.JSON(http.StatusOK, response)
 }
 
-func getItemsFromDB(request GetItemRequest) (*itemsResult, error) {
+func getItemsFromDB(c *gin.Context, request GetItemRequest) (*itemsResult, error) {
 	ai := rss3uri.NewAccountInstance(request.Identity, request.PlatformID.Symbol())
 
 	var err error
@@ -95,6 +97,7 @@ func getItemsFromDB(request GetItemRequest) (*itemsResult, error) {
 		return nil, err
 	}
 
+	addToRecentVisit(c.Request.Context(), &request)
 	if !isOld {
 		return nil, nil
 	}
@@ -148,4 +151,17 @@ func crawlerResult2ItemsResult(itemsPointArr []*model.Item) *[]model.Item {
 	}
 
 	return itemsArrPoint
+}
+
+func addToRecentVisit(ctx context.Context, req *GetItemRequest) error {
+	param := &crawler.WorkParam{
+		Identity:   req.Identity,
+		NetworkID:  req.NetworkID,
+		PlatformID: req.PlatformID,
+		// NOTE looks like only for misskey
+		// Limit:      ?,
+		// TimeStamp:  ?,
+	}
+
+	return autoupdater.AddToRecentVisitQueue(ctx, param)
 }

@@ -38,7 +38,7 @@ func main() {
 		Handler:      router.InitRouter(),
 	}
 
-	srv.Start()
-
 	defer logger.Logger.Sync()
+
+	srv.Start()
 }
