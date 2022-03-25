@@ -6,31 +6,31 @@ import (
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/logger"
 )
 
-type UserBioStrogeTask struct {
+type UserBioStorageTask struct {
 	processor.ProcessTaskParam
-	ResultQ chan *UserBioStrogeResult
+	ResultQ chan *UserBioStorageResult
 }
 
-type UserBioStrogeResult struct {
+type UserBioStorageResult struct {
 	processor.ProcessTaskResult
 
 	UserBio string
 }
 
-func NewUserBioStrogeTask(workParam crawler.WorkParam) *UserBioStrogeTask {
-	return &UserBioStrogeTask{
+func NewUserBioStorageTask(workParam crawler.WorkParam) *UserBioStorageTask {
+	return &UserBioStorageTask{
 		processor.ProcessTaskParam{
-			TaskType:  processor.ProcessTaskTypeUserBioStroge,
+			TaskType:  processor.ProcessTaskTypeUserBioStorage,
 			WorkParam: workParam,
 		},
-		make(chan *UserBioStrogeResult),
+		make(chan *UserBioStorageResult),
 	}
 }
 
-func NewUserBioStrogeResult() *UserBioStrogeResult {
-	return &UserBioStrogeResult{
+func NewUserBioStorageResult() *UserBioStorageResult {
+	return &UserBioStorageResult{
 		processor.ProcessTaskResult{
-			TaskType:   processor.ProcessTaskTypeUserBioStroge,
+			TaskType:   processor.ProcessTaskTypeUserBioStorage,
 			TaskResult: processor.ProcessTaskErrorCodeSuccess,
 		},
 
@@ -38,14 +38,14 @@ func NewUserBioStrogeResult() *UserBioStrogeResult {
 	}
 }
 
-func (pt *UserBioStrogeTask) Fun() error {
+func (pt *UserBioStorageTask) Fun() error {
 	var err error
 
 	var c crawler.Crawler
 
 	var userBio string
 
-	result := NewUserBioStrogeResult()
+	result := NewUserBioStorageResult()
 
 	c = processor.MakeCrawlers(pt.WorkParam.NetworkID)
 	if c == nil {

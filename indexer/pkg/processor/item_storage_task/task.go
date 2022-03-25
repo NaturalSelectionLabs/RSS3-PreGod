@@ -1,4 +1,4 @@
-package item_stroge_task
+package item_storage_task
 
 import (
 	"fmt"
@@ -10,20 +10,20 @@ import (
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/rss3uri"
 )
 
-type ItemStrogeTask struct {
+type ItemStorageTask struct {
 	processor.ProcessTaskParam
 }
 
-func NewItemStrogeParam(workParam crawler.WorkParam) *ItemStrogeTask {
-	return &ItemStrogeTask{
+func NewItemStorageParam(workParam crawler.WorkParam) *ItemStorageTask {
+	return &ItemStorageTask{
 		processor.ProcessTaskParam{
-			TaskType:  processor.ProcessTaskTypeItemStroge,
+			TaskType:  processor.ProcessTaskTypeItemStorage,
 			WorkParam: workParam,
 		},
 	}
 }
 
-func (pt *ItemStrogeTask) Fun() error {
+func (pt *ItemStorageTask) Fun() error {
 	var err error
 
 	var c crawler.Crawler

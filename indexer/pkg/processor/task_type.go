@@ -3,9 +3,9 @@ package processor
 type ProcessTaskType int
 
 const (
-	ProcessTaskTypeNontType      ProcessTaskType = iota
-	ProcessTaskTypeItemStroge    ProcessTaskType = 1
-	ProcessTaskTypeUserBioStroge ProcessTaskType = 2
+	ProcessTaskTypeNontType       ProcessTaskType = iota
+	ProcessTaskTypeItemStorage    ProcessTaskType = 1
+	ProcessTaskTypeUserBioStorage ProcessTaskType = 2
 )
 
 type ProcessTaskErrorCode int
