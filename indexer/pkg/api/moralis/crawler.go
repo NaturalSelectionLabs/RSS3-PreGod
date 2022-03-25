@@ -11,11 +11,25 @@ import (
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/rss3uri"
 )
 
+type moralisCrawler struct {
+	crawler.DefaultCrawler
+}
+
+func NewMoralisCrawler() crawler.Crawler {
+	return &moralisCrawler{
+		crawler.DefaultCrawler{
+			Items:  []*model.Item{},
+			Assets: []*model.ItemId{},
+			Notes:  []*model.ItemId{},
+		},
+	}
+}
+
 //nolint:funlen // disable line length check
-func Crawl(param *crawler.WorkParam, result *crawler.CrawlerResult) (crawler.CrawlerResult, error) {
+func (c *moralisCrawler) Work(param crawler.WorkParam) error {
 	chainType := GetChainType(param.NetworkID)
 	if chainType == Unknown {
-		return *result, fmt.Errorf("unsupported network: %s", chainType)
+		return fmt.Errorf("unsupported network: %s", chainType)
 	}
 
 	networkSymbol := chainType.GetNetworkSymbol()
@@ -23,17 +37,17 @@ func Crawl(param *crawler.WorkParam, result *crawler.CrawlerResult) (crawler.Cra
 	nftTransfers, err := GetNFTTransfers(param.Identity, chainType, GetApiKey())
 
 	if err != nil {
-		return *result, err
+		return err
 	}
 
 	//TODO: tsp
 	assets, err := GetNFTs(param.Identity, chainType, GetApiKey())
 	if err != nil {
-		return *result, err
+		return err
 	}
 	//parser
 	for _, nftTransfer := range nftTransfers.Result {
-		result.Notes = append(result.Notes, &model.ItemId{
+		c.Notes = append(c.Notes, &model.ItemId{
 			NetworkID: networkId,
 			Proof:     nftTransfer.TransactionHash,
 		})
@@ -46,7 +60,7 @@ func Crawl(param *crawler.WorkParam, result *crawler.CrawlerResult) (crawler.Cra
 			if nftTransfer.EqualsToToken(asset) {
 				hasProof = true
 
-				result.Assets = append(result.Assets, &model.ItemId{
+				c.Assets = append(c.Assets, &model.ItemId{
 					NetworkID: networkId,
 					Proof:     nftTransfer.TransactionHash,
 				})
@@ -98,8 +112,8 @@ func Crawl(param *crawler.WorkParam, result *crawler.CrawlerResult) (crawler.Cra
 			[]model.Attachment{},
 			tsp,
 		)
-		result.Items = append(result.Items, ni)
+		c.Items = append(c.Items, ni)
 	}
 
-	return *result, nil
+	return nil
 }

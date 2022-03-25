@@ -11,7 +11,7 @@ import (
 )
 
 //nolint:funlen // disable line length check
-func Crawl(param *crawler.WorkParam, result *crawler.CrawlerResult) (crawler.CrawlerResult, error) {
+func Crawl(param *crawler.WorkParam, result *crawler.DefaultCrawler) (crawler.DefaultCrawler, error) {
 	nftTransfers, err := GetNFTTransfers(param.Identity)
 	if err != nil {
 		return *result, err

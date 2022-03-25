@@ -51,6 +51,7 @@ func GetItemHandlerFunc(c *gin.Context) {
 	}
 
 	// TODO Query data
+	// 旧用户查询数据库，新用户拉取
 	ai := rss3uri.NewAccountInstance(request.Identity, request.PlatformID.Symbol())
 
 	isOld, err := db.Exists(ai)

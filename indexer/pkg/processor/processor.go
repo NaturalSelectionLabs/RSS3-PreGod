@@ -1,79 +1,88 @@
 package processor
 
 import (
-	"time"
-
-	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/config"
-	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/rss3uri"
-	"github.com/RichardKnop/machinery/v1"
-	"github.com/RichardKnop/machinery/v1/backends/result"
-	machineryConfig "github.com/RichardKnop/machinery/v1/config"
-	"github.com/RichardKnop/machinery/v1/tasks"
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/api/jike"
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/api/misskey"
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/api/moralis"
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/api/twitter"
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/crawler"
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/constants"
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/logger"
 )
+
+type ProcessTaskHandler interface {
+	Fun() error
+}
+
+type ProcessTaskParam struct {
+	ProcessTaskHandler
+	TaskType  ProcessTaskType
+	WorkParam crawler.WorkParam
+}
+
+type ProcessTaskResult struct {
+	TaskType   ProcessTaskType
+	TaskResult ProcessTaskErrorCode
+}
 
 type Processor struct {
-	server  *machinery.Server
-	workers []*machinery.Worker
+	// Emergency use, highest priority, such as user data not found
+	UrgentQ chan ProcessTaskHandler
+	// General use, such as access to authenticate user information
+	HighQ chan ProcessTaskHandler
+	// Unaffected condition use, such as polling query data
+	LowQ chan ProcessTaskHandler
 }
 
-var (
-	processor Processor
-)
+var GlobalProcessor *Processor
 
 func Setup() error {
-	cnf := &machineryConfig.Config{
-		Broker:          config.Config.Broker.Addr,
-		DefaultQueue:    "indexer_queue",
-		ResultBackend:   config.Config.Broker.Addr,
-		ResultsExpireIn: 3600,
-		AMQP: &machineryConfig.AMQPConfig{
-			Exchange:      "indexer_exchange",
-			ExchangeType:  "direct",
-			BindingKey:    "indexer_task",
-			PrefetchCount: 3,
-		},
-	}
+	GlobalProcessor = NewProcessor()
+	go GlobalProcessor.ListenAndServe()
 
-	server, err := machinery.NewServer(cnf)
-	if err != nil {
-		return err
-	}
-
-	processor.server = server
-
-	// Register tasks
-	tasks := map[string]interface{}{
-		"dispatch": Dispatch,
-	}
-
-	return server.RegisterTasks(tasks)
+	return nil
 }
 
-func NewWorker(queueName string, consumerName string, concurrency int) error {
-	worker := processor.server.NewWorker(consumerName, concurrency)
-	worker.Queue = queueName
-	processor.workers = append(processor.workers, worker)
+func NewProcessor() *Processor {
+	processor := new(Processor)
 
-	return worker.Launch()
+	processor.UrgentQ = make(chan ProcessTaskHandler)
+	processor.HighQ = make(chan ProcessTaskHandler)
+	processor.LowQ = make(chan ProcessTaskHandler)
+
+	logger.Infof("NewProcessor init:%v", processor)
+
+	return processor
 }
 
-func SendTask(task tasks.Signature) (*result.AsyncResult, error) {
-	asyncResult, err := processor.server.SendTask(&task)
-	if err != nil {
-		return nil, err
+func MakeCrawler(network constants.NetworkID) crawler.Crawler {
+	switch network {
+	case constants.NetworkIDEthereumMainnet,
+		constants.NetworkIDBNBChain,
+		constants.NetworkIDAvalanche,
+		constants.NetworkIDFantom,
+		constants.NetworkIDPolygon:
+		return moralis.NewMoralisCrawler()
+	case constants.NetworkIDJike:
+		return jike.NewJikeCrawler()
+	case constants.NetworkIDTwitter:
+		return twitter.NewTwitterCrawler()
+	case constants.NetworkIDMisskey:
+		return misskey.NewMisskeyCrawler()
+	default:
+		return nil
 	}
-
-	return asyncResult, nil
 }
 
-func GetLastIndexedTsp(instance *rss3uri.PlatformInstance) (time.Time, error) {
-
-	// TODO: get the last indexed tsp from `instance_status_metadata` table
-
-	return time.Time{}, nil
-}
-
-func UpdateLastIndexedTsp(instance *rss3uri.PlatformInstance) {
-
-	// TODO: update the last indexed tsp in `instance_status_metadata` table
+func (w *Processor) ListenAndServe() {
+	for {
+		select {
+		case t := <-w.UrgentQ:
+			t.Fun()
+		case t := <-w.HighQ:
+			t.Fun()
+		case t := <-w.LowQ:
+			t.Fun()
+		}
+	}
 }

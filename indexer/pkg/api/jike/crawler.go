@@ -6,11 +6,24 @@ import (
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/constants"
 )
 
-func Crawl(param *crawler.WorkParam, result *crawler.CrawlerResult) (crawler.CrawlerResult, error) {
+type jikeCrawler struct {
+	crawler.DefaultCrawler
+}
+
+func NewJikeCrawler() crawler.Crawler {
+	return &jikeCrawler{
+		crawler.DefaultCrawler{
+			Items: []*model.Item{},
+			Notes: []*model.ItemId{},
+		},
+	}
+}
+
+func (mc *jikeCrawler) Work(param crawler.WorkParam) error {
 	timeline, err := GetUserTimeline(param.Identity)
 
 	if err != nil {
-		return *result, err
+		return err
 	}
 
 	for _, item := range timeline {
@@ -28,13 +41,34 @@ func Crawl(param *crawler.WorkParam, result *crawler.CrawlerResult) (crawler.Cra
 			item.Attachments,
 			item.Timestamp,
 		)
-		result.Items = append(result.Items, ni)
+		mc.Items = append(mc.Items, ni)
 
-		result.Notes = append(result.Notes, &model.ItemId{
+		mc.Notes = append(mc.Notes, &model.ItemId{
 			NetworkID: param.NetworkID,
 			Proof:     item.Link,
 		})
 	}
 
-	return *result, nil
+	return nil
+}
+
+func (tc *jikeCrawler) GetUserBio(Identity string) (string, error) {
+	if err := Login(); err != nil {
+		return "", err
+	}
+
+	userProfile, err := GetUserProfile(Identity)
+
+	if err != nil {
+		return "", err
+	}
+
+	userBios := []string{userProfile.Bio}
+	userBioJson, err := crawler.GetUserBioJson(userBios)
+
+	if err != nil {
+		return "", err
+	}
+
+	return userBioJson, nil
 }

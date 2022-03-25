@@ -18,90 +18,108 @@ var (
 	parser fastjson.Parser
 )
 
-func GetUserId(accountInfo []string) (string, error) {
+func GetUserShow(accountInfo []string) (*UserShow, error) {
 	url := "https://" + accountInfo[1] + "/api/users/show"
+	logger.Infof("url: %s", url)
 
 	username := fmt.Sprintf(`{"username":"%s"}`, accountInfo[0])
 
 	response, requestErr := httpx.Post(url, nil, username)
 
 	if requestErr != nil {
-		return "", requestErr
+		return nil, requestErr
 	}
 
 	parsedJson, parseErr := parser.Parse(string(response))
 
-	if parseErr != nil {
-		return "", requestErr
+	if parseErr != nil || parsedJson == nil {
+		return nil, requestErr
 	}
 
-	return string(parsedJson.GetStringBytes("id")), nil
+	errorObj := parsedJson.Get("error")
+
+	if errorObj != nil {
+		errorMsg := string(errorObj.GetStringBytes("message"))
+
+		return nil, fmt.Errorf("Get misskey userinfo error: %s", errorMsg)
+	}
+
+	userShow := new(UserShow)
+	userShow.Id = string(parsedJson.GetStringBytes("id"))
+	userShow.Bios = append(userShow.Bios, string(parsedJson.GetStringBytes("description")))
+	fields := parsedJson.GetArray("fields")
+
+	for _, field := range fields {
+		userShow.Bios = append(userShow.Bios, string(field.GetStringBytes("value")))
+	}
+
+	return userShow, nil
 }
 
 func GetUserNoteList(address string, count int, since time.Time) ([]Note, error) {
 	accountInfo, err := formatUserAccount(address)
 
-	if err == nil {
-		userId, getUserIdErr := GetUserId(accountInfo)
-
-		if getUserIdErr != nil {
-			return nil, getUserIdErr
-		}
-
-		url := "https://" + accountInfo[1] + "/api/users/notes"
-
-		request := new(TimelineRequest)
-
-		request.UserId = userId
-		request.Limit = count
-		request.SinceDate = since.Unix() * 1000
-		request.ExcludeNsfw = true
-		request.Renote = true
-		request.IncludeReplies = false
-
-		json, _ := jsoni.MarshalToString(request)
-
-		response, requestErr := httpx.Post(url, nil, json)
-
-		if requestErr != nil {
-			return nil, requestErr
-		}
-
-		parsedJson, parseErr := parser.Parse(string(response))
-
-		if parseErr != nil {
-			return nil, parseErr
-		}
-
-		parsedObject := parsedJson.GetArray()
-
-		var noteList []Note
-
-		for _, note := range parsedObject {
-			ns := new(Note)
-
-			ns.Summary = string(note.GetStringBytes("text"))
-			formatContent(note, ns, accountInfo[1])
-
-			ns.Id = string(note.GetStringBytes("id"))
-			ns.Author = string(note.GetStringBytes("userId"))
-			ns.Link = fmt.Sprintf("https://%s/notes/%s", accountInfo[1], ns.Id)
-
-			t, timeErr := time.Parse(time.RFC3339, string(note.GetStringBytes("createdAt")))
-
-			if timeErr != nil {
-				return nil, timeErr
-			}
-
-			ns.CreatedAt = t
-
-			noteList = append(noteList, *ns)
-		}
-
-		return noteList, nil
+	if err != nil {
+		return nil, err
 	}
 
-	return nil, err
+	userShow, getUserIdErr := GetUserShow(accountInfo)
+
+	if getUserIdErr != nil {
+		return nil, getUserIdErr
+	}
+
+	url := "https://" + accountInfo[1] + "/api/users/notes"
+
+	request := new(TimelineRequest)
+
+	request.UserId = userShow.Id
+	request.Limit = count
+	request.SinceDate = since.Unix() * 1000
+	request.ExcludeNsfw = true
+	request.Renote = true
+	request.IncludeReplies = false
+
+	json, _ := jsoni.MarshalToString(request)
+
+	response, requestErr := httpx.Post(url, nil, json)
+
+	if requestErr != nil {
+		return nil, requestErr
+	}
+
+	parsedJson, parseErr := parser.Parse(string(response))
+
+	if parseErr != nil {
+		return nil, parseErr
+	}
+
+	parsedObject := parsedJson.GetArray()
+
+	var noteList = make([]Note, 0, 10)
+
+	for _, note := range parsedObject {
+		ns := new(Note)
+
+		ns.Summary = string(note.GetStringBytes("text"))
+		formatContent(note, ns, accountInfo[1])
+
+		ns.Id = string(note.GetStringBytes("id"))
+		ns.Author = string(note.GetStringBytes("userId"))
+		ns.Link = fmt.Sprintf("https://%s/notes/%s", accountInfo[1], ns.Id)
+
+		t, timeErr := time.Parse(time.RFC3339, string(note.GetStringBytes("createdAt")))
+
+		if timeErr != nil {
+			return nil, timeErr
+		}
+
+		ns.CreatedAt = t
+
+		noteList = append(noteList, *ns)
+	}
+
+	return noteList, nil
 }
 
 func formatContent(note *fastjson.Value, ns *Note, instance string) {
@@ -118,8 +136,7 @@ func formatContent(note *fastjson.Value, ns *Note, instance string) {
 	renoteId := string(note.GetStringBytes("renoteId"))
 
 	// format renote if any
-	fmt.Println("renoteId")
-	if len(renoteId) > 0 {
+	if renoteId != "null" {
 		renoteUser := string(note.GetStringBytes("renote", "user", "username"))
 
 		renoteText := string(note.GetStringBytes("renote", "text"))

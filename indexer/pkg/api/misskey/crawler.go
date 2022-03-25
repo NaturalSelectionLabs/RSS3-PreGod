@@ -7,13 +7,26 @@ import (
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/logger"
 )
 
-func Crawl(param *crawler.WorkParam, result *crawler.CrawlerResult) (crawler.CrawlerResult, error) {
-	noteList, err := GetUserNoteList(param.Identity, param.Limit, param.LastIndexedTsp)
+type misskeyCrawler struct {
+	crawler.DefaultCrawler
+}
+
+func NewMisskeyCrawler() crawler.Crawler {
+	return &misskeyCrawler{
+		crawler.DefaultCrawler{
+			Items: []*model.Item{},
+			Notes: []*model.ItemId{},
+		},
+	}
+}
+
+func (mc *misskeyCrawler) Work(param crawler.WorkParam) error {
+	noteList, err := GetUserNoteList(param.Identity, param.Limit, param.TimeStamp)
 
 	if err != nil {
 		logger.Errorf("%v : unable to retrieve misskey note list for %s", err, param.Identity)
 
-		return *result, err
+		return err
 	}
 
 	for _, note := range noteList {
@@ -31,13 +44,35 @@ func Crawl(param *crawler.WorkParam, result *crawler.CrawlerResult) (crawler.Cra
 			note.Attachments,
 			note.CreatedAt,
 		)
-		result.Items = append(result.Items, ni)
+		mc.Items = append(mc.Items, ni)
 
-		result.Notes = append(result.Notes, &model.ItemId{
+		mc.Notes = append(mc.Notes, &model.ItemId{
 			NetworkID: param.NetworkID,
 			Proof:     note.Link,
 		})
 	}
 
-	return *result, nil
+	return nil
+}
+
+func (mc *misskeyCrawler) GetUserBio(Identity string) (string, error) {
+	accountInfo, err := formatUserAccount(Identity)
+	if err != nil {
+		return "", err
+	}
+
+	userShow, err := GetUserShow(accountInfo)
+
+	if err != nil {
+		return "", err
+	}
+
+	userBios := userShow.Bios
+	userBioJson, err := crawler.GetUserBioJson(userBios)
+
+	if err != nil {
+		return "", err
+	}
+
+	return userBioJson, nil
 }

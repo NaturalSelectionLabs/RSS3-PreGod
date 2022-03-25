@@ -25,3 +25,8 @@ type Note struct {
 	Attachments []model.Attachment
 	Link        string
 }
+
+type UserShow struct {
+	Id   string
+	Bios []string
+}

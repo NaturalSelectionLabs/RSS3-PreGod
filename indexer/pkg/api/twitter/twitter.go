@@ -14,7 +14,7 @@ import (
 
 const endpoint = "https://api.twitter.com/1.1"
 
-func GetUsersShow(name string) (*UserShow, error) {
+func GetUserShow(name string) (*UserShow, error) {
 	key := util.GotKey("round-robin", "Twitter", config.Config.Indexer.Twitter.Tokens)
 	authorization := fmt.Sprintf("Bearer %s", key)
 

@@ -11,32 +11,46 @@ import (
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/rss3uri"
 )
 
-func Crawl(param *crawler.WorkParam, result *crawler.CrawlerResult) (crawler.CrawlerResult, error) {
+type poapCrawler struct {
+	crawler.DefaultCrawler
+}
+
+func NewPoapCrawler() crawler.Crawler {
+	return &poapCrawler{
+		crawler.DefaultCrawler{
+			Items:  []*model.Item{},
+			Assets: []*model.ItemId{},
+			Notes:  []*model.ItemId{},
+		},
+	}
+}
+
+func (pc *poapCrawler) Work(param crawler.WorkParam) error {
 	if param.NetworkID != constants.NetworkIDGnosisMainnet {
-		return *result, fmt.Errorf("network is not gnosis")
+		return fmt.Errorf("network is not gnosis")
 	}
 
 	networkSymbol := constants.NetworkSymbolGnosisMainnet
 
 	networkId := networkSymbol.GetID()
 
-	response, err := GetActions(param.Identity)
+	poapResps, err := GetActions(param.Identity)
 	if err != nil {
 		logger.Error(err)
 
-		return *result, err
+		return err
 	}
 
 	author, err := rss3uri.NewInstance("account", param.Identity, string(constants.PlatformSymbolEthereum))
 	if err != nil {
 		logger.Error(err)
 
-		return *result, err
+		return err
 	}
 
 	//TODO: Since we are getting the full amount of interfaces,
 	// I hope to get incremental interfaces in the future and use other methods to improve efficiency
-	for _, poapResp := range response {
+	for _, poapResp := range poapResps {
 		tsp, err := poapResp.GetTsp()
 		if err != nil {
 			// TODO: log error
@@ -59,8 +73,16 @@ func Crawl(param *crawler.WorkParam, result *crawler.CrawlerResult) (crawler.Cra
 			tsp,
 		)
 
-		result.Items = append(result.Items, ni)
+		pc.Items = append(pc.Items, ni)
+		pc.Notes = append(pc.Notes, &model.ItemId{
+			NetworkID: networkId,
+			Proof:     "",
+		})
+		pc.Assets = append(pc.Assets, &model.ItemId{
+			NetworkID: networkId,
+			Proof:     "",
+		})
 	}
 
-	return *result, nil
+	return nil
 }

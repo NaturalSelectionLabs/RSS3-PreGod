@@ -20,10 +20,10 @@ func init() {
 	}
 }
 
-func TestGetUsersShow(t *testing.T) {
+func TestGetUserShow(t *testing.T) {
 	t.Parallel()
 
-	result, err := twitter.GetUsersShow("@rss3_")
+	result, err := twitter.GetUserShow("@rss3_")
 
 	assert.Nil(t, err)
 

@@ -11,11 +11,24 @@ import (
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/rss3uri"
 )
 
+type twitterCrawler struct {
+	crawler.DefaultCrawler
+}
+
+func NewTwitterCrawler() crawler.Crawler {
+	return &twitterCrawler{
+		crawler.DefaultCrawler{
+			Items: []*model.Item{},
+			Notes: []*model.ItemId{},
+		},
+	}
+}
+
 const DefaultTwitterCount = 200
 
-func Crawl(param *crawler.WorkParam, result *crawler.CrawlerResult) (crawler.CrawlerResult, error) {
+func (tc *twitterCrawler) Work(param crawler.WorkParam) error {
 	if param.NetworkID != constants.NetworkIDTwitter {
-		return *result, fmt.Errorf("network is not twitter")
+		return fmt.Errorf("network is not twitter")
 	}
 
 	networkSymbol := constants.NetworkSymbolTwitter
@@ -24,12 +37,12 @@ func Crawl(param *crawler.WorkParam, result *crawler.CrawlerResult) (crawler.Cra
 
 	contentInfos, err := GetTimeline(param.Identity, DefaultTwitterCount)
 	if err != nil {
-		return *result, err
+		return err
 	}
 
 	author, err := rss3uri.NewInstance("account", param.Identity, string(constants.PlatformSymbolTwitter))
 	if err != nil {
-		return *result, err
+		return err
 	}
 
 	for _, contentInfo := range contentInfos {
@@ -52,8 +65,29 @@ func Crawl(param *crawler.WorkParam, result *crawler.CrawlerResult) (crawler.Cra
 			tsp,
 		)
 
-		result.Items = append(result.Items, ni)
+		tc.Items = append(tc.Items, ni)
+		tc.Notes = append(tc.Notes, &model.ItemId{
+			NetworkID: networkId,
+			Proof:     "",
+		})
 	}
 
-	return *result, nil
+	return nil
+}
+
+func (tc *twitterCrawler) GetUserBio(Identity string) (string, error) {
+	userShow, err := GetUserShow(Identity)
+
+	if err != nil {
+		return "", err
+	}
+
+	userBios := []string{userShow.Description}
+	userBioJson, err := crawler.GetUserBioJson(userBios)
+
+	if err != nil {
+		return "", err
+	}
+
+	return userBioJson, nil
 }
