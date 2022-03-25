@@ -7,12 +7,12 @@ import (
 )
 
 type jikeCrawler struct {
-	crawler.CrawlerResult
+	crawler.DefaultCrawler
 }
 
 func NewJikeCrawler() crawler.Crawler {
 	return &jikeCrawler{
-		crawler.CrawlerResult{
+		crawler.DefaultCrawler{
 			Items: []*model.Item{},
 			Notes: []*model.ItemId{},
 		},
@@ -50,13 +50,6 @@ func (mc *jikeCrawler) Work(param crawler.WorkParam) error {
 	}
 
 	return nil
-}
-
-func (mc *jikeCrawler) GetResult() *crawler.CrawlerResult {
-	return &crawler.CrawlerResult{
-		Notes: mc.Notes,
-		Items: mc.Items,
-	}
 }
 
 func (tc *jikeCrawler) GetUserBio(Identity string) (string, error) {

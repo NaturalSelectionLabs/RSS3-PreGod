@@ -12,12 +12,12 @@ import (
 )
 
 type twitterCrawler struct {
-	crawler.CrawlerResult
+	crawler.DefaultCrawler
 }
 
 func NewTwitterCrawler() crawler.Crawler {
 	return &twitterCrawler{
-		crawler.CrawlerResult{
+		crawler.DefaultCrawler{
 			Items: []*model.Item{},
 			Notes: []*model.ItemId{},
 		},
@@ -73,13 +73,6 @@ func (tc *twitterCrawler) Work(param crawler.WorkParam) error {
 	}
 
 	return nil
-}
-
-func (tc *twitterCrawler) GetResult() *crawler.CrawlerResult {
-	return &crawler.CrawlerResult{
-		Assets: tc.Assets,
-		Notes:  tc.Notes,
-	}
 }
 
 func (tc *twitterCrawler) GetUserBio(Identity string) (string, error) {

@@ -14,25 +14,16 @@ type ItemStorageTask struct {
 	processor.ProcessTaskParam
 }
 
-func NewItemStorageParam(workParam crawler.WorkParam) *ItemStorageTask {
-	return &ItemStorageTask{
-		processor.ProcessTaskParam{
-			TaskType:  processor.ProcessTaskTypeItemStorage,
-			WorkParam: workParam,
-		},
-	}
-}
-
 func (pt *ItemStorageTask) Fun() error {
 	var err error
 
 	var c crawler.Crawler
 
-	var r *crawler.CrawlerResult
+	var r *crawler.DefaultCrawler
 
 	instance := rss3uri.NewAccountInstance(pt.WorkParam.Identity, pt.WorkParam.PlatformID.Symbol())
 
-	c = processor.MakeCrawlers(pt.WorkParam.NetworkID)
+	c = processor.MakeCrawler(pt.WorkParam.NetworkID)
 	if c == nil {
 		err = fmt.Errorf("unsupported network id: %d", pt.WorkParam.NetworkID)
 

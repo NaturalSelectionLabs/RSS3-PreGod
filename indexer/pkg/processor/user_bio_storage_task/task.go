@@ -1,4 +1,4 @@
-package user_bio_stroge_task
+package user_bio_storage_task
 
 import (
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/crawler"
@@ -17,17 +17,7 @@ type UserBioStorageResult struct {
 	UserBio string
 }
 
-func NewUserBioStorageTask(workParam crawler.WorkParam) *UserBioStorageTask {
-	return &UserBioStorageTask{
-		processor.ProcessTaskParam{
-			TaskType:  processor.ProcessTaskTypeUserBioStorage,
-			WorkParam: workParam,
-		},
-		make(chan *UserBioStorageResult),
-	}
-}
-
-func NewUserBioStorageResult() *UserBioStorageResult {
+func NewEmptyUserBioStorageResult() *UserBioStorageResult {
 	return &UserBioStorageResult{
 		processor.ProcessTaskResult{
 			TaskType:   processor.ProcessTaskTypeUserBioStorage,
@@ -45,9 +35,9 @@ func (pt *UserBioStorageTask) Fun() error {
 
 	var userBio string
 
-	result := NewUserBioStorageResult()
+	result := NewEmptyUserBioStorageResult()
 
-	c = processor.MakeCrawlers(pt.WorkParam.NetworkID)
+	c = processor.MakeCrawler(pt.WorkParam.NetworkID)
 	if c == nil {
 		result.TaskResult = processor.ProcessTaskErrorCodeNotSupportedNetwork
 

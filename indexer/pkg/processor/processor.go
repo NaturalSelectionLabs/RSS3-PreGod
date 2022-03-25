@@ -55,7 +55,7 @@ func NewProcessor() *Processor {
 	return processor
 }
 
-func MakeCrawlers(network constants.NetworkID) crawler.Crawler {
+func MakeCrawler(network constants.NetworkID) crawler.Crawler {
 	switch network {
 	case constants.NetworkIDEthereumMainnet,
 		constants.NetworkIDBNBChain,

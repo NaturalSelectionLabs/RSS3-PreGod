@@ -11,17 +11,31 @@ import (
 type Crawler interface {
 	Work(param WorkParam) error
 	// GetResult return &{Assets, Notes, Items}
-	GetResult() *CrawlerResult
+	GetResult() *DefaultCrawler
 	// GetBio
 	// Since some apps have multiple bios,
 	// they need to be converted into json and then collectively transmitted
 	GetUserBio(Identity string) (string, error)
 }
 
-type CrawlerResult struct {
+type DefaultCrawler struct {
 	Assets []*model.ItemId
 	Notes  []*model.ItemId
 	Items  []*model.Item
+}
+
+// CrawlerResult inherits the function by default
+
+func (cr *DefaultCrawler) Work(param WorkParam) error {
+	return nil
+}
+
+func (cr *DefaultCrawler) GetResult() *DefaultCrawler {
+	return cr
+}
+
+func (cr *DefaultCrawler) GetUserBio(Identity string) (string, error) {
+	return "", nil
 }
 
 type WorkParam struct {
@@ -33,28 +47,14 @@ type WorkParam struct {
 	TimeStamp time.Time // optional, if provided, only index items newer than this time
 }
 
-// CrawlerResult inherits the function by default
-
-func (cr *CrawlerResult) Work(param WorkParam) error {
-	return nil
-}
-
-func (cr *CrawlerResult) GetResult() *CrawlerResult {
-	return cr
-}
-
-func (cr *CrawlerResult) GetUserBio(Identity string) (string, error) {
-	return "", nil
-}
-
-type UserBios struct {
+type userBios struct {
 	Bios []string `json:"bios"`
 }
 
 func GetUserBioJson(bios []string) (string, error) {
 	jsoni := jsoniter.ConfigCompatibleWithStandardLibrary
 
-	userbios := UserBios{Bios: bios}
+	userbios := userBios{Bios: bios}
 	userBioJson, err := jsoni.MarshalToString(userbios)
 
 	if err != nil {

@@ -8,12 +8,12 @@ import (
 )
 
 type misskeyCrawler struct {
-	crawler.CrawlerResult
+	crawler.DefaultCrawler
 }
 
 func NewMisskeyCrawler() crawler.Crawler {
 	return &misskeyCrawler{
-		crawler.CrawlerResult{
+		crawler.DefaultCrawler{
 			Items: []*model.Item{},
 			Notes: []*model.ItemId{},
 		},
@@ -53,13 +53,6 @@ func (mc *misskeyCrawler) Work(param crawler.WorkParam) error {
 	}
 
 	return nil
-}
-
-func (mc *misskeyCrawler) GetResult() *crawler.CrawlerResult {
-	return &crawler.CrawlerResult{
-		Notes: mc.Notes,
-		Items: mc.Items,
-	}
 }
 
 func (mc *misskeyCrawler) GetUserBio(Identity string) (string, error) {
