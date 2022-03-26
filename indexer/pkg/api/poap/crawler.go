@@ -12,12 +12,12 @@ import (
 )
 
 type poapCrawler struct {
-	crawler.CrawlerResult
+	crawler.DefaultCrawler
 }
 
 func NewPoapCrawler() crawler.Crawler {
 	return &poapCrawler{
-		crawler.CrawlerResult{
+		crawler.DefaultCrawler{
 			Items:  []*model.Item{},
 			Assets: []*model.ItemId{},
 			Notes:  []*model.ItemId{},
@@ -85,12 +85,4 @@ func (pc *poapCrawler) Work(param crawler.WorkParam) error {
 	}
 
 	return nil
-}
-
-func (pc *poapCrawler) GetResult() *crawler.CrawlerResult {
-	return &crawler.CrawlerResult{
-		Assets: pc.Assets,
-		Notes:  pc.Notes,
-		Items:  pc.Items,
-	}
 }

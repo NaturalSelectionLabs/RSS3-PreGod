@@ -12,12 +12,12 @@ import (
 )
 
 type moralisCrawler struct {
-	crawler.CrawlerResult
+	crawler.DefaultCrawler
 }
 
 func NewMoralisCrawler() crawler.Crawler {
 	return &moralisCrawler{
-		crawler.CrawlerResult{
+		crawler.DefaultCrawler{
 			Items:  []*model.Item{},
 			Assets: []*model.ItemId{},
 			Notes:  []*model.ItemId{},
@@ -26,7 +26,7 @@ func NewMoralisCrawler() crawler.Crawler {
 }
 
 //nolint:funlen // disable line length check
-func (mc *moralisCrawler) Work(param crawler.WorkParam) error {
+func (c *moralisCrawler) Work(param crawler.WorkParam) error {
 	chainType := GetChainType(param.NetworkID)
 	if chainType == Unknown {
 		return fmt.Errorf("unsupported network: %s", chainType)
@@ -47,7 +47,7 @@ func (mc *moralisCrawler) Work(param crawler.WorkParam) error {
 	}
 	//parser
 	for _, nftTransfer := range nftTransfers.Result {
-		mc.Notes = append(mc.Notes, &model.ItemId{
+		c.Notes = append(c.Notes, &model.ItemId{
 			NetworkID: networkId,
 			Proof:     nftTransfer.TransactionHash,
 		})
@@ -60,7 +60,7 @@ func (mc *moralisCrawler) Work(param crawler.WorkParam) error {
 			if nftTransfer.EqualsToToken(asset) {
 				hasProof = true
 
-				mc.Assets = append(mc.Assets, &model.ItemId{
+				c.Assets = append(c.Assets, &model.ItemId{
 					NetworkID: networkId,
 					Proof:     nftTransfer.TransactionHash,
 				})
@@ -112,7 +112,7 @@ func (mc *moralisCrawler) Work(param crawler.WorkParam) error {
 			[]model.Attachment{},
 			tsp,
 		)
-		mc.Items = append(mc.Items, ni)
+		c.Items = append(c.Items, ni)
 	}
 
 	return nil

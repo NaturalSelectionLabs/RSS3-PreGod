@@ -14,7 +14,7 @@ type GetItemsHandler struct {
 
 type GetItemsResult struct {
 	CrawlerHandlerResultBase
-	Result *crawler.CrawlerResult
+	Result *crawler.DefaultCrawler
 }
 
 func NewGetItemsHandler(workParam crawler.WorkParam) *GetItemsHandler {
@@ -39,7 +39,7 @@ func (pt *GetItemsHandler) Excute() *GetItemsResult {
 
 	var c crawler.Crawler
 
-	var r *crawler.CrawlerResult
+	var r *crawler.DefaultCrawler
 
 	result := NewGetItemsResult()
 
