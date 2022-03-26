@@ -1,54 +1,50 @@
-package user_bio_stroge_task
+package crawler_handler
 
 import (
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/crawler"
-	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/processor"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/util"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/logger"
 )
 
-type UserBioStrogeTask struct {
-	processor.ProcessTaskParam
+type GetUserBioHandler struct {
+	CrawlerHandlerBase
 }
 
-type UserBioStrogeResult struct {
-	processor.ProcessTaskResult
+type GetUserBioResult struct {
+	CrawlerHandlerResultBase
 
 	UserBio string
 }
 
-func NewUserBioStrogeTask(workParam crawler.WorkParam) *UserBioStrogeTask {
-	return &UserBioStrogeTask{
-		processor.ProcessTaskParam{
-			TaskType:  processor.ProcessTaskTypeUserBioStroge,
+func NewGetUserBioHandler(workParam crawler.WorkParam) *GetUserBioHandler {
+	return &GetUserBioHandler{
+		CrawlerHandlerBase{
 			WorkParam: workParam,
 		},
 	}
 }
 
-func NewUserBioStrogeResult() *UserBioStrogeResult {
-	return &UserBioStrogeResult{
-		processor.ProcessTaskResult{
-			TaskType:   processor.ProcessTaskTypeUserBioStroge,
-			TaskResult: util.ErrorCodeSuccess,
+func NewGetUserBioResult() *GetUserBioResult {
+	return &GetUserBioResult{
+		CrawlerHandlerResultBase{
+			Error: util.GetErrorBase(util.ErrorCodeSuccess),
 		},
-
 		"",
 	}
 }
 
-func (pt *UserBioStrogeTask) Fun() *UserBioStrogeResult {
+func (pt *GetUserBioHandler) Excute() *GetUserBioResult {
 	var err error
 
 	var c crawler.Crawler
 
 	var userBio string
 
-	result := NewUserBioStrogeResult()
+	result := NewGetUserBioResult()
 
-	c = processor.MakeCrawlers(pt.WorkParam.NetworkID)
+	c = MakeCrawlers(pt.WorkParam.NetworkID)
 	if c == nil {
-		result.TaskResult = util.ErrorCodeNotSupportedNetwork
+		result.Error = util.GetErrorBase(util.ErrorCodeNotSupportedNetwork)
 
 		logger.Errorf("unsupported network id[%d]", pt.WorkParam.NetworkID)
 
@@ -58,7 +54,7 @@ func (pt *UserBioStrogeTask) Fun() *UserBioStrogeResult {
 	userBio, err = c.GetUserBio(pt.WorkParam.Identity)
 
 	if err != nil {
-		result.TaskResult = util.ErrorCodeNotFoundData
+		result.Error = util.GetErrorBase(util.ErrorCodeNotFoundData)
 
 		logger.Errorf("[%d] can't find", pt.WorkParam.Identity)
 

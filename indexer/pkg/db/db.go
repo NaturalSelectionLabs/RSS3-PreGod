@@ -48,14 +48,6 @@ func AppendNotes(instance rss3uri.Instance, notes []*model.ItemId) {
 	)
 }
 
-func GetNotes(instance rss3uri.Instance) (*[]model.Item, error) {
-	return getAccountItems(instance, constants.ItemTypeNote)
-}
-
-func GetAssets(instance rss3uri.Instance) (*[]model.Item, error) {
-	return getAccountItems(instance, constants.ItemTypeAsset)
-}
-
 func Exists(i rss3uri.Instance) (bool, error) {
 	n, err := mgm.Coll(&model.AccountItemList{}).CountDocuments(
 		mgm.Ctx(),
@@ -86,7 +78,7 @@ func GetAccountInstance(instance rss3uri.Instance) (*model.AccountItemList, erro
 	}
 }
 
-func getAccountItems(instance rss3uri.Instance, t constants.ItemType) (*[]model.Item, error) {
+func GetAccountItems(instance rss3uri.Instance, t constants.ItemType) (*[]model.Item, error) {
 	r, err := GetAccountInstance(instance)
 	if err != nil {
 		return nil, err
