@@ -113,6 +113,12 @@ type JikeStruct struct {
 type TwitterStruct struct {
 	Tokens []string `koanf:"break_down_tokens"`
 }
+
+type InfuraStruct struct {
+	Gateway string `koanf:"gateway"`
+	ApiKey  string `koanf:"api_key"`
+}
+
 type IndexerStruct struct {
 	Server ServerStruct `koanf:"server"`
 
@@ -123,6 +129,7 @@ type IndexerStruct struct {
 	PolygonScan PolygonScanStruct `koanf:"polygonscan"`
 	Twitter     TwitterStruct     `koanf:"twitter"`
 	Aribtrum    ArbitrumStruct    `koanf:"arbitrum"`
+	Infura      InfuraStruct      `koanf:"infura"`
 }
 
 type ConfigStruct struct {
