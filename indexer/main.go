@@ -1,16 +1,19 @@
 package main
 
 import (
+	"context"
 	"log"
 
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/api/arweave"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/api/gitcoin"
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/autoupdater"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/db"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/router"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/cache"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/config"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/logger"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/web"
+	"github.com/spf13/cobra"
 )
 
 func init() {
@@ -31,7 +34,7 @@ func init() {
 	}
 }
 
-func main() {
+func RunHTTPServer(cmd *cobra.Command, args []string) error {
 	srv := &web.Server{
 		RunMode:      config.Config.Indexer.Server.RunMode,
 		HttpPort:     config.Config.Indexer.Server.HttpPort,
@@ -39,8 +42,6 @@ func main() {
 		WriteTimeout: config.Config.Indexer.Server.WriteTimeout,
 		Handler:      router.InitRouter(),
 	}
-
-	srv.Start()
 
 	// arweave crawler
 	ar := arweave.NewArCrawler(
@@ -63,4 +64,30 @@ func main() {
 	go gc.ZkStart()
 
 	defer logger.Logger.Sync()
+
+	srv.Start()
+
+	return nil
+}
+
+// runs every 10 minutes
+func RunAutoUpdater(cmd *cobra.Command, args []string) error {
+	return autoupdater.RunRecentVisitQueue(context.Background())
+}
+
+var rootCmd = &cobra.Command{Use: "indexer"}
+
+func main() {
+	rootCmd.AddCommand(&cobra.Command{
+		Use:  "httpsvc",
+		RunE: RunHTTPServer,
+	})
+	rootCmd.AddCommand(&cobra.Command{
+		Use:  "autoupdater",
+		RunE: RunAutoUpdater,
+	})
+
+	if err := rootCmd.Execute(); err != nil {
+		panic(err)
+	}
 }
