@@ -4,13 +4,9 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/api/jike"
-	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/api/misskey"
-	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/api/moralis"
-	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/api/twitter"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/crawler"
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/crawler_handler"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/db"
-	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/constants"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/rss3uri"
 	"github.com/vmihailenco/msgpack"
 )
@@ -24,6 +20,7 @@ func AddToRecentVisitQueue(ctx context.Context, param *crawler.WorkParam) error 
 	return RecentVisitQueue.Add(ctx, string(item))
 }
 
+// TODO: Can be optimized and merged with item's Execute code
 func RunRecentVisitQueue(ctx context.Context) error {
 	return RecentVisitQueue.Iter(ctx, func(s string) error {
 		var c crawler.Crawler
@@ -33,20 +30,8 @@ func RunRecentVisitQueue(ctx context.Context) error {
 		}
 
 		// choose executor
-		switch param.NetworkID {
-		case constants.NetworkIDEthereumMainnet,
-			constants.NetworkIDBNBChain,
-			constants.NetworkIDAvalanche,
-			constants.NetworkIDFantom,
-			constants.NetworkIDPolygon:
-			c = moralis.NewMoralisCrawler()
-		case constants.NetworkIDMisskey:
-			c = misskey.NewMisskeyCrawler()
-		case constants.NetworkIDJike:
-			c = jike.NewJikeCrawler()
-		case constants.NetworkIDTwitter:
-			c = twitter.NewTwitterCrawler()
-		default:
+		c = crawler_handler.MakeCrawlers(param.NetworkID)
+		if c == nil {
 			return fmt.Errorf("unknown network id")
 		}
 

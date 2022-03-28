@@ -45,7 +45,8 @@ func GetBioHandlerFunc(c *gin.Context) {
 		"",
 	}
 
-	if len(request.Identity) > 0 || !constants.IsValidPlatformSymbol(string(request.PlatformID.Symbol())) {
+	if len(request.Identity) <= 0 ||
+		!constants.IsValidPlatformSymbol(string(request.PlatformID.Symbol())) {
 		logger.Errorf("parameter error")
 
 		response.ErrorBase = util.GetErrorBase(util.ErrorCodeParameterError)
