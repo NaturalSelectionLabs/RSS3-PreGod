@@ -2,6 +2,7 @@ package index
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"time"
@@ -10,6 +11,7 @@ import (
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/database/model"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/pkg/middleware"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/pkg/protocol"
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/pkg/verify"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/pkg/web"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/status"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/isotime"
@@ -26,15 +28,8 @@ func PutIndexHandlerFunc(c *gin.Context) {
 	w := web.Gin{C: c}
 
 	// Parse the request
-	value, exists := c.Get(middleware.KeyInstance)
-	if !exists {
-		w.JSONResponse(http.StatusBadRequest, status.CodeInvalidParams, nil)
-
-		return
-	}
-
-	platformInstance, ok := value.(*rss3uri.PlatformInstance)
-	if !ok {
+	platformInstance, err := middleware.GetInstance(c)
+	if err != nil {
 		w.JSONResponse(http.StatusBadRequest, status.CodeInvalidParams, nil)
 
 		return
@@ -42,13 +37,25 @@ func PutIndexHandlerFunc(c *gin.Context) {
 
 	// Get the new put index file
 	var indexFile protocol.Index
-	if err := c.ShouldBind(&indexFile); err != nil {
+	if err = c.ShouldBind(&indexFile); err != nil {
 		w.JSONResponse(http.StatusBadRequest, status.CodeInvalidParams, nil)
 
 		return
 	}
 
-	// TODO: Check the signature
+	// Check the signature
+	jsonBytes, err := json.Marshal(indexFile)
+	if err != nil {
+		w.JSONResponse(http.StatusInternalServerError, status.CodeInvalidParams, nil)
+
+		return
+	}
+
+	if ok, err := verify.Signature(jsonBytes, platformInstance.GetIdentity(), indexFile.Identifier); !ok || err != nil {
+		w.JSONResponse(http.StatusBadRequest, status.CodeSignatureInvalid, nil)
+
+		return
+	}
 
 	// Get the original index file
 	oIndexFile, httpStatus, bizStatus := getIndexFile(platformInstance)
@@ -94,9 +101,7 @@ func PutIndexHandlerFunc(c *gin.Context) {
 
 	w.JSONResponse(http.StatusOK, status.CodeOK, indexFile)
 
-	// TODO: compare more diffs
-
-	return //nolint:gosimple // TODO:
+	return
 }
 
 type UpdateTaskFunc func(db *gorm.DB, old, newIndex *protocol.Index) (int, status.Code)

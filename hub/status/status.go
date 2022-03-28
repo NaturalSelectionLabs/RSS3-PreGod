@@ -47,6 +47,7 @@ const (
 	CodeLinkNotExist      Code = 10006
 	CodeFileFieldError    Code = 10007
 	CodeSignatureNotExist Code = 10008
+	CodeSignatureInvalid  Code = 10009
 
 	// Base error
 	MessageUnknown Message = "unknown"
@@ -63,6 +64,7 @@ const (
 	MessageLinkListNotExist Message = "link list not exist"
 	MessageLinkNotExist     Message = "link not exist"
 	MessageFileFieldError   Message = "file field error"
+	MessageSignatureInvalid Message = "signature invalid"
 )
 
 var (
@@ -79,6 +81,7 @@ var (
 		CodeLinkListNotExist: MessageLinkListNotExist,
 		CodeLinkNotExist:     MessageLinkNotExist,
 		CodeFileFieldError:   MessageFileFieldError,
+		CodeSignatureInvalid: MessageSignatureInvalid,
 	}
 	codeMap = map[Message]Code{}
 )
