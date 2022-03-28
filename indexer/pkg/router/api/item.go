@@ -17,8 +17,8 @@ import (
 type GetItemRequest struct {
 	Identity   string               `form:"proof" binding:"required"`
 	PlatformID constants.PlatformID `form:"platform_id" binding:"required"`
-	NetworkID  constants.NetworkID  `form:"network_id"`
-	ItemType   constants.ItemType   `form:"item_type"`
+	NetworkID  constants.NetworkID  `form:"network_id" binding:"required"`
+	ItemType   constants.ItemType   `form:"item_type" binding:"required"`
 }
 
 type itemsResult struct {
@@ -44,6 +44,16 @@ func GetItemHandlerFunc(c *gin.Context) {
 		itemsResult{},
 	}
 
+	if len(request.Identity) <= 0 ||
+		!constants.IsValidPlatformSymbol(string(request.PlatformID.Symbol())) ||
+		!constants.IsValidNetworkName(string(request.NetworkID.Symbol())) ||
+		request.ItemType == constants.ItemTypeUnknown {
+		logger.Errorf("parameter error")
+
+		response.ErrorBase = util.GetErrorBase(util.ErrorCodeParameterError)
+		c.JSON(http.StatusOK, response)
+	}
+
 	dbResult, err := getItemsFromDB(request)
 	if err != nil {
 		logger.Errorf("get items from db error: %s", err.Error())
@@ -51,6 +61,8 @@ func GetItemHandlerFunc(c *gin.Context) {
 
 	if dbResult != nil {
 		response.ItemsResult = *dbResult
+
+		c.JSON(http.StatusOK, response)
 	}
 
 	getItemHandler := crawler_handler.NewGetItemsHandler(crawler.WorkParam{
