@@ -163,6 +163,8 @@ func ZScan(ctx context.Context, key string, cursor uint64, match string, count i
 	return rdb.ZScan(ctx, key, cursor, match, count).Result()
 }
 
+func GetRedisClient() *redis.Client { return rdb }
+
 func SRem(ctx context.Context, key string, data interface{}) error {
 	value, err := jsoni.Marshal(data)
 	if err != nil {

@@ -17,7 +17,7 @@ func AddToRecentVisitQueue(ctx context.Context, param *crawler.WorkParam) error 
 		return err
 	}
 
-	return RecentVisitQueue.Add(ctx, string(item))
+	return RecentVisitQueue.Add(ctx, item)
 }
 
 // TODO: Can be optimized and merged with item's Execute code
