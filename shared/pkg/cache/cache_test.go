@@ -21,8 +21,6 @@ var (
 )
 
 func TestGetSet(t *testing.T) {
-	t.Parallel()
-
 	err := cache.Setup()
 	assert.Nil(t, err)
 
@@ -38,8 +36,6 @@ func TestGetSet(t *testing.T) {
 }
 
 func TestExists(t *testing.T) {
-	t.Parallel()
-
 	err := cache.Setup()
 	assert.Nil(t, err)
 
@@ -53,8 +49,6 @@ func TestExists(t *testing.T) {
 }
 
 func TestZAdd(t *testing.T) {
-	t.Parallel()
-
 	err := cache.Setup()
 	assert.Nil(t, err)
 
@@ -68,8 +62,6 @@ func TestZAdd(t *testing.T) {
 }
 
 func TestZRevRange(t *testing.T) {
-	t.Parallel()
-
 	err := cache.Setup()
 	assert.Nil(t, err)
 
@@ -92,8 +84,6 @@ func TestZRevRange(t *testing.T) {
 }
 
 func TestZRevRangeWithScore(t *testing.T) {
-	t.Parallel()
-
 	err := cache.Setup()
 	assert.Nil(t, err)
 

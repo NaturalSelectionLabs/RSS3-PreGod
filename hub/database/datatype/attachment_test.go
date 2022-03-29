@@ -23,8 +23,6 @@ func init() {
 }
 
 func TestAttachment(t *testing.T) {
-	t.Parallel()
-
 	type UserWithAttachments struct {
 		ID          uint
 		Name        string

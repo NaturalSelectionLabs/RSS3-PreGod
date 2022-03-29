@@ -1,7 +1,9 @@
 package web
 
 import (
-	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/pkg/status"
+	"net/http"
+
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/status"
 	"github.com/gin-gonic/gin"
 )
 
@@ -16,9 +18,15 @@ type Response struct {
 }
 
 func (g *Gin) JSONResponse(httpCode int, errCode status.Code, data interface{}) {
+	if httpCode == http.StatusOK {
+		g.C.JSON(httpCode, data)
+
+		return
+	}
+
 	g.C.JSON(httpCode, Response{
 		Code:    errCode,
-		Message: status.GetMessage(errCode),
+		Message: errCode.Message(),
 		Data:    data,
 	})
 }

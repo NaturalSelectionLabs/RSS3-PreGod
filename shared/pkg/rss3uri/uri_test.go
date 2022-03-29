@@ -9,8 +9,6 @@ import (
 )
 
 func TestNew(t *testing.T) {
-	t.Parallel()
-
 	instance, err := rss3uri.NewInstance("account", "0xC8b960D09C0078c18Dcbe7eB9AB9d816BcCa8944", "ethereum")
 	assert.Nil(t, err)
 
@@ -32,8 +30,6 @@ func BenchmarkNew(b *testing.B) {
 }
 
 func TestParse(t *testing.T) {
-	t.Parallel()
-
 	uri, err := rss3uri.Parse("rss3://account:0xC8b960D09C0078c18Dcbe7eB9AB9d816BcCa8944@ethereum")
 	assert.Nil(t, err, err)
 	assert.Equal(t, uri.String(), "rss3://account:0xC8b960D09C0078c18Dcbe7eB9AB9d816BcCa8944@ethereum")

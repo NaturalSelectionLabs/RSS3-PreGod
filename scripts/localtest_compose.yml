@@ -1,0 +1,21 @@
+version: "3"
+services:
+  redis:
+    image: "redis:alpine"
+    ports:
+      - "6379:6379"
+  pgsql:
+    image: "postgres:13.4"
+    environment:
+      POSTGRES_PASSWORD: Pa33WoRD
+      POSTGRES_USER: rss3
+      POSTGRES_DB: pregod
+    ports:
+      - "5432:5432"
+  mongo:
+    image: "mongo:4.0"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: rss3
+      MONGO_INITDB_ROOT_PASSWORD: Pa33WoRD
+    ports:
+      - "27017:27017"
