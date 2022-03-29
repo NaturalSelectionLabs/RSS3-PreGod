@@ -1,0 +1,3 @@
+# start redis/mongo/pgsql before run it
+# docker-compose -f scripts/localtest_compose.yml up -d
+CONFIG_ENV=local go test -count=1 -failfast -coverpkg . ./...

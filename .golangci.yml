@@ -34,6 +34,8 @@ linters: # https://golangci-lint.run/usage/linters
     - scopelint # deprecated, replaced by exportloopref
     - gochecknoinits # `init` functions should be] allowed
     - gofumpt # too strict so far
+    - paralleltest # Not for our situation
+    - tparallel # Not for our situation
   enable:
     - exportloopref # in replacement of scopelint
     - deadcode # no dead code
