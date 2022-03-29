@@ -7,7 +7,5 @@ import (
 )
 
 func TestName(t *testing.T) {
-	t.Parallel()
-
 	t.Log(status.CodeFileFieldError.Message())
 }

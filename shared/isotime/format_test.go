@@ -8,8 +8,6 @@ import (
 )
 
 func TestName(t *testing.T) {
-	t.Parallel()
-
 	result, err := time.Parse(isotime.ISO8601, "2022-03-22T11:52:22.865Z")
 	if err != nil {
 		t.Error(err)

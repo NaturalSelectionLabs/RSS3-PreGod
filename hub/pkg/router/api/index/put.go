@@ -92,11 +92,9 @@ func PutIndexHandlerFunc(c *gin.Context) {
 		return
 	}
 
-	w.JSONResponse(http.StatusOK, status.CodeOK, indexFile)
-
 	// TODO: compare more diffs
-
-	return //nolint:gosimple // TODO:
+	// return
+	w.JSONResponse(http.StatusOK, status.CodeOK, indexFile)
 }
 
 type UpdateTaskFunc func(db *gorm.DB, old, newIndex *protocol.Index) (int, status.Code)
