@@ -8,8 +8,6 @@ import (
 )
 
 func TestNewInstance(t *testing.T) {
-	t.Parallel()
-
 	instance, err := rss3uri.NewInstance("account", "0xC8b960D09C0078c18Dcbe7eB9AB9d816BcCa8944", "ethereum")
 	assert.Nil(t, err)
 	assert.Equal(t, instance.String(), "account:0xC8b960D09C0078c18Dcbe7eB9AB9d816BcCa8944@ethereum")
@@ -25,8 +23,6 @@ func BenchmarkNewInstance(b *testing.B) {
 }
 
 func TestParseInstance(t *testing.T) {
-	t.Parallel()
-
 	instance, err := rss3uri.ParseInstance("account:0xC8b960D09C0078c18Dcbe7eB9AB9d816BcCa8944@ethereum")
 	assert.Nil(t, err, err)
 	assert.Equal(t, instance.String(), "account:0xC8b960D09C0078c18Dcbe7eB9AB9d816BcCa8944@ethereum")

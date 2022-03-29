@@ -8,8 +8,6 @@ import (
 )
 
 func TestVerifyMessage(t *testing.T) {
-	t.Parallel()
-
 	type args struct {
 		msg  []byte
 		sig  string
@@ -54,7 +52,6 @@ func TestVerifyMessage(t *testing.T) {
 	for _, tt := range tests {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
-			t.Parallel()
 			got, err := ethers.VerifyMessage(tt.args.msg, tt.args.sig, tt.args.addr)
 			if err != nil {
 				t.Errorf("[%v] VerifyMessage() error = %v", tt.name, err)

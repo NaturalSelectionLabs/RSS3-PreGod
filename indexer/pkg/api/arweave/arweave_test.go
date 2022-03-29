@@ -9,16 +9,12 @@ import (
 )
 
 func TestGetLatestBlockHeight(t *testing.T) {
-	t.Parallel()
-
 	blockHeight, err := arweave.GetLatestBlockHeight()
 	assert.Nil(t, err)
 	assert.NotEqual(t, 0, blockHeight)
 }
 
 func TestGetContentByTxHash(t *testing.T) {
-	t.Parallel()
-
 	hash := "BhM-D1bsQkaqi72EEG1aRVs4Nv5bZZIW-mH8yEdIDWA"
 	response, err := arweave.GetContentByTxHash(hash)
 	// assert for nil
@@ -46,8 +42,6 @@ func TestGetContentByTxHash(t *testing.T) {
 }
 
 func TestGetTransacitons(t *testing.T) {
-	t.Parallel()
-
 	owner := "Ky1c1Kkt-jZ9sY1hvLF5nCf6WWdBhIU5Un_BMYh-t3c"
 	response, err := arweave.GetTransactions(877250, 877250, owner)
 	// assert for nil
@@ -63,8 +57,6 @@ func TestGetTransacitons(t *testing.T) {
 }
 
 func TestGetArticles(t *testing.T) {
-	t.Parallel()
-
 	owner := "Ky1c1Kkt-jZ9sY1hvLF5nCf6WWdBhIU5Un_BMYh-t3c"
 	articles, err := arweave.GetArticles(877250, 877250, owner)
 	// assert for nil
