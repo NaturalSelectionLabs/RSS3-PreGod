@@ -9,7 +9,9 @@ type AccountItemList struct {
 
 	AccountInstance string `json:"account_instance" bson:"account_instance"`
 
-	Assets []ItemId `json:"assets" bson:"assets"`
+	Profiles []Profile `json:"profiles" bson:"profiles"`
 
-	Notes []ItemId `json:"notes" bson:"notes"`
+	Assets []ObjectId `json:"assets" bson:"assets"`
+
+	Notes []ObjectId `json:"notes" bson:"notes"`
 }

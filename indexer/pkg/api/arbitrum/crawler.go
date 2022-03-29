@@ -26,7 +26,7 @@ func Crawl(param *crawler.WorkParam, result *crawler.DefaultCrawler) (crawler.De
 
 	// parse notes
 	for _, v := range nftTransfers {
-		result.Notes = append(result.Notes, &model.ItemId{
+		result.Notes = append(result.Notes, &model.ObjectId{
 			NetworkID: networkId,
 			Proof:     v.Hash,
 		})
@@ -40,7 +40,7 @@ func Crawl(param *crawler.WorkParam, result *crawler.DefaultCrawler) (crawler.De
 			if nftTransfer.EqualsToToken(v) {
 				hasProof = true
 
-				result.Assets = append(result.Assets, &model.ItemId{
+				result.Assets = append(result.Assets, &model.ObjectId{
 					NetworkID: networkId,
 					Proof:     nftTransfer.Hash,
 				})

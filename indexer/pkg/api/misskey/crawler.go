@@ -15,7 +15,7 @@ func NewMisskeyCrawler() crawler.Crawler {
 	return &misskeyCrawler{
 		crawler.DefaultCrawler{
 			Items: []*model.Item{},
-			Notes: []*model.ItemId{},
+			Notes: []*model.ObjectId{},
 		},
 	}
 }
@@ -46,7 +46,7 @@ func (mc *misskeyCrawler) Work(param crawler.WorkParam) error {
 		)
 		mc.Items = append(mc.Items, ni)
 
-		mc.Notes = append(mc.Notes, &model.ItemId{
+		mc.Notes = append(mc.Notes, &model.ObjectId{
 			NetworkID: param.NetworkID,
 			Proof:     note.Link,
 		})

@@ -6,6 +6,7 @@ import (
 
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/crawler"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/db/model"
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/config"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/constants"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/logger"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/rss3uri"
@@ -19,8 +20,8 @@ func NewMoralisCrawler() crawler.Crawler {
 	return &moralisCrawler{
 		crawler.DefaultCrawler{
 			Items:  []*model.Item{},
-			Assets: []*model.ItemId{},
-			Notes:  []*model.ItemId{},
+			Assets: []*model.ObjectId{},
+			Notes:  []*model.ObjectId{},
 		},
 	}
 }
@@ -34,20 +35,20 @@ func (c *moralisCrawler) Work(param crawler.WorkParam) error {
 
 	networkSymbol := chainType.GetNetworkSymbol()
 	networkId := networkSymbol.GetID()
-	nftTransfers, err := GetNFTTransfers(param.Identity, chainType, GetApiKey())
+	nftTransfers, err := GetNFTTransfers(param.Identity, chainType, config.Config.Indexer.Moralis.ApiKey)
 
 	if err != nil {
 		return err
 	}
 
 	//TODO: tsp
-	assets, err := GetNFTs(param.Identity, chainType, GetApiKey())
+	assets, err := GetNFTs(param.Identity, chainType, config.Config.Indexer.Moralis.ApiKey)
 	if err != nil {
 		return err
 	}
 	//parser
 	for _, nftTransfer := range nftTransfers.Result {
-		c.Notes = append(c.Notes, &model.ItemId{
+		c.Notes = append(c.Notes, &model.ObjectId{
 			NetworkID: networkId,
 			Proof:     nftTransfer.TransactionHash,
 		})
@@ -60,7 +61,7 @@ func (c *moralisCrawler) Work(param crawler.WorkParam) error {
 			if nftTransfer.EqualsToToken(asset) {
 				hasProof = true
 
-				c.Assets = append(c.Assets, &model.ItemId{
+				c.Assets = append(c.Assets, &model.ObjectId{
 					NetworkID: networkId,
 					Proof:     nftTransfer.TransactionHash,
 				})
@@ -88,7 +89,7 @@ func (c *moralisCrawler) Work(param crawler.WorkParam) error {
 		hasObject := false
 
 		for _, asset := range assets.Result {
-			if nftTransfer.EqualsToToken(asset) && asset.MetaData != "" {
+			if nftTransfer.EqualsToToken(asset) && asset.MetaData.Name != "" {
 				hasObject = true
 			}
 		}

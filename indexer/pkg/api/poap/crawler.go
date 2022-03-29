@@ -19,8 +19,8 @@ func NewPoapCrawler() crawler.Crawler {
 	return &poapCrawler{
 		crawler.DefaultCrawler{
 			Items:  []*model.Item{},
-			Assets: []*model.ItemId{},
-			Notes:  []*model.ItemId{},
+			Assets: []*model.ObjectId{},
+			Notes:  []*model.ObjectId{},
 		},
 	}
 }
@@ -74,11 +74,11 @@ func (pc *poapCrawler) Work(param crawler.WorkParam) error {
 		)
 
 		pc.Items = append(pc.Items, ni)
-		pc.Notes = append(pc.Notes, &model.ItemId{
+		pc.Notes = append(pc.Notes, &model.ObjectId{
 			NetworkID: networkId,
 			Proof:     "",
 		})
-		pc.Assets = append(pc.Assets, &model.ItemId{
+		pc.Assets = append(pc.Assets, &model.ObjectId{
 			NetworkID: networkId,
 			Proof:     "",
 		})

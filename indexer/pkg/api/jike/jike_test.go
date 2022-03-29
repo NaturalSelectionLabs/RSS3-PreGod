@@ -9,12 +9,14 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestLogin(t *testing.T) {
-	t.Parallel()
-
+func init() {
 	if err := config.Setup(); err != nil {
 		log.Fatalf("config.Setup err: %v", err)
 	}
+}
+
+func TestLogin(t *testing.T) {
+	t.Parallel()
 
 	err := jike.Login()
 
@@ -32,10 +34,6 @@ func TestLogin(t *testing.T) {
 
 func TestGetUserProfile(t *testing.T) {
 	t.Parallel()
-
-	if err := config.Setup(); err != nil {
-		log.Fatalf("config.Setup err: %v", err)
-	}
 
 	jike.Login()
 

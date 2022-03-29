@@ -3,7 +3,6 @@ package ens
 import (
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/crawler"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/db/model"
-	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/constants"
 )
 
 type ensCrawler struct {
@@ -13,40 +12,36 @@ type ensCrawler struct {
 func NewEnsCrawler() crawler.Crawler {
 	return &ensCrawler{
 		crawler.DefaultCrawler{
-			Items:  []*model.Item{},
-			Assets: []*model.ItemId{},
+			Profiles: []*model.Profile{},
 		},
 	}
 }
 
 func (c *ensCrawler) Work(param crawler.WorkParam) error {
-	ensList := GetENSList(param.Identity)
-	for _, ens := range ensList {
+	ensList, err := GetENSList(param.Identity)
 
-		metadata := make(map[string]interface{}, len(ens.text))
-		for k, v := range ens.text {
+	if err != nil {
+		return err
+	}
+
+	for _, ens := range ensList {
+		metadata := make(map[string]interface{}, len(ens.Text))
+		for k, v := range ens.Text {
 			metadata[k] = v
 		}
 
-		item := model.NewItem(
+		profile := model.NewProfile(
 			param.NetworkID,
-			ens.domain,
-			metadata,
-			constants.ItemTagENS,
-			[]string{param.Identity},
-			"",
-			"",
+			ens.TxHash,
+			ens.Text,
+			ens.Domain,
+			ens.Description,
+			[]string{ens.Text["avatar"]},
 			[]model.Attachment{},
-			ens.createdAt,
+			[]string{param.Identity},
 		)
 
-		c.Items = append(c.Items, item)
-
-		c.Assets = append(c.Assets, &model.ItemId{
-			NetworkID: param.NetworkID,
-			Proof:     ens.txHash,
-		})
-
+		c.Profiles = append(c.Profiles, profile)
 	}
 
 	return nil

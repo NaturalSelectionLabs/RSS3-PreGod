@@ -13,7 +13,6 @@ const (
 	itemTagTweet       itemTag = "Tweet"
 	itemTagMisskeyNote itemTag = "Misskey Note"
 	itemTagJikePost    itemTag = "Jike Post"
-	itemTagENS         itemTag = "ENS"
 )
 
 // See https://rss3.io/protocol/RIPs/RIP-4.html
@@ -29,5 +28,4 @@ var (
 	ItemTagsTweet           ItemTags = []itemTag{itemTagTweet}
 	ItemTagsMisskeyNote     ItemTags = []itemTag{itemTagMisskeyNote}
 	ItemTagsJikePost        ItemTags = []itemTag{itemTagJikePost}
-	ItemTagENS              ItemTags = []itemTag{itemTagENS}
 )
