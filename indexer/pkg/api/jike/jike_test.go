@@ -6,7 +6,6 @@ import (
 
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/api/jike"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/config"
-	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/logger"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -21,7 +20,6 @@ func TestLogin(t *testing.T) {
 
 	err := jike.Login()
 
-	err := jike.Login()
 	assert.Nil(t, err)
 }
 
