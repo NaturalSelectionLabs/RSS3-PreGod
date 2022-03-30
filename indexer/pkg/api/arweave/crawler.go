@@ -117,15 +117,11 @@ func (ar *arCrawler) getArticles(from, to int64, owner string) error {
 		items = append(items, ni)
 	}
 
-	setDB(items)
+	if len(items) > 0 {
+		db.InsertItems(items, constants.NetworkSymbolArweaveMainnet.GetID())
+	}
 
 	return nil
-}
-
-func setDB(items []*model.Item) {
-	for _, item := range items {
-		db.InsertItem(item)
-	}
 }
 
 func (ar *arCrawler) Start() error {
