@@ -33,3 +33,6 @@ tmp_data/
 docker/volume
 
 import_data/
+
+# config
+config.local.json
