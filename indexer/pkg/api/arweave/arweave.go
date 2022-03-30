@@ -41,7 +41,7 @@ func GetContentByTxHash(hash string) ([]byte, error) {
 }
 
 // GetTransactions gets all transactions using filters.
-func GetTransactions(from, to uint64, owner string) ([]byte, error) {
+func GetTransactions(from, to int64, owner string) ([]byte, error) {
 	var headers = map[string]string{
 		"Accept-Encoding": "gzip, deflate, br",
 		"Content-Type":    "application/json",
@@ -61,7 +61,7 @@ func GetTransactions(from, to uint64, owner string) ([]byte, error) {
 }
 
 // GetArticles gets all articles from arweave using filters.
-func GetArticles(from, to uint64, owner string) ([]MirrorArticle, error) {
+func GetArticles(from, to int64, owner string) ([]MirrorArticle, error) {
 	response, err := GetTransactions(from, to, owner)
 	if err != nil {
 		return nil, nil

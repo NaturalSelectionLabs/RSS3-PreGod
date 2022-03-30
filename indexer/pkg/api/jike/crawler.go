@@ -7,20 +7,20 @@ import (
 )
 
 type jikeCrawler struct {
-	rss3Items []*model.Item
-
-	rss3Assets, rss3Notes []*model.ItemId
+	crawler.DefaultCrawler
 }
 
 func NewJikeCrawler() crawler.Crawler {
 	return &jikeCrawler{
-		rss3Items: []*model.Item{},
-		rss3Notes: []*model.ItemId{},
+		crawler.DefaultCrawler{
+			Items: []*model.Item{},
+			Notes: []*model.ItemId{},
+		},
 	}
 }
 
-func (mc *jikeCrawler) Work(userAddress string, networkId constants.NetworkID) error {
-	timeline, err := GetUserTimeline(userAddress)
+func (mc *jikeCrawler) Work(param crawler.WorkParam) error {
+	timeline, err := GetUserTimeline(param.Identity)
 
 	if err != nil {
 		return err
@@ -28,7 +28,7 @@ func (mc *jikeCrawler) Work(userAddress string, networkId constants.NetworkID) e
 
 	for _, item := range timeline {
 		ni := model.NewItem(
-			networkId,
+			param.NetworkID,
 			item.Link,
 			model.Metadata{
 				"network": constants.NetworkSymbolJike,
@@ -41,10 +41,10 @@ func (mc *jikeCrawler) Work(userAddress string, networkId constants.NetworkID) e
 			item.Attachments,
 			item.Timestamp,
 		)
-		mc.rss3Items = append(mc.rss3Items, ni)
+		mc.Items = append(mc.Items, ni)
 
-		mc.rss3Notes = append(mc.rss3Notes, &model.ItemId{
-			NetworkId: networkId,
+		mc.Notes = append(mc.Notes, &model.ItemId{
+			NetworkID: param.NetworkID,
 			Proof:     item.Link,
 		})
 	}
@@ -52,10 +52,23 @@ func (mc *jikeCrawler) Work(userAddress string, networkId constants.NetworkID) e
 	return nil
 }
 
-func (mc *jikeCrawler) GetResult() *crawler.CrawlerResult {
-	return &crawler.CrawlerResult{
-		Assets: mc.rss3Assets,
-		Notes:  mc.rss3Notes,
-		Items:  mc.rss3Items,
+func (tc *jikeCrawler) GetUserBio(Identity string) (string, error) {
+	if err := Login(); err != nil {
+		return "", err
 	}
+
+	userProfile, err := GetUserProfile(Identity)
+
+	if err != nil {
+		return "", err
+	}
+
+	userBios := []string{userProfile.Bio}
+	userBioJson, err := crawler.GetUserBioJson(userBios)
+
+	if err != nil {
+		return "", err
+	}
+
+	return userBioJson, nil
 }

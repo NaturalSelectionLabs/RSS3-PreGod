@@ -29,7 +29,9 @@ func GetApiKey() string {
 
 func GetNFTTxs(owner string) ([]byte, error) {
 	apiKey := GetApiKey()
-	url := fmt.Sprintf("%s/api?module=account&action=tokennfttx&address=%s&startblock=0&endblock=999999999&sort=asc&apikey=%s", endpoint, owner, apiKey)
+	url := fmt.Sprintf(
+		"%s/api?module=account&action=tokennfttx&address=%s&startblock=0&endblock=999999999&sort=asc&apikey=%s",
+		endpoint, owner, apiKey)
 
 	response, err := httpx.Get(url, nil)
 	if err != nil {

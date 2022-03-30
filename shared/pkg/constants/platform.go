@@ -1,6 +1,9 @@
 package constants
 
-type PlatformID int
+type (
+	PlatformID     int
+	PlatformSymbol string
+)
 
 func (p PlatformID) Symbol() PlatformSymbol {
 	if v, ok := platformSymbolMap[p]; ok {
@@ -15,8 +18,6 @@ func (p PlatformID) IsSignable() bool {
 
 	return ok
 }
-
-type PlatformSymbol string
 
 func (p PlatformSymbol) ID() PlatformID {
 	if v, ok := platformIDMap[p]; ok {
@@ -66,7 +67,20 @@ var (
 		PlatformIDPlayStation: PlatformSymbolPlayStation,
 		PlatformIDGitHub:      PlatformSymbolGitHub,
 	}
-	platformIDMap = map[PlatformSymbol]PlatformID{}
+
+	platformIDMap = map[PlatformSymbol]PlatformID{
+		PlatformSymbolUnknown:     PlatformIDUnknown,
+		PlatformSymbolEthereum:    PlatformIDEthereum,
+		PlatformSymbolSolana:      PlatformIDSolana,
+		PlatformSymbolFlow:        PlatformIDFlow,
+		PlatformSymbolArweave:     PlatformIDArweave,
+		PlatformSymbolRSS:         PlatformIDRSS,
+		PlatformSymbolTwitter:     PlatformIDTwitter,
+		PlatformSymbolMisskey:     PlatformIDMisskey,
+		PlatformSymbolJike:        PlatformIDJike,
+		PlatformSymbolPlayStation: PlatformIDPlayStation,
+		PlatformSymbolGitHub:      PlatformIDGitHub,
+	}
 
 	signablePlatformSymbolMap = map[PlatformID]PlatformSymbol{
 		PlatformIDEthereum: PlatformSymbolEthereum,
@@ -87,5 +101,22 @@ func IsValidPlatformSymbol(value string) bool {
 func init() {
 	for id, symbol := range platformSymbolMap {
 		platformIDMap[symbol] = id
+	}
+}
+
+func (p PlatformID) GetNetwork() []NetworkID {
+	switch p {
+	case PlatformIDEthereum:
+		return append(GetEthereumPlatformNetworks(), NetworkIDArweaveMainnet)
+	case PlatformIDArweave:
+		return []NetworkID{NetworkIDArweaveMainnet}
+	case PlatformIDTwitter:
+		return []NetworkID{NetworkIDTwitter}
+	case PlatformIDMisskey:
+		return []NetworkID{NetworkIDMisskey}
+	case PlatformIDJike:
+		return []NetworkID{NetworkIDJike}
+	default:
+		return nil
 	}
 }

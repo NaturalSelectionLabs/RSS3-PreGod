@@ -7,7 +7,7 @@
   },
   "redis": {
     "addr": "localhost:6379",
-    "password": "Pa33WoRD",
+    "password": "",
     "db": 0
   },
   "postgres": {
@@ -23,6 +23,9 @@
     "max_pool_size": 200,
     "min_pool_size": 50
   },
+  "network": {
+    "proxy": "http://localhost:7890"
+  },
   "logger": {
     "prefix_tag": "pregod",
     "engine": "zap",
@@ -37,7 +40,7 @@
   "indexer": {
     "server": {
       "run_mode": "debug",
-      "http_port": 8081,
+      "http_port": 3000,
       "read_timeout": 60,
       "write_timeout": 60
     },
@@ -48,13 +51,24 @@
       "api_key": "+1"
     },
     "arbitrum": {
-      "arbiscan_key": "+1"
+      "api_key": "+1"
+    },
+    "etherscan": {
+      "api_key": "+1"
+    },
+    "polygonscan": {
+      "api_key": "+1"
     },
     "jike": {
       "area_code": "+1",
       "mobile_phone_number": "",
       "password": "",
       "app_version": "7.27.1"
+    },
+    "twitter": {
+      "break_down_tokens":[
+        "xxx"
+      ]
     }
   }
 }

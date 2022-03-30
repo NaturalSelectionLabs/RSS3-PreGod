@@ -155,6 +155,16 @@ func ZRem(ctx context.Context, key string, data interface{}, score float64) erro
 	return nil
 }
 
+func ZRemRangeByScore(ctx context.Context, key, min, max string) error {
+	return rdb.ZRemRangeByScore(ctx, key, min, max).Err()
+}
+
+func ZScan(ctx context.Context, key string, cursor uint64, match string, count int64) ([]string, uint64, error) {
+	return rdb.ZScan(ctx, key, cursor, match, count).Result()
+}
+
+func GetRedisClient() *redis.Client { return rdb }
+
 func SRem(ctx context.Context, key string, data interface{}) error {
 	value, err := jsoni.Marshal(data)
 	if err != nil {

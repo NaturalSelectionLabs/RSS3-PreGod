@@ -38,8 +38,7 @@ func main() {
 		Handler:      router.InitRouter(),
 	}
 
-	addr := srv.Start()
-
-	logger.Infof("Start http server listening on http://%s", addr)
 	defer logger.Logger.Sync()
+
+	srv.Start()
 }

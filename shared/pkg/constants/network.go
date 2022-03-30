@@ -5,6 +5,22 @@ type (
 	NetworkSymbol string
 )
 
+func (p NetworkID) Symbol() NetworkSymbol {
+	if v, ok := networkSymbolMap[p]; ok {
+		return v
+	}
+
+	return NetworkSymbolUnknown
+}
+
+func (p NetworkSymbol) ID() NetworkID {
+	if v, ok := networkIDMap[p]; ok {
+		return v
+	}
+
+	return NetworkIDUnknown
+}
+
 const (
 	NetworkIDUnknown         NetworkID = 0
 	NetworkIDEthereumMainnet NetworkID = 1
@@ -23,6 +39,7 @@ const (
 	NetworkIDJike            NetworkID = 14
 	NetworkIDPlayStation     NetworkID = 15
 	NetworkIDGitHub          NetworkID = 16
+	NetworkIDZksync          NetworkID = 17
 
 	NetworkSymbolUnknown                       = "unknown"
 	NetworkSymbolEthereumMainnet NetworkSymbol = "ethereum_mainnet"
@@ -41,6 +58,7 @@ const (
 	NetworkSymbolJike            NetworkSymbol = "jike"
 	NetworkSymbolPlayStation     NetworkSymbol = "playstation"
 	NetworkSymbolGitHub          NetworkSymbol = "github"
+	NetworkSymbolZksync          NetworkSymbol = "zksync"
 )
 
 var (
@@ -63,6 +81,26 @@ var (
 		NetworkSymbolPlayStation:     NetworkIDPlayStation,
 		NetworkSymbolGitHub:          NetworkIDGitHub,
 	}
+
+	networkSymbolMap = map[NetworkID]NetworkSymbol{
+		NetworkIDUnknown:         NetworkSymbolUnknown,
+		NetworkIDEthereumMainnet: NetworkSymbolEthereumMainnet,
+		NetworkIDPolygon:         NetworkSymbolPolygon,
+		NetworkIDBNBChain:        NetworkSymbolBNBChain,
+		NetworkIDArbitrum:        NetworkSymbolArbitrum,
+		NetworkIDAvalanche:       NetworkSymbolAvalanche,
+		NetworkIDFantom:          NetworkSymbolFantom,
+		NetworkIDGnosisMainnet:   NetworkSymbolGnosisMainnet,
+		NetworkIDSolanaMainet:    NetworkSymbolSolanaMainet,
+		NetworkIDFlowMainnet:     NetworkSymbolFlowMainnet,
+		NetworkIDArweaveMainnet:  NetworkSymbolArweaveMainnet,
+		NetworkIDRSS:             NetworkSymbolRSS,
+		NetworkIDTwitter:         NetworkSymbolTwitter,
+		NetworkIDMisskey:         NetworkSymbolMisskey,
+		NetworkIDJike:            NetworkSymbolJike,
+		NetworkIDPlayStation:     NetworkSymbolPlayStation,
+		NetworkIDGitHub:          NetworkSymbolGitHub,
+	}
 )
 
 func IsValidNetworkName(value string) bool {
@@ -76,4 +114,16 @@ func IsValidNetworkName(value string) bool {
 
 func (id NetworkSymbol) GetID() NetworkID {
 	return networkIDMap[NetworkSymbol(id)]
+}
+
+func GetEthereumPlatformNetworks() []NetworkID {
+	return []NetworkID{
+		NetworkIDEthereumMainnet,
+		NetworkIDPolygon,
+		NetworkIDBNBChain,
+		NetworkIDArbitrum,
+		NetworkIDAvalanche,
+		NetworkIDFantom,
+		NetworkIDGnosisMainnet,
+	}
 }

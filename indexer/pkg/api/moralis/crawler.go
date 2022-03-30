@@ -12,12 +12,12 @@ import (
 )
 
 type moralisCrawler struct {
-	crawler.CrawlerResult
+	crawler.DefaultCrawler
 }
 
 func NewMoralisCrawler() crawler.Crawler {
 	return &moralisCrawler{
-		crawler.CrawlerResult{
+		crawler.DefaultCrawler{
 			Items:  []*model.Item{},
 			Assets: []*model.ItemId{},
 			Notes:  []*model.ItemId{},
@@ -26,29 +26,29 @@ func NewMoralisCrawler() crawler.Crawler {
 }
 
 //nolint:funlen // disable line length check
-func (mc *moralisCrawler) Work(userAddress string, network constants.NetworkID) error {
-	chainType := GetChainType(network)
+func (c *moralisCrawler) Work(param crawler.WorkParam) error {
+	chainType := GetChainType(param.NetworkID)
 	if chainType == Unknown {
 		return fmt.Errorf("unsupported network: %s", chainType)
 	}
 
 	networkSymbol := chainType.GetNetworkSymbol()
 	networkId := networkSymbol.GetID()
-	nftTransfers, err := GetNFTTransfers(userAddress, chainType, GetApiKey())
+	nftTransfers, err := GetNFTTransfers(param.Identity, chainType, GetApiKey())
 
 	if err != nil {
 		return err
 	}
 
 	//TODO: tsp
-	assets, err := GetNFTs(userAddress, chainType, GetApiKey())
+	assets, err := GetNFTs(param.Identity, chainType, GetApiKey())
 	if err != nil {
 		return err
 	}
 	//parser
 	for _, nftTransfer := range nftTransfers.Result {
-		mc.Notes = append(mc.Notes, &model.ItemId{
-			NetworkId: networkId,
+		c.Notes = append(c.Notes, &model.ItemId{
+			NetworkID: networkId,
 			Proof:     nftTransfer.TransactionHash,
 		})
 	}
@@ -60,8 +60,8 @@ func (mc *moralisCrawler) Work(userAddress string, network constants.NetworkID) 
 			if nftTransfer.EqualsToToken(asset) {
 				hasProof = true
 
-				mc.Assets = append(mc.Assets, &model.ItemId{
-					NetworkId: networkId,
+				c.Assets = append(c.Assets, &model.ItemId{
+					NetworkID: networkId,
 					Proof:     nftTransfer.TransactionHash,
 				})
 			}
@@ -73,13 +73,6 @@ func (mc *moralisCrawler) Work(userAddress string, network constants.NetworkID) 
 		}
 	}
 
-	author, err := rss3uri.NewInstance("account", userAddress, string(constants.PlatformSymbolEthereum))
-
-	if err != nil {
-		// TODO
-		logger.Error(err)
-	}
-
 	// make the item list complete
 	for _, nftTransfer := range nftTransfers.Result {
 		// TODO: make attachments
@@ -89,6 +82,8 @@ func (mc *moralisCrawler) Work(userAddress string, network constants.NetworkID) 
 			logger.Error(tsp, err)
 			tsp = time.Now()
 		}
+
+		author := rss3uri.NewAccountInstance(param.Identity, constants.PlatformSymbolEthereum)
 
 		hasObject := false
 
@@ -117,16 +112,8 @@ func (mc *moralisCrawler) Work(userAddress string, network constants.NetworkID) 
 			[]model.Attachment{},
 			tsp,
 		)
-		mc.Items = append(mc.Items, ni)
+		c.Items = append(c.Items, ni)
 	}
 
 	return nil
-}
-
-func (mc *moralisCrawler) GetResult() *crawler.CrawlerResult {
-	return &crawler.CrawlerResult{
-		Assets: mc.Assets,
-		Notes:  mc.Notes,
-		Items:  mc.Items,
-	}
 }

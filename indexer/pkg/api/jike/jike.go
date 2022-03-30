@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/db/model"
-	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/util"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/config"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/httpx"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/logger"
@@ -133,10 +132,10 @@ func GetUserProfile(name string) (*UserProfile, error) {
 
 	profile := new(UserProfile)
 
-	parsedObject := parsedJson.GetObject("user")
+	parsedObject := parsedJson.Get("user")
 
-	profile.ScreenName = parsedObject.Get("screenName").String()
-	profile.Bio = parsedObject.Get("bio").String()
+	profile.ScreenName = string(parsedObject.GetStringBytes("screenName"))
+	profile.Bio = string(parsedObject.GetStringBytes("bio"))
 
 	return profile, err
 }
@@ -272,19 +271,19 @@ func GetUserTimeline(name string) ([]Timeline, error) {
 	result := make([]Timeline, len(parsedObject))
 
 	for i, node := range parsedObject {
-		id := util.TrimQuote(node.Get("id").String())
+		id := string(node.GetStringBytes("id"))
 		result[i].Id = id
 
-		t, timeErr := time.Parse(time.RFC3339, util.TrimQuote(node.Get("createdAt").String()))
+		t, timeErr := time.Parse(time.RFC3339, string(node.GetStringBytes("createdAt")))
 		if err != nil {
 			logger.Errorf("Jike GetUserTimeline timestamp parsing err: %v", timeErr)
 
 			return nil, timeErr
 		}
 
-		result[i].Author = util.TrimQuote(parsedJson.Get("username").String())
+		result[i].Author = string(parsedJson.GetStringBytes("username"))
 		result[i].Timestamp = t
-		result[i].Summary = util.TrimQuote(node.Get("content").String())
+		result[i].Summary = string(node.GetStringBytes("content"))
 		result[i].Link = fmt.Sprintf("https://web.okjike.com/originalPost/%s", id)
 		result[i].Attachments = *getAttachment(node)
 	}
@@ -299,31 +298,31 @@ func GetUserTimeline(name string) ([]Timeline, error) {
 }
 
 func formatFeed(node *fastjson.Value) string {
-	text := util.TrimQuote(node.Get("content").String())
+	text := string(node.GetStringBytes("content"))
 
 	if node.Exists("pictures") {
 		for _, picture := range node.GetArray("pictures") {
 			var url string
 
 			if picture.Exists("picUrl") {
-				url = picture.Get("picUrl").String()
+				url = string(picture.GetStringBytes("picUrl"))
 			}
 
 			if picture.Exists("thumbnailUrl") {
-				url = picture.Get("thumbnailUrl").String()
+				url = string(picture.GetStringBytes("thumbnailUrl"))
 			}
 
-			text += fmt.Sprintf("<img class=\"media\" src=\"%s\">", util.TrimQuote(url))
+			text += fmt.Sprintf("<img class=\"media\" src=\"%s\">", string(url))
 		}
 	}
 
-	if node.Exists("target") && node.Get("type").String() == "REPOST" {
+	if node.Exists("target") && string(node.GetStringBytes("type")) == "REPOST" {
 		target := node.Get("target")
 		// a status key means the feed is unavailable, e.g, DELETED
 		if !target.Exists("status") {
 			var user string
 			if target.Exists("user", "screenName") {
-				user = util.TrimQuote(target.Get("user", "screenName").String())
+				user = string(target.GetStringBytes("user", "screenName"))
 			}
 
 			text += fmt.Sprintf("\nRT %s: %s", user, formatFeed(target))
@@ -348,7 +347,7 @@ func getAttachment(node *fastjson.Value) *[]model.Attachment {
 			node = node.Get("target")
 			// store quote_address
 
-			content = "https://web.okjike.com/originalPost/" + util.TrimQuote(node.Get("id").String())
+			content = "https://web.okjike.com/originalPost/" + string(node.GetStringBytes("id"))
 
 			syncAt := time.Now()
 
@@ -356,7 +355,7 @@ func getAttachment(node *fastjson.Value) *[]model.Attachment {
 
 			// store quote_text
 
-			content = util.TrimQuote(node.Get("content").String())
+			content = string(node.GetStringBytes("content"))
 			qText := *model.NewAttachment(content, nil, "text/plain", "quote_text", 0, syncAt)
 
 			attachments = append(attachments, qAddress, qText)
@@ -387,11 +386,11 @@ func getPicture(node *fastjson.Value) *[]model.Attachment {
 		var url string
 
 		if picture.Exists("thumbnailUrl") {
-			url = util.TrimQuote(picture.Get("thumbnailUrl").String())
+			url = string(picture.GetStringBytes("thumbnailUrl"))
 		}
 
 		if picture.Exists("picUrl") {
-			url = util.TrimQuote(picture.Get("picUrl").String())
+			url = string(picture.GetStringBytes("picUrl"))
 		}
 
 		header, err := httpx.Head(url)

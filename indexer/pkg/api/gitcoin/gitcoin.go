@@ -2,10 +2,12 @@ package gitcoin
 
 import (
 	"math/big"
+	"strings"
 
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/api/moralis"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/api/zksync"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/httpx"
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/logger"
 	"github.com/valyala/fastjson"
 )
 
@@ -156,7 +158,7 @@ func GetProjectsInfo(adminAddress string, title string) (ProjectInfo, error) {
 }
 
 // GetZkSyncDonations returns donations from zksync
-func GetZkSyncDonations(fromBlock, toBlock int64) ([]DonationInfo, error) {
+func (gc *gitcoinCrawler) GetZkSyncDonations(fromBlock, toBlock int64) ([]DonationInfo, error) {
 	donations := make([]DonationInfo, 0)
 
 	for i := fromBlock; i <= toBlock; i++ {
@@ -166,32 +168,51 @@ func GetZkSyncDonations(fromBlock, toBlock int64) ([]DonationInfo, error) {
 		}
 
 		for _, tx := range trxs {
-			if tx.Op.Type != "Transfer" ||
-				!tx.Success ||
-				tx.Op.To == "" ||
-				zksync.InactiveAdminAddress(tx.Op.To) {
+			if tx.Op.Type != "Transfer" || !tx.Success {
 				continue
 			}
 
-			tokenId := tx.Op.TokenId
-			token := zksync.GetZksToken(tokenId)
-
-			formatedAmount := big.NewInt(1)
-			formatedAmount.SetString(tx.Op.Amount, 10)
-
-			d := DonationInfo{
-				Donor:          tx.Op.From,
-				AdminAddress:   tx.Op.To,
-				TokenAddress:   token.Address,
-				Amount:         tx.Op.Amount,
-				Symbol:         token.Symbol,
-				FormatedAmount: formatedAmount,
-				Decimals:       token.Decimals,
-				Timestamp:      tx.CreatedAt,
-				TxHash:         tx.TxHash,
-				Approach:       DonationApproachZksync,
+			// admin address empty
+			adminAddress := strings.ToLower(tx.Op.To)
+			if adminAddress == "" {
+				continue
 			}
-			donations = append(donations, d)
+
+			// inactive project
+			if gc.inactiveAdminAddress(adminAddress) {
+				continue
+			}
+
+			// update project info
+			inactive := false
+			if gc.needUpdateProject(adminAddress) {
+				inactive, err = gc.updateHostingProject(adminAddress)
+				if err != nil {
+					logger.Error(err)
+				}
+			}
+
+			if !inactive {
+				tokenId := tx.Op.TokenId
+				token := gc.GetZksToken(tokenId)
+
+				formatedAmount := big.NewInt(1)
+				formatedAmount.SetString(tx.Op.Amount, 10)
+
+				d := DonationInfo{
+					Donor:          tx.Op.From,
+					AdminAddress:   tx.Op.To,
+					TokenAddress:   token.Address,
+					Amount:         tx.Op.Amount,
+					Symbol:         token.Symbol,
+					FormatedAmount: formatedAmount,
+					Decimals:       token.Decimals,
+					Timestamp:      tx.CreatedAt,
+					TxHash:         tx.TxHash,
+					Approach:       DonationApproachZksync,
+				}
+				donations = append(donations, d)
+			}
 		}
 	}
 

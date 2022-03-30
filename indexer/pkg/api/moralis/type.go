@@ -38,15 +38,15 @@ func GetChainType(network constants.NetworkID) ChainType {
 
 func (mt ChainType) GetNetworkSymbol() constants.NetworkSymbol {
 	switch mt {
-	case "ETH":
+	case ETH:
 		return constants.NetworkSymbolEthereumMainnet
-	case "BSC":
+	case BSC:
 		return constants.NetworkSymbolBNBChain
-	case "Polygon":
+	case Polygon:
 		return constants.NetworkSymbolPolygon
-	case "AVAX":
+	case AVAX:
 		return constants.NetworkSymbolAvalanche
-	case "Fantom":
+	case Fantom:
 		return constants.NetworkSymbolFantom
 	default:
 		return constants.NetworkSymbolUnknown

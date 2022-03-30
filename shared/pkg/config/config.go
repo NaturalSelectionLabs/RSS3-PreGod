@@ -11,11 +11,13 @@ import (
 	"github.com/knadh/koanf/providers/file"
 )
 
+// Golbal Config
+
 type ProtocolStruct struct {
 	Version string `koanf:"version"`
 }
 
-type HubServerStruct struct {
+type ServerStruct struct {
 	RunMode      string        `koanf:"run_mode"`
 	HttpPort     int           `koanf:"http_port"`
 	ReadTimeout  time.Duration `koanf:"read_timeout"`
@@ -45,6 +47,10 @@ type MongoStruct struct {
 	MinPoolSize int    `koanf:"min_pool_size"`
 }
 
+type BrokerStruct struct {
+	Addr string `koanf:"addr"`
+}
+
 /*
  * File module：You can simply make the log print to a file
  * example:
@@ -71,22 +77,26 @@ type LoggerStruct struct {
 	Output []LoggerOutputConfig `koanf:"output"`
 }
 
+type NetWorkStruct struct {
+	Proxy string `koanf:"proxy"`
+}
+
+// Indexer Struct Config
+
 type MoralisStruct struct {
 	ApiKey string `koanf:"api_key"`
 }
 
-type ArbitrumStruct struct {
-	ApiKey string `koanf:"arbiscan_key"`
+type EtherScanStruct struct {
+	ApiKey string `koanf:"api_key"`
 }
 
-type ConfigStruct struct {
-	Protocol  ProtocolStruct  `koanf:"protocol"`
-	HubServer HubServerStruct `koanf:"hub_server"`
-	Redis     RedisStruct     `koanf:"redis"`
-	Postgres  PostgresStruct  `koanf:"postgres"`
-	Mongo     MongoStruct     `koanf:"mongo"`
-	Logger    LoggerStruct    `koanf:"logger"`
-	Indexer   IndexerStruct   `koanf:"indexer"`
+type PolygonScanStruct struct {
+	ApiKey string `koanf:"api_key"`
+}
+
+type ArbitrumStruct struct {
+	ApiKey string `koanf:"api_key"`
 }
 
 type MiscStruct struct {
@@ -100,26 +110,35 @@ type JikeStruct struct {
 	Password          string `koanf:"password" json:"password"`
 	AppVersion        string `koanf:"app_version" json:"appVersion"`
 }
+type TwitterStruct struct {
+	Tokens []string `koanf:"break_down_tokens"`
+}
+type IndexerStruct struct {
+	Server ServerStruct `koanf:"server"`
 
-type IndexerServerStruct struct {
-	RunMode      string        `koanf:"run_mode"`
-	HttpPort     int           `koanf:"http_port"`
-	ReadTimeout  time.Duration `koanf:"read_timeout"`
-	WriteTimeout time.Duration `koanf:"write_timeout"`
+	Misc        MiscStruct        `koanf:"misc"`
+	Jike        JikeStruct        `koanf:"jike"`
+	Moralis     MoralisStruct     `koanf:"moralis"`
+	EtherScan   EtherScanStruct   `koanf:"etherscan"`
+	PolygonScan PolygonScanStruct `koanf:"polygonscan"`
+	Twitter     TwitterStruct     `koanf:"twitter"`
+	Aribtrum    ArbitrumStruct    `koanf:"arbitrum"`
 }
 
-type IndexerStruct struct {
-	Server IndexerServerStruct `koanf:"server"`
-
-	Misc     MiscStruct     `koanf:"misc"`
-	Jike     JikeStruct     `koanf:"jike"`
-	Moralis  MoralisStruct  `koanf:"moralis"`
-	Aribtrum ArbitrumStruct `koanf:"arbitrum"`
+type ConfigStruct struct {
+	Protocol  ProtocolStruct `koanf:"protocol"`
+	HubServer ServerStruct   `koanf:"hub_server"`
+	Redis     RedisStruct    `koanf:"redis"`
+	Postgres  PostgresStruct `koanf:"postgres"`
+	Mongo     MongoStruct    `koanf:"mongo"`
+	Broker    BrokerStruct   `koanf:"broker"`
+	Logger    LoggerStruct   `koanf:"logger"`
+	Network   NetWorkStruct  `koanf:"network"`
+	Indexer   IndexerStruct  `koanf:"indexer"`
 }
 
 var (
-	Config  = &ConfigStruct{}
-	Indexer = &IndexerStruct{}
+	Config = &ConfigStruct{}
 
 	k = koanf.New(".")
 )
@@ -147,6 +166,9 @@ func Setup() error {
 
 	Config.Postgres.ConnMaxIdleTime = Config.Postgres.ConnMaxIdleTime * time.Second
 	Config.Postgres.ConnMaxLifetime = Config.Postgres.ConnMaxLifetime * time.Second
+
+	Config.Indexer.Server.ReadTimeout = Config.Indexer.Server.ReadTimeout * time.Second
+	Config.Indexer.Server.WriteTimeout = Config.Indexer.Server.WriteTimeout * time.Second
 
 	return nil
 }
