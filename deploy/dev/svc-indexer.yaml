@@ -1,0 +1,16 @@
+# htpp://pregod-indexer-api.pregod.traefik.mesh:3000
+apiVersion: v1
+kind: Service
+metadata:
+  name: pregod-indexer-api
+  namespace: pregod
+spec:
+  type: ClusterIP
+  selector:
+    app: pregod-indexer
+    tier: api
+  ports:
+    - name: http
+      protocol: TCP
+      port: 3000
+      targetPort: 3000
