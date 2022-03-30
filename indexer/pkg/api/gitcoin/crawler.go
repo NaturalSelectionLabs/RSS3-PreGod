@@ -209,6 +209,8 @@ func (gc *gitcoinCrawler) xscanRun(networkId constants.NetworkID) error {
 }
 
 func setDB(donations []DonationInfo, networkId constants.NetworkID) {
+	items := []*model.Item{}
+
 	for _, v := range donations {
 		tsp, err := time.Parse(time.RFC3339, v.Timestamp)
 		if err != nil {
@@ -233,8 +235,11 @@ func setDB(donations []DonationInfo, networkId constants.NetworkID) {
 			[]model.Attachment{},
 			tsp,
 		)
-		db.InsertItem(item)
+
+		items = append(items, item)
 	}
+
+	db.InsertItems(items, networkId)
 }
 
 func (gc *gitcoinCrawler) ZkStart() error {

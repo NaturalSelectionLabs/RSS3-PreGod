@@ -297,7 +297,6 @@ func GetUserTimeline(name string) ([]Timeline, error) {
 	return result, err
 }
 
-//nolint:unused // might need it in the future
 func formatFeed(node *fastjson.Value) string {
 	text := string(node.GetStringBytes("content"))
 

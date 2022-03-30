@@ -6,13 +6,13 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"time"
 
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/database"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/pkg/middleware"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/pkg/protocol"
-	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/pkg/status"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/pkg/web"
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/status"
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/isotime"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/constants"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/rss3uri"
 	"github.com/gin-gonic/gin"
@@ -70,13 +70,13 @@ func GetBackLinkListHandlerFunc(c *gin.Context) {
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			w := web.Gin{C: c}
-			w.JSONResponse(http.StatusNotFound, status.CodeError, nil)
+			w.JSONResponse(http.StatusNotFound, status.CodeLinkListNotExist, nil)
 
 			return
 		}
 
 		w := web.Gin{C: c}
-		w.JSONResponse(http.StatusInternalServerError, status.CodeError, nil)
+		w.JSONResponse(http.StatusInternalServerError, status.CodeDatabaseError, nil)
 
 		return
 	}
@@ -99,10 +99,10 @@ func GetBackLinkListHandlerFunc(c *gin.Context) {
 	if err != nil {
 		w := web.Gin{C: c}
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			w.JSONResponse(http.StatusNotFound, status.CodeError, nil)
+			w.JSONResponse(http.StatusNotFound, status.CodeLinkNotExist, nil)
 		}
 
-		w.JSONResponse(http.StatusInternalServerError, status.CodeError, nil)
+		w.JSONResponse(http.StatusInternalServerError, status.CodeDatabaseError, nil)
 
 		return
 	}
@@ -132,23 +132,16 @@ func GetBackLinkListHandlerFunc(c *gin.Context) {
 		})
 	}
 
-	if err != nil {
-		w := web.Gin{C: c}
-		w.JSONResponse(http.StatusInternalServerError, status.CodeError, nil)
-
-		return
-	}
-
 	if err := tx.Commit().Error; err != nil {
 		w := web.Gin{C: c}
-		w.JSONResponse(http.StatusInternalServerError, status.CodeError, nil)
+		w.JSONResponse(http.StatusInternalServerError, status.CodeDatabaseError, nil)
 
 		return
 	}
 
 	backLinkListFile.Total = len(backLinkListFile.List)
-	backLinkListFile.DateCreated = dateCreated.Time.Format(time.RFC3339)
-	backLinkListFile.DateUpdated = dateUpdated.Time.Format(time.RFC3339)
+	backLinkListFile.DateCreated = dateCreated.Time.Format(isotime.ISO8601)
+	backLinkListFile.DateUpdated = dateUpdated.Time.Format(isotime.ISO8601)
 
 	c.JSON(http.StatusOK, &backLinkListFile)
 }

@@ -7,8 +7,6 @@ import (
 )
 
 func TestSortJsonByKeys(t *testing.T) {
-	t.Parallel()
-
 	tests := []struct {
 		name string
 		json string
@@ -50,8 +48,6 @@ func TestSortJsonByKeys(t *testing.T) {
 	for _, tt := range tests {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
-			t.Parallel()
-
 			got, err := json_util.SortJsonByKeys([]byte(tt.json), tt.opt)
 			if err != nil {
 				t.Errorf("SortJsonByKeys() error = %v", err)

@@ -55,7 +55,7 @@ func (tc *twitterCrawler) Work(param crawler.WorkParam) error {
 
 		ni := model.NewItem(
 			networkId,
-			"",
+			contentInfo.Hash,
 			model.Metadata{},
 			constants.ItemTagsTweet,
 			[]string{author.String()},
@@ -68,7 +68,7 @@ func (tc *twitterCrawler) Work(param crawler.WorkParam) error {
 		tc.Items = append(tc.Items, ni)
 		tc.Notes = append(tc.Notes, &model.ItemId{
 			NetworkID: networkId,
-			Proof:     "",
+			Proof:     contentInfo.Hash,
 		})
 	}
 

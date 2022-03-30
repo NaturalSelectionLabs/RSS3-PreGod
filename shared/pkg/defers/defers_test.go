@@ -7,8 +7,6 @@ import (
 )
 
 func TestDefers(t *testing.T) {
-	t.Parallel()
-
 	var str string
 
 	type args struct {

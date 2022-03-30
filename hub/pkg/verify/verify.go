@@ -19,7 +19,7 @@ type agent struct {
 }
 
 // Verifies if the current json file has a valid signature.
-func Signature(jsonBytes []byte, address, instanceUrl string) (bool, error) {
+func Signature(jsonBytes []byte, address, instanceUri string) (bool, error) {
 	jsonBytes, err := json_util.SortJsonByKeys(jsonBytes, &json_util.SortOptions{NoSignProperties: true})
 	if err != nil {
 		return false, err
@@ -65,7 +65,7 @@ func Signature(jsonBytes []byte, address, instanceUrl string) (bool, error) {
 	// check if any of the agents has a valid signature
 	for _, agent := range agents {
 		// verify if user has authorization to sign
-		ethersOk, _ := ethers.VerifyMessage(getAgentSignatureMessage(agent.App, agent.Pubkey, instanceUrl), agent.Authorization, address)
+		ethersOk, _ := ethers.VerifyMessage(getAgentSignatureMessage(agent.App, agent.Pubkey, instanceUri), agent.Authorization, address)
 
 		// verify if file signature is valid
 		naclOk, _ := nacl.Verify(jsonBytes, []byte(agent.Signature), []byte(agent.Pubkey))
@@ -81,13 +81,13 @@ func Signature(jsonBytes []byte, address, instanceUrl string) (bool, error) {
 // `[RSS3] I am well aware that this APP (name: ${app}) can use
 // the following agent instead of me (${InstanceURI}) to
 // modify my files and I would like to authorize this agent (${pubkey})`
-func getAgentSignatureMessage(appname, pubkey, instanceUrl string) []byte {
+func getAgentSignatureMessage(appname, pubkey, instanceUri string) []byte {
 	var buf bytes.Buffer
 
 	buf.WriteString("[RSS3] I am well aware that this APP (name: ")
 	buf.WriteString(appname)
 	buf.WriteString(") can use the following agent instead of me (")
-	buf.WriteString(instanceUrl)
+	buf.WriteString(instanceUri)
 	buf.WriteString(") to modify my files and I would like to authorize this agent (")
 	buf.WriteString(pubkey)
 	buf.WriteString(")")
