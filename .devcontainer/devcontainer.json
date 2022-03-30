@@ -34,6 +34,10 @@
         "eamodio.gitlens",
         "oderwat.indent-rainbow",
         "quicktype.quicktype",
+        "usernamehw.errorlens",
+        "sachinsmc.turbo-fmt-println",
+        "vscode-icons-team.vscode-icons",
+        "edhat.vscode-yaml",
         // "wakatime.vscode-wakatime",
     ],
     // Use 'forwardPorts' to make a list of ports inside the container available locally.
