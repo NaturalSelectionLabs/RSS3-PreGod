@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"errors"
 	"fmt"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/internal/middleware"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/internal/protocol"
@@ -9,9 +10,27 @@ import (
 	"time"
 )
 
+type GetAssetListRequest struct {
+	Limit         int       `form:"limit"`
+	LastTime      time.Time `json:"last_time"`
+	Tags          []string  `json:"tags"`
+	MimeTypes     []string  `json:"mime_types"`
+	ItemSources   []string  `json:"item_sources"`
+	LinkSource    string    `json:"link_source"`
+	LinkType      string    `json:"link_type"`
+	ProfileSource string    `json:"profile_source"`
+}
+
 func GetAssetListHandlerFunc(c *gin.Context) {
 	instance, err := middleware.GetPlatformInstance(c)
 	if err != nil {
+		return
+	}
+
+	request := GetAssetListRequest{}
+	if err := c.ShouldBindQuery(&request); err != nil {
+		_ = c.Error(errors.New("invalid params"))
+
 		return
 	}
 
