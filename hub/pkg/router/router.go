@@ -52,10 +52,10 @@ func InitRouter() (engine *gin.Engine) {
 
 		// Link List File
 		// rss3://account:0xC8b960D09C0078c18Dcbe7eB9AB9d816BcCa8944@ethereum/list/link/following/1
-		apiRouter.GET("/:instance/list/link/:link_type/:page_index", api.GetLinkListHandlerFunc)
+		apiRouter.GET("/:instance/links/:link_type/:page_index", api.GetLinkListHandlerFunc)
 
 		// Back Link List File
-		apiRouter.GET("/:instance/list/backlink", api.GetBackLinkListHandlerFunc)
+		apiRouter.GET("/:instance/backlinks", api.GetBackLinkListHandlerFunc)
 
 		// Asset List File
 		// rss3://account:0xC8b960D09C0078c18Dcbe7eB9AB9d816BcCa8944@ethereum/list/asset/0
