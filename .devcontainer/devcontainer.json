@@ -26,7 +26,15 @@
     },
     // Add the IDs of extensions you want installed when the container is created.
     "extensions": [
-        "golang.Go"
+        "ms-azuretools.vscode-docker",
+        "golang.Go",
+        "streetsidesoftware.code-spell-checker",
+        "github.copilot",
+        "tombonnike.vscode-status-bar-format-toggle",
+        "eamodio.gitlens",
+        "oderwat.indent-rainbow",
+        "quicktype.quicktype",
+        // "wakatime.vscode-wakatime",
     ],
     // Use 'forwardPorts' to make a list of ports inside the container available locally.
     // "forwardPorts": [],
