@@ -62,7 +62,7 @@ func GetLatestBlockHeight(networkId constants.NetworkID) (int64, error) {
 	msg := string(parsedJson.GetStringBytes("message"))
 	result := string(parsedJson.GetStringBytes("result"))
 
-	if msg == "NOTOK" {
+	if len(msg) > 0 {
 		return 0, fmt.Errorf("api error, %s", result)
 	}
 
