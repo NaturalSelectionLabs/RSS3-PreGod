@@ -59,7 +59,6 @@ func GetBioHandlerFunc(c *gin.Context) {
 		crawler.WorkParam{
 			Identity:   request.Identity,
 			PlatformID: request.PlatformID,
-			NetworkID:  platform2Network[request.PlatformID],
 		})
 	handlerResult := getuserBioHandler.Excute()
 

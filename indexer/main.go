@@ -17,14 +17,6 @@ import (
 )
 
 func init() {
-	if err := config.Setup(); err != nil {
-		log.Fatalf("config.Setup err: %v", err)
-	}
-
-	if err := logger.Setup(); err != nil {
-		log.Fatalf("config.Setup err: %v", err)
-	}
-
 	if err := cache.Setup(); err != nil {
 		log.Fatalf("cache.Setup err: %v", err)
 	}
