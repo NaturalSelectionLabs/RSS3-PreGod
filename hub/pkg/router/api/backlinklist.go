@@ -140,7 +140,6 @@ func GetBackLinkListHandlerFunc(c *gin.Context) {
 	}
 
 	backLinkListFile.Total = len(backLinkListFile.List)
-	backLinkListFile.DateCreated = dateCreated.Time.Format(isotime.ISO8601)
 	backLinkListFile.DateUpdated = dateUpdated.Time.Format(isotime.ISO8601)
 
 	c.JSON(http.StatusOK, &backLinkListFile)

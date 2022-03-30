@@ -7,7 +7,6 @@ const (
 type Base struct {
 	Version     string `json:"version"`      // Proposal version for current file. It should be like `v1.0.0`
 	Identifier  string `json:"identifier"`   // RSS3 URI
-	DateCreated string `json:"date_created"` // Specifies the published date in RFC 3339 format
 	DateUpdated string `json:"date_updated"` // Specifies the published date in RFC 3339 format
 }
 

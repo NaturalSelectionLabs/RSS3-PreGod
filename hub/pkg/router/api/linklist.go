@@ -161,7 +161,6 @@ func GetLinkListHandlerFunc(c *gin.Context) {
 	}
 
 	linkListFile.Signature = signature.Signature
-	linkListFile.Base.DateCreated = signature.CreatedAt.Format(isotime.ISO8601)
 	linkListFile.Base.DateUpdated = signature.UpdatedAt.Format(isotime.ISO8601)
 
 	linkListFile.Total = len(linkListFile.List)

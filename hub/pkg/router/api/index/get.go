@@ -116,7 +116,6 @@ func getIndexFile(instance *rss3uri.PlatformInstance) (*protocol.Index, int, sta
 	}
 
 	indexFile.Signature = signature.Signature
-	indexFile.Base.DateCreated = signature.CreatedAt.Format(isotime.ISO8601)
 	indexFile.Base.DateUpdated = signature.UpdatedAt.Format(isotime.ISO8601)
 
 	// Commit the transaction
