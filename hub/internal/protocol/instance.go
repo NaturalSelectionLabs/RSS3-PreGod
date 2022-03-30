@@ -14,15 +14,15 @@ const (
 	InstanceNotes     = "notes"
 )
 
-type InstanceItem struct {
+type Instance struct {
 	Type       string `json:"type"`
 	Identifier string `json:"identifier"`
 }
 
-func NewInstanceItemList(instance rss3uri.Instance) []InstanceItem {
+func NewInstanceList(instance rss3uri.Instance) []Instance {
 	uri := rss3uri.New(instance).String()
 
-	return []InstanceItem{
+	return []Instance{
 		{
 			Type:       InstanceProfiles,
 			Identifier: fmt.Sprintf("%s/profiles", uri),
