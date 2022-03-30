@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"errors"
 	"fmt"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/internal/middleware"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/rss3uri"
@@ -11,9 +12,25 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+type GetLinkListRequest struct {
+	Type          string   `form:"type"`
+	Limit         int      `form:"limit"`
+	LastInstance  string   `form:"last_instance"`
+	Instance      string   `form:"instance"`
+	LinkSources   []string `form:"link_sources"`
+	ProfileSource string   `form:"profile_source"`
+}
+
 func GetLinkListHandlerFunc(c *gin.Context) {
 	instance, err := middleware.GetPlatformInstance(c)
 	if err != nil {
+		return
+	}
+
+	request := GetLinkListRequest{}
+	if err := c.ShouldBindQuery(&request); err != nil {
+		_ = c.Error(errors.New("invalid params"))
+
 		return
 	}
 
