@@ -4,7 +4,7 @@ import (
 	"log"
 
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/database"
-	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/pkg/router"
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/internal/router"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/cache"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/config"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/logger"
@@ -35,7 +35,7 @@ func main() {
 		HttpPort:     config.Config.HubServer.HttpPort,
 		ReadTimeout:  config.Config.HubServer.ReadTimeout,
 		WriteTimeout: config.Config.HubServer.WriteTimeout,
-		Handler:      router.InitRouter(),
+		Handler:      router.InitializeRouter(),
 	}
 
 	defer logger.Logger.Sync()
