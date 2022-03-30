@@ -43,7 +43,7 @@ func AppendNotes(instance rss3uri.Instance, notes []*model.ItemId) {
 	// If we use ODM, the order is the same. So we do not need to worry
 	mgm.Coll(&model.AccountItemList{}).FindOneAndUpdate(
 		mgm.Ctx(),
-		bson.M{"account_instance": instance}, bson.M{"$addToSet": bson.M{"notes": bson.M{"$each": notes}}},
+		bson.M{"account_instance": instance.String()}, bson.M{"$addToSet": bson.M{"notes": bson.M{"$each": notes}}},
 		options.FindOneAndUpdate().SetUpsert(true),
 	)
 }
@@ -112,6 +112,18 @@ func InsertItem(item *model.Item) *mongo.SingleResult {
 		item,
 		options.FindOneAndReplace().SetUpsert(true),
 	)
+}
+
+func InsertItems(items []*model.Item, networkID constants.NetworkID) (*mongo.BulkWriteResult, error) {
+	models := []mongo.WriteModel{}
+
+	for _, item := range items {
+		models = append(models, mongo.NewReplaceOneModel().SetFilter(
+			bson.M{"item_id.network_id": item.ItemId.NetworkID,
+				"item_id.proof": item.ItemId.Proof}).SetReplacement(item).SetUpsert(true))
+	}
+
+	return mgm.Coll(&model.Item{}).BulkWrite(mgm.Ctx(), models)
 }
 
 func GetItem(key *model.ItemId) (*model.Item, error) {
