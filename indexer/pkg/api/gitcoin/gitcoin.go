@@ -101,10 +101,10 @@ func GetGrantsInfo() ([]GrantInfo, error) {
 		return nil, nil
 	}
 
-	grantArrs := parsedJson.GetArray()
+	grantArray := parsedJson.GetArray()
 	grants := make([]GrantInfo, 0)
 
-	for _, grant := range grantArrs {
+	for _, grant := range grantArray {
 		projects := grant.GetArray()
 
 		item := GrantInfo{Title: projects[0].String(), AdminAddress: projects[1].String()}
