@@ -30,6 +30,6 @@ Examples:
 - Misskey: `GET /bio?proof=song@misskey.io&platform_id=7`
 - Jike: `GET /bio?proof=C05E4867-4251-4F11-9096-C1D720B41710&platform_id=8`
 
-### Get User Profile
+### Get Items
 
 TODO
