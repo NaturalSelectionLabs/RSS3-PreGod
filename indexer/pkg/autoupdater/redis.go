@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/cache"
+	"github.com/go-redis/redis/v8"
 	"go.uber.org/multierr"
 )
 
@@ -26,8 +27,13 @@ type RedisRecentQueue struct {
 
 var RecentVisitQueue = &RedisRecentQueue{Key: RecentVisitKey, Duration: RecentVisitDuration}
 
-func (q *RedisRecentQueue) Add(ctx context.Context, item string) error {
-	return cache.ZAdd(ctx, q.Key, item, float64(time.Now().Unix()))
+func (q *RedisRecentQueue) Add(ctx context.Context, item []byte) error {
+	return cache.GetRedisClient().ZAdd(ctx, q.Key, []*redis.Z{
+		{
+			Score:  float64(time.Now().Unix()),
+			Member: item,
+		},
+	}...).Err()
 }
 
 func (q *RedisRecentQueue) Iter(ctx context.Context, runner func(string) error) error {
@@ -38,7 +44,7 @@ func (q *RedisRecentQueue) Iter(ctx context.Context, runner func(string) error) 
 		result error
 	)
 
-	if err = q.clearOld(ctx); err != nil {
+	if err = q.ClearOld(ctx); err != nil {
 		result = multierr.Append(result, err)
 	}
 
@@ -48,7 +54,11 @@ func (q *RedisRecentQueue) Iter(ctx context.Context, runner func(string) error) 
 			result = multierr.Append(result, err)
 		}
 
-		for _, item := range items {
+		for index, item := range items {
+			if index%2 != 0 { // score
+				continue
+			}
+
 			if err := runner(item); err != nil {
 				result = multierr.Append(result, err)
 			}
@@ -63,7 +73,7 @@ func (q *RedisRecentQueue) Iter(ctx context.Context, runner func(string) error) 
 }
 
 // Those who have not come for a long time( > Duration) will be deleted
-func (q *RedisRecentQueue) clearOld(ctx context.Context) error {
+func (q *RedisRecentQueue) ClearOld(ctx context.Context) error {
 	oldestTime := int(time.Now().Add(-q.Duration).Unix())
 
 	return cache.ZRemRangeByScore(ctx, q.Key, strconv.Itoa(0), strconv.Itoa(oldestTime))

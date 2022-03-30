@@ -65,6 +65,7 @@ func GetItemHandlerFunc(c *gin.Context) {
 		response.ItemsResult = *dbResult
 
 		c.JSON(http.StatusOK, response)
+
 		return
 	}
 
