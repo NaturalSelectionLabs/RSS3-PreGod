@@ -135,10 +135,7 @@ func GetTxByToken(tokenAddress string, tokenId string, chainType ChainType, apiK
 
 	parsedJson, err := parser.Parse(string(response))
 
-	parsedObject := parsedJson.GetArray("result")[0]
-
-	res.BlockTimestamp = string(parsedObject.GetStringBytes("block_timestamp"))
-	res.TransactionHash = string(parsedObject.GetStringBytes("transaction_hash"))
+	jsoni.UnmarshalFromString(string(parsedJson.GetObject("result", "0").MarshalTo(nil)), &res)
 
 	if err != nil {
 		logger.Errorf("GetTxByToken: %v", err)

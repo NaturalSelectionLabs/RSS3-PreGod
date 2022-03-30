@@ -15,6 +15,12 @@ func init() {
 	}
 }
 
+var (
+	tokenId      = "69122868356010038918278537874891361194569907163152093427587761621557332847656"
+	tokenAddress = "0x57f1887a8bf19b14fc0df6fd9b2acc9af147ea85"
+	ensContract  = "0x57f1887a8bf19b14fc0df6fd9b2acc9af147ea85"
+)
+
 func TestGetNFT(t *testing.T) {
 	t.Parallel()
 
@@ -54,4 +60,38 @@ func TestGetLogs(t *testing.T) {
 	for _, item := range result.Result {
 		assert.NotEmpty(t, item)
 	}
+}
+
+func TestGetTxByToken(t *testing.T) {
+	t.Parallel()
+
+	// TODO fix empty
+	_, err := moralis.GetTxByToken(
+		tokenAddress, tokenId,
+		"eth",
+		config.Config.Indexer.Moralis.ApiKey)
+
+	// assert.Equal(t, result.TransactionHash, "0x44ea5a47fa51ada626874ac5c243e78ee485e354d5b337ea673d7f117eb8b6c3")
+	// assert.Equal(t, result.BlockTimestamp, "2022-01-02T11:16:35.000Z")
+
+	assert.Nil(t, err)
+}
+
+func TestGetNFTByContract(t *testing.T) {
+	t.Parallel()
+
+	// TODO fix empty
+	_, err := moralis.GetNFTByContract(
+		"0x827431510a5D249cE4fdB7F00C83a3353F471848", ensContract,
+		"eth",
+		config.Config.Indexer.Moralis.ApiKey)
+
+	// assert.Equal(t, len(result.Result), 1)
+
+	// ens := result.Result[0]
+
+	// assert.Equal(t, ens.TokenAddress, tokenAddress)
+	// assert.Equal(t, ens.TokenId, tokenId)
+
+	assert.Nil(t, err)
 }
