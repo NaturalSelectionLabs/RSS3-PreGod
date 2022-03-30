@@ -21,10 +21,12 @@ func InitializeRouter() (router *gin.Engine) {
 	apiRouter := router.Group(fmt.Sprintf("/%s", protocol.Version))
 	apiRouter.Use(middleware.Instance())
 	{
-		apiRouter.GET("/:instance", handler.GetIndexHandlerFunc)
-		apiRouter.GET("/:instance/profiles")
-		apiRouter.GET("/:instance/links")
-		apiRouter.GET("/:instance/backlinks")
+		apiRouter.GET("/:instance", handler.GetInstanceHandlerFunc)
+		apiRouter.GET("/:instance/profiles", handler.GetProfileListHandlerFunc)
+		apiRouter.GET("/:instance/links", handler.GetLinkListHandlerFunc)
+		apiRouter.GET("/:instance/backlinks", handler.GetBackLinkListHandlerFunc)
+		apiRouter.GET("/:instance/assets", handler.GetAssetListHandlerFunc)
+		apiRouter.GET("/:instance/notes", handler.GetNoteListHandlerFunc)
 	}
 
 	// Older version API

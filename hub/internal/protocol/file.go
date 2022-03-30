@@ -22,15 +22,6 @@ type File struct {
 	List           any       `json:"list,omitempty"`
 }
 
-type magicFile struct {
-	Version        string `json:"version"`
-	DateUpdated    string `json:"date_updated"`
-	Identifier     string `json:"identifier"`
-	IdentifierNext string `json:"identifier_next,omitempty"`
-	Total          int    `json:"total"`
-	List           any    `json:"list,omitempty"`
-}
-
 func (f File) MarshalJSON() ([]byte, error) {
 	return json.Marshal(&magicFile{
 		Version:        Version,
@@ -40,4 +31,13 @@ func (f File) MarshalJSON() ([]byte, error) {
 		Total:          f.Total,
 		List:           f.List,
 	})
+}
+
+type magicFile struct {
+	Version        string `json:"version"`
+	DateUpdated    string `json:"date_updated"`
+	Identifier     string `json:"identifier"`
+	IdentifierNext string `json:"identifier_next,omitempty"`
+	Total          int    `json:"total"`
+	List           any    `json:"list,omitempty"`
 }
