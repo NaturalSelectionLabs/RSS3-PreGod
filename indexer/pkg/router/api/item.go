@@ -111,6 +111,7 @@ func getItemsFromDB(c *gin.Context, request GetItemRequest) (*itemsResult, error
 	}
 
 	addToRecentVisit(c.Request.Context(), &request)
+
 	if !isOld {
 		return nil, nil
 	}

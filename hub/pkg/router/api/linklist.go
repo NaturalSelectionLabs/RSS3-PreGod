@@ -5,13 +5,13 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"time"
 
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/database"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/pkg/middleware"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/pkg/protocol"
-	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/pkg/status"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/pkg/web"
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/status"
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/isotime"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/constants"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/rss3uri"
 	"github.com/gin-gonic/gin"
@@ -52,14 +52,14 @@ func GetLinkListHandlerFunc(c *gin.Context) {
 	platformInstance, ok := value.(*rss3uri.PlatformInstance)
 	if !ok {
 		w := web.Gin{C: c}
-		w.JSONResponse(http.StatusBadRequest, status.CodeInvalidParams, nil)
+		w.JSONResponse(http.StatusBadRequest, status.CodeInvalidInstance, nil)
 
 		return
 	}
 
 	if platformInstance.Prefix != constants.PrefixNameAccount || platformInstance.Platform != constants.PlatformSymbolEthereum {
 		w := web.Gin{C: c}
-		w.JSONResponse(http.StatusBadRequest, status.CodeInvalidParams, nil)
+		w.JSONResponse(http.StatusBadRequest, status.CodeInvalidInstance, nil)
 
 		return
 	}
@@ -76,13 +76,13 @@ func GetLinkListHandlerFunc(c *gin.Context) {
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			w := web.Gin{C: c}
-			w.JSONResponse(http.StatusNotFound, status.CodeError, nil)
+			w.JSONResponse(http.StatusNotFound, status.CodeLinkListNotExist, nil)
 
 			return
 		}
 
 		w := web.Gin{C: c}
-		w.JSONResponse(http.StatusInternalServerError, status.CodeError, nil)
+		w.JSONResponse(http.StatusInternalServerError, status.CodeDatabaseError, nil)
 
 		return
 	}
@@ -112,10 +112,10 @@ func GetLinkListHandlerFunc(c *gin.Context) {
 	if err != nil {
 		w := web.Gin{C: c}
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			w.JSONResponse(http.StatusNotFound, status.CodeError, nil)
+			w.JSONResponse(http.StatusNotFound, status.CodeLinkNotExist, nil)
 		}
 
-		w.JSONResponse(http.StatusInternalServerError, status.CodeError, nil)
+		w.JSONResponse(http.StatusInternalServerError, status.CodeDatabaseError, nil)
 
 		return
 	}
@@ -144,21 +144,25 @@ func GetLinkListHandlerFunc(c *gin.Context) {
 
 	if err != nil {
 		w := web.Gin{C: c}
-		w.JSONResponse(http.StatusInternalServerError, status.CodeError, nil)
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			w.JSONResponse(http.StatusNotFound, status.CodeSignatureNotExist, nil)
+		}
+
+		w.JSONResponse(http.StatusInternalServerError, status.CodeDatabaseError, nil)
 
 		return
 	}
 
 	if err := tx.Commit().Error; err != nil {
 		w := web.Gin{C: c}
-		w.JSONResponse(http.StatusInternalServerError, status.CodeError, nil)
+		w.JSONResponse(http.StatusInternalServerError, status.CodeDatabaseError, nil)
 
 		return
 	}
 
 	linkListFile.Signature = signature.Signature
-	linkListFile.Base.DateCreated = signature.CreatedAt.Format(time.RFC3339)
-	linkListFile.Base.DateUpdated = signature.UpdatedAt.Format(time.RFC3339)
+	linkListFile.Base.DateCreated = signature.CreatedAt.Format(isotime.ISO8601)
+	linkListFile.Base.DateUpdated = signature.UpdatedAt.Format(isotime.ISO8601)
 
 	linkListFile.Total = len(linkListFile.List)
 

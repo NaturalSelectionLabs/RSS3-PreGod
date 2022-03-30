@@ -1,6 +1,6 @@
 module github.com/NaturalSelectionLabs/RSS3-PreGod
 
-go 1.17
+go 1.18
 
 require (
 	github.com/arl/statsviz v0.4.1

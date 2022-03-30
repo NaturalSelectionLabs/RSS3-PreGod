@@ -123,6 +123,9 @@ func GetUserNoteList(address string, count int, since time.Time) ([]Note, error)
 }
 
 func formatContent(note *fastjson.Value, ns *Note, instance string) {
+	if note == nil { // TODO check it
+		return
+	}
 	// add emojis into text
 	if len(note.GetArray("emojis")) > 0 {
 		formatEmoji(note.GetArray("emojis"), ns)
