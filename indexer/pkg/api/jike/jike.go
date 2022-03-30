@@ -374,7 +374,7 @@ func getAttachment(node *fastjson.Value) *[]model.Attachment {
 func getPicture(node *fastjson.Value) *[]model.Attachment {
 	address := make([]string, 1)
 
-	var mime, content string
+	var mime string
 
 	var sizeInBytes = 0
 
@@ -402,7 +402,7 @@ func getPicture(node *fastjson.Value) *[]model.Attachment {
 
 		address = append(address, url)
 
-		qMedia := *model.NewAttachment(content, address, mime, "quote_media", sizeInBytes, time.Now())
+		qMedia := *model.NewAttachment(url, address, mime, "quote_media", sizeInBytes, time.Now())
 		result[i] = qMedia
 	}
 
