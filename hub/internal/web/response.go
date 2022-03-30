@@ -3,7 +3,7 @@ package web
 import (
 	"net/http"
 
-	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/status"
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/internal/status"
 	"github.com/gin-gonic/gin"
 )
 
