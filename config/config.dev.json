@@ -67,6 +67,12 @@
     },
     "polygonscan": {
       "api_key": "__PLACEHOLDER__"
+    },
+    "moralis": {
+      "api_key": "__PLACEHOLDER__"
+    },
+    "infura": {
+      "api_key": "__PLACEHOLDER__"
     }
   }
 }

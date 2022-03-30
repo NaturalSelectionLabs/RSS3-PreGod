@@ -47,6 +47,10 @@
     "moralis": {
       "api_key": "+1"
     },
+    "infura": {
+      "gateway": "https://mainnet.infura.io/v3",
+      "api_key": "+1"
+    },
     "arbitrum": {
       "api_key": "+1"
     },
@@ -63,7 +67,7 @@
       "app_version": "7.27.1"
     },
     "twitter": {
-      "break_down_tokens":[
+      "break_down_tokens": [
         "xxx"
       ]
     }
