@@ -8,10 +8,12 @@ import (
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/logger"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
+	jsoniter "github.com/json-iterator/go"
 	goens "github.com/wealdtech/go-ens/v3"
 )
 
 var (
+	jsoni       = jsoniter.ConfigCompatibleWithStandardLibrary
 	client      *ethclient.Client
 	ensContract = "0x57f1887a8bf19b14fc0df6fd9b2acc9af147ea85"
 )
@@ -98,31 +100,49 @@ func getENSDetail(address string, record *ENSTextRecord) error {
 		return err
 	}
 
-	// an address might have multiple ENS domains
 	for _, ens := range ensList.Result {
-		// if the one is the current ENS domain
-		if ens.MetaData.Name == record.Domain {
-			// get TxHash and Tsp with TokenId from Moralis
-			t, err := moralis.GetTxByToken(ens.TokenAddress, ens.TokenId, moralis.ETH, config.Config.Indexer.Moralis.ApiKey)
+		// moralis sometimes returns empty metadata
+		if ens.MetaData != "" {
+			meta := new(moralis.NFTMetadata)
+
+			err = jsoni.UnmarshalFromString(ens.MetaData, &meta)
 
 			if err != nil {
-				logger.Errorf("getENSDetail transaction: %v", err)
+				logger.Errorf("getENSDetail unmarshall metadata: %v", err)
 
 				return err
 			}
 
-			record.TxHash = t.TransactionHash
-			record.CreatedAt, err = time.Parse(time.RFC3339, t.BlockTimestamp)
-			record.Description = ens.MetaData.Description
+			// an address might have multiple ENS domains
+			// if the one is the current ENS domain
+			if meta.Name == record.Domain {
+				record.Description = meta.Description
 
-			if err != nil {
-				logger.Errorf("getENSDetail transaction: %v", err)
-
-				return err
+				return getENSTransaction(ens, record)
 			}
-
-			return nil
 		}
+	}
+
+	return nil
+}
+
+func getENSTransaction(ens moralis.NFTItem, record *ENSTextRecord) error {
+	// get TxHash and Tsp with TokenId from Moralis
+	t, err := moralis.GetTxByToken(ens.TokenAddress, ens.TokenId, moralis.ETH, config.Config.Indexer.Moralis.ApiKey)
+
+	if err != nil {
+		logger.Errorf("getENSDetail transaction: %v", err)
+
+		return err
+	}
+
+	record.TxHash = t.TransactionHash
+	record.CreatedAt, err = time.Parse(time.RFC3339, t.BlockTimestamp)
+
+	if err != nil {
+		logger.Errorf("getENSDetail transaction: %v", err)
+
+		return err
 	}
 
 	return nil

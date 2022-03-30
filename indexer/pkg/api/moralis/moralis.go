@@ -113,8 +113,6 @@ func GetNFTByContract(userAddress string, contactAddress string, chainType Chain
 		return NFTResult{}, err
 	}
 
-	fmt.Println(res)
-
 	return *res, nil
 }
 

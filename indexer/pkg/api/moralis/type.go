@@ -55,21 +55,21 @@ func (mt ChainType) GetNetworkSymbol() constants.NetworkSymbol {
 
 // NFTItem store all indexed NFTs from moralis api.
 type NFTItem struct {
-	TokenAddress      string      `json:"token_address"`
-	TokenId           string      `json:"token_id"`
-	BlockNumberMinted string      `json:"block_number_minted"`
-	OwnerOf           string      `json:"owner_of"`
-	BlockNumber       string      `json:"block_number"`
-	Amount            string      `json:"amount"`
-	ContractType      string      `json:"contract_type"`
-	Name              string      `json:"name"`
-	Symbol            string      `json:"symbol"`
-	TokenURI          string      `json:"token_uri"`
-	MetaData          NFTMetadata `json:"metadata"`
-	SyncedAt          string      `json:"synced_at"`
-	IsValid           int64       `json:"is_valid"`
-	Syncing           int64       `json:"syncing"`
-	Frozen            int64       `json:"frozen"`
+	TokenAddress      string `json:"token_address"`
+	TokenId           string `json:"token_id"`
+	BlockNumberMinted string `json:"block_number_minted"`
+	OwnerOf           string `json:"owner_of"`
+	BlockNumber       string `json:"block_number"`
+	Amount            string `json:"amount"`
+	ContractType      string `json:"contract_type"`
+	Name              string `json:"name"`
+	Symbol            string `json:"symbol"`
+	TokenURI          string `json:"token_uri"`
+	MetaData          string `json:"metadata"`
+	SyncedAt          string `json:"synced_at"`
+	IsValid           int64  `json:"is_valid"`
+	Syncing           int64  `json:"syncing"`
+	Frozen            int64  `json:"frozen"`
 }
 
 // an incomplete set of metadata returned from Moralis, mapped only what are needed for now

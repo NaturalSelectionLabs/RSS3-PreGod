@@ -89,7 +89,7 @@ func (c *moralisCrawler) Work(param crawler.WorkParam) error {
 		hasObject := false
 
 		for _, asset := range assets.Result {
-			if nftTransfer.EqualsToToken(asset) && asset.MetaData.Name != "" {
+			if nftTransfer.EqualsToToken(asset) && asset.MetaData != "" {
 				hasObject = true
 			}
 		}
