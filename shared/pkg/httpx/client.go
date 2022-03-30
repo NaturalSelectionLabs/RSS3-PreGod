@@ -69,15 +69,19 @@ func Head(url string) (http.Header, error) {
 	return resp.Header(), err
 }
 
-func getClient() *resty.Client {
-	client := resty.New()
+var client *resty.Client
+
+func init() {
+	client = resty.New()
 
 	if len(config.Config.Network.Proxy) != 0 {
 		client.SetProxy(config.Config.Network.Proxy)
 	}
 
 	client.SetTimeout(1 * time.Second * 10)
+}
 
+func getClient() *resty.Client {
 	return client
 }
 

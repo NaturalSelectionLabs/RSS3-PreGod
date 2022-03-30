@@ -68,7 +68,7 @@ spec:
       volumes:
         - name: config
           secret:
-            secretName: pregod-hub
+            secretName: pregod
         - name: mongo-ca
           configMap:
             name: rds-combined-ca-bundle.pem

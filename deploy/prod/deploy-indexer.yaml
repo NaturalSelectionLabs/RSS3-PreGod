@@ -1,15 +1,15 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: pregod-hub
+  name: pregod-indexer
   namespace: pregod
 spec:
   progressDeadlineSeconds: 600
-  replicas: 4
+  replicas: 6
   revisionHistoryLimit: 10
   selector:
     matchLabels:
-      app: pregod-hub
+      app: pregod-indexer
       tier: api
   strategy:
     rollingUpdate:
@@ -19,7 +19,7 @@ spec:
   template:
     metadata:
       labels:
-        app: pregod-hub
+        app: pregod-indexer
         tier: api
     spec:
       containers:
@@ -30,31 +30,30 @@ spec:
             - name: CONFIG_ENV
               value: prod
           command:
-            - ./hub
+            - ./indexer
+            - httpsvc
           ports:
-            - containerPort: 8080
+            - containerPort: 3000
               protocol: TCP
           resources:
             requests:
-              memory: "200Mi"
-              cpu: "500m"
+              memory: "300Mi"
+              cpu: "600m"
             limits:
               memory: "600Mi"
-              cpu: "800m"
+              cpu: "1000m"
           terminationMessagePath: /dev/termination-log
           terminationMessagePolicy: File
           readinessProbe:
-            httpGet:
-              path: /ping
-              port: 8080
-            initialDelaySeconds: 20
+            tcpSocket:
+              port: 3000
+            initialDelaySeconds: 5
             periodSeconds: 10
           livenessProbe:
-            httpGet:
-              path: /ping
-              port: 8080
-            initialDelaySeconds: 20
-            periodSeconds: 10
+            tcpSocket:
+              port: 3000
+            initialDelaySeconds: 15
+            periodSeconds: 20
           volumeMounts:
             - name: config
               mountPath: "/rss3-pregod/config"
@@ -71,7 +70,7 @@ spec:
       volumes:
         - name: config
           secret:
-            secretName: pregod-hub
+            secretName: pregod
         - name: mongo-ca
           configMap:
             name: rds-combined-ca-bundle.pem

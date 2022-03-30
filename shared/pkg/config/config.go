@@ -118,7 +118,6 @@ type InfuraStruct struct {
 	Gateway string `koanf:"gateway"`
 	ApiKey  string `koanf:"api_key"`
 }
-
 type IndexerStruct struct {
 	Server ServerStruct `koanf:"server"`
 
