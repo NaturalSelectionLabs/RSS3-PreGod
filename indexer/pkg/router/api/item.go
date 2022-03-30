@@ -65,6 +65,8 @@ func GetItemHandlerFunc(c *gin.Context) {
 		response.ItemsResult = *dbResult
 
 		c.JSON(http.StatusOK, response)
+
+		return
 	}
 
 	getItemHandler := crawler_handler.NewGetItemsHandler(crawler.WorkParam{

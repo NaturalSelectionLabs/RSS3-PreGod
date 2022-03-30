@@ -1,6 +1,7 @@
 package xscan
 
 import (
+	"fmt"
 	"strconv"
 	"strings"
 
@@ -35,6 +36,9 @@ func GetApiKey(networkId constants.NetworkID) string {
 
 func GetLatestBlockHeight(networkId constants.NetworkID) (int64, error) {
 	apiKey := GetApiKey(networkId)
+	if apiKey == "" {
+		return 0, fmt.Errorf("no api key")
+	}
 
 	var url string
 	if networkId == constants.NetworkIDEthereumMainnet {
@@ -55,9 +59,14 @@ func GetLatestBlockHeight(networkId constants.NetworkID) (int64, error) {
 		return 0, parseErr
 	}
 
-	height := string(parsedJson.GetStringBytes("result"))
-	blockHeight, err := strconv.ParseUint(height[2:], 16, 64)
+	msg := string(parsedJson.GetStringBytes("message"))
+	result := string(parsedJson.GetStringBytes("result"))
 
+	if len(msg) > 0 {
+		return 0, fmt.Errorf("api error, %s", result)
+	}
+
+	blockHeight, err := strconv.ParseUint(result[2:], 16, 64)
 	if err != nil {
 		return 0, err
 	}

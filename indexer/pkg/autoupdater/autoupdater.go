@@ -41,11 +41,7 @@ func RunRecentVisitQueue(ctx context.Context) error {
 		}
 		result := c.GetResult()
 		if result.Items != nil {
-			for _, item := range result.Items {
-				if err := db.InsertItem(item).Err(); err != nil {
-					return err
-				}
-			}
+			db.InsertItems(result.Items, param.NetworkID)
 		}
 		instance := rss3uri.NewAccountInstance(param.Identity, param.PlatformID.Symbol())
 		if result.Assets != nil {

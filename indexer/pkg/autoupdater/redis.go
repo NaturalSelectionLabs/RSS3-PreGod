@@ -49,8 +49,7 @@ func (q *RedisRecentQueue) Iter(ctx context.Context, runner func(string) error) 
 	}
 
 	for {
-		// items: [member, score, member, score]
-		items, cursor, err = cache.ZScan(ctx, q.Key, cursor, "*", 10)
+		items, cursor, err = cache.ZScan(ctx, q.Key, cursor, "*", IterCount)
 		if err != nil {
 			result = multierr.Append(result, err)
 		}
