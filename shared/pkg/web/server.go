@@ -23,7 +23,7 @@ type Server struct {
 }
 
 // Setup starts the web server.
-// Returns the address of the server.
+// Block until get os signal and shutdown server
 func (s *Server) Start() string {
 	gin.SetMode(s.RunMode)
 
@@ -45,7 +45,7 @@ func (s *Server) Start() string {
 
 	logger.Infof("Start http server listening on http://%s", addr)
 
-	gracefullyExit(server)
+	gracefullyExit(server) // block here
 
 	return addr
 }
@@ -53,7 +53,7 @@ func (s *Server) Start() string {
 func gracefullyExit(server *http.Server) {
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGTERM, syscall.SIGQUIT, syscall.SIGINT)
-	sig := <-quit
+	sig := <-quit // block here
 
 	logger.Info("Shutdown due to a signal: ", sig)
 

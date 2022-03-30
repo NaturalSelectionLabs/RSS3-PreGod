@@ -15,8 +15,8 @@ type Instance interface {
 }
 
 var (
-	_ Instance = &PlatformInstance{}
-	_ Instance = &NetworkInstance{}
+	_ Instance = PlatformInstance{}
+	_ Instance = NetworkInstance{}
 )
 
 type PlatformInstance struct {
@@ -25,19 +25,19 @@ type PlatformInstance struct {
 	Platform constants.PlatformSymbol `json:"platform"`
 }
 
-func (p *PlatformInstance) GetPrefix() string {
+func (p PlatformInstance) GetPrefix() string {
 	return string(p.Prefix)
 }
 
-func (p *PlatformInstance) GetIdentity() string {
+func (p PlatformInstance) GetIdentity() string {
 	return p.Identity
 }
 
-func (p *PlatformInstance) GetSuffix() string {
+func (p PlatformInstance) GetSuffix() string {
 	return string(p.Platform)
 }
 
-func (p *PlatformInstance) String() string {
+func (p PlatformInstance) String() string {
 	return fmt.Sprintf("%s:%s@%s", p.Prefix, p.Identity, p.Platform)
 }
 
@@ -47,19 +47,19 @@ type NetworkInstance struct {
 	Network  constants.NetworkSymbol `json:"network"`
 }
 
-func (n *NetworkInstance) GetPrefix() string {
+func (n NetworkInstance) GetPrefix() string {
 	return string(n.Prefix)
 }
 
-func (n *NetworkInstance) GetIdentity() string {
+func (n NetworkInstance) GetIdentity() string {
 	return n.Identity
 }
 
-func (n *NetworkInstance) GetSuffix() string {
+func (n NetworkInstance) GetSuffix() string {
 	return string(n.Network)
 }
 
-func (n *NetworkInstance) String() string {
+func (n NetworkInstance) String() string {
 	return fmt.Sprintf("%s:%s@%s", n.Prefix, n.Identity, n.Network)
 }
 

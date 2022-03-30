@@ -1,4 +1,4 @@
-FROM golang:1.17-alpine AS BUILDER
+FROM golang:1.18-alpine AS BUILDER
 
 # Set the Current Working Directory inside the container
 WORKDIR /rss3-pregod
@@ -9,7 +9,8 @@ COPY . .
 # Install basic packages
 RUN apk add \
     gcc \
-    g++
+    g++ \
+    git
 
 # Download all the dependencies
 RUN go get ./hub/

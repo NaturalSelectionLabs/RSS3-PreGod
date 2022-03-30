@@ -8,8 +8,6 @@ import (
 )
 
 func TestVerify(t *testing.T) {
-	t.Parallel()
-
 	type args struct {
 		msg    string
 		sig    string
@@ -46,7 +44,6 @@ func TestVerify(t *testing.T) {
 	for _, tt := range tests {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
-			t.Parallel()
 			msg := []byte(tt.args.msg)
 
 			sig, err := base64.StdEncoding.DecodeString(tt.args.sig)

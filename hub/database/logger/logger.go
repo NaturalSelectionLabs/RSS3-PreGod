@@ -101,6 +101,7 @@ func (l *Logger) logger() *zap.SugaredLogger {
 		case !ok:
 		case strings.HasSuffix(file, "_test.go"):
 		case strings.HasSuffix(file, "dblogger.go"):
+		case strings.Contains(file, "gorm"):
 		default:
 			return l.CoreLogger.Desugar().WithOptions(zap.AddCallerSkip(i)).Sugar()
 		}

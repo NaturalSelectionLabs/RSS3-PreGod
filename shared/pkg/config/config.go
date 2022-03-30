@@ -168,6 +168,9 @@ func Setup() error {
 	Config.HubServer.ReadTimeout = Config.HubServer.ReadTimeout * time.Second
 	Config.HubServer.WriteTimeout = Config.HubServer.WriteTimeout * time.Second
 
+	Config.Indexer.Server.ReadTimeout = Config.Indexer.Server.ReadTimeout * time.Second
+	Config.Indexer.Server.WriteTimeout = Config.Indexer.Server.WriteTimeout * time.Second
+
 	Config.Postgres.ConnMaxIdleTime = Config.Postgres.ConnMaxIdleTime * time.Second
 	Config.Postgres.ConnMaxLifetime = Config.Postgres.ConnMaxLifetime * time.Second
 

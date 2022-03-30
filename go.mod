@@ -1,6 +1,6 @@
 module github.com/NaturalSelectionLabs/RSS3-PreGod
 
-go 1.17
+go 1.18
 
 require (
 	github.com/arl/statsviz v0.4.1
@@ -19,8 +19,10 @@ require (
 	github.com/swaggo/gin-swagger v1.4.1
 	github.com/swaggo/swag v1.7.9
 	github.com/valyala/fastjson v1.6.3
+	github.com/vmihailenco/msgpack v4.0.4+incompatible
 	github.com/wealdtech/go-ens/v3 v3.5.2
 	go.mongodb.org/mongo-driver v1.8.4
+	go.uber.org/multierr v1.6.0
 	go.uber.org/zap v1.21.0
 	golang.org/x/crypto v0.0.0-20220214200702-86341886e292
 	golang.org/x/net v0.0.0-20220127200216-cd36cc0744dd
@@ -102,11 +104,11 @@ require (
 	github.com/youmark/pkcs8 v0.0.0-20181117223130-1be2e3e5546d // indirect
 	github.com/yusufpapurcu/wmi v1.2.2 // indirect
 	go.uber.org/atomic v1.7.0 // indirect
-	go.uber.org/multierr v1.6.0 // indirect
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c // indirect
 	golang.org/x/sys v0.0.0-20220209214540-3681064d5158 // indirect
 	golang.org/x/text v0.3.7 // indirect
 	golang.org/x/tools v0.1.7 // indirect
+	google.golang.org/appengine v1.6.7 // indirect
 	google.golang.org/protobuf v1.26.0 // indirect
 	gopkg.in/natefinch/npipe.v2 v2.0.0-20160621034901-c1b8fa8bdcce // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect

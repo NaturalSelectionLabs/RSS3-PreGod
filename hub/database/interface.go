@@ -13,7 +13,7 @@ import (
 )
 
 var (
-	Instance Database
+	Instance Database // TODO: rename this to "DB" to avoid confusion with RSS3 Instance
 )
 
 type Database interface {
@@ -27,6 +27,7 @@ type Database interface {
 	QueryLinks(db *gorm.DB, _type int, identity string, suffixID, pageIndex int) ([]model.Link, error)
 	QueryLinksByTarget(db *gorm.DB, _type int, targetIdentity string, targetSuffixID, limit int, instance, lastInstance string) ([]model.Link, error)
 
+	QueryLinkListsByOwner(db *gorm.DB, identity string, prefixID, suffixID int) ([]model.LinkList, error)
 	QueryLinkList(db *gorm.DB, _type int, identity string, prefixID, suffixID int) (*model.LinkList, error)
 
 	QuerySignature(db *gorm.DB, fileURI string) (*model.Signature, error)

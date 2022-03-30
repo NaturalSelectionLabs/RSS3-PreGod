@@ -6,8 +6,8 @@ import (
 
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/pkg/middleware"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/pkg/protocol"
-	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/pkg/status"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/pkg/web"
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/status"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/constants"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/rss3uri"
 	"github.com/gin-gonic/gin"
@@ -34,14 +34,14 @@ func GetAssetListRequestHandlerFunc(c *gin.Context) {
 	platformInstance, ok := value.(*rss3uri.PlatformInstance)
 	if !ok {
 		w := web.Gin{C: c}
-		w.JSONResponse(http.StatusBadRequest, status.CodeInvalidParams, nil)
+		w.JSONResponse(http.StatusBadRequest, status.CodeInvalidInstance, nil)
 
 		return
 	}
 
 	if platformInstance.Prefix != constants.PrefixNameAccount || platformInstance.Platform != constants.PlatformSymbolEthereum {
 		w := web.Gin{C: c}
-		w.JSONResponse(http.StatusBadRequest, status.CodeInvalidParams, nil)
+		w.JSONResponse(http.StatusBadRequest, status.CodeInvalidInstance, nil)
 
 		return
 	}
