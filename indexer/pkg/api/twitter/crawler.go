@@ -19,7 +19,7 @@ func NewTwitterCrawler() crawler.Crawler {
 	return &twitterCrawler{
 		crawler.DefaultCrawler{
 			Items: []*model.Item{},
-			Notes: []*model.ItemId{},
+			Notes: []*model.ObjectId{},
 		},
 	}
 }
@@ -66,7 +66,7 @@ func (tc *twitterCrawler) Work(param crawler.WorkParam) error {
 		)
 
 		tc.Items = append(tc.Items, ni)
-		tc.Notes = append(tc.Notes, &model.ItemId{
+		tc.Notes = append(tc.Notes, &model.ObjectId{
 			NetworkID: networkId,
 			Proof:     contentInfo.Hash,
 		})

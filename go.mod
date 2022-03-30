@@ -20,7 +20,6 @@ require (
 	github.com/swaggo/swag v1.7.9
 	github.com/valyala/fastjson v1.6.3
 	github.com/vmihailenco/msgpack v4.0.4+incompatible
-	github.com/vmihailenco/msgpack v4.0.4+incompatible
 	github.com/wealdtech/go-ens/v3 v3.5.2
 	go.mongodb.org/mongo-driver v1.8.4
 	go.uber.org/multierr v1.6.0
