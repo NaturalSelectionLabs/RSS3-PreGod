@@ -21,7 +21,7 @@ func NewMisskeyCrawler() crawler.Crawler {
 }
 
 func (mc *misskeyCrawler) Work(param crawler.WorkParam) error {
-	noteList, err := GetUserNoteList(param.Identity, param.Limit, param.TimeStamp)
+	noteList, err := GetUserNoteList(param.Identity, param.Limit, param.Timestamp)
 
 	if err != nil {
 		logger.Errorf("%v : unable to retrieve misskey note list for %s", err, param.Identity)

@@ -53,7 +53,7 @@ func Crawl(param *crawler.WorkParam, result *crawler.DefaultCrawler) (crawler.De
 	}
 
 	for _, v := range nftTransfers {
-		tsp, err := time.Parse(time.RFC3339, v.TimeStamp)
+		tsp, err := time.Parse(time.RFC3339, v.Timestamp)
 		if err != nil {
 			tsp = time.Now()
 		}

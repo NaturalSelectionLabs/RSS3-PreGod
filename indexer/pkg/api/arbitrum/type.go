@@ -29,7 +29,7 @@ type NFTTransferItem struct {
 	TokenId      string
 	From         string
 	To           string
-	TimeStamp    string
+	Timestamp    string
 	Hash         string
 }
 
