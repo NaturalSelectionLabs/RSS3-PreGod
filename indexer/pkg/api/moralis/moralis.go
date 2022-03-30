@@ -14,10 +14,6 @@ const endpoint = "https://deep-index.moralis.io"
 var jsoni = jsoniter.ConfigCompatibleWithStandardLibrary
 
 func GetApiKey() string {
-	if err := config.Setup(); err != nil {
-		return ""
-	}
-
 	apiKey, err := jsoni.MarshalToString(config.Config.Indexer.Moralis.ApiKey)
 	if err != nil {
 		return ""

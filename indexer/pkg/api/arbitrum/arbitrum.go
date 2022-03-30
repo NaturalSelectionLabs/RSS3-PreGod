@@ -15,10 +15,6 @@ const endpoint = "https://api.arbiscan.io"
 var jsoni = jsoniter.ConfigCompatibleWithStandardLibrary
 
 func GetApiKey() string {
-	if err := config.Setup(); err != nil {
-		return ""
-	}
-
 	apiKey, err := jsoni.MarshalToString(config.Config.Indexer.Aribtrum.ApiKey)
 	if err != nil {
 		return ""
