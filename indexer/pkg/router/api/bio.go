@@ -21,17 +21,6 @@ type GetBioResponse struct {
 	UserBio        string `json:"data"`
 }
 
-var (
-	// Since the transmitted parameter is only PlatformID
-	// Currently, the platform and network for pulling bio are the same
-	// , so there is a need for a place to transfer to each other.
-	platform2Network = map[constants.PlatformID]constants.NetworkID{
-		constants.PlatformIDTwitter: constants.NetworkIDTwitter,
-		constants.PlatformIDJike:    constants.NetworkIDJike,
-		constants.PlatformIDMisskey: constants.NetworkIDMisskey,
-	}
-)
-
 func GetBioHandlerFunc(c *gin.Context) {
 	request := GetBioRequest{}
 	if err := c.ShouldBind(&request); err != nil {
