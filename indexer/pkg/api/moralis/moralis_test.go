@@ -1,20 +1,13 @@
 package moralis_test
 
 import (
-	"log"
 	"testing"
 
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/api/moralis"
-	_ "github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/config"
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/config"
 	_ "github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/logger"
 	"github.com/stretchr/testify/assert"
 )
-
-func init() {
-	if err := config.Setup(); err != nil {
-		log.Fatalf("config.Setup err: %v", err)
-	}
-}
 
 var (
 	tokenId      = "69122868356010038918278537874891361194569907163152093427587761621557332847656"
@@ -25,7 +18,7 @@ var (
 func TestGetNFT(t *testing.T) {
 	t.Parallel()
 
-	result, err := moralis.GetNFTs("0x3b6d02a24df681ffdf621d35d70aba7adaac07c1", "eth", apiKey)
+	result, err := moralis.GetNFTs("0x3b6d02a24df681ffdf621d35d70aba7adaac07c1", "eth", config.Config.Indexer.Moralis.ApiKey)
 	assert.NotEmpty(t, result.Result)
 	// assert for nil
 	assert.Nil(t, err)
@@ -34,7 +27,7 @@ func TestGetNFT(t *testing.T) {
 func TestGetNFTTransfers(t *testing.T) {
 	t.Parallel()
 
-	result, err := moralis.GetNFTTransfers("0x3b6d02a24df681ffdf621d35d70aba7adaac07c1", "eth", apiKey)
+	result, err := moralis.GetNFTTransfers("0x3b6d02a24df681ffdf621d35d70aba7adaac07c1", "eth", config.Config.Indexer.Moralis.ApiKey)
 
 	assert.NotEmpty(t, result.Result)
 	// assert for nil
@@ -63,14 +56,13 @@ func TestGetLogs(t *testing.T) {
 func TestGetTxByToken(t *testing.T) {
 	t.Parallel()
 
-	// TODO fix empty
-	_, err := moralis.GetTxByToken(
+	result, err := moralis.GetTxByToken(
 		tokenAddress, tokenId,
 		"eth",
 		config.Config.Indexer.Moralis.ApiKey)
 
-	// assert.Equal(t, result.TransactionHash, "0x44ea5a47fa51ada626874ac5c243e78ee485e354d5b337ea673d7f117eb8b6c3")
-	// assert.Equal(t, result.BlockTimestamp, "2022-01-02T11:16:35.000Z")
+	assert.Equal(t, result.TransactionHash, "0x44ea5a47fa51ada626874ac5c243e78ee485e354d5b337ea673d7f117eb8b6c3")
+	assert.Equal(t, result.BlockTimestamp, "2022-01-02T11:16:35.000Z")
 
 	assert.Nil(t, err)
 }
@@ -78,18 +70,17 @@ func TestGetTxByToken(t *testing.T) {
 func TestGetNFTByContract(t *testing.T) {
 	t.Parallel()
 
-	// TODO fix empty
-	_, err := moralis.GetNFTByContract(
+	result, err := moralis.GetNFTByContract(
 		"0x827431510a5D249cE4fdB7F00C83a3353F471848", ensContract,
 		"eth",
 		config.Config.Indexer.Moralis.ApiKey)
 
-	// assert.Equal(t, len(result.Result), 1)
+	assert.Equal(t, len(result.Result), 1)
 
-	// ens := result.Result[0]
+	ens := result.Result[0]
 
-	// assert.Equal(t, ens.TokenAddress, tokenAddress)
-	// assert.Equal(t, ens.TokenId, tokenId)
+	assert.Equal(t, ens.TokenAddress, tokenAddress)
+	assert.Equal(t, ens.TokenId, tokenId)
 
 	assert.Nil(t, err)
 }

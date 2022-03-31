@@ -7,6 +7,7 @@ import (
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/crawler"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/crawler_handler"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/constants"
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/logger"
 )
 
 func TestGetBio(t *testing.T) {
@@ -71,7 +72,11 @@ func request(identity string, platformID constants.PlatformID) *crawler_handler.
 			PlatformID: platformID,
 		})
 
-	handlerResult := getuserBioHandler.Excute()
+	handlerResult, err := getuserBioHandler.Excute()
+
+	if err != nil {
+		logger.Error(err)
+	}
 
 	return handlerResult
 }
