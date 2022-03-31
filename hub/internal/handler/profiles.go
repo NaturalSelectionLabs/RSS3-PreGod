@@ -83,7 +83,7 @@ func getPlatformInstanceProfileList(instance *rss3uri.PlatformInstance) ([]proto
 			})
 		}
 
-		var accountConnects []string
+		var connectedAccounts []string
 
 		accountModels, err := database.QueryAccounts(
 			tx, instance.GetIdentity(), instance.Platform.ID().Int(), constants.ProfileSourceIDCrossbell.Int(),
@@ -93,13 +93,10 @@ func getPlatformInstanceProfileList(instance *rss3uri.PlatformInstance) ([]proto
 		}
 
 		for _, accountModel := range accountModels {
-			accountConnect := fmt.Sprintf(
-				"%s@%s",
-				accountModel.ID,
-				constants.PlatformID(accountModel.Platform).Symbol().String(),
+			connectedAccounts = append(
+				connectedAccounts,
+				rss3uri.NewAccountInstance(accountModel.ID, constants.PlatformID(accountModel.Platform).Symbol()).String(),
 			)
-
-			accountConnects = append(accountConnects, accountConnect)
 		}
 
 		profiles = append(profiles, protocol.Profile{
@@ -109,7 +106,7 @@ func getPlatformInstanceProfileList(instance *rss3uri.PlatformInstance) ([]proto
 			Avatars:           profileModel.Avatars,
 			Bio:               database.UnwrapNullString(profileModel.Bio),
 			Attachments:       attachments,
-			ConnectedAccounts: nil,
+			ConnectedAccounts: connectedAccounts,
 			Source:            constants.ProfileSourceID(profileModel.Source).Name().String(),
 			Metadata: protocol.ProfileMetadata{
 				Network: constants.NetworkID(profileModel.Platform).Symbol().String(),

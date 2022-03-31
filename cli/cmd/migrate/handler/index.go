@@ -42,10 +42,10 @@ func MigrateIndex(db *gorm.DB, file mongomodel.File) error {
 
 			accountID := splits[1]
 			if err := tx.Create(&model.Account{
-				ID:              file.Content.ID,
-				Platform:        int(constants.PlatformIDEthereum),
-				ProfileID:       strings.Trim(strings.Trim(accountID, "@"), "\\"),
-				ProfilePlatform: platformID,
+				ID:              strings.Trim(strings.Trim(accountID, "@"), "\\"),
+				Platform:        platformID,
+				ProfileID:       file.Content.ID,
+				ProfilePlatform: int(constants.PlatformIDEthereum),
 				Source:          constants.ProfileSourceIDCrossbell.Int(),
 				Table: common.Table{
 					CreatedAt: file.Content.DateCreated,
