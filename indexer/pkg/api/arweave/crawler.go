@@ -2,9 +2,9 @@ package arweave
 
 import (
 	"errors"
+	"log"
 	"os"
 	"os/signal"
-	"strconv"
 	"time"
 
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/db"
@@ -41,8 +41,9 @@ func NewArCrawler(fromHeight, step, minStep, confirmations, sleepInterval int64,
 }
 
 func (ar *arCrawler) run() error {
-	startBlockHeight := ar.fromHeight
 	step := ar.step
+	startBlockHeight := ar.fromHeight
+	endBlockHeight := startBlockHeight + step
 	tempDelay := ar.sleepInterval
 
 	// get latest block height
@@ -60,11 +61,14 @@ func (ar *arCrawler) run() error {
 		}
 
 		// get articles
-		endBlockHeight := startBlockHeight + step
+		startBlockHeight = startBlockHeight + step
+		endBlockHeight = endBlockHeight + step
+
 		if latestConfirmedBlockHeight <= endBlockHeight {
 			time.Sleep(tempDelay)
 
 			latestBlockHeight, err = GetLatestBlockHeight()
+
 			if err != nil {
 				return err
 			}
@@ -73,15 +77,23 @@ func (ar *arCrawler) run() error {
 			step = 10
 		}
 
-		ar.getArticles(startBlockHeight, latestConfirmedBlockHeight, ar.identity)
+		log.Println("Getting articles from", startBlockHeight, "to", endBlockHeight,
+			"with step", step, "and temp delay", tempDelay,
+			"and latest confirmed block height", latestConfirmedBlockHeight,
+		)
+		ar.getArticles(startBlockHeight, endBlockHeight, ar.identity)
 	}
 }
 
 func (ar *arCrawler) getArticles(from, to int64, owner string) error {
+	logger.Infof("Getting articles from %d to %d", from, to)
+
 	articles, err := GetArticles(from, to, owner)
 	if err != nil {
 		return err
 	}
+
+	logger.Info("Got articles:", len(articles))
 
 	items := make([]*model.Item, 0)
 
@@ -92,12 +104,7 @@ func (ar *arCrawler) getArticles(from, to int64, owner string) error {
 			MimeType: "text/markdown",
 		}
 
-		tsp, err := time.Parse(time.RFC3339, strconv.FormatInt(article.TimeStamp, 10))
-		if err != nil {
-			logger.Error(err)
-
-			tsp = time.Now()
-		}
+		tsp := time.Unix(article.TimeStamp, 0)
 
 		ni := model.NewItem(
 			constants.NetworkSymbolArweaveMainnet.GetID(),
@@ -127,15 +134,17 @@ func (ar *arCrawler) getArticles(from, to int64, owner string) error {
 func (ar *arCrawler) Start() error {
 	signal.Notify(ar.interrupt, os.Interrupt)
 
+	log.Println("Starting Arweave crawler...")
+
 	go func() {
 		ar.complete <- ar.run()
 	}()
 
-	select {
-	case err := <-ar.complete:
-		return err
-	default:
-		return nil
+	for {
+		select {
+		case err := <-ar.complete:
+			return err
+		}
 	}
 }
 
