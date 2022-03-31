@@ -90,12 +90,16 @@ func GetItemHandlerFunc(c *gin.Context) {
 
 	if response.ErrorBase.ErrorCode == 0 {
 		response.ItemsResult = *result
+
+		c.JSON(http.StatusOK, response)
+
+		return
 	}
 
-	if handlerResult.Error.ErrorCode != util.ErrorCodeSuccess {
+	if response.ErrorBase.ErrorCode != util.ErrorCodeSuccess {
 		logger.Errorf("[%s] get item error", request.Identity)
 
-		response.ErrorBase = util.GetErrorBase(handlerResult.Error.ErrorCode)
+		response.ErrorBase = util.GetErrorBase(response.ErrorBase.ErrorCode)
 		c.JSON(http.StatusOK, response)
 	}
 }
