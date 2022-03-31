@@ -21,21 +21,17 @@ func init() {
 }
 
 func TestGetUserShow(t *testing.T) {
-	_, err := twitter.GetUserShow("@rss3_")
+	result, err := twitter.GetUserShow("@rss3_")
 
-	// TODO fix empty
-	// assert.NotEmpty(t, result.Name)
-	// assert.NotEmpty(t, result.ScreenName)
-	// assert.NotEmpty(t, result.Description)
+	assert.NotEmpty(t, result.Name)
+	assert.NotEmpty(t, result.ScreenName)
+	assert.NotEmpty(t, result.Description)
 	assert.Nil(t, err)
 }
 
 func TestGetTimeline(t *testing.T) {
 	result, err := twitter.GetTimeline("@rss3_", 200)
 
-	// TODO fix: value doesn't contain array; it contains object
-	// assert.Nil(t, err)
-	// assert.True(t, len(result) > 0)
-	assert.NotNil(t, err)            // fix and delete this line
-	assert.False(t, len(result) > 0) // fix and delete this line
+	assert.Nil(t, err)
+	assert.True(t, len(result) > 0)
 }

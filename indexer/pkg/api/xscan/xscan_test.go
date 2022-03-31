@@ -9,16 +9,13 @@ import (
 )
 
 func TestGetLatestBlockHeight(t *testing.T) {
-	// TODO fix valid key and remove `if false`
-	if false {
-		// eth
-		blockHeight, err := xscan.GetLatestBlockHeight(constants.NetworkIDEthereumMainnet)
-		assert.Nil(t, err)
-		assert.NotEqual(t, 0, blockHeight)
+	// eth
+	blockHeight, err := xscan.GetLatestBlockHeight(constants.NetworkIDEthereumMainnet)
+	assert.Nil(t, err)
+	assert.NotEqual(t, 0, blockHeight)
 
-		// polygon
-		blockHeight, err = xscan.GetLatestBlockHeight(constants.NetworkIDPolygon)
-		assert.Nil(t, err)
-		assert.NotEqual(t, 0, blockHeight)
-	}
+	// polygon
+	blockHeight, err = xscan.GetLatestBlockHeight(constants.NetworkIDPolygon)
+	assert.Nil(t, err)
+	assert.NotEqual(t, 0, blockHeight)
 }
