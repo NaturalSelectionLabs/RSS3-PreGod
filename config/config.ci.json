@@ -48,7 +48,6 @@
       "api_key": "+1"
     },
     "infura": {
-      "gateway": "https://mainnet.infura.io/v3",
       "api_key": "+1"
     },
     "arbitrum": {

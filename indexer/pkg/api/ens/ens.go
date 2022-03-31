@@ -16,14 +16,14 @@ import (
 )
 
 var (
-	jsoni       = jsoniter.ConfigCompatibleWithStandardLibrary
-	client      *ethclient.Client
-	ensContract = "0x57f1887a8bf19b14fc0df6fd9b2acc9af147ea85"
+	jsoni         = jsoniter.ConfigCompatibleWithStandardLibrary
+	client        *ethclient.Client
+	ensContract   = "0x57f1887a8bf19b14fc0df6fd9b2acc9af147ea85"
+	infuraGateway = "https://mainnet.infura.io/v3"
 )
 
 func getClient() {
-	gateway := config.Config.Indexer.Infura.Gateway + "/" + config.Config.Indexer.Infura.ApiKey
-	c, err := ethclient.Dial(gateway)
+	c, err := ethclient.Dial(infuraGateway + "/" + config.Config.Indexer.Infura.ApiKey)
 
 	if err != nil {
 		logger.Errorf("connect to Infura: %v", err)
