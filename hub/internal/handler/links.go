@@ -3,6 +3,8 @@ package handler
 import (
 	"errors"
 	"fmt"
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/database"
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/constants"
 	"net/http"
 	"time"
 
@@ -34,33 +36,32 @@ func GetLinkListHandlerFunc(c *gin.Context) {
 		return
 	}
 
-	linkItem := []protocol.LinkItem{
-		{
-			DateCreated: time.Now(),
-			From:        "0xC8b960D09C0078c18Dcbe7eB9AB9d816BcCa8944",
-			To:          "0x0fefeD77Bb715E96f1c35c1a4E0D349563d6f6c0",
-			Source:      "Corssbell",
-			Metadata: protocol.LinkItemMetadata{
-				Network: "Crossbell",
-				Proof:   "todo",
+	linkModels, err := database.QueryLinks(
+		database.DB, constants.LinkTypeFollowing.Int(), instance.Identity, constants.ProfileSourceIDCrossbell.Int(),
+	)
+	if err != nil {
+		_ = c.Error(errors.New("invalid params"))
+
+		return
+	}
+
+	var links []protocol.Link
+	for _, linkModel := range linkModels {
+		links = append(links, protocol.Link{
+			DateCreated: linkModel.CreatedAt,
+			From:        linkModel.From,
+			To:          linkModel.To,
+			Source:      constants.ProfileSourceID(linkModel.Source).Name().String(),
+			Metadata:    protocol.LinkMetadata{
+				// TODO
 			},
-		},
-		{
-			DateCreated: time.Now(),
-			From:        "0xC8b960D09C0078c18Dcbe7eB9AB9d816BcCa8944",
-			To:          "0x0fefeD77Bb715E96f1c35c1a4E0D349563d6f6c0",
-			Source:      "Lens",
-			Metadata: protocol.LinkItemMetadata{
-				Network: "Polygon",
-				Proof:   "todo",
-			},
-		},
+		})
 	}
 
 	c.JSON(http.StatusOK, protocol.File{
 		Identifier:  fmt.Sprintf("%s/links", rss3uri.New(instance).String()),
 		DateUpdated: time.Now(),
-		Total:       len(linkItem),
-		List:        linkItem,
+		Total:       len(links),
+		List:        links,
 	})
 }

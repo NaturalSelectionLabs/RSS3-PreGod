@@ -110,9 +110,11 @@ func getPlatformInstanceProfileList(instance *rss3uri.PlatformInstance) ([]proto
 			Bio:               database.UnwrapNullString(profileModel.Bio),
 			Attachments:       attachments,
 			ConnectedAccounts: nil,
-			Source:            constants.PlatformID(profileModel.Platform).Symbol().String(),
-			// TODO
-			//Metadata:          protocol.ProfileMetadata{},
+			Source:            constants.ProfileSourceID(profileModel.Source).Name().String(),
+			Metadata: protocol.ProfileMetadata{
+				Network: constants.NetworkID(profileModel.Platform).Symbol().String(),
+				Proof:   "TODO",
+			},
 		})
 	}
 

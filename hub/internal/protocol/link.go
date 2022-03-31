@@ -7,18 +7,18 @@ import (
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/isotime"
 )
 
-var _ json.Marshaler = &LinkItem{}
+var _ json.Marshaler = &Link{}
 
-type LinkItem struct {
-	DateCreated time.Time        `json:"date_created"`
-	From        string           `json:"from"`
-	To          string           `json:"to"`
-	Source      string           `json:"source"`
-	Metadata    LinkItemMetadata `json:"metadata"`
+type Link struct {
+	DateCreated time.Time    `json:"date_created"`
+	From        string       `json:"from"`
+	To          string       `json:"to"`
+	Source      string       `json:"source"`
+	Metadata    LinkMetadata `json:"metadata"`
 }
 
-func (l LinkItem) MarshalJSON() ([]byte, error) {
-	return json.Marshal(&magicLinkItem{
+func (l Link) MarshalJSON() ([]byte, error) {
+	return json.Marshal(&magicLink{
 		DateCreated: l.DateCreated.Format(isotime.ISO8601),
 		From:        l.From,
 		To:          l.To,
@@ -27,15 +27,15 @@ func (l LinkItem) MarshalJSON() ([]byte, error) {
 	})
 }
 
-type magicLinkItem struct {
-	DateCreated string           `json:"date_created"`
-	From        string           `json:"from"`
-	To          string           `json:"to"`
-	Source      string           `json:"source"`
-	Metadata    LinkItemMetadata `json:"metadata"`
+type magicLink struct {
+	DateCreated string       `json:"date_created"`
+	From        string       `json:"from"`
+	To          string       `json:"to"`
+	Source      string       `json:"source"`
+	Metadata    LinkMetadata `json:"metadata"`
 }
 
-type LinkItemMetadata struct {
+type LinkMetadata struct {
 	Network string `json:"network"`
 	Proof   string `json:"proof"`
 }
