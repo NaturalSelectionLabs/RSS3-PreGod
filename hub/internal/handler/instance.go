@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/internal/api"
 	"net/http"
 	"time"
 
@@ -17,6 +18,10 @@ func GetInstanceHandlerFunc(c *gin.Context) {
 	}
 
 	instanceList := protocol.NewInstanceList(instance)
+
+	// TODO test
+	_ = c.Error(api.ErrorDatabaseError)
+	return
 
 	c.JSON(http.StatusOK, protocol.File{
 		Version: protocol.Version,

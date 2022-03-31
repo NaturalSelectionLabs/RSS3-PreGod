@@ -2,10 +2,8 @@ package middleware
 
 import (
 	"fmt"
-	"net/http"
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/internal/api"
 
-	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/internal/status"
-	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/internal/web"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/rss3uri"
 	"github.com/gin-gonic/gin"
 )
@@ -22,18 +20,14 @@ func Instance() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		request := InstanceUri{}
 		if err := c.ShouldBindUri(&request); err != nil {
-			w := web.Gin{C: c}
-			w.JSONResponse(http.StatusBadRequest, status.CodeInvalidParams, nil)
-			c.Abort()
+			_ = c.Error(api.ErrorInvalidParams)
 
 			return
 		}
 
 		instance, err := rss3uri.ParseInstance(request.Instance)
 		if err != nil {
-			w := web.Gin{C: c}
-			w.JSONResponse(http.StatusBadRequest, status.CodeInvalidParams, nil)
-			c.Abort()
+			_ = c.Error(api.ErrorInvalidParams)
 
 			return
 		}
