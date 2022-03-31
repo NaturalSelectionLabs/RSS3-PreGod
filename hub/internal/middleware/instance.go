@@ -2,8 +2,8 @@ package middleware
 
 import (
 	"fmt"
-	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/internal/api"
 
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/internal/api"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/rss3uri"
 	"github.com/gin-gonic/gin"
 )
@@ -36,13 +36,27 @@ func Instance() gin.HandlerFunc {
 	}
 }
 
-func GetPlatformInstance(c *gin.Context) (*rss3uri.PlatformInstance, error) {
+func GetInstance(c *gin.Context) (rss3uri.Instance, error) {
 	value, exists := c.Get(KeyInstance)
 	if !exists {
 		return nil, fmt.Errorf("instance not found")
 	}
 
-	platformInstance, ok := value.(*rss3uri.PlatformInstance)
+	instance, ok := value.(rss3uri.Instance)
+	if !ok {
+		return nil, fmt.Errorf("instance not found")
+	}
+
+	return instance, nil
+}
+
+func GetPlatformInstance(c *gin.Context) (*rss3uri.PlatformInstance, error) {
+	instance, err := GetInstance(c)
+	if err != nil {
+		return nil, err
+	}
+
+	platformInstance, ok := instance.(*rss3uri.PlatformInstance)
 	if !ok {
 		return nil, fmt.Errorf("instance not found")
 	}

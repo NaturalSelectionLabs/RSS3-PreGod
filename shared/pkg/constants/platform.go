@@ -13,6 +13,10 @@ func (p PlatformID) Symbol() PlatformSymbol {
 	return PlatformSymbolUnknown
 }
 
+func (p PlatformID) Int() int {
+	return int(p)
+}
+
 func (p PlatformID) IsSignable() bool {
 	_, ok := signablePlatformSymbolMap[p]
 
@@ -25,6 +29,10 @@ func (p PlatformSymbol) ID() PlatformID {
 	}
 
 	return PlatformIDUnknown
+}
+
+func (p PlatformSymbol) String() string {
+	return string(p)
 }
 
 const (

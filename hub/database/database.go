@@ -1,112 +1,78 @@
 package database
 
 import (
-	"context"
+	"time"
 
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/database/logger"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/database/model"
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/config"
+	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
+	"gorm.io/gorm/schema"
 )
 
-var (
-	_ Database = &database{}
-)
+var DB *gorm.DB
 
-type database struct {
-	db *gorm.DB
+func Setup() error {
+	db, err := gorm.Open(postgres.New(postgres.Config{
+		// TODO Refactor config package
+		DSN: config.Config.Postgres.DSN,
+	}), &gorm.Config{
+		SkipDefaultTransaction:                   true,
+		NamingStrategy:                           schema.NamingStrategy{SingularTable: true},
+		NowFunc:                                  func() time.Time { return time.Now().UTC() },
+		DisableForeignKeyConstraintWhenMigrating: true,
+		Logger:                                   logger.New(),
+	})
+
+	if err != nil {
+		return err
+	}
+
+	DB = db
+
+	// Install uuid extension for postgres
+	if err := DB.Exec("CREATE EXTENSION IF NOT EXISTS \"uuid-ossp\";").Error; err != nil {
+		return err
+	}
+
+	if err := DB.AutoMigrate(
+	//&model.Account{},
+	//&model.AccountPlatform{},
+	//&model.Instance{},
+	//&model.LinkList{},
+	//&model.Link{},
+	//&model.Signature{},
+	//&model.Asset{},
+	//&model.Note{},
+	); err != nil {
+		return err
+	}
+
+	return nil
 }
 
-func (d *database) DB(ctx context.Context) *gorm.DB {
-	return d.db.WithContext(ctx)
-}
-
-func (d *database) Tx(ctx context.Context) *gorm.DB {
-	return d.db.WithContext(ctx).Begin()
-}
-
-func (d *database) QueryAccount(db *gorm.DB, id string, platformID int) (*model.Account, error) {
-	account := model.Account{}
-	if err := db.Where("id = ? and platform = ?", id, platformID).First(&account).Error; err != nil {
+func QueryProfiles(db *gorm.DB, id string, platform int) ([]model.Profile, error) {
+	var profiles []model.Profile
+	if err := db.Where(&model.Profile{
+		ID:       id,
+		Platform: platform,
+	}).Find(&profiles).Error; err != nil {
 		return nil, err
 	}
 
-	return &account, nil
+	return profiles, nil
 }
 
-func (d *database) QueryAccountPlatforms(db *gorm.DB, accountID string, platformID int) ([]model.AccountPlatform, error) {
-	accountPlatforms := make([]model.AccountPlatform, 0)
-	if err := db.Where("account_id = ? and platform_id = ?", accountID, platformID).Find(&accountPlatforms).Error; err != nil {
+func QueryAccounts(db *gorm.DB, profileID string, profilePlatform int, source int) ([]model.Account, error) {
+	var accounts []model.Account
+	if err := db.Where(&model.Account{
+		ProfileID:       profileID,
+		ProfilePlatform: profilePlatform,
+		Source:          source,
+	}).Find(&accounts).Error; err != nil {
 		return nil, err
 	}
 
-	return accountPlatforms, nil
-}
-
-func (d *database) QueryLinks(db *gorm.DB, _type int, identity string, suffixID, pageIndex int) ([]model.Link, error) {
-	links := make([]model.Link, 0)
-	if err := db.Where(
-		"type = ? and identity = ? and suffix_id = ? and page_index = ?",
-		_type, identity, suffixID, pageIndex,
-	).Find(&links).Error; err != nil {
-		return nil, err
-	}
-
-	return links, nil
-}
-
-func (d *database) QueryLinksByTarget(
-	db *gorm.DB,
-	_type int,
-	targetIdentity string,
-	targetSuffixID, limit int,
-	instance,
-	lastInstance string,
-) ([]model.Link, error) {
-	links := make([]model.Link, 0)
-	query := db.Where("type = ? and target_identity = ? and target_suffix_id = ?", _type, targetIdentity, targetSuffixID)
-
-	if limit >= 0 {
-		query = query.Limit(limit)
-	}
-
-	if err := query.Find(&links).Error; err != nil {
-		return nil, err
-	}
-
-	return links, nil
-}
-
-func (d *database) QueryLinkList(db *gorm.DB, _type int, identity string, prefixID, suffixID int) (*model.LinkList, error) {
-	linkList := model.LinkList{
-		Type:     _type,
-		Identity: identity,
-		PrefixID: prefixID,
-		SuffixID: suffixID,
-	}
-	if err := db.First(&linkList).Error; err != nil {
-		return nil, err
-	}
-
-	return &linkList, nil
-}
-
-func (d *database) QueryLinkListsByOwner(db *gorm.DB, identity string, prefixID, suffixID int) ([]model.LinkList, error) {
-	linkLists := make([]model.LinkList, 0)
-	if err := db.Where(&model.LinkList{
-		Identity: identity,
-		PrefixID: prefixID,
-		SuffixID: suffixID,
-	}).Find(&linkLists).Error; err != nil {
-		return nil, err
-	}
-
-	return linkLists, nil
-}
-
-func (d *database) QuerySignature(db *gorm.DB, fileURI string) (*model.Signature, error) {
-	signature := model.Signature{}
-	if err := db.Where("file_uri = ?", fileURI).First(&signature).Error; err != nil {
-		return nil, err
-	}
-
-	return &signature, nil
+	return accounts, nil
 }

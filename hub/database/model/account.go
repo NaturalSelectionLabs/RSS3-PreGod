@@ -1,27 +1,22 @@
 package model
 
 import (
-	"database/sql"
-
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/database/common"
-	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/database/datatype"
-	"github.com/lib/pq"
 	"gorm.io/gorm/schema"
 )
 
 var _ schema.Tabler = &Account{}
 
 type Account struct {
-	ID          string               `gorm:"column:id;index:account_idx;primaryKey"`
-	Platform    int                  `gorm:"column:platform;index:account_idx"`
-	Name        sql.NullString       `gorm:"column:name"`
-	Bio         sql.NullString       `gorm:"column:bio"`
-	Avatars     pq.StringArray       `gorm:"column:avatars;type:text[]"`
-	Attachments datatype.Attachments `gorm:"column:attachments;type:jsonb"`
+	ID              string `gorm:"column:id;index:index_account"`
+	Platform        int    `gorm:"column:platform_;index:index_account"`
+	ProfileID       string `gorm:"column:profile_id;index:index_account"`
+	ProfilePlatform int    `gorm:"column:profile_platform;index:index_account"`
+	Source          int    `gorm:"column:source;index:index_account"`
 
 	common.Table
 }
 
-func (a *Account) TableName() string {
+func (a Account) TableName() string {
 	return "account"
 }

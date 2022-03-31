@@ -18,6 +18,7 @@ func Wrapper() gin.HandlerFunc {
 
 		if err := c.Errors.Last(); err != nil {
 			code := api.ErrorToCode(err)
+
 			c.AbortWithStatusJSON(http.StatusInternalServerError, &WrapperResponse{
 				Code:  code,
 				Error: api.CodeToError(code).Error(),

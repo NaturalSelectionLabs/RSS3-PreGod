@@ -24,7 +24,7 @@ type Config struct {
 }
 
 var (
-	_ cmd.Command = &Migrate{}
+	_ cmd.Interface = &Migrate{}
 )
 
 type Migrate struct {
@@ -65,14 +65,9 @@ func (m *Migrate) Initialize() error {
 	}
 
 	if err := m.postgresClient.AutoMigrate(
+		&model.Profile{},
 		&model.Account{},
-		&model.AccountPlatform{},
-		&model.Instance{},
-		&model.LinkList{},
 		&model.Link{},
-		&model.Signature{},
-		&model.Asset{},
-		&model.Note{},
 	); err != nil {
 		return err
 	}

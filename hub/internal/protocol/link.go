@@ -2,8 +2,9 @@ package protocol
 
 import (
 	"encoding/json"
-	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/isotime"
 	"time"
+
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/isotime"
 )
 
 var _ json.Marshaler = &LinkItem{}

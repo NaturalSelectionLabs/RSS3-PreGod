@@ -3,11 +3,12 @@ package handler
 import (
 	"errors"
 	"fmt"
+	"net/http"
+	"time"
+
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/internal/middleware"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/internal/protocol"
 	"github.com/gin-gonic/gin"
-	"net/http"
-	"time"
 )
 
 type GetAssetListRequest struct {

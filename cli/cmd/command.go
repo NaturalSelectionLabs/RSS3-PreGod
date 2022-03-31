@@ -1,6 +1,6 @@
 package cmd
 
-type Command interface {
+type Interface interface {
 	Initialize() error
 	Run() error
 }
