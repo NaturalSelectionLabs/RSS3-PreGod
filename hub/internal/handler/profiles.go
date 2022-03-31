@@ -27,7 +27,7 @@ func GetProfileListHandlerFunc(c *gin.Context) {
 		return
 	}
 
-	var profileList []protocol.Profile
+	profileList := make([]protocol.Profile, 0)
 
 	switch value := instance.(type) {
 	case *rss3uri.PlatformInstance:
@@ -70,10 +70,10 @@ func getPlatformInstanceProfileList(instance *rss3uri.PlatformInstance) ([]proto
 		return nil, err
 	}
 
-	var profiles []protocol.Profile
+	profiles := make([]protocol.Profile, 0)
 
 	for _, profileModel := range profileModels {
-		var attachments []protocol.ProfileAttachment
+		attachments := make([]protocol.ProfileAttachment, 0)
 
 		for _, attachmentModel := range profileModel.Attachments {
 			attachments = append(attachments, protocol.ProfileAttachment{
@@ -83,7 +83,7 @@ func getPlatformInstanceProfileList(instance *rss3uri.PlatformInstance) ([]proto
 			})
 		}
 
-		var connectedAccounts []string
+		connectedAccounts := make([]string, 0)
 
 		accountModels, err := database.QueryAccounts(
 			tx, instance.GetIdentity(), instance.Platform.ID().Int(), constants.ProfileSourceIDCrossbell.Int(),
@@ -95,7 +95,7 @@ func getPlatformInstanceProfileList(instance *rss3uri.PlatformInstance) ([]proto
 		for _, accountModel := range accountModels {
 			connectedAccounts = append(
 				connectedAccounts,
-				rss3uri.NewAccountInstance(accountModel.ID, constants.PlatformID(accountModel.Platform).Symbol()).String(),
+				rss3uri.New(rss3uri.NewAccountInstance(accountModel.ID, constants.PlatformID(accountModel.Platform).Symbol())).String(),
 			)
 		}
 
