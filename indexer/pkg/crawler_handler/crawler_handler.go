@@ -31,7 +31,7 @@ func MakeCrawlers[T constants.NetworkID | constants.PlatformID](network T) crawl
 	switch any(network).(type) {
 	case constants.NetworkID:
 		switch constants.NetworkID(network) {
-		case constants.NetworkIDEthereumMainnet,
+		case constants.NetworkIDEthereum,
 			constants.NetworkIDBNBChain,
 			constants.NetworkIDAvalanche,
 			constants.NetworkIDFantom,

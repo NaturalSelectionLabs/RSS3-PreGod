@@ -21,7 +21,7 @@ const (
 
 func GetChainType(network constants.NetworkID) ChainType {
 	switch network {
-	case constants.NetworkIDEthereumMainnet:
+	case constants.NetworkIDEthereum:
 		return ETH
 	case constants.NetworkIDBNBChain:
 		return BSC
