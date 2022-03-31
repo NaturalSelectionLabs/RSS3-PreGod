@@ -157,7 +157,7 @@ jobs:
           cmd: |
             yq -i '.spec.template.spec.containers[0].image = "${{ env.IMAGE_NAME_HUB }}:${{ steps.meta.outputs.version }}"' ./deploy/prod/deploy-hub.yaml
             yq -i '.spec.template.spec.containers[0].image = "${{ env.IMAGE_NAME_INDEXER }}:${{ steps.meta.outputs.version }}"' ./deploy/prod/deploy-indexer.yaml
-            yq -i '.spec.template.spec.containers[0].image = "${{ env.IMAGE_NAME_INDEXER }}:${{ steps.meta.outputs.version }}"' ./deploy/dev/deploy-indexer-autocrawler.yaml
+            yq -i '.spec.template.spec.containers[0].image = "${{ env.IMAGE_NAME_INDEXER }}:${{ steps.meta.outputs.version }}"' ./deploy/prod/deploy-indexer-autocrawler.yaml
             yq -i '.spec.jobTemplate.spec.template.spec.containers[0].image = "${{ env.IMAGE_NAME_INDEXER }}:${{ steps.meta.outputs.version }}"' ./deploy/prod/cronjob-indexer.yaml
       - run: aws eks update-kubeconfig --region us-west-2 --name production
       - run: |
