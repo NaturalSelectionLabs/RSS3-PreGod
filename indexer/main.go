@@ -23,7 +23,7 @@ func init() {
 	}
 
 	if err := db.Setup(); err != nil {
-		log.Fatalf("web.Setup err: %v", err)
+		log.Fatalf("db.Setup err: %v", err)
 	}
 }
 

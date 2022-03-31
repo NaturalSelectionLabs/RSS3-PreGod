@@ -23,11 +23,11 @@ func Setup() error {
 // SetAssets refresh users' all assets by network
 func SetAssets(instance rss3uri.Instance, assets []*model.ItemId, refreshBy constants.NetworkID) {
 	mgm.Coll(&model.AccountItemList{}).FindOneAndUpdate(
-		mgm.Ctx(), bson.M{"account_instance": instance},
+		mgm.Ctx(), bson.M{"account_instance": instance.String()},
 		bson.M{"$pull": bson.M{"assets.network_id": refreshBy}},
 	)
 	mgm.Coll(&model.AccountItemList{}).FindOneAndUpdate(
-		mgm.Ctx(), bson.M{"account_instance": instance},
+		mgm.Ctx(), bson.M{"account_instance": instance.String()},
 		bson.M{"$addToSet": bson.M{"assets": bson.M{"$each": assets}}},
 		options.FindOneAndUpdate().SetUpsert(true),
 	)
@@ -43,7 +43,8 @@ func AppendNotes(instance rss3uri.Instance, notes []*model.ItemId) {
 	// If we use ODM, the order is the same. So we do not need to worry
 	mgm.Coll(&model.AccountItemList{}).FindOneAndUpdate(
 		mgm.Ctx(),
-		bson.M{"account_instance": instance.String()}, bson.M{"$addToSet": bson.M{"notes": bson.M{"$each": notes}}},
+		bson.M{"account_instance": instance.String()},
+		bson.M{"$addToSet": bson.M{"notes": bson.M{"$each": notes}}},
 		options.FindOneAndUpdate().SetUpsert(true),
 	)
 }
@@ -103,15 +104,6 @@ func GetAccountItems(instance rss3uri.Instance, t constants.ItemType) (*[]model.
 	} else {
 		return results, nil
 	}
-}
-
-func InsertItem(item *model.Item) *mongo.SingleResult {
-	return mgm.Coll(&model.Item{}).FindOneAndReplace(
-		mgm.Ctx(),
-		bson.M{"item_id.network_id": item.ItemId.NetworkID, "item_id.proof": item.ItemId.Proof},
-		item,
-		options.FindOneAndReplace().SetUpsert(true),
-	)
 }
 
 func InsertItems(items []*model.Item, networkID constants.NetworkID) (*mongo.BulkWriteResult, error) {
