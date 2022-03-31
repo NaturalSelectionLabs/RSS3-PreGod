@@ -72,6 +72,7 @@
       "api_key": "__PLACEHOLDER__"
     },
     "infura": {
+      "gateway": "https://mainnet.infura.io/v3",
       "api_key": "__PLACEHOLDER__"
     }
   }
