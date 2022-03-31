@@ -69,20 +69,18 @@ func GetItemHandlerFunc(c *gin.Context) {
 		return
 	}
 
-	// dbResult, err := getItemsFromDB(c.Request.Context(), request)
-	// if err != nil {
-	// 	logger.Errorf("get items from db error: %s", err.Error())
-	// }
+	dbResult, err := getItemsFromDB(c.Request.Context(), request)
+	if err != nil {
+		logger.Errorf("get items from db error: %s", err.Error())
+	}
 
-	// if dbResult != nil {
-	// 	response.ItemsResult = *dbResult
+	if dbResult != nil {
+		response.ItemsResult = *dbResult
 
-	// 	c.JSON(http.StatusOK, response)
+		c.JSON(http.StatusOK, response)
 
-	// 	return
-	// }
-
-	logger.Infof("GetItemHandlerFunc3")
+		return
+	}
 
 	result, errorBase := getItemsResult(request)
 	response.ErrorBase = errorBase
@@ -91,8 +89,6 @@ func GetItemHandlerFunc(c *gin.Context) {
 		response.ItemsResult = *result
 
 		c.JSON(http.StatusOK, response)
-
-		return
 	}
 
 	if response.ErrorBase.ErrorCode != util.ErrorCodeSuccess {
