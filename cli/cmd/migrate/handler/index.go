@@ -1,13 +1,12 @@
 package handler
 
 import (
-	"database/sql"
-	"fmt"
 	"strings"
 	"sync/atomic"
 
 	mongomodel "github.com/NaturalSelectionLabs/RSS3-PreGod/cli/cmd/migrate/model"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/cli/cmd/migrate/stats"
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/database"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/database/common"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/database/model"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/constants"
@@ -16,44 +15,23 @@ import (
 
 func MigrateIndex(db *gorm.DB, file mongomodel.File) error {
 	return db.Transaction(func(tx *gorm.DB) error {
-		// Migrate signature
-		if file.Content.Signature != "" {
-			// Field format update
-			identity := strings.Split(file.Path, "/")[0]
-			fileURI := strings.ReplaceAll(file.Path, identity, fmt.Sprintf("%s@ethereum", identity))
-
-			if err := tx.Create(&model.Signature{
-				FileURI:   fileURI,
-				Signature: file.Content.Signature,
-				Table: common.Table{
-					CreatedAt: file.Content.DateCreated,
-					UpdatedAt: file.Content.DateUpdated,
-				},
-			}).Error; err != nil {
-				return err
-			}
-
-			atomic.AddInt64(&stats.SignatureNumber, 1)
-		}
-
-		// Migrate ethereum account
-		if err := tx.Create(&model.Account{
-			ID:       file.Path,
-			Platform: int(constants.PlatformIDEthereum),
-			Name:     wrapNullString(file.Content.Profile.Name),
-			Bio:      wrapNullString(file.Content.Profile.Bio),
-			Avatars:  file.Content.Profile.Avatar,
+		// Migrate crossbell account
+		tx.Create(&model.Profile{
+			ID:          file.Path,
+			Platform:    int(constants.PlatformIDEthereum),
+			Name:        database.WrapNullString(file.Content.Profile.Name),
+			Bio:         database.WrapNullString(file.Content.Profile.Bio),
+			Avatars:     file.Content.Profile.Avatar,
+			Attachments: nil,
 			Table: common.Table{
 				CreatedAt: file.Content.DateCreated,
 				UpdatedAt: file.Content.DateUpdated,
 			},
-		}).Error; err != nil {
-			return err
-		}
+		})
 
-		atomic.AddInt64(&stats.AccountNumber, 1)
+		atomic.AddInt64(&stats.Profile, 1)
 
-		// Migrate platform account
+		// Migrate connected accounts
 		for _, account := range file.Content.Profile.Accounts {
 			splits := strings.Split(account.ID, "-")
 			platform := splits[0]
@@ -63,11 +41,12 @@ func MigrateIndex(db *gorm.DB, file mongomodel.File) error {
 			}
 
 			accountID := splits[1]
-			if err := tx.Create(&model.AccountPlatform{
-				AccountID:         file.Content.ID,
-				AccountPlatformID: int(constants.PlatformIDEthereum),
-				PlatformAccountID: strings.Trim(strings.Trim(accountID, "@"), "\\"),
-				PlatformID:        platformID,
+			if err := tx.Create(&model.Account{
+				ID:              strings.Trim(strings.Trim(accountID, "@"), "\\"),
+				Platform:        platformID,
+				ProfileID:       file.Content.ID,
+				ProfilePlatform: int(constants.PlatformIDEthereum),
+				Source:          constants.ProfileSourceIDCrossbell.Int(),
 				Table: common.Table{
 					CreatedAt: file.Content.DateCreated,
 					UpdatedAt: file.Content.DateUpdated,
@@ -76,20 +55,9 @@ func MigrateIndex(db *gorm.DB, file mongomodel.File) error {
 				return err
 			}
 
-			atomic.AddInt64(&stats.AccountPlatformNumber, 1)
+			atomic.AddInt64(&stats.Account, 1)
 		}
 
 		return nil
 	})
-}
-
-func wrapNullString(str string) sql.NullString {
-	if str == "" {
-		return sql.NullString{}
-	}
-
-	return sql.NullString{
-		String: str,
-		Valid:  true,
-	}
 }

@@ -164,7 +164,7 @@ func (gc *gitcoinCrawler) zksyncRun() error {
 
 func (gc *gitcoinCrawler) xscanRun(networkId constants.NetworkID) error {
 	var p *Param
-	if networkId == constants.NetworkIDEthereumMainnet {
+	if networkId == constants.NetworkIDEthereum {
 		p = &gc.eth
 	} else if networkId == constants.NetworkIDPolygon {
 		p = &gc.polygon
@@ -189,7 +189,7 @@ func (gc *gitcoinCrawler) xscanRun(networkId constants.NetworkID) error {
 	}
 
 	var chainType ChainType
-	if networkId == constants.NetworkIDEthereumMainnet {
+	if networkId == constants.NetworkIDEthereum {
 		chainType = ETH
 	} else if networkId == constants.NetworkIDPolygon {
 		chainType = Polygon
@@ -263,7 +263,7 @@ func (gc *gitcoinCrawler) EthStart() error {
 		case <-gc.eth.Interrupt:
 			return nil
 		case <-time.After(5 * time.Second):
-			gc.xscanRun(constants.NetworkIDEthereumMainnet)
+			gc.xscanRun(constants.NetworkIDEthereum)
 		}
 	}
 }

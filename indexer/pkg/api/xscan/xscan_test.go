@@ -10,7 +10,7 @@ import (
 
 func TestGetLatestBlockHeight(t *testing.T) {
 	// eth
-	blockHeight, err := xscan.GetLatestBlockHeight(constants.NetworkIDEthereumMainnet)
+	blockHeight, err := xscan.GetLatestBlockHeight(constants.NetworkIDEthereum)
 	assert.Nil(t, err)
 	assert.NotEqual(t, 0, blockHeight)
 

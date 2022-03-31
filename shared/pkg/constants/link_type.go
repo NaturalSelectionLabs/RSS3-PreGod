@@ -20,6 +20,10 @@ var LinkTypeMap = map[LinkTypeID]string{
 	LinkTypeCollection: "collection",
 }
 
+func (id LinkTypeID) Int() int {
+	return int(id)
+}
+
 // Converts LinkTypeID to string.
 func (id LinkTypeID) String() string {
 	return LinkTypeMap[id]

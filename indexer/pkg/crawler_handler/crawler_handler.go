@@ -4,6 +4,7 @@ import (
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/api/jike"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/api/misskey"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/api/moralis"
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/api/poap"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/api/twitter"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/crawler"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/util"
@@ -31,7 +32,7 @@ func MakeCrawlers[T constants.NetworkID | constants.PlatformID](network T) crawl
 	switch any(network).(type) {
 	case constants.NetworkID:
 		switch constants.NetworkID(network) {
-		case constants.NetworkIDEthereumMainnet,
+		case constants.NetworkIDEthereum,
 			constants.NetworkIDBNBChain,
 			constants.NetworkIDAvalanche,
 			constants.NetworkIDFantom,
@@ -43,6 +44,8 @@ func MakeCrawlers[T constants.NetworkID | constants.PlatformID](network T) crawl
 			return twitter.NewTwitterCrawler()
 		case constants.NetworkIDMisskey:
 			return misskey.NewMisskeyCrawler()
+		case constants.NetworkIDGnosisMainnet:
+			return poap.NewPoapCrawler()
 		default:
 			return nil
 		}
