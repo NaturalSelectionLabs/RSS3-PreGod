@@ -75,7 +75,7 @@ func GetUserNoteList(address string, count int, since time.Time) ([]Note, error)
 
 	request.UserId = userShow.Id
 	request.Limit = count
-	request.SinceDate = since.Unix() * 1000
+	request.UntilDate = since.Unix() * 1000
 	request.ExcludeNsfw = true
 	request.Renote = true
 	request.IncludeReplies = false
@@ -97,7 +97,10 @@ func GetUserNoteList(address string, count int, since time.Time) ([]Note, error)
 	// check response error
 	errorMsg := string(parsedJson.GetStringBytes("error", "message"))
 	if errorMsg != "" {
-		return nil, fmt.Errorf("Get misskey user timeline error: %s", errorMsg)
+		param := string(parsedJson.GetStringBytes("error", "info", "param"))
+		reason := string(parsedJson.GetStringBytes("error", "info", "reason"))
+
+		return nil, fmt.Errorf("Get misskey user timeline error: %s; %s; %s", errorMsg, param, reason)
 	}
 
 	parsedObject := parsedJson.GetArray()

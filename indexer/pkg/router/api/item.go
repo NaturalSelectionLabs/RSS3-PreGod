@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/autoupdater"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/crawler"
@@ -22,6 +23,8 @@ type GetItemRequest struct {
 	PlatformID constants.PlatformID `form:"platform_id" binding:"required"`
 	NetworkID  constants.NetworkID  `form:"network_id"`
 	ItemType   constants.ItemType   `form:"item_type"`
+	Limit      int                  `form:"limit"`
+	TimeStamp  int64                `form:"time_stamp"`
 }
 
 type itemsResult struct {
@@ -36,17 +39,28 @@ type GetItemResponse struct {
 
 func GetItemHandlerFunc(c *gin.Context) {
 	request := GetItemRequest{}
+	response := GetItemResponse{
+		util.ErrorBase{},
+		itemsResult{},
+	}
+
+	// bind request
 	if err := c.ShouldBind(&request); err != nil {
 		logger.Errorf("request bind error: %s", err.Error())
 
 		return
 	}
 
-	response := GetItemResponse{
-		util.ErrorBase{},
-		itemsResult{},
+	// set default request
+	if request.Limit == 0 {
+		request.Limit = 100 // TODO: constants.DefaultLimit?
 	}
 
+	if request.TimeStamp == 0 {
+		request.TimeStamp = time.Now().Unix()
+	}
+
+	// request validation
 	if len(request.Identity) <= 0 ||
 		!constants.IsValidPlatformSymbol(string(request.PlatformID.Symbol())) ||
 		!constants.IsValidNetworkName(string(request.NetworkID.Symbol())) {
@@ -69,6 +83,7 @@ func GetItemHandlerFunc(c *gin.Context) {
 		return
 	}
 
+	// get items from db
 	dbResult, err := getItemsFromDB(c.Request.Context(), request)
 	if err != nil {
 		logger.Errorf("get items from db error: %s", err.Error())
@@ -82,6 +97,7 @@ func GetItemHandlerFunc(c *gin.Context) {
 		return
 	}
 
+	// get items from crawler
 	result, errorBase := getItemsResult(request)
 	response.ErrorBase = errorBase
 
@@ -174,8 +190,8 @@ func addToRecentVisit(ctx context.Context, req *GetItemRequest) error {
 		NetworkID:  req.NetworkID,
 		PlatformID: req.PlatformID,
 		// NOTE looks like only for misskey
-		// Limit:      ?,
-		// TimeStamp:  ?,
+		Limit:     req.Limit,
+		TimeStamp: time.Unix(req.TimeStamp, 0),
 	}
 
 	return autoupdater.AddToRecentVisitQueue(ctx, param)
@@ -184,11 +200,16 @@ func addToRecentVisit(ctx context.Context, req *GetItemRequest) error {
 func getItemsResultFromOneNetwork(identity string,
 	platformID constants.PlatformID,
 	networkID constants.NetworkID,
-	itemType constants.ItemType) (*itemsResult, util.ErrorBase) {
+	itemType constants.ItemType,
+	limit int,
+	timestamp time.Time,
+) (*itemsResult, util.ErrorBase) {
 	getItemHandler := crawler_handler.NewGetItemsHandler(crawler.WorkParam{
 		Identity:   identity,
 		PlatformID: platformID,
 		NetworkID:  networkID,
+		Limit:      limit,
+		TimeStamp:  timestamp,
 	})
 
 	handlerResult, err := getItemHandler.Excute()
@@ -230,7 +251,9 @@ func getItemsResult(request GetItemRequest) (*itemsResult, util.ErrorBase) {
 		networkIDs := constants.GetEthereumPlatformNetworks()
 		for _, networkID := range networkIDs {
 			currResult, currErrorBase := getItemsResultFromOneNetwork(
-				request.Identity, request.PlatformID, networkID, request.ItemType)
+				request.Identity, request.PlatformID, networkID, request.ItemType,
+				request.Limit, time.Unix(request.TimeStamp, 0),
+			)
 
 			if currErrorBase.ErrorCode != util.ErrorCodeSuccess {
 				logger.Errorf("[%s] get item error, network[%s],error reason:%s",
@@ -242,7 +265,9 @@ func getItemsResult(request GetItemRequest) (*itemsResult, util.ErrorBase) {
 		}
 	} else {
 		result, errorBase = getItemsResultFromOneNetwork(
-			request.Identity, request.PlatformID, request.NetworkID, request.ItemType)
+			request.Identity, request.PlatformID, request.NetworkID, request.ItemType,
+			request.Limit, time.Unix(request.TimeStamp, 0),
+		)
 	}
 
 	return result, errorBase
