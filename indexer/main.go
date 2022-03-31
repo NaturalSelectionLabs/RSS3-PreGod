@@ -6,7 +6,6 @@ import (
 	_ "net/http/pprof"
 
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/api/arweave"
-	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/api/gitcoin"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/autoupdater"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/db"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/router"
@@ -60,18 +59,23 @@ func RunAutoCrawler(cmd *cobra.Command, args []string) error {
 		2,
 		600,
 		"Ky1c1Kkt-jZ9sY1hvLF5nCf6WWdBhIU5Un_BMYh-t3c")
-	ar.Start()
+
+	if err := ar.Start(); err != nil {
+		logger.Errorf("arweave crawler start error: %v", err)
+	}
 
 	// gitcoin crawler
-	ethParam := gitcoin.NewParam(1, 10000, 10, 10, 600)
-	polygonParam := gitcoin.NewParam(1, 10000, 10, 10, 600)
-	zkParam := gitcoin.NewParam(1, 10000, 10, 10, 600)
-	gc := gitcoin.NewGitcoinCrawler(ethParam, polygonParam, zkParam)
+	// ethParam := gitcoin.NewParam(1, 10000, 10, 10, 600)
+	// polygonParam := gitcoin.NewParam(1, 10000, 10, 10, 600)
+	// zkParam := gitcoin.NewParam(1, 10000, 10, 10, 600)
+	// gc := gitcoin.NewGitcoinCrawler(ethParam, polygonParam, zkParam)
 
-	go gc.PolygonStart()
-	go gc.EthStart()
+	// go gc.PolygonStart()
+	// go gc.EthStart()
 
-	return gc.ZkStart()
+	// return gc.ZkStart()
+
+	return nil
 }
 
 var rootCmd = &cobra.Command{Use: "indexer"}
