@@ -1,10 +1,13 @@
 package ens
 
 import (
+	"strings"
 	"time"
 
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/api/moralis"
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/db/model"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/config"
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/httpx"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/logger"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
@@ -19,7 +22,7 @@ var (
 )
 
 func getClient() {
-	gateway := config.Config.Indexer.Infura.Gateway + config.Config.Indexer.Infura.ApiKey
+	gateway := config.Config.Indexer.Infura.Gateway + "/" + config.Config.Indexer.Infura.ApiKey
 	c, err := ethclient.Dial(gateway)
 
 	if err != nil {
@@ -75,6 +78,8 @@ func getENSTextValue(domain string, record *ENSTextRecord) error {
 
 	record.Text = make(map[string]string)
 
+	var attachments []model.Attachment
+
 	for _, key := range getTextRecordKeyList() {
 		t, err := r.Text(key)
 
@@ -85,7 +90,28 @@ func getENSTextValue(domain string, record *ENSTextRecord) error {
 		}
 
 		record.Text[key] = t
+
+		// append attachments
+		switch key {
+		case "url":
+			a := *model.NewAttachment(t, nil, "text/uri-list", "websites", 0, time.Now())
+			attachments = append(attachments, a)
+		case "avatar":
+			// only get content headers if it's http for now
+			if strings.HasPrefix(t, "http") {
+				contentHeader, err := httpx.GetContentHeader(t)
+
+				if err != nil {
+					logger.Errorf("GetContentHeader err: %v", err)
+				}
+
+				a := *model.NewAttachment(t, nil, contentHeader.MIMEType, "banner", contentHeader.SizeInByte, time.Now())
+				attachments = append(attachments, a)
+			}
+		}
 	}
+
+	record.Attachments = attachments
 
 	return nil
 }

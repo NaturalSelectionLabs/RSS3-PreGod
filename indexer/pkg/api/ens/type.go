@@ -1,11 +1,16 @@
 package ens
 
-import "time"
+import (
+	"time"
+
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/db/model"
+)
 
 type ENSTextRecord struct {
 	Domain      string
 	Description string
 	Text        map[string]string
+	Attachments []model.Attachment
 	CreatedAt   time.Time
 	TxHash      string
 }
