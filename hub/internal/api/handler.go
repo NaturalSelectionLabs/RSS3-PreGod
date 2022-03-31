@@ -17,5 +17,5 @@ func NoRouterHandlerFunc(c *gin.Context) {
 }
 
 func NoMethodHandlerFunc(c *gin.Context) {
-	_ = c.Error(ErrorNoRouter)
+	_ = c.Error(ErrorNoMethod)
 }
