@@ -35,7 +35,7 @@ func main() {
 		HttpPort:     config.Config.HubServer.HttpPort,
 		ReadTimeout:  config.Config.HubServer.ReadTimeout,
 		WriteTimeout: config.Config.HubServer.WriteTimeout,
-		Handler:      router.InitializeRouter(),
+		Handler:      router.Initialize(),
 	}
 
 	defer logger.Logger.Sync()
