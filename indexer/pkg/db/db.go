@@ -105,15 +105,6 @@ func GetAccountItems(instance rss3uri.Instance, t constants.ItemType) (*[]model.
 	}
 }
 
-func InsertItem(item *model.Item) *mongo.SingleResult {
-	return mgm.Coll(&model.Item{}).FindOneAndReplace(
-		mgm.Ctx(),
-		bson.M{"item_id.network_id": item.ItemId.NetworkID, "item_id.proof": item.ItemId.Proof},
-		item,
-		options.FindOneAndReplace().SetUpsert(true),
-	)
-}
-
 func InsertItems(items []*model.Item, networkID constants.NetworkID) (*mongo.BulkWriteResult, error) {
 	models := []mongo.WriteModel{}
 

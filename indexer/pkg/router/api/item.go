@@ -54,6 +54,8 @@ func GetItemHandlerFunc(c *gin.Context) {
 
 		response.ErrorBase = util.GetErrorBase(util.ErrorCodeParameterError)
 		c.JSON(http.StatusOK, response)
+
+		return
 	}
 
 	if len(request.ItemType) > 0 &&
@@ -63,6 +65,8 @@ func GetItemHandlerFunc(c *gin.Context) {
 
 		response.ErrorBase = util.GetErrorBase(util.ErrorCodeParameterError)
 		c.JSON(http.StatusOK, response)
+
+		return
 	}
 
 
@@ -93,6 +97,7 @@ func GetItemHandlerFunc(c *gin.Context) {
 
 		response.ErrorBase = util.GetErrorBase(handlerResult.Error.ErrorCode)
 		c.JSON(http.StatusOK, response)
+	}
 }
 
 func getItemsFromDB(context context.Context, request GetItemRequest) (*itemsResult, error) {

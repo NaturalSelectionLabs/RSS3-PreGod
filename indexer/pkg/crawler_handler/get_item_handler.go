@@ -66,9 +66,7 @@ func (pt *GetItemsHandler) Excute() *GetItemsResult {
 
 	r = c.GetResult()
 	if r.Items != nil {
-		for _, item := range r.Items {
-			db.InsertItem(item)
-		}
+		db.InsertItems(r.Items, pt.WorkParam.NetworkID)
 	}
 
 	if r.Assets != nil {
