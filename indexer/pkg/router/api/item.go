@@ -31,7 +31,7 @@ type itemsResult struct {
 
 type GetItemResponse struct {
 	util.ErrorBase `json:"error"`
-	ItemsResult    itemsResult
+	ItemsResult    itemsResult `json:"data"`
 }
 
 func GetItemHandlerFunc(c *gin.Context) {
@@ -69,19 +69,18 @@ func GetItemHandlerFunc(c *gin.Context) {
 		return
 	}
 
+	// dbResult, err := getItemsFromDB(c.Request.Context(), request)
+	// if err != nil {
+	// 	logger.Errorf("get items from db error: %s", err.Error())
+	// }
 
-	dbResult, err := getItemsFromDB(c.Request.Context(), request)
-	if err != nil {
-		logger.Errorf("get items from db error: %s", err.Error())
-	}
+	// if dbResult != nil {
+	// 	response.ItemsResult = *dbResult
 
-	if dbResult != nil {
-		response.ItemsResult = *dbResult
+	// 	c.JSON(http.StatusOK, response)
 
-		c.JSON(http.StatusOK, response)
-
-		return
-	}
+	// 	return
+	// }
 
 	logger.Infof("GetItemHandlerFunc3")
 
@@ -196,7 +195,12 @@ func getItemsResultFromOneNetwork(identity string,
 		NetworkID:  platform2Network[platformID],
 	})
 
-	handlerResult := getItemHandler.Excute()
+	handlerResult, err := getItemHandler.Excute()
+	if err != nil {
+		logger.Errorf("get items from crawler error: %s", err.Error())
+
+		return nil, util.GetErrorBase(util.ErrorCodeNotFoundData)
+	}
 
 	if handlerResult == nil || handlerResult.Result == nil {
 		return nil, util.GetErrorBase(util.ErrorCodeNotFoundData)

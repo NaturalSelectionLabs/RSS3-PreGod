@@ -18,7 +18,7 @@ type GetBioRequest struct {
 
 type GetBioResponse struct {
 	util.ErrorBase `json:"error"`
-	UserBio        string `json:"user_bio"`
+	UserBio        string `json:"data"`
 }
 
 var (
@@ -60,7 +60,14 @@ func GetBioHandlerFunc(c *gin.Context) {
 			Identity:   request.Identity,
 			PlatformID: request.PlatformID,
 		})
-	handlerResult := getuserBioHandler.Excute()
+
+	handlerResult, err := getuserBioHandler.Excute()
+	if err != nil {
+		logger.Errorf("handler error: %s", err.Error())
+
+		response.ErrorBase = util.GetErrorBase(util.ErrorCodeNotFoundData)
+		c.JSON(http.StatusOK, response)
+	}
 
 	if handlerResult == nil {
 		logger.Errorf("[%s] get user bio result error", request.Identity)

@@ -5,6 +5,7 @@ import (
 
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/constants"
 	"github.com/kamva/mgm/v3"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type ItemId struct {
@@ -29,7 +30,7 @@ type Item struct {
 	Metadata          Metadata           `json:"metadata" bson:"metadata"`
 	Tags              constants.ItemTags `json:"tags" bson:"tags"`
 	Authors           []string           `json:"authors" bson:"authors"`
-	Title             string             `json:"title" bson:"title"`
+	Title             string             `json:"title,omitempty" bson:"title"`
 	Summary           string             `json:"summary" bson:"summary"`
 	Attachments       []Attachment       `json:"attachments" bson:"attachments"`
 	PlatformCreatedAt time.Time          `json:"date_created" bson:"date_created"`
@@ -46,10 +47,27 @@ func NewAttachment(content string, address []string, mimetype string, t string, 
 	}
 }
 
-func NewItem(networkId constants.NetworkID, proof string, metadata Metadata,
-	tags constants.ItemTags, authors []string, title string, summary string,
-	attachments []Attachment, platformCreatedAt time.Time) *Item {
+func NewItem(
+	networkId constants.NetworkID,
+	proof string,
+	metadata Metadata,
+	tags constants.ItemTags,
+	authors []string,
+	title string,
+	summary string,
+	attachments []Attachment,
+	platformCreatedAt time.Time,
+) *Item {
 	return &Item{
+		DefaultModel: mgm.DefaultModel{
+			IDField: mgm.IDField{
+				ID: primitive.NewObjectID(),
+			},
+			DateFields: mgm.DateFields{
+				CreatedAt: time.Now(),
+				UpdatedAt: time.Now(),
+			},
+		},
 		ItemId: ItemId{
 			NetworkID: networkId,
 			Proof:     proof,

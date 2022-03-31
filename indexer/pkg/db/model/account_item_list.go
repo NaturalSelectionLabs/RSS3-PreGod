@@ -1,8 +1,6 @@
 package model
 
-import (
-	"github.com/kamva/mgm/v3"
-)
+import "github.com/kamva/mgm/v3"
 
 type AccountItemList struct {
 	mgm.DefaultModel `bson:",inline"`

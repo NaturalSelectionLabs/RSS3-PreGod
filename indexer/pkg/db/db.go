@@ -110,9 +110,15 @@ func InsertItems(items []*model.Item, networkID constants.NetworkID) (*mongo.Bul
 	models := []mongo.WriteModel{}
 
 	for _, item := range items {
-		models = append(models, mongo.NewReplaceOneModel().SetFilter(
-			bson.M{"item_id.network_id": item.ItemId.NetworkID,
-				"item_id.proof": item.ItemId.Proof}).SetReplacement(item).SetUpsert(true))
+		models = append(models,
+			mongo.NewReplaceOneModel().
+				SetFilter(
+					bson.M{
+						"item_id.network_id": item.ItemId.NetworkID,
+						"item_id.proof":      item.ItemId.Proof},
+				).
+				SetReplacement(item).
+				SetUpsert(true))
 	}
 
 	return mgm.Coll(&model.Item{}).BulkWrite(mgm.Ctx(), models)

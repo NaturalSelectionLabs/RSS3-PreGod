@@ -1,10 +1,11 @@
 package crawler_handler
 
 import (
+	"fmt"
+
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/crawler"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/db"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/util"
-	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/logger"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/rss3uri"
 )
 
@@ -34,7 +35,7 @@ func NewGetItemsResult() *GetItemsResult {
 	}
 }
 
-func (pt *GetItemsHandler) Excute() *GetItemsResult {
+func (pt *GetItemsHandler) Excute() (*GetItemsResult, error) {
 	var err error
 
 	var c crawler.Crawler
@@ -49,9 +50,7 @@ func (pt *GetItemsHandler) Excute() *GetItemsResult {
 	if c == nil {
 		result.Error = util.GetErrorBase(util.ErrorCodeNotSupportedNetwork)
 
-		logger.Errorf("unsupported network id[%d]", pt.WorkParam.NetworkID)
-
-		return result
+		return result, fmt.Errorf("unsupported network id[%d]", pt.WorkParam.NetworkID)
 	}
 
 	err = c.Work(pt.WorkParam)
@@ -59,9 +58,7 @@ func (pt *GetItemsHandler) Excute() *GetItemsResult {
 	if err != nil {
 		result.Error = util.GetErrorBase(util.ErrorCodeNotSupportedNetwork)
 
-		logger.Errorf("crawler fails while working: %s", err)
-
-		return result
+		return result, fmt.Errorf("crawler fails while working: %s", err)
 	}
 
 	r = c.GetResult()
@@ -79,5 +76,5 @@ func (pt *GetItemsHandler) Excute() *GetItemsResult {
 
 	result.Result = r
 
-	return result
+	return result, nil
 }
