@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"log"
+	_ "net/http/pprof"
 
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/api/arweave"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/api/gitcoin"
@@ -43,6 +44,22 @@ func RunHTTPServer(cmd *cobra.Command, args []string) error {
 		Handler:      router.InitRouter(),
 	}
 
+	defer logger.Logger.Sync()
+
+	srv.Start()
+
+	return nil
+}
+
+// runs every 10 minutes
+func RunAutoUpdater(cmd *cobra.Command, args []string) error {
+	logger.Info("Start refreshing recent visiters' data")
+
+	return autoupdater.RunRecentVisitQueue(context.Background())
+}
+
+func RunAutoCrawler(cmd *cobra.Command, args []string) error {
+	logger.Info("Start crawling arweave and gitcoin")
 	// arweave crawler
 	ar := arweave.NewArCrawler(
 		1,
@@ -61,18 +78,8 @@ func RunHTTPServer(cmd *cobra.Command, args []string) error {
 
 	go gc.PolygonStart()
 	go gc.EthStart()
-	go gc.ZkStart()
 
-	defer logger.Logger.Sync()
-
-	srv.Start()
-
-	return nil
-}
-
-// runs every 10 minutes
-func RunAutoUpdater(cmd *cobra.Command, args []string) error {
-	return autoupdater.RunRecentVisitQueue(context.Background())
+	return gc.ZkStart()
 }
 
 var rootCmd = &cobra.Command{Use: "indexer"}
@@ -85,6 +92,10 @@ func main() {
 	rootCmd.AddCommand(&cobra.Command{
 		Use:  "autoupdater",
 		RunE: RunAutoUpdater,
+	})
+	rootCmd.AddCommand(&cobra.Command{
+		Use:  "autocrawler",
+		RunE: RunAutoCrawler,
 	})
 
 	if err := rootCmd.Execute(); err != nil {
