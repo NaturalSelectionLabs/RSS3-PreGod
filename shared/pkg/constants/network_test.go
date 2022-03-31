@@ -8,7 +8,7 @@ import (
 )
 
 func TestIsValidNetworkName(t *testing.T) {
-	assert.Equal(t, constants.IsValidNetworkName("ethereum_mainnet"), true)
+	assert.Equal(t, constants.IsValidNetworkName("ethereum"), true)
 	assert.Equal(t, constants.IsValidNetworkName("unknown"), false)
 	assert.Equal(t, constants.IsValidNetworkName("foobar"), false)
 }
