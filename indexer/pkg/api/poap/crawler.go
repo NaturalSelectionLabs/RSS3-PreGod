@@ -73,11 +73,7 @@ func (pc *poapCrawler) Work(param crawler.WorkParam) error {
 		pc.Items = append(pc.Items, ni)
 		pc.Notes = append(pc.Notes, &model.ItemId{
 			NetworkID: networkId,
-			Proof:     "",
-		})
-		pc.Assets = append(pc.Assets, &model.ItemId{
-			NetworkID: networkId,
-			Proof:     "",
+			Proof:     proof,
 		})
 	}
 
