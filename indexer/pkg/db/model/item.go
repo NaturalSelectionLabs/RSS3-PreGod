@@ -36,7 +36,13 @@ type Item struct {
 	PlatformCreatedAt time.Time          `json:"date_created" bson:"date_created"`
 }
 
-func NewAttachment(content string, address []string, mimetype string, t string, size_in_bytes int, sync_at time.Time) *Attachment {
+func NewAttachment(
+	content string,
+	address []string,
+	mimetype string,
+	t string,
+	size_in_bytes int,
+	sync_at time.Time) *Attachment {
 	return &Attachment{
 		Content:    content,
 		Address:    address,

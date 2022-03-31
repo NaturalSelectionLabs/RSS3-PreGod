@@ -36,16 +36,12 @@ func (pc *poapCrawler) Work(param crawler.WorkParam) error {
 
 	poapResps, err := GetActions(param.Identity)
 	if err != nil {
-		logger.Error(err)
-
-		return err
+		return fmt.Errorf("poap [%s] get actions error:", err)
 	}
 
 	author, err := rss3uri.NewInstance("account", param.Identity, string(constants.PlatformSymbolEthereum))
 	if err != nil {
-		logger.Error(err)
-
-		return err
+		return fmt.Errorf("poap [%s] get new instance error:", err)
 	}
 
 	//TODO: Since we are getting the full amount of interfaces,
@@ -58,9 +54,10 @@ func (pc *poapCrawler) Work(param crawler.WorkParam) error {
 			tsp = time.Now()
 		}
 
+		proof := poapResp.Owner + poapResp.TokenId
 		ni := model.NewItem(
 			networkId,
-			"",
+			proof,
 			model.Metadata{
 				"from": "0x0",
 				"to":   poapResp.Owner,

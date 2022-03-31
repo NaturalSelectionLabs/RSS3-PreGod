@@ -192,7 +192,7 @@ func getItemsResultFromOneNetwork(identity string,
 	getItemHandler := crawler_handler.NewGetItemsHandler(crawler.WorkParam{
 		Identity:   identity,
 		PlatformID: platformID,
-		NetworkID:  platform2Network[platformID],
+		NetworkID:  networkID,
 	})
 
 	handlerResult, err := getItemHandler.Excute()
