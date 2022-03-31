@@ -97,4 +97,5 @@ jobs:
 
       - name: Run tests
         run: |
+          echo -n ${{ secrets.CONFIG_CI_B64 }} | base64 -d > config/config.ci.json
           sh ./scripts/localtest.sh

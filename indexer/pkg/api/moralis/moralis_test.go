@@ -4,15 +4,16 @@ import (
 	"testing"
 
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/api/moralis"
+	_ "github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/config"
+	_ "github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/logger"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestGetNFT(t *testing.T) {
 	apiKey := moralis.GetApiKey()
 
-	_, err := moralis.GetNFTs("0x3b6d02a24df681ffdf621d35d70aba7adaac07c1", "eth", apiKey)
-	// TODO fix empty
-	// assert.NotEmpty(t, result.Result)
+	result, err := moralis.GetNFTs("0x3b6d02a24df681ffdf621d35d70aba7adaac07c1", "eth", apiKey)
+	assert.NotEmpty(t, result.Result)
 	// assert for nil
 	assert.Nil(t, err)
 }
@@ -20,10 +21,9 @@ func TestGetNFT(t *testing.T) {
 func TestGetNFTTransfers(t *testing.T) {
 	apiKey := moralis.GetApiKey()
 
-	_, err := moralis.GetNFTTransfers("0x3b6d02a24df681ffdf621d35d70aba7adaac07c1", "eth", apiKey)
+	result, err := moralis.GetNFTTransfers("0x3b6d02a24df681ffdf621d35d70aba7adaac07c1", "eth", apiKey)
 
-	// TODO fix empty
-	// assert.NotEmpty(t, result.Result)
+	assert.NotEmpty(t, result.Result)
 	// assert for nil
 	assert.Nil(t, err)
 }
@@ -40,8 +40,7 @@ func TestGetLogs(t *testing.T) {
 		apiKey)
 	// assert for nil
 	assert.Nil(t, err)
-	// TODO fix empty
-	// assert.NotEmpty(t, result.Result)
+	assert.NotEmpty(t, result.Result)
 
 	for _, item := range result.Result {
 		assert.NotEmpty(t, item)
