@@ -12,9 +12,9 @@ import (
 var _ schema.Tabler = &Profile{}
 
 type Profile struct {
-	ID          string               `gorm:"column:id;primaryKey"`
-	Platform    int                  `gorm:"column:platform"`
-	Source      int                  `gorm:"column:source"`
+	ID          string               `gorm:"column:id;index:index_profile_id"`
+	Platform    int                  `gorm:"column:platform;index_profile_platform"`
+	Source      int                  `gorm:"column:source;index_profile_source"`
 	Name        sql.NullString       `gorm:"column:name"`
 	Bio         sql.NullString       `gorm:"column:bio"`
 	Avatars     pq.StringArray       `gorm:"column:avatars;type:text[]"`
