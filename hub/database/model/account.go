@@ -8,11 +8,11 @@ import (
 var _ schema.Tabler = &Account{}
 
 type Account struct {
-	ID              string `gorm:"column:id;index:index_account_id"`
-	Platform        int    `gorm:"column:platform_;index:index_account_platform"`
-	ProfileID       string `gorm:"column:profile_id;index:index_account_profile_id"`
-	ProfilePlatform int    `gorm:"column:profile_platform;index:index_account_profile_platform"`
-	Source          int    `gorm:"column:source;index:index_account_source"`
+	ID              string `gorm:"column:id;"`
+	Platform        int    `gorm:"column:platform"`
+	ProfileID       string `gorm:"column:profile_id"`
+	ProfilePlatform int    `gorm:"column:profile_platform"`
+	Source          int    `gorm:"column:source"`
 
 	common.Table
 }
