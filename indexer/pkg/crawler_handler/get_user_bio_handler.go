@@ -42,11 +42,11 @@ func (pt *GetUserBioHandler) Excute() *GetUserBioResult {
 
 	result := NewGetUserBioResult()
 
-	c = MakeCrawlers(pt.WorkParam.NetworkID)
+	c = MakeCrawlers(pt.WorkParam.PlatformID)
 	if c == nil {
 		result.Error = util.GetErrorBase(util.ErrorCodeNotSupportedNetwork)
 
-		logger.Errorf("unsupported network id[%d]", pt.WorkParam.NetworkID)
+		logger.Errorf("unsupported platform id[%d]", pt.WorkParam.PlatformID)
 
 		return result
 	}

@@ -41,6 +41,7 @@ func GetUserShow(name string) (*UserShow, error) {
 	userShow.Name = string(parsedJson.GetStringBytes("name"))
 	userShow.ScreenName = string(parsedJson.GetStringBytes("screen_name"))
 	userShow.Description = string(parsedJson.GetStringBytes("description"))
+	userShow.Entities = string(parsedJson.GetObject("entities").MarshalTo(nil))
 
 	return userShow, nil
 }

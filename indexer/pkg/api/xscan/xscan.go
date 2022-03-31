@@ -16,9 +16,6 @@ var jsoni = jsoniter.ConfigCompatibleWithStandardLibrary
 
 func GetApiKey(networkId constants.NetworkID) string {
 	var err error
-	if err = config.Setup(); err != nil {
-		return ""
-	}
 
 	var apiKey string
 	if networkId == constants.NetworkIDEthereumMainnet {

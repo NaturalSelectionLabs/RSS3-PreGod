@@ -121,12 +121,17 @@ jobs:
       - name: Replace image field
         uses: mikefarah/yq@master
         with:
-          cmd: yq -i '.spec.template.spec.containers[0].image = "${{ env.IMAGE_NAME_HUB }}:${{ steps.meta.outputs.version }}"' ./deploy/dev/deploy.yaml
+          cmd: |
+            yq -i '.spec.template.spec.containers[0].image = "${{ env.IMAGE_NAME_HUB }}:${{ steps.meta.outputs.version }}"' ./deploy/dev/deploy-hub.yaml
+            yq -i '.spec.template.spec.containers[0].image = "${{ env.IMAGE_NAME_INDEXER }}:${{ steps.meta.outputs.version }}"' ./deploy/dev/deploy-indexer.yaml
+            yq -i '.spec.template.spec.containers[0].image = "${{ env.IMAGE_NAME_INDEXER }}:${{ steps.meta.outputs.version }}"' ./deploy/dev/deploy-indexer-autocrawler.yaml
+            yq -i '.spec.jobTemplate.spec.template.spec.containers[0].image = "${{ env.IMAGE_NAME_INDEXER }}:${{ steps.meta.outputs.version }}"' ./deploy/dev/cronjob-indexer.yaml
       - run: aws eks update-kubeconfig --region us-west-2 --name development
       - run: |
           kubectl apply -f deploy/dev
-          kubectl -n pregod rollout restart deploy pregod-hub
+          kubectl -n pregod rollout restart deploy pregod-hub pregod-indexer pregod-indexer-autocrawler
           kubectl -n pregod rollout status deploy pregod-hub
+          kubectl -n pregod rollout status deploy pregod-indexer
 
   deploy-prod:
     if: startsWith(github.ref, 'refs/tags/v')
@@ -149,8 +154,14 @@ jobs:
       - name: Replace image field
         uses: mikefarah/yq@master
         with:
-          cmd: yq -i '.spec.template.spec.containers[0].image = "${{ env.IMAGE_NAME_HUB }}:${{ steps.meta.outputs.version }}"' ./deploy/prod/deploy.yaml
+          cmd: |
+            yq -i '.spec.template.spec.containers[0].image = "${{ env.IMAGE_NAME_HUB }}:${{ steps.meta.outputs.version }}"' ./deploy/prod/deploy-hub.yaml
+            yq -i '.spec.template.spec.containers[0].image = "${{ env.IMAGE_NAME_INDEXER }}:${{ steps.meta.outputs.version }}"' ./deploy/prod/deploy-indexer.yaml
+            yq -i '.spec.template.spec.containers[0].image = "${{ env.IMAGE_NAME_INDEXER }}:${{ steps.meta.outputs.version }}"' ./deploy/dev/deploy-indexer-autocrawler.yaml
+            yq -i '.spec.jobTemplate.spec.template.spec.containers[0].image = "${{ env.IMAGE_NAME_INDEXER }}:${{ steps.meta.outputs.version }}"' ./deploy/prod/cronjob-indexer.yaml
       - run: aws eks update-kubeconfig --region us-west-2 --name production
       - run: |
           kubectl apply -f deploy/prod
           kubectl -n pregod rollout status deploy pregod-hub
+          kubectl -n pregod rollout status deploy pregod-indexer
+          kubectl -n pregod rollout status deploy pregod-indexer-autocrawler

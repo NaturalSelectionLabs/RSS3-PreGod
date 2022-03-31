@@ -249,7 +249,7 @@ func (gc *gitcoinCrawler) ZkStart() error {
 		select {
 		case <-gc.zk.Interrupt:
 			return nil
-		default:
+		case <-time.After(5 * time.Second):
 			gc.zksyncRun()
 		}
 	}
@@ -262,7 +262,7 @@ func (gc *gitcoinCrawler) EthStart() error {
 		select {
 		case <-gc.eth.Interrupt:
 			return nil
-		default:
+		case <-time.After(5 * time.Second):
 			gc.xscanRun(constants.NetworkIDEthereumMainnet)
 		}
 	}
@@ -275,7 +275,7 @@ func (gc *gitcoinCrawler) PolygonStart() error {
 		select {
 		case <-gc.polygon.Interrupt:
 			return nil
-		default:
+		case <-time.After(5 * time.Second):
 			gc.xscanRun(constants.NetworkIDPolygon)
 		}
 	}

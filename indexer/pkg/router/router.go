@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/router/api"
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/router/monitor"
 	"github.com/gin-gonic/gin"
 )
 
@@ -28,6 +29,7 @@ func InitRouter() *gin.Engine {
 
 	r.GET("/item", api.GetItemHandlerFunc)
 	r.GET("/bio", api.GetBioHandlerFunc)
+	r.GET("/debug/statsviz/*filepath", monitor.Statsviz)
 
 	return r
 }

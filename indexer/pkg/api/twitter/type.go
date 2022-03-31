@@ -6,6 +6,7 @@ type UserShow struct {
 	Name        string
 	Description string
 	ScreenName  string
+	Entities    string
 }
 
 type ContentInfo struct {

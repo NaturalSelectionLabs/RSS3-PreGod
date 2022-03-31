@@ -82,7 +82,7 @@ func (tc *twitterCrawler) GetUserBio(Identity string) (string, error) {
 		return "", err
 	}
 
-	userBios := []string{userShow.Description}
+	userBios := []string{userShow.Description, userShow.Entities}
 	userBioJson, err := crawler.GetUserBioJson(userBios)
 
 	if err != nil {
