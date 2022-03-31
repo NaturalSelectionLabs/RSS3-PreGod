@@ -18,8 +18,8 @@
     "conn_max_life_time": -1
   },
   "mongo": {
-    "uri": "mongodb://pregod:Pa33WoRD@localhost:27017",
-    "db": "pregod",
+    "uri": "mongodb://rss3:Pa33WoRD@localhost:27017",
+    "db": "rss3-prod",
     "max_pool_size": 200,
     "min_pool_size": 50
   },

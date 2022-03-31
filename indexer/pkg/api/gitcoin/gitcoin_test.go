@@ -1,3 +1,6 @@
+/*
+If it fails, the APIs may not be accessible (often because of bot authentication)
+*/
 package gitcoin_test
 
 import (
@@ -10,8 +13,7 @@ import (
 func TestGetGrantsInfo(t *testing.T) {
 	grants, err := gitcoin.GetGrantsInfo()
 	assert.Nil(t, err)
-	// TODO fix empty response
-	// assert.NotEmpty(t, grants)
+	assert.NotEmpty(t, grants)
 
 	for _, item := range grants {
 		if item.AdminAddress != "\"0x0\"" {
@@ -30,10 +32,9 @@ func TestGetProjectsInfo(t *testing.T) {
 }
 
 func TestGetEthDonations(t *testing.T) {
-	// TODO fix http error and empty
-	// res, err := gitcoin.GetEthDonations(12605342, 12605343, gitcoin.ETH)
-	// assert.Nil(t, err)
-	// assert.NotEmpty(t, res)
+	res, err := gitcoin.GetEthDonations(12605342, 12605343, gitcoin.ETH)
+	assert.Nil(t, err)
+	assert.NotEmpty(t, res)
 }
 
 func TestGetZkSyncDonations(t *testing.T) {
@@ -43,7 +44,7 @@ func TestGetZkSyncDonations(t *testing.T) {
 	assert.Nil(t, err)
 
 	_, err = gc.GetZkSyncDonations(1000, 1001)
-	// TODO fix empty
+	// TODO GetZkSyncDonations often gots empty here
 	// assert.NotEmpty(t, res)
 	assert.Nil(t, err)
 }

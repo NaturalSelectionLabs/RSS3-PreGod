@@ -93,6 +93,12 @@ func GetUserNoteList(address string, count int, since time.Time) ([]Note, error)
 		return nil, parseErr
 	}
 
+	// check response error
+	errorMsg := string(parsedJson.GetStringBytes("error", "message"))
+	if errorMsg != "" {
+		return nil, fmt.Errorf("Get misskey user timeline error: %s", errorMsg)
+	}
+
 	parsedObject := parsedJson.GetArray()
 
 	var noteList = make([]Note, 0, 10)

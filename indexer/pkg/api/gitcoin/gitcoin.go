@@ -125,14 +125,14 @@ func GetProjectsInfo(adminAddress string, title string) (ProjectInfo, error) {
 	content, err := httpx.Get(url, headers)
 
 	if err != nil {
-		return project, nil
+		return project, err
 	}
 
 	var parser fastjson.Parser
 	parsedJson, parseErr := parser.Parse(string(content))
 
 	if parseErr != nil {
-		return project, nil
+		return project, parseErr
 	}
 
 	if "[]" == string(content) {

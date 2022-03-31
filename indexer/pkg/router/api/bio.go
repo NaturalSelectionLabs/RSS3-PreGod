@@ -18,19 +18,8 @@ type GetBioRequest struct {
 
 type GetBioResponse struct {
 	util.ErrorBase `json:"error"`
-	UserBio        string `json:"user_bio"`
+	UserBio        string `json:"data"`
 }
-
-var (
-	// Since the transmitted parameter is only PlatformID
-	// Currently, the platform and network for pulling bio are the same
-	// , so there is a need for a place to transfer to each other.
-	platform2Network = map[constants.PlatformID]constants.NetworkID{
-		constants.PlatformIDTwitter: constants.NetworkIDTwitter,
-		constants.PlatformIDJike:    constants.NetworkIDJike,
-		constants.PlatformIDMisskey: constants.NetworkIDMisskey,
-	}
-)
 
 func GetBioHandlerFunc(c *gin.Context) {
 	request := GetBioRequest{}
@@ -59,9 +48,15 @@ func GetBioHandlerFunc(c *gin.Context) {
 		crawler.WorkParam{
 			Identity:   request.Identity,
 			PlatformID: request.PlatformID,
-			NetworkID:  platform2Network[request.PlatformID],
 		})
-	handlerResult := getuserBioHandler.Excute()
+
+	handlerResult, err := getuserBioHandler.Excute()
+	if err != nil {
+		logger.Errorf("handler error: %s", err.Error())
+
+		response.ErrorBase = util.GetErrorBase(util.ErrorCodeNotFoundData)
+		c.JSON(http.StatusOK, response)
+	}
 
 	if handlerResult == nil {
 		logger.Errorf("[%s] get user bio result error", request.Identity)

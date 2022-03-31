@@ -7,6 +7,12 @@ import (
 	"go.uber.org/zap/zapcore"
 )
 
+func init() {
+	if err := Setup(); err != nil {
+		panic(err)
+	}
+}
+
 var Logger *zap.SugaredLogger
 var ShortcutLogger *zap.SugaredLogger
 var DesugarredLogger *zap.Logger

@@ -11,7 +11,13 @@ import (
 	"github.com/knadh/koanf/providers/file"
 )
 
-// Golbal Config
+func init() {
+	if err := Setup(); err != nil {
+		panic(err)
+	}
+}
+
+// Global Config
 
 type ProtocolStruct struct {
 	Version string `koanf:"version"`

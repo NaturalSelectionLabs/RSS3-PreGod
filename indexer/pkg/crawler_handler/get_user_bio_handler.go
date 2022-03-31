@@ -1,9 +1,10 @@
 package crawler_handler
 
 import (
+	"fmt"
+
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/crawler"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/util"
-	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/logger"
 )
 
 type GetUserBioHandler struct {
@@ -33,7 +34,7 @@ func NewGetUserBioResult() *GetUserBioResult {
 	}
 }
 
-func (pt *GetUserBioHandler) Excute() *GetUserBioResult {
+func (pt *GetUserBioHandler) Excute() (*GetUserBioResult, error) {
 	var err error
 
 	var c crawler.Crawler
@@ -42,13 +43,11 @@ func (pt *GetUserBioHandler) Excute() *GetUserBioResult {
 
 	result := NewGetUserBioResult()
 
-	c = MakeCrawlers(pt.WorkParam.NetworkID)
+	c = MakeCrawlers(pt.WorkParam.PlatformID)
 	if c == nil {
 		result.Error = util.GetErrorBase(util.ErrorCodeNotSupportedNetwork)
 
-		logger.Errorf("unsupported network id[%d]", pt.WorkParam.NetworkID)
-
-		return result
+		return result, fmt.Errorf("unsupported platform id[%d]", pt.WorkParam.PlatformID)
 	}
 
 	userBio, err = c.GetUserBio(pt.WorkParam.Identity)
@@ -56,9 +55,7 @@ func (pt *GetUserBioHandler) Excute() *GetUserBioResult {
 	if err != nil {
 		result.Error = util.GetErrorBase(util.ErrorCodeNotFoundData)
 
-		logger.Errorf("[%d] can't find", pt.WorkParam.Identity)
-
-		return result
+		return result, fmt.Errorf("[%s] can't find", pt.WorkParam.Identity)
 	}
 
 	if len(userBio) > 0 {
@@ -72,5 +69,5 @@ func (pt *GetUserBioHandler) Excute() *GetUserBioResult {
 		result.UserBio = userBio
 	}
 
-	return result
+	return result, nil
 }

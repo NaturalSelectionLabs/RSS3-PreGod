@@ -18,7 +18,7 @@ func GetApiKey(networkId constants.NetworkID) string {
 	var err error
 
 	var apiKey string
-	if networkId == constants.NetworkIDEthereumMainnet {
+	if networkId == constants.NetworkIDEthereum {
 		apiKey, err = jsoni.MarshalToString(config.Config.Indexer.EtherScan.ApiKey)
 	} else if networkId == constants.NetworkIDPolygon {
 		apiKey, err = jsoni.MarshalToString(config.Config.Indexer.PolygonScan.ApiKey)
@@ -38,7 +38,7 @@ func GetLatestBlockHeight(networkId constants.NetworkID) (int64, error) {
 	}
 
 	var url string
-	if networkId == constants.NetworkIDEthereumMainnet {
+	if networkId == constants.NetworkIDEthereum {
 		url = "https://api.etherscan.io/api/?module=proxy&action=eth_blockNumber&apikey=" + apiKey
 	} else if networkId == constants.NetworkIDPolygon {
 		url = "https://api.polygonscan.com/api/?module=proxy&action=eth_blockNumber&apikey=" + apiKey
