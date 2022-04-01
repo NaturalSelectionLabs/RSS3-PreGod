@@ -6,6 +6,7 @@ import (
 	_ "net/http/pprof"
 
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/api/arweave"
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/api/gitcoin"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/autoupdater"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/db"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/router"
@@ -60,10 +61,10 @@ func RunAutoCrawler(cmd *cobra.Command, args []string) error {
 	}
 
 	// gitcoin crawler
-	// gc := gitcoin.NewCrawler(*gitcoin.DefaultEthConfig, *gitcoin.DefaultPolygonConfig, *gitcoin.DefaultZksyncConfig)
-	// go gc.PolygonStart()
-	// go gc.EthStart()
-	// go gc.ZkStart()
+	gc := gitcoin.NewCrawler(*gitcoin.DefaultEthConfig, *gitcoin.DefaultPolygonConfig, *gitcoin.DefaultZksyncConfig)
+	go gc.PolygonStart()
+	go gc.EthStart()
+	go gc.ZkStart()
 
 	return nil
 }
