@@ -19,9 +19,10 @@ type Crawler interface {
 }
 
 type DefaultCrawler struct {
-	Assets []*model.ItemId
-	Notes  []*model.ItemId
-	Items  []*model.Item
+	Profiles []*model.Profile
+	Assets   []*model.ObjectId
+	Notes    []*model.ObjectId
+	Items    []*model.Item
 }
 
 // CrawlerResult inherits the function by default
@@ -44,7 +45,7 @@ type WorkParam struct {
 	PlatformID constants.PlatformID // optional
 	Limit      int                  // optional, aka Count, limit the number of items to be crawled
 
-	TimeStamp time.Time // optional, if provided, only index items newer than this time
+	Timestamp time.Time // optional, if provided, only index items newer than this time
 }
 
 type userBios struct {

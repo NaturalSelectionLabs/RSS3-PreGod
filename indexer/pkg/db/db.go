@@ -21,7 +21,7 @@ func Setup() error {
 }
 
 // SetAssets refresh users' all assets by network
-func SetAssets(instance rss3uri.Instance, assets []*model.ItemId, refreshBy constants.NetworkID) {
+func SetAssets(instance rss3uri.Instance, assets []*model.ObjectId, refreshBy constants.NetworkID) {
 	mgm.Coll(&model.AccountItemList{}).FindOneAndUpdate(
 		mgm.Ctx(), bson.M{"account_instance": instance.String()},
 		bson.M{"$pull": bson.M{"assets.network_id": refreshBy}},
@@ -34,7 +34,7 @@ func SetAssets(instance rss3uri.Instance, assets []*model.ItemId, refreshBy cons
 }
 
 // AppendNotes only append users' new notes(duplicated notes are omitted.)
-func AppendNotes(instance rss3uri.Instance, notes []*model.ItemId) {
+func AppendNotes(instance rss3uri.Instance, notes []*model.ObjectId) {
 	// If the value is a document, MongoDB determines that the document is a duplicate if an existing
 	// document in the array matches the to-be-added document exactly; i.e. the existing document has
 	// the exact same fields and values and the fields are in the same order. As such, field order
@@ -85,7 +85,7 @@ func GetAccountItems(instance rss3uri.Instance, t constants.ItemType) (*[]model.
 		return nil, err
 	}
 
-	idList := []model.ItemId{}
+	idList := []model.ObjectId{}
 	if t == constants.ItemTypeAsset {
 		idList = r.Assets
 	} else if t == constants.ItemTypeNote {
@@ -124,7 +124,7 @@ func InsertItems(items []*model.Item, networkID constants.NetworkID) (*mongo.Bul
 	return mgm.Coll(&model.Item{}).BulkWrite(mgm.Ctx(), models)
 }
 
-func GetItem(key *model.ItemId) (*model.Item, error) {
+func GetItem(key *model.ObjectId) (*model.Item, error) {
 	r := &model.Item{}
 	err := mgm.Coll(&model.Item{}).FindOne(
 		mgm.Ctx(),
@@ -138,7 +138,7 @@ func GetItem(key *model.ItemId) (*model.Item, error) {
 	}
 }
 
-func GetItems(key *[]model.ItemId) (*[]model.Item, error) {
+func GetItems(key *[]model.ObjectId) (*[]model.Item, error) {
 	results := &[]model.Item{}
 	err := mgm.Coll(&model.Item{}).SimpleFind(
 		results,

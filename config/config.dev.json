@@ -7,7 +7,7 @@
   },
   "redis": {
     "addr": "localhost:6379",
-    "password": "Pa33WoRD",
+    "password": "",
     "db": 0
   },
   "postgres": {
@@ -40,7 +40,7 @@
   "indexer": {
     "server": {
       "run_mode": "debug",
-      "http_port": 8081,
+      "http_port": 3000,
       "read_timeout": 60,
       "write_timeout": 60
     },
@@ -66,6 +66,12 @@
       "api_key": "__PLACEHOLDER__"
     },
     "polygonscan": {
+      "api_key": "__PLACEHOLDER__"
+    },
+    "moralis": {
+      "api_key": "__PLACEHOLDER__"
+    },
+    "infura": {
       "api_key": "__PLACEHOLDER__"
     }
   }

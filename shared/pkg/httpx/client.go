@@ -2,11 +2,17 @@ package httpx
 
 import (
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/config"
 	"github.com/go-resty/resty/v2"
 )
+
+type ContentHeader struct {
+	MIMEType   string
+	SizeInByte int
+}
 
 func Get(url string, headers map[string]string) ([]byte, error) {
 	// Create a Resty Client
@@ -67,6 +73,33 @@ func Head(url string) (http.Header, error) {
 	resp, err := request.Head(url)
 
 	return resp.Header(), err
+}
+
+// returns required fields for an Attachment
+func GetContentHeader(url string) (*ContentHeader, error) {
+	res := new(ContentHeader)
+
+	header, err := Head(url)
+
+	if err != nil {
+		return res, err
+	}
+
+	if header.Get("Content-Length") != "" {
+		sizeInBytes, atoi_err := strconv.Atoi(header.Get("Content-Length"))
+
+		if atoi_err != nil {
+			return res, atoi_err
+		}
+
+		res.SizeInByte = sizeInBytes
+	} else {
+		res.SizeInByte = 0
+	}
+
+	res.MIMEType = header.Get("Content-Type")
+
+	return res, err
 }
 
 var client *resty.Client

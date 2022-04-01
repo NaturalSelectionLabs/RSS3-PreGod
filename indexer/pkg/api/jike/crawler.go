@@ -14,7 +14,7 @@ func NewJikeCrawler() crawler.Crawler {
 	return &jikeCrawler{
 		crawler.DefaultCrawler{
 			Items: []*model.Item{},
-			Notes: []*model.ItemId{},
+			Notes: []*model.ObjectId{},
 		},
 	}
 }
@@ -43,7 +43,7 @@ func (mc *jikeCrawler) Work(param crawler.WorkParam) error {
 		)
 		mc.Items = append(mc.Items, ni)
 
-		mc.Notes = append(mc.Notes, &model.ItemId{
+		mc.Notes = append(mc.Notes, &model.ObjectId{
 			NetworkID: param.NetworkID,
 			Proof:     item.Link,
 		})
