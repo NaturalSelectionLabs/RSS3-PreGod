@@ -3,14 +3,15 @@ package handler
 import (
 	"errors"
 	"fmt"
+	"net/http"
+	"time"
+
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/database"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/internal/middleware"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/internal/protocol"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/constants"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/rss3uri"
 	"github.com/gin-gonic/gin"
-	"net/http"
-	"time"
 )
 
 type GetBackLinkListRequest struct {
@@ -29,7 +30,7 @@ func GetBackLinkListHandlerFunc(c *gin.Context) {
 	}
 
 	request := GetBackLinkListRequest{}
-	if err := c.ShouldBindQuery(&request); err != nil {
+	if err = c.ShouldBindQuery(&request); err != nil {
 		_ = c.Error(errors.New("invalid params"))
 
 		return
@@ -44,7 +45,8 @@ func GetBackLinkListHandlerFunc(c *gin.Context) {
 		return
 	}
 
-	var links []protocol.Link
+	links := make([]protocol.Link, 0)
+
 	for _, linkModel := range linkModels {
 		links = append(links, protocol.Link{
 			DateCreated: linkModel.CreatedAt,
