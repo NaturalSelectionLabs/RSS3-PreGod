@@ -1,10 +1,10 @@
 package handler
 
 import (
+	"database/sql"
 	"errors"
 	"fmt"
 	"net/http"
-	"time"
 
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/database"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/internal/api"
@@ -13,6 +13,8 @@ import (
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/constants"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/rss3uri"
 	"github.com/gin-gonic/gin"
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 )
 
 type GetProfileListRequest struct {
@@ -52,10 +54,21 @@ func GetProfileListHandlerFunc(c *gin.Context) {
 		return
 	}
 
+	var dateUpdated sql.NullTime
+	for _, profile := range profileList {
+		if !dateUpdated.Valid {
+			dateUpdated.Valid = true
+			dateUpdated.Time = profile.DateUpdated
+		}
+
+		if dateUpdated.Time.Before(profile.DateCreated) {
+			dateUpdated.Time = profile.DateUpdated
+		}
+	}
+
 	c.JSON(http.StatusOK, protocol.File{
-		// TODO
-		DateUpdated: time.Now(),
-		Identifier:  fmt.Sprintf("%s/profiles", instance.String()),
+		DateUpdated: dateUpdated.Time,
+		Identifier:  fmt.Sprintf("%s/profiles", rss3uri.New(instance)),
 		Total:       len(profileList),
 		List:        profileList,
 	})
@@ -109,8 +122,10 @@ func getPlatformInstanceProfileList(instance *rss3uri.PlatformInstance) ([]proto
 			ConnectedAccounts: connectedAccounts,
 			Source:            constants.ProfileSourceID(profileModel.Source).Name().String(),
 			Metadata: protocol.ProfileMetadata{
-				Network: constants.NetworkID(profileModel.Platform).Symbol().String(),
-				Proof:   "TODO",
+				// TODO Now only Crossbell is supported,
+				Network: cases.Title(language.English, cases.NoLower).String(constants.NetworkSymbolCrossbell.String()),
+				// Network: constants.NetworkID(profileModel.Platform).Symbol().String(),
+				Proof: instance.Identity,
 			},
 		})
 	}
