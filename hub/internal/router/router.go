@@ -3,6 +3,7 @@ package router
 import (
 	"fmt"
 
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/internal/api"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/internal/handler"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/internal/middleware"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/internal/protocol"
@@ -19,6 +20,10 @@ func Initialize() (router *gin.Engine) {
 
 	// Response wrapper
 	router.Use(middleware.Wrapper())
+
+	router.NoRoute(api.NoRouterHandlerFunc)
+	router.NoMethod(api.NoMethodHandlerFunc)
+	router.GET("/", api.GetIndexHandlerFunc)
 
 	// Latest version API
 	apiRouter := router.Group(fmt.Sprintf("/%s", protocol.Version))

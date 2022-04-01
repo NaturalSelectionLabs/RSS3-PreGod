@@ -16,6 +16,14 @@ func (p LinkSourceID) Name() LinkSourceName {
 
 type LinkSourceName string
 
+func (p LinkSourceName) ID() LinkSourceID {
+	if id, exist := linkSourceIDMap[p]; exist {
+		return id
+	}
+
+	return LinkSourceIDUnknown
+}
+
 func (p LinkSourceName) String() string {
 	return string(p)
 }

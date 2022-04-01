@@ -52,12 +52,25 @@ func Setup() error {
 	return nil
 }
 
-func QueryProfiles(db *gorm.DB, id string, platform int) ([]model.Profile, error) {
+func QueryInstance(db *gorm.DB, id string, platform int) error {
+	_, err := QueryProfiles(db, id, platform, []int{})
+
+	return err
+}
+
+func QueryProfiles(db *gorm.DB, id string, platform int, profileSources []int) ([]model.Profile, error) {
 	var profiles []model.Profile
-	if err := db.Where(&model.Profile{
+
+	internalDB := db.Where(&model.Profile{
 		ID:       id,
 		Platform: platform,
-	}).Find(&profiles).Error; err != nil {
+	})
+
+	if len(profileSources) > 0 {
+		internalDB.Where("source IN ?", profileSources)
+	}
+
+	if err := internalDB.Find(&profiles).Error; err != nil {
 		return nil, err
 	}
 
@@ -77,26 +90,46 @@ func QueryAccounts(db *gorm.DB, profileID string, profilePlatform int, source in
 	return accounts, nil
 }
 
-func QueryLinks(db *gorm.DB, _type int, form string, source int) ([]model.Link, error) {
+func QueryLinks(db *gorm.DB, _type int, form string, linkSources []int, limit int) ([]model.Link, error) {
 	var links []model.Link
-	if err := db.Where(&model.Link{
-		Type:   _type,
-		From:   form,
-		Source: source,
-	}).Find(&links).Error; err != nil {
+
+	internalDB := db.Where(&model.Link{
+		Type: _type,
+		From: form,
+	})
+
+	if len(linkSources) > 0 {
+		internalDB.Where("source IN ?", linkSources)
+	}
+
+	if limit > 0 {
+		internalDB = internalDB.Limit(limit)
+	}
+
+	if err := internalDB.Find(&links).Error; err != nil {
 		return nil, err
 	}
 
 	return links, nil
 }
 
-func QueryLinksByTo(db *gorm.DB, _type int, to string, source int) ([]model.Link, error) {
+func QueryLinksByTo(db *gorm.DB, _type int, to string, linkSources []int, limit int) ([]model.Link, error) {
 	var links []model.Link
-	if err := db.Where(&model.Link{
-		Type:   _type,
-		To:     to,
-		Source: source,
-	}).Find(&links).Error; err != nil {
+
+	internalDB := db.Where(&model.Link{
+		Type: _type,
+		To:   to,
+	})
+
+	if len(linkSources) > 0 {
+		internalDB.Where("source IN ?", linkSources)
+	}
+
+	if limit > 0 {
+		internalDB = internalDB.Limit(limit)
+	}
+
+	if err := internalDB.Find(&links).Error; err != nil {
 		return nil, err
 	}
 
