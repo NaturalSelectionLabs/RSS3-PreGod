@@ -40,6 +40,8 @@ func NewArCrawler(fromHeight, step, minStep, confirmations, sleepInterval int64,
 	}
 }
 
+//TODO: I think it will be the same as other crawler formats in the future,
+// and it will return to an abstract and unified crawler
 func (ar *arCrawler) run() error {
 	step := ar.step
 	startBlockHeight := ar.fromHeight
