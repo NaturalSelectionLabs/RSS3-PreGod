@@ -234,11 +234,10 @@ func setDB(donations []DonationInfo, networkId constants.NetworkID) {
 		items = append(items, item)
 
 		// append notes
-		notes := make([]*model.ItemId, 0)
-		notes = append(notes, &model.ItemId{
+		notes := []*model.ObjectId{{
 			NetworkID: networkId,
 			Proof:     v.TxHash,
-		})
+		}}
 		db.AppendNotes(instance, notes)
 	}
 
