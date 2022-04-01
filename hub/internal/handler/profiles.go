@@ -2,6 +2,7 @@ package handler
 
 import (
 	"database/sql"
+	"errors"
 	"fmt"
 	"net/http"
 
@@ -41,7 +42,11 @@ func GetProfileListHandlerFunc(c *gin.Context) {
 	case *rss3uri.PlatformInstance:
 		profileList, err = getPlatformInstanceProfileList(value, request)
 		if err != nil {
-			_ = c.Error(api.ErrorDatabaseError)
+			if !errors.Is(err, api.ErrorNotFound) {
+				err = api.ErrorDatabaseError
+			}
+
+			_ = c.Error(err)
 
 			return
 		}
@@ -103,7 +108,10 @@ func getPlatformInstanceProfileList(instance *rss3uri.PlatformInstance, request 
 		connectedAccounts := make([]string, 0)
 
 		accountModels, err := database.QueryAccounts(
-			tx, instance.GetIdentity(), instance.Platform.ID().Int(), constants.ProfileSourceIDCrossbell.Int(),
+			tx, instance.GetIdentity(),
+			instance.Platform.ID().Int(),
+			// TODO
+			constants.ProfileSourceIDCrossbell.Int(),
 		)
 		if err != nil {
 			return nil, err
@@ -114,10 +122,6 @@ func getPlatformInstanceProfileList(instance *rss3uri.PlatformInstance, request 
 				connectedAccounts,
 				rss3uri.New(rss3uri.NewAccountInstance(accountModel.ID, constants.PlatformID(accountModel.Platform).Symbol())).String(),
 			)
-		}
-
-		if len(profiles) == 0 {
-			return nil, api.ErrorNotFound
 		}
 
 		profiles = append(profiles, protocol.Profile{
@@ -136,6 +140,10 @@ func getPlatformInstanceProfileList(instance *rss3uri.PlatformInstance, request 
 				Proof: instance.Identity,
 			},
 		})
+	}
+
+	if len(profiles) == 0 {
+		return nil, api.ErrorNotFound
 	}
 
 	tx.Commit()

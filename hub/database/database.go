@@ -52,6 +52,12 @@ func Setup() error {
 	return nil
 }
 
+func QueryInstance(db *gorm.DB, id string, platform int) error {
+	_, err := QueryProfiles(db, id, platform, []int{})
+
+	return err
+}
+
 func QueryProfiles(db *gorm.DB, id string, platform int, profileSources []int) ([]model.Profile, error) {
 	var profiles []model.Profile
 
