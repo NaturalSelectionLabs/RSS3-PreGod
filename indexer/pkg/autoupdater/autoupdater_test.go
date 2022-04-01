@@ -40,7 +40,7 @@ func Test_Run(t *testing.T) {
 			NetworkID:  constants.NetworkIDMisskey,
 			PlatformID: constants.PlatformIDMisskey,
 			Limit:      100,
-			TimeStamp:  time.Now().Add(-time.Hour),
+			Timestamp:  time.Now().Add(-time.Hour),
 		})
 	}
 	time.Sleep(time.Second)

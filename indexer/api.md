@@ -22,7 +22,8 @@ http://localhost:8081 # depends on `indexer.server.http_port` in `config/config.
 GET /bio?proof=<proof>&platform_id=<platform_id>
 ```
 
-For `platform_id`, see [RIP-1](https://rss3.io/protocol/RIPs/RIP-1.html#account-platform-list).
+- `proof`: (required) the proof of the user.
+- `platform_id`: (required) see [RIP-1](https://rss3.io/protocol/RIPs/RIP-1.html#account-platform-list).
 
 Examples:
 
@@ -32,4 +33,13 @@ Examples:
 
 ### Get Items
 
-TODO
+```
+GET /item?proof=<proof>&platform_id=<platform_id>&network_id=<network_id>&item_type=<item_type>&limit=<limit>&timestamp=<timestamp>
+```
+
+- `proof`: (required) the proof of the user.
+- `platform_id`: (required) see [RIP-1](https://rss3.io/protocol/RIPs/RIP-1.html#account-platform-list).
+- `network_id`: (optional) see [RIP-3](https://rss3.io/protocol/RIPs/RIP-3.html#item-network-list).
+- `item_type`: (optional) available values: `note` `asset`
+- `limit`: (optional) the number of items to return. default: 100.
+- `timestamp`: (optional) the timestamp of the last item. default: now.

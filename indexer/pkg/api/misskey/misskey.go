@@ -2,7 +2,6 @@ package misskey
 
 import (
 	"fmt"
-	"strconv"
 	"strings"
 	"time"
 
@@ -75,7 +74,7 @@ func GetUserNoteList(address string, count int, since time.Time) ([]Note, error)
 
 	request.UserId = userShow.Id
 	request.Limit = count
-	request.SinceDate = since.Unix() * 1000
+	request.UntilDate = since.Unix() * 1000
 	request.ExcludeNsfw = true
 	request.Renote = true
 	request.IncludeReplies = false
@@ -97,7 +96,10 @@ func GetUserNoteList(address string, count int, since time.Time) ([]Note, error)
 	// check response error
 	errorMsg := string(parsedJson.GetStringBytes("error", "message"))
 	if errorMsg != "" {
-		return nil, fmt.Errorf("Get misskey user timeline error: %s", errorMsg)
+		param := string(parsedJson.GetStringBytes("error", "info", "param"))
+		reason := string(parsedJson.GetStringBytes("error", "info", "reason"))
+
+		return nil, fmt.Errorf("Get misskey user timeline error: %s; %s; %s", errorMsg, param, reason)
 	}
 
 	parsedObject := parsedJson.GetArray()
@@ -180,10 +182,6 @@ func formatEmoji(emojiList []*fastjson.Value, ns *Note) {
 }
 
 func formatImage(imageList []*fastjson.Value, ns *Note) {
-	var mime string
-
-	var sizeInBytes = 0
-
 	for _, image := range imageList {
 		_type := string(image.GetStringBytes("type"))
 
@@ -192,14 +190,13 @@ func formatImage(imageList []*fastjson.Value, ns *Note) {
 
 			ns.Summary += fmt.Sprintf("<img class=\"media\" src=\"%s\">", url)
 
-			res, err := httpx.Head(url)
+			contentHeader, err := httpx.GetContentHeader(url)
 
-			if err == nil {
-				sizeInBytes, _ = strconv.Atoi(res.Get("Content-Length"))
-				mime = res.Get("Content-Type")
+			if err != nil {
+				logger.Errorf("Jike GetPicture err: %v", err)
 			}
 
-			attachment := *model.NewAttachment(url, nil, mime, "quote_file", sizeInBytes, time.Now())
+			attachment := *model.NewAttachment(url, nil, contentHeader.MIMEType, "quote_file", contentHeader.SizeInByte, time.Now())
 
 			ns.Attachments = append(ns.Attachments, attachment)
 		}

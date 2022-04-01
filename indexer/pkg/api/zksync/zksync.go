@@ -29,6 +29,16 @@ func GetLatestBlockHeight() (int64, error) {
 	return blockHeight, nil
 }
 
+func GetLatestBlockHeightWithConfirmations(confirmations int64) (int64, error) {
+	// get latest block height
+	latestBlockHeight, err := GetLatestBlockHeight()
+	if err != nil {
+		return 0, err
+	}
+
+	return latestBlockHeight - confirmations, nil
+}
+
 func GetTokens() ([]Token, error) {
 	url := endpoint + "/api/v0.1/tokens"
 	response, err := httpx.Get(url, nil)
@@ -40,10 +50,10 @@ func GetTokens() ([]Token, error) {
 	var parser fastjson.Parser
 	parsedJson, _ := parser.Parse(string(response))
 
-	arrs := parsedJson.GetArray()
-	tokens := make([]Token, len(arrs))
+	array := parsedJson.GetArray()
+	tokens := make([]Token, len(array))
 
-	for i, arr := range arrs {
+	for i, arr := range array {
 		tokens[i].Id = arr.GetInt64("id")
 		tokens[i].Address = string(arr.GetStringBytes("address"))
 		tokens[i].Symbol = string(arr.GetStringBytes("symbol"))
@@ -66,10 +76,10 @@ func GetTxsByBlock(blockHeight int64) ([]ZKTransaction, error) {
 	var parser fastjson.Parser
 	parsedJson, _ := parser.Parse(string(response))
 
-	arrs := parsedJson.GetArray()
-	trxs := make([]ZKTransaction, len(arrs))
+	array := parsedJson.GetArray()
+	trxs := make([]ZKTransaction, len(array))
 
-	for i, arr := range arrs {
+	for i, arr := range array {
 		trxs[i].TxHash = string(arr.GetStringBytes("tx_hash"))
 		trxs[i].BlockNumber = arr.GetInt64("block_number")
 		trxs[i].Op.From = string(arr.GetStringBytes("op", "from"))

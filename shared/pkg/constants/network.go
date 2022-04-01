@@ -89,25 +89,7 @@ var (
 		NetworkSymbolGitHub:         NetworkIDGitHub,
 	}
 
-	networkSymbolMap = map[NetworkID]NetworkSymbol{
-		NetworkIDUnknown:        NetworkSymbolUnknown,
-		NetworkIDCrossbell:      NetworkSymbolCrossbell,
-		NetworkIDPolygon:        NetworkSymbolPolygon,
-		NetworkIDBNBChain:       NetworkSymbolBNBChain,
-		NetworkIDArbitrum:       NetworkSymbolArbitrum,
-		NetworkIDAvalanche:      NetworkSymbolAvalanche,
-		NetworkIDFantom:         NetworkSymbolFantom,
-		NetworkIDGnosisMainnet:  NetworkSymbolGnosisMainnet,
-		NetworkIDSolanaMainet:   NetworkSymbolSolanaMainet,
-		NetworkIDFlowMainnet:    NetworkSymbolFlowMainnet,
-		NetworkIDArweaveMainnet: NetworkSymbolArweaveMainnet,
-		NetworkIDRSS:            NetworkSymbolRSS,
-		NetworkIDTwitter:        NetworkSymbolTwitter,
-		NetworkIDMisskey:        NetworkSymbolMisskey,
-		NetworkIDJike:           NetworkSymbolJike,
-		NetworkIDPlayStation:    NetworkSymbolPlayStation,
-		NetworkIDGitHub:         NetworkSymbolGitHub,
-	}
+	networkSymbolMap = map[NetworkID]NetworkSymbol{}
 )
 
 func IsValidNetworkName(value string) bool {
@@ -125,6 +107,7 @@ func (id NetworkSymbol) GetID() NetworkID {
 
 func GetEthereumPlatformNetworks() []NetworkID {
 	return []NetworkID{
+		NetworkIDCrossbell,
 		NetworkIDEthereum,
 		NetworkIDPolygon,
 		NetworkIDBNBChain,
@@ -132,5 +115,11 @@ func GetEthereumPlatformNetworks() []NetworkID {
 		NetworkIDAvalanche,
 		NetworkIDFantom,
 		NetworkIDGnosisMainnet,
+	}
+}
+
+func init() {
+	for id, name := range networkIDMap {
+		networkSymbolMap[name] = id
 	}
 }

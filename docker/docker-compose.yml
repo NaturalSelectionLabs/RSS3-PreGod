@@ -21,3 +21,10 @@ services:
     container_name: mongodb
     ports:
       - "27017:27017"
+
+  rabbitmq:
+    restart: always
+    image: rabbitmq:latest
+    container_name: rabbitmq
+    ports:
+      - '5672:5672'

@@ -13,6 +13,7 @@ type Link struct {
 	DateCreated time.Time    `json:"date_created"`
 	From        string       `json:"from"`
 	To          string       `json:"to"`
+	Type        string       `json:"type"`
 	Source      string       `json:"source"`
 	Metadata    LinkMetadata `json:"metadata"`
 }
@@ -22,6 +23,7 @@ func (l Link) MarshalJSON() ([]byte, error) {
 		DateCreated: l.DateCreated.Format(isotime.ISO8601),
 		From:        l.From,
 		To:          l.To,
+		Type:        l.Type,
 		Source:      l.Source,
 		Metadata:    l.Metadata,
 	})
@@ -31,6 +33,7 @@ type magicLink struct {
 	DateCreated string       `json:"date_created"`
 	From        string       `json:"from"`
 	To          string       `json:"to"`
+	Type        string       `json:"type"`
 	Source      string       `json:"source"`
 	Metadata    LinkMetadata `json:"metadata"`
 }

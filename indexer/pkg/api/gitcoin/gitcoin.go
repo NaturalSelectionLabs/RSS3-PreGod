@@ -6,6 +6,7 @@ import (
 
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/api/moralis"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/api/zksync"
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/config"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/httpx"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/logger"
 	"github.com/valyala/fastjson"
@@ -100,10 +101,10 @@ func GetGrantsInfo() ([]GrantInfo, error) {
 		return nil, nil
 	}
 
-	grantArrs := parsedJson.GetArray()
+	grantArray := parsedJson.GetArray()
 	grants := make([]GrantInfo, 0)
 
-	for _, grant := range grantArrs {
+	for _, grant := range grantArray {
 		projects := grant.GetArray()
 
 		item := GrantInfo{Title: projects[0].String(), AdminAddress: projects[1].String()}
@@ -158,7 +159,7 @@ func GetProjectsInfo(adminAddress string, title string) (ProjectInfo, error) {
 }
 
 // GetZkSyncDonations returns donations from zksync
-func (gc *gitcoinCrawler) GetZkSyncDonations(fromBlock, toBlock int64) ([]DonationInfo, error) {
+func (gc *crawler) GetZkSyncDonations(fromBlock, toBlock int64) ([]DonationInfo, error) {
 	donations := make([]DonationInfo, 0)
 
 	for i := fromBlock; i <= toBlock; i++ {
@@ -221,8 +222,7 @@ func (gc *gitcoinCrawler) GetZkSyncDonations(fromBlock, toBlock int64) ([]Donati
 
 // GetEthDonations returns donations from ethereum and polygon
 func GetEthDonations(fromBlock int64, toBlock int64, chainType ChainType) ([]DonationInfo, error) {
-	apiKey := moralis.GetApiKey()
-	logs, err := moralis.GetLogs(fromBlock, toBlock, bulkCheckoutAddress, donationSentTopic, string(chainType), apiKey)
+	logs, err := moralis.GetLogs(fromBlock, toBlock, bulkCheckoutAddress, donationSentTopic, string(chainType), config.Config.Indexer.Moralis.ApiKey)
 
 	if err != nil {
 		return nil, err
