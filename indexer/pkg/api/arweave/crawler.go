@@ -2,6 +2,7 @@ package arweave
 
 import (
 	"errors"
+	"fmt"
 	"log"
 	"os"
 	"os/signal"
@@ -11,6 +12,7 @@ import (
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/db/model"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/constants"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/logger"
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/rss3uri"
 )
 
 var ErrTimeout = errors.New("received timeout")
@@ -95,7 +97,7 @@ func (ar *arCrawler) getArticles(from, to int64, owner string) error {
 
 	logger.Info("Got articles:", len(articles))
 
-	items := make([]*model.Item, 0)
+	items := make([]*model.Item, len(articles))
 
 	for _, article := range articles {
 		attachment := model.Attachment{
@@ -106,15 +108,20 @@ func (ar *arCrawler) getArticles(from, to int64, owner string) error {
 
 		tsp := time.Unix(article.TimeStamp, 0)
 
+		author, err := rss3uri.NewInstance("account", article.Author, string(constants.PlatformSymbolEthereum))
+		if err != nil {
+			return fmt.Errorf("poap [%s] get new instance error:", err)
+		}
+
 		ni := model.NewItem(
-			constants.NetworkSymbolArweaveMainnet.GetID(),
+			constants.NetworkIDArweaveMainnet,
 			article.Digest,
 			model.Metadata{
 				"network": constants.NetworkSymbolArweaveMainnet,
 				"proof":   article.Digest,
 			},
 			constants.ItemTagsMirrorEntry,
-			[]string{article.Author},
+			[]string{author.String()},
 			article.Title,
 			article.Content, // TODO: According to RIP4, if the body is too long, then only record part of the body, followed by ... at the end
 			[]model.Attachment{attachment},
@@ -122,6 +129,11 @@ func (ar *arCrawler) getArticles(from, to int64, owner string) error {
 		)
 
 		items = append(items, ni)
+		notes := []*model.ItemId{{
+			NetworkID: constants.NetworkIDArweaveMainnet,
+			Proof:     "", // TODO: @atlas
+		}}
+		db.AppendNotes(author, notes)
 	}
 
 	if len(items) > 0 {
