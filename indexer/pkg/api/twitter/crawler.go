@@ -37,6 +37,8 @@ func (tc *twitterCrawler) Work(param crawler.WorkParam) error {
 
 	contentInfos, err := GetTimeline(param.Identity, DefaultTwitterCount)
 	if err != nil {
+		logger.Error(err)
+
 		return err
 	}
 
@@ -70,6 +72,7 @@ func (tc *twitterCrawler) Work(param crawler.WorkParam) error {
 			NetworkID: networkId,
 			Proof:     contentInfo.Hash,
 		})
+
 	}
 
 	return nil
