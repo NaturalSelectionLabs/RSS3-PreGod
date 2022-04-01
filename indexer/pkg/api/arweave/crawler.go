@@ -131,7 +131,7 @@ func (ar *arCrawler) getArticles(from, to int64, owner string) error {
 		)
 
 		items = append(items, ni)
-		notes := []*model.ItemId{{
+		notes := []*model.ObjectId{{
 			NetworkID: constants.NetworkIDArweaveMainnet,
 			Proof:     "", // TODO: @atlas
 		}}
