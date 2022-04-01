@@ -38,13 +38,11 @@ func TestGetEthDonations(t *testing.T) {
 }
 
 func TestGetZkSyncDonations(t *testing.T) {
-	ethParam := gitcoin.Param{FromHeight: 1, Step: 10000, MinStep: 10, Confirmations: 10, SleepInterval: 600}
-	gc := gitcoin.NewGitcoinCrawler(ethParam, ethParam, ethParam)
+	gc := gitcoin.NewCrawler(*gitcoin.DefaultEthConfig, *gitcoin.DefaultPolygonConfig, *gitcoin.DefaultZksyncConfig)
 	err := gc.UpdateZksToken()
 	assert.Nil(t, err)
 
-	_, err = gc.GetZkSyncDonations(1000, 1001)
-	// TODO GetZkSyncDonations often gots empty here
-	// assert.NotEmpty(t, res)
+	res, err := gc.GetZkSyncDonations(1000, 1001)
 	assert.Nil(t, err)
+	assert.NotEmpty(t, res)
 }
