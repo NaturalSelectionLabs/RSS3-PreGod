@@ -116,6 +116,10 @@ func getPlatformInstanceProfileList(instance *rss3uri.PlatformInstance, request 
 			)
 		}
 
+		if len(profiles) == 0 {
+			return nil, api.ErrorNotFound
+		}
+
 		profiles = append(profiles, protocol.Profile{
 			DateCreated:       profileModel.CreatedAt,
 			DateUpdated:       profileModel.UpdatedAt,

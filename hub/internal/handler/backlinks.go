@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/database"
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/internal/api"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/internal/middleware"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/internal/protocol"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/constants"
@@ -86,8 +87,14 @@ func GetBackLinkListHandlerFunc(c *gin.Context) {
 		}
 	}
 
+	if len(links) == 0 {
+		_ = c.Error(api.ErrorNotFound)
+
+		return
+	}
+
 	c.JSON(http.StatusOK, protocol.File{
-		Identifier:  fmt.Sprintf("%s/backlinks", rss3uri.New(instance).String()),
+		Identifier:  fmt.Sprintf("%s/backlinks", rss3uri.New(instance)),
 		DateUpdated: time.Now(),
 		Total:       len(links),
 		List:        links,

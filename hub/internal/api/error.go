@@ -10,6 +10,7 @@ var (
 	CodeNoRouter      = 10001
 	CodeNoMethod      = 10002
 	CodeDatabaseError = 10003
+	CodeNotFound      = 10001
 
 	// Service error
 	CodeInvalidParams = 20001
@@ -20,6 +21,7 @@ var (
 	ErrorUnknown  = errors.New("unknown")
 
 	// System error
+	ErrorNotFound      = errors.New("not found")
 	ErrorDatabaseError = errors.New("database error")
 
 	// Service error
@@ -30,6 +32,7 @@ var (
 	errorMap = map[int]error{
 		CodeUnknown: ErrorUnknown,
 
+		CodeNotFound:      ErrorNotFound,
 		CodeNoRouter:      ErrorNoRouter,
 		CodeNoMethod:      ErrorNoMethod,
 		CodeDatabaseError: ErrorDatabaseError,
