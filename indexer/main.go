@@ -52,19 +52,18 @@ func RunAutoUpdater(cmd *cobra.Command, args []string) error {
 
 func RunAutoCrawler(cmd *cobra.Command, args []string) error {
 	logger.Info("Start crawling arweave and gitcoin")
-	// arweave crawler
-	ar := arweave.NewCrawler(arweave.MirrorUploader, arweave.DefaultCrawlConfig)
-	ar.Start()
-
-	if err := ar.Start(); err != nil {
-		logger.Errorf("arweave crawler start error: %v", err)
-	}
 
 	// gitcoin crawler
 	gc := gitcoin.NewCrawler(*gitcoin.DefaultEthConfig, *gitcoin.DefaultPolygonConfig, *gitcoin.DefaultZksyncConfig)
 	go gc.PolygonStart()
 	go gc.EthStart()
 	go gc.ZkStart()
+
+	// arweave crawler
+	ar := arweave.NewCrawler(arweave.MirrorUploader, arweave.DefaultCrawlConfig)
+	if err := ar.Start(); err != nil {
+		logger.Errorf("arweave crawler start error: %v", err)
+	}
 
 	return nil
 }
