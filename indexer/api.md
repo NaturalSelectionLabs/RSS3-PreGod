@@ -40,6 +40,6 @@ GET /item?proof=<proof>&platform_id=<platform_id>&network_id=<network_id>&item_t
 - `proof`: (required) the proof of the user.
 - `platform_id`: (required) see [RIP-1](https://rss3.io/protocol/RIPs/RIP-1.html#account-platform-list).
 - `network_id`: (optional) see [RIP-3](https://rss3.io/protocol/RIPs/RIP-3.html#item-network-list).
-- `item_type`: (optional) available values: `notes` `assets`
+- `item_type`: (optional) available values: `note` `asset`
 - `limit`: (optional) the number of items to return. default: 100.
 - `timestamp`: (optional) the timestamp of the last item. default: now.

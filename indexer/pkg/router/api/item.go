@@ -61,23 +61,33 @@ func GetItemHandlerFunc(c *gin.Context) {
 	}
 
 	// request validation
-	if len(request.Identity) <= 0 ||
-		!constants.IsValidPlatformSymbol(string(request.PlatformID.Symbol())) ||
-		!constants.IsValidNetworkName(string(request.NetworkID.Symbol())) {
-		logger.Errorf("parameter error")
+	var paramErrMsg string
 
-		response.ErrorBase = util.GetErrorBase(util.ErrorCodeParameterError)
-		c.JSON(http.StatusOK, response)
-
-		return
+	if request.Identity == "" {
+		paramErrMsg = "identity is empty; "
 	}
 
-	if len(request.ItemType) > 0 &&
-		request.ItemType != constants.ItemTypeAsset &&
-		request.ItemType != constants.ItemTypeNote {
-		logger.Errorf("parameter error")
+	if !constants.IsValidPlatformSymbol(string(request.PlatformID.Symbol())) {
+		paramErrMsg += "platform_id is invalid; "
+	}
 
+	if !constants.IsValidNetworkName(string(request.NetworkID.Symbol())) {
+		paramErrMsg += "network_id is invalid; "
+	}
+
+	if request.ItemType == "" {
+		paramErrMsg += "item_type is empty; "
+	}
+
+	if request.ItemType != constants.ItemTypeAsset &&
+		request.ItemType != constants.ItemTypeNote {
+		paramErrMsg += "itemtype should be one of 'note' or 'asset'; "
+	}
+
+	if paramErrMsg != "" {
 		response.ErrorBase = util.GetErrorBase(util.ErrorCodeParameterError)
+		response.ErrorBase.ErrorMsg += ": " + util.ErrorMsg(paramErrMsg)
+
 		c.JSON(http.StatusOK, response)
 
 		return
