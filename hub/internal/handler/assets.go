@@ -1,13 +1,14 @@
 package handler
 
 import (
-	"errors"
 	"fmt"
 	"net/http"
 	"time"
 
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/internal/api"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/internal/middleware"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/internal/protocol"
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/rss3uri"
 	"github.com/gin-gonic/gin"
 )
 
@@ -30,29 +31,21 @@ func GetAssetListHandlerFunc(c *gin.Context) {
 
 	request := GetAssetListRequest{}
 	if err := c.ShouldBindQuery(&request); err != nil {
-		_ = c.Error(errors.New("invalid params"))
+		_ = c.Error(api.ErrorNotFound)
 
 		return
 	}
 
-	noteList := []protocol.Item{
-		{
-			Identifier:  "",
-			DateCreated: time.Time{},
-			DateUpdated: time.Time{},
-			RelatedURLs: nil,
-			Links:       "",
-			BackLinks:   "",
-			Tags:        nil,
-			Authors:     nil,
-			Title:       "",
-			Summary:     "",
-			Attachments: nil,
-		},
+	noteList := make([]protocol.Item, 0)
+
+	if len(noteList) == 0 {
+		_ = c.Error(api.ErrorNotFound)
+
+		return
 	}
 
 	c.JSON(http.StatusOK, protocol.File{
-		Identifier: fmt.Sprintf("%s/assets", instance.String()),
+		Identifier: fmt.Sprintf("%s/assets", rss3uri.New(instance)),
 		Total:      len(noteList),
 		List:       noteList,
 	})

@@ -42,13 +42,13 @@ spec:
           terminationMessagePolicy: File
           readinessProbe:
             httpGet:
-              path: /ping
+              path: /
               port: 8080
             initialDelaySeconds: 20
             periodSeconds: 10
           livenessProbe:
             httpGet:
-              path: /ping
+              path: /
               port: 8080
             initialDelaySeconds: 20
             periodSeconds: 10
