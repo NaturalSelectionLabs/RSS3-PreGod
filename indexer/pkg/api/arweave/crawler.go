@@ -43,6 +43,7 @@ func NewCrawler(identity ArAccount, crawlCfg *crawlConfig) *crawler {
 func (ar *crawler) run() error {
 	startBlockHeight := ar.cfg.fromHeight
 	step := ar.cfg.step
+	endBlockHeight := startBlockHeight + step
 	tempDelay := ar.cfg.sleepInterval
 
 	latestConfirmedBlockHeight, err := GetLatestBlockHeightWithConfirmations(ar.cfg.confirmations)
@@ -56,16 +57,21 @@ func (ar *crawler) run() error {
 			return ErrInterrupt
 		}
 
-		endBlockHeight := startBlockHeight + step
 		if latestConfirmedBlockHeight <= endBlockHeight {
-			time.Sleep(tempDelay)
+			for {
+				time.Sleep(tempDelay)
 
-			latestConfirmedBlockHeight, err = GetLatestBlockHeightWithConfirmations(ar.cfg.confirmations)
-			if err != nil {
-				return err
+				latestConfirmedBlockHeight, err = GetLatestBlockHeightWithConfirmations(ar.cfg.confirmations)
+				if err != nil {
+					return err
+				}
+
+				step = DefaultCrawlStep // reset step to default if we are at the end of the chain
+
+				if latestConfirmedBlockHeight <= endBlockHeight {
+					break
+				}
 			}
-
-			step = DefaultCrawlStep
 		} else {
 			step = ar.cfg.step
 		}
@@ -74,8 +80,11 @@ func (ar *crawler) run() error {
 			"with step", step, "and temp delay", tempDelay,
 			"and latest confirmed block height", latestConfirmedBlockHeight,
 		)
-		time.Sleep(500 * time.Millisecond)
-		ar.parseMirrorArticles(startBlockHeight, latestConfirmedBlockHeight, ar.identity)
+
+		ar.parseMirrorArticles(startBlockHeight, endBlockHeight, ar.identity)
+
+		startBlockHeight = startBlockHeight + step
+		endBlockHeight = endBlockHeight + step
 	}
 }
 
@@ -146,11 +155,11 @@ func (ar *crawler) Start() error {
 		ar.complete <- ar.run()
 	}()
 
-	select {
-	case err := <-ar.complete:
-		return err
-	default:
-		return nil
+	for {
+		select {
+		case err := <-ar.complete:
+			return err
+		}
 	}
 }
 
