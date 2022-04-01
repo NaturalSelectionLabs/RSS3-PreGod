@@ -71,6 +71,7 @@ func NewItem(
 		ItemId: ObjectId{
 			NetworkID: networkId,
 			Proof:     proof,
+			SyncAt:    time.Now(),
 		},
 		Metadata:          metadata,
 		Tags:              tags,
