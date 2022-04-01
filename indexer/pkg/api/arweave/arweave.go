@@ -140,7 +140,7 @@ func parseGraphqlNode(node string) (MirrorContent, error) {
 	// title
 	article.Title = string(parsedJson.GetStringBytes("content", "title"))
 	// timestamp
-	article.TimeStamp = parsedJson.GetInt64("content", "timestamp")
+	article.Timestamp = parsedJson.GetInt64("content", "timestamp")
 	// content
 	article.Content = string(parsedJson.GetStringBytes("content", "body")) // timestamp
 	// txHash
