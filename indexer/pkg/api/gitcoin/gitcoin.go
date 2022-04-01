@@ -158,7 +158,7 @@ func GetProjectsInfo(adminAddress string, title string) (ProjectInfo, error) {
 }
 
 // GetZkSyncDonations returns donations from zksync
-func (gc *gitcoinCrawler) GetZkSyncDonations(fromBlock, toBlock int64) ([]DonationInfo, error) {
+func (gc *crawler) GetZkSyncDonations(fromBlock, toBlock int64) ([]DonationInfo, error) {
 	donations := make([]DonationInfo, 0)
 
 	for i := fromBlock; i <= toBlock; i++ {

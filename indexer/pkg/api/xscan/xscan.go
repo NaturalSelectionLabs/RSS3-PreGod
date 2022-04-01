@@ -16,6 +16,9 @@ var jsoni = jsoniter.ConfigCompatibleWithStandardLibrary
 
 func GetApiKey(networkId constants.NetworkID) string {
 	var err error
+	if err = config.Setup(); err != nil {
+		return ""
+	}
 
 	var apiKey string
 	if networkId == constants.NetworkIDEthereum {
@@ -65,8 +68,18 @@ func GetLatestBlockHeight(networkId constants.NetworkID) (int64, error) {
 
 	blockHeight, err := strconv.ParseUint(result[2:], 16, 64)
 	if err != nil {
-		return 0, err
+		return 0, fmt.Errorf("parse height error, %s", result)
 	}
 
 	return int64(blockHeight), nil
+}
+
+func GetLatestBlockHeightWithConfirmations(networkId constants.NetworkID, confirmations int64) (int64, error) {
+	// get latest block height
+	latestBlockHeight, err := GetLatestBlockHeight(networkId)
+	if err != nil {
+		return 0, err
+	}
+
+	return latestBlockHeight - confirmations, nil
 }

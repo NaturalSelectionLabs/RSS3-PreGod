@@ -29,6 +29,16 @@ func GetLatestBlockHeight() (int64, error) {
 	return blockHeight, nil
 }
 
+func GetLatestBlockHeightWithConfirmations(confirmations int64) (int64, error) {
+	// get latest block height
+	latestBlockHeight, err := GetLatestBlockHeight()
+	if err != nil {
+		return 0, err
+	}
+
+	return latestBlockHeight - confirmations, nil
+}
+
 func GetTokens() ([]Token, error) {
 	url := endpoint + "/api/v0.1/tokens"
 	response, err := httpx.Get(url, nil)
