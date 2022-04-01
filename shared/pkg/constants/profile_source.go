@@ -16,6 +16,14 @@ func (p ProfileSourceID) Name() ProfileSourceName {
 
 type ProfileSourceName string
 
+func (p ProfileSourceName) ID() ProfileSourceID {
+	if id, exist := profileSourceIDMap[p]; exist {
+		return id
+	}
+
+	return ProfileSourceIDUnknown
+}
+
 func (p ProfileSourceName) String() string {
 	return string(p)
 }

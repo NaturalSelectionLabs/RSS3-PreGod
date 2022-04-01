@@ -52,12 +52,19 @@ func Setup() error {
 	return nil
 }
 
-func QueryProfiles(db *gorm.DB, id string, platform int) ([]model.Profile, error) {
+func QueryProfiles(db *gorm.DB, id string, platform int, profileSources []int) ([]model.Profile, error) {
 	var profiles []model.Profile
-	if err := db.Where(&model.Profile{
+
+	internalDB := db.Where(&model.Profile{
 		ID:       id,
 		Platform: platform,
-	}).Find(&profiles).Error; err != nil {
+	})
+
+	if len(profileSources) > 0 {
+		internalDB.Where("source IN ?", profileSources)
+	}
+
+	if err := internalDB.Find(&profiles).Error; err != nil {
 		return nil, err
 	}
 

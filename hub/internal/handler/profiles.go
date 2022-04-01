@@ -2,7 +2,6 @@ package handler
 
 import (
 	"database/sql"
-	"errors"
 	"fmt"
 	"net/http"
 
@@ -29,11 +28,18 @@ func GetProfileListHandlerFunc(c *gin.Context) {
 		return
 	}
 
+	request := GetProfileListRequest{}
+	if err = c.ShouldBindQuery(&request); err != nil {
+		_ = c.Error(api.ErrorInvalidParams)
+
+		return
+	}
+
 	profileList := make([]protocol.Profile, 0)
 
 	switch value := instance.(type) {
 	case *rss3uri.PlatformInstance:
-		profileList, err = getPlatformInstanceProfileList(value)
+		profileList, err = getPlatformInstanceProfileList(value, request)
 		if err != nil {
 			_ = c.Error(api.ErrorDatabaseError)
 
@@ -43,13 +49,6 @@ func GetProfileListHandlerFunc(c *gin.Context) {
 		// TODO
 	default:
 		_ = c.Error(api.ErrorInvalidParams)
-
-		return
-	}
-
-	request := GetProfileListRequest{}
-	if err := c.ShouldBindQuery(&request); err != nil {
-		_ = c.Error(errors.New("invalid params"))
 
 		return
 	}
@@ -74,11 +73,16 @@ func GetProfileListHandlerFunc(c *gin.Context) {
 	})
 }
 
-func getPlatformInstanceProfileList(instance *rss3uri.PlatformInstance) ([]protocol.Profile, error) {
+func getPlatformInstanceProfileList(instance *rss3uri.PlatformInstance, request GetProfileListRequest) ([]protocol.Profile, error) {
 	tx := database.DB.Begin()
 	defer tx.Rollback()
 
-	profileModels, err := database.QueryProfiles(tx, instance.GetIdentity(), instance.Platform.ID().Int())
+	profileSources := make([]int, 0)
+	for _, profileSource := range request.ProfileSources {
+		profileSources = append(profileSources, constants.ProfileSourceName(profileSource).ID().Int())
+	}
+
+	profileModels, err := database.QueryProfiles(tx, instance.GetIdentity(), instance.Platform.ID().Int(), profileSources)
 	if err != nil {
 		return nil, err
 	}
