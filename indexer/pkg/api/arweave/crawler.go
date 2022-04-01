@@ -87,6 +87,8 @@ func (ar *arCrawler) run() error {
 	}
 }
 
+//TODO: I think it will be the same as other crawler formats in the future,
+// and it will return to an abstract and unified crawler
 func (ar *arCrawler) getArticles(from, to int64, owner string) error {
 	logger.Infof("Getting articles from %d to %d", from, to)
 
