@@ -65,6 +65,7 @@ func Crawl(param *crawler.WorkParam, result *crawler.DefaultCrawler) (crawler.De
 		}
 
 		hasObject := false
+
 		attachments := make([]model.Attachment, 0)
 
 		for _, asset := range assets {

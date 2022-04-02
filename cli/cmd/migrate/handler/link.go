@@ -16,7 +16,7 @@ func MigrateLinkList(db *gorm.DB, file mongomodel.File) error {
 	return db.Transaction(func(tx *gorm.DB) error {
 		splits := strings.Split(file.Path, "-")
 
-		links := make([]model.Link, len(file.Content.Links))
+		links := make([]model.Link, 0, len(file.Content.Links))
 		for _, targetIdentity := range file.Content.List {
 			links = append(links, model.Link{
 				Type:   constants.LinkTypeFollowing.Int(),

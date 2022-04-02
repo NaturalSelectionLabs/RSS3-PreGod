@@ -35,7 +35,7 @@ var (
 )
 
 func (t ItemTags) ToPqStringArray() pq.StringArray {
-	result := make([]string, len(t))
+	result := make([]string, 0, len(t))
 
 	for _, tag := range t {
 		result = append(result, string(tag))
