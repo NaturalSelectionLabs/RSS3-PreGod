@@ -63,13 +63,13 @@ func (pt *GetItemsHandler) Excute() (*GetItemsResult, error) {
 	tx := database.DB.Begin()
 	defer tx.Rollback()
 
-	if r.Assets != nil {
+	if r.Assets != nil && len(r.Assets) > 0 {
 		if _, err := database.CreateAssets(tx, r.Assets, true); err != nil {
 			return result, err
 		}
 	}
 
-	if r.Notes != nil {
+	if r.Notes != nil && len(r.Notes) > 0 {
 		if _, err := database.CreateNotes(tx, r.Notes, true); err != nil {
 			return result, err
 		}

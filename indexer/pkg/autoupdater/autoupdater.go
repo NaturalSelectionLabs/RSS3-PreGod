@@ -6,8 +6,7 @@ import (
 
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/crawler"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/crawler_handler"
-	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/db"
-	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/rss3uri"
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database"
 	"github.com/vmihailenco/msgpack"
 )
 
@@ -40,15 +39,18 @@ func RunRecentVisitQueue(ctx context.Context) error {
 			return err
 		}
 		result := c.GetResult()
-		if result.Items != nil {
-			db.InsertItems(result.Items, param.NetworkID)
+		tx := database.DB.Begin()
+		defer tx.Rollback()
+
+		if result.Assets != nil && len(result.Assets) > 0 {
+			if _, err := database.CreateAssets(tx, result.Assets, true); err != nil {
+				return err
+			}
 		}
-		instance := rss3uri.NewAccountInstance(param.Identity, param.PlatformID.Symbol())
-		if result.Assets != nil {
-			db.SetAssets(instance, result.Assets, param.NetworkID)
-		}
-		if result.Notes != nil {
-			db.AppendNotes(instance, result.Notes)
+		if result.Notes != nil && len(result.Notes) > 0 {
+			if _, err := database.CreateNotes(tx, result.Notes, true); err != nil {
+				return err
+			}
 		}
 
 		return nil
