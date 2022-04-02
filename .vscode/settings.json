@@ -25,6 +25,8 @@
     "resty",
     "unmarshall",
     "valyala",
+    "Warnf",
+    "httpsvc",
     "zksync"
   ],
   "go.lintTool": "golangci-lint",

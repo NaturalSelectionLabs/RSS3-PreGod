@@ -98,6 +98,10 @@ func (i NFTItem) String() string {
 		i.TokenAddress, i.TokenId, i.OwnerOf, i.TokenURI)
 }
 
+func (i NFTItem) GetAssetProof() string {
+	return i.TokenAddress + "-" + i.TokenId
+}
+
 // NFTTransferItem store the transfers of NFTS.
 type NFTTransferItem struct {
 	BlockNumber      string `json:"block_number"`

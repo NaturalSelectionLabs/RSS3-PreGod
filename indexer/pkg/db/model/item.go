@@ -9,11 +9,11 @@ import (
 )
 
 type Attachment struct {
-	Content    string    `json:"content" bson:"content"`
-	Address    []string  `json:"address" bson:"address"`
+	Content    string    `json:"content,omitempty" bson:"content"`
+	Address    []string  `json:"address,omitempty" bson:"address"`
 	MimeType   string    `json:"mime_type" bson:"mime_type"`
-	Type       string    `json:"type" bson:"type"`
-	SizeInByte int       `json:"size_in_bytes" bson:"size_in_bytes"`
+	Type       string    `json:"type,omitempty" bson:"type"`
+	SizeInByte int       `json:"size_in_bytes,omitempty" bson:"size_in_bytes"`
 	SyncAt     time.Time `json:"sync_at" bson:"sync_at"`
 }
 
