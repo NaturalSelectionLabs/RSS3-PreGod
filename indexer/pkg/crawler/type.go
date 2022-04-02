@@ -39,12 +39,12 @@ func (cr *DefaultCrawler) GetUserBio(Identity string) (string, error) {
 }
 
 type WorkParam struct {
-	Identity   string
-	NetworkID  constants.NetworkID
-	PlatformID constants.PlatformID // optional
-	Limit      int                  // optional, aka Count, limit the number of items to be crawled
-
-	Timestamp time.Time // optional, if provided, only index items newer than this time
+	Identity    string
+	NetworkID   constants.NetworkID
+	PlatformID  constants.PlatformID // optional
+	Limit       int                  // optional, aka Count, limit the number of items to be crawled
+	BlockHeight int                  // optional, used by [X]scan
+	Timestamp   time.Time            // optional, if provided, only index items newer than this time
 }
 
 type userBios struct {

@@ -45,7 +45,7 @@ func (c *moralisCrawler) Work(param crawler.WorkParam) error {
 	}
 
 	networkSymbol := chainType.GetNetworkSymbol()
-	nftTransfers, err := GetNFTTransfers(param.Identity, chainType, getApiKey())
+	nftTransfers, err := GetNFTTransfers(param.Identity, chainType, param.BlockHeight, getApiKey())
 
 	if err != nil {
 		return err

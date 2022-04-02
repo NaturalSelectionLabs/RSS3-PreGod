@@ -27,7 +27,7 @@ func TestGetNFT(t *testing.T) {
 func TestGetNFTTransfers(t *testing.T) {
 	t.Parallel()
 
-	result, err := moralis.GetNFTTransfers("0x3b6d02a24df681ffdf621d35d70aba7adaac07c1", "eth", config.Config.Indexer.Moralis.ApiKey)
+	result, err := moralis.GetNFTTransfers("0x3b6d02a24df681ffdf621d35d70aba7adaac07c1", "eth", 0, config.Config.Indexer.Moralis.ApiKey)
 
 	assert.NotEmpty(t, result.Result)
 	// assert for nil

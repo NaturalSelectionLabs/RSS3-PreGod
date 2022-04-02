@@ -6,6 +6,7 @@ import (
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database/logger"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database/model"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/config"
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/constants"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
@@ -180,6 +181,26 @@ func CreateProfiles(db *gorm.DB, profiles []model.Profile, updateAll bool) ([]mo
 	}
 
 	return profiles, nil
+}
+
+func CreateCrawlerMetadata(db *gorm.DB, crawler *model.CrawlerMetadata, updateAll bool) (*model.CrawlerMetadata, error) {
+	if err := db.Clauses(NewCreateClauses(updateAll)...).Create(&crawler).Error; err != nil {
+		return nil, err
+	}
+
+	return crawler, nil
+}
+
+func QueryCrawlerMetadata(db *gorm.DB, identity string, networkId constants.NetworkID) (*model.CrawlerMetadata, error) {
+	var crawler model.CrawlerMetadata
+	if err := db.Where(&model.CrawlerMetadata{
+		AccountInstance: identity,
+		NetworkId:       networkId,
+	}).Find(&crawler).Error; err != nil {
+		return nil, err
+	}
+
+	return &crawler, nil
 }
 
 func NewCreateClauses(updateAll bool) []clause.Expression {
