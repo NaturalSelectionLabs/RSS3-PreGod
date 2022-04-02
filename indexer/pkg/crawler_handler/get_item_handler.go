@@ -4,9 +4,8 @@ import (
 	"fmt"
 
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/crawler"
-	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/db"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/util"
-	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/rss3uri"
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database"
 )
 
 type GetItemsHandler struct {
@@ -44,8 +43,6 @@ func (pt *GetItemsHandler) Excute() (*GetItemsResult, error) {
 
 	result := NewGetItemsResult()
 
-	instance := rss3uri.NewAccountInstance(pt.WorkParam.Identity, pt.WorkParam.PlatformID.Symbol())
-
 	c = MakeCrawlers(pt.WorkParam.NetworkID)
 	if c == nil {
 		result.Error = util.GetErrorBase(util.ErrorCodeNotSupportedNetwork)
@@ -62,16 +59,24 @@ func (pt *GetItemsHandler) Excute() (*GetItemsResult, error) {
 	}
 
 	r = c.GetResult()
-	if r.Items != nil {
-		db.InsertItems(r.Items, pt.WorkParam.NetworkID)
-	}
+
+	tx := database.DB.Begin()
+	defer tx.Rollback()
 
 	if r.Assets != nil {
-		db.SetAssets(instance, r.Assets, pt.WorkParam.NetworkID)
+		if _, err := database.CreateAssets(tx, r.Assets, true); err != nil {
+			return result, err
+		}
 	}
 
 	if r.Notes != nil {
-		db.AppendNotes(instance, r.Notes)
+		if _, err := database.CreateNotes(tx, r.Notes, true); err != nil {
+			return result, err
+		}
+	}
+
+	if err = tx.Commit().Error; err != nil {
+		return result, err
 	}
 
 	result.Result = r
