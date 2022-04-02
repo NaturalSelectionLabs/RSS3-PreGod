@@ -28,6 +28,8 @@ func GetNFTs(userAddress string, chainType ChainType, apiKey string) (NFTResult,
 
 	response, err := httpx.Get(url, headers)
 	if err != nil {
+		logger.Errorf("http get error: [%v]", err)
+
 		return NFTResult{}, err
 	}
 
@@ -53,6 +55,8 @@ func GetNFTTransfers(userAddress string, chainType ChainType, apiKey string) (NF
 
 	response, err := httpx.Get(url, headers)
 	if err != nil {
+		logger.Errorf("http get error: [%v]", err)
+
 		return NFTTransferResult{}, err
 	}
 
@@ -74,9 +78,12 @@ func GetLogs(fromBlock int64, toBlock int64, address string, topic string, chain
 
 	url := fmt.Sprintf("%s/api/v2/%s/logs?chain=%s&from_block=%d&to_block=%d&topic0=%s",
 		endpoint, address, chainType, fromBlock, toBlock, topic)
+	logger.Info("url: ", url)
 
 	response, err := httpx.Get(url, headers)
 	if err != nil {
+		logger.Errorf("http get error: [%v]", err)
+
 		return nil, err
 	}
 
@@ -84,6 +91,8 @@ func GetLogs(fromBlock int64, toBlock int64, address string, topic string, chain
 
 	err = jsoni.Unmarshal(response, &res)
 	if err != nil {
+		logger.Errorf("unmarshal error: [%v]", err)
+
 		return nil, err
 	}
 
@@ -103,6 +112,8 @@ func GetNFTByContract(userAddress string, contactAddress string, chainType Chain
 
 	response, err := httpx.Get(url, headers)
 	if err != nil {
+		logger.Errorf("http get error: [%v]", err)
+
 		return NFTResult{}, err
 	}
 
@@ -116,7 +127,7 @@ func GetNFTByContract(userAddress string, contactAddress string, chainType Chain
 	return *res, nil
 }
 
-// this function is used by ENS indexer
+// GetTxByToken is used by ENS indexer
 func GetTxByToken(tokenAddress string, tokenId string, chainType ChainType, apiKey string) (NFTTransferItem, error) {
 	var headers = map[string]string{
 		"accept":    "application/json",
@@ -130,6 +141,8 @@ func GetTxByToken(tokenAddress string, tokenId string, chainType ChainType, apiK
 
 	response, err := httpx.Get(url, headers)
 	if err != nil {
+		logger.Errorf("http get error: [%v]", err)
+
 		return *res, err
 	}
 

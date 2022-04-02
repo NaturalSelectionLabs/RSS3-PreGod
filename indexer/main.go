@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"log"
-	_ "net/http/pprof"
 
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/api/arweave"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/api/gitcoin"
@@ -51,13 +50,15 @@ func RunAutoUpdater(cmd *cobra.Command, args []string) error {
 }
 
 func RunAutoCrawler(cmd *cobra.Command, args []string) error {
-	logger.Info("Start crawling arweave and gitcoin")
+	logger.Info("Start crawling gitcoin")
 
 	// gitcoin crawler
 	gc := gitcoin.NewCrawler(*gitcoin.DefaultEthConfig, *gitcoin.DefaultPolygonConfig, *gitcoin.DefaultZksyncConfig)
 	go gc.PolygonStart()
 	go gc.EthStart()
 	go gc.ZkStart()
+
+	logger.Info("Start crawling arweave")
 
 	// arweave crawler
 	ar := arweave.NewCrawler(arweave.MirrorUploader, arweave.DefaultCrawlConfig)
