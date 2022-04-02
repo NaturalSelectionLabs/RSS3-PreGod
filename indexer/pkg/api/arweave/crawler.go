@@ -116,25 +116,16 @@ func (ar *crawler) parseMirrorArticles(from, to int64, owner ArAccount) error {
 
 		tsp := time.Unix(article.Timestamp, 0)
 
-		author, authorErr := rss3uri.NewInstance("account", article.Author, string(constants.PlatformSymbolEthereum))
-		if authorErr != nil {
-			//TODO: may send to a error queue or whatever in the future
-			logger.Errorf("arweave NewInstance error: [%v]", authorErr)
-
-			tsp = time.Now()
-		}
-
-		logger.Infof("author: [%v]", author)
-
+		author := rss3uri.NewAccountInstance(article.Author, constants.PlatformSymbolEthereum).UriString()
 		note := model.Note{
-			Identifier: rss3uri.NewNoteInstance(article.Author, constants.NetworkSymbolArweaveMainnet).String(),
-			Owner:      author.String(),
+			Identifier: rss3uri.NewNoteInstance(article.Author, constants.NetworkSymbolArweaveMainnet).UriString(),
+			Owner:      author,
 			RelatedURLs: []string{
 				"https://arweave.net/" + article.TxHash,
 				"https://mirror.xyz/" + article.Author + "/" + article.OriginalDigest,
 			},
 			Tags:    constants.ItemTagsMirrorEntry.ToPqStringArray(),
-			Authors: []string{author.String()},
+			Authors: []string{author},
 			Title:   article.Title,
 			// TODO: Summary - According to RIP4, if the body is too long, then only record part of the body, followed by ... at the end
 			Summary:         article.Content,

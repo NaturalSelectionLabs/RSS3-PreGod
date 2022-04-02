@@ -36,11 +36,6 @@ func (pc *poapCrawler) Work(param crawler.WorkParam) error {
 		return fmt.Errorf("poap [%s] get actions error:", err)
 	}
 
-	author, err := rss3uri.NewInstance("account", param.Identity, string(constants.PlatformSymbolEthereum))
-	if err != nil {
-		return fmt.Errorf("poap [%s] get new instance error:", err)
-	}
-
 	//TODO: Since we are getting the full amount of interfaces,
 	// I hope to get incremental interfaces in the future and use other methods to improve efficiency
 	for _, item := range poapResps {
@@ -52,12 +47,13 @@ func (pc *poapCrawler) Work(param crawler.WorkParam) error {
 		}
 
 		id := ContractAddress + "-" + item.TokenId
+		author := rss3uri.NewAccountInstance(param.Identity, constants.PlatformSymbolEthereum).UriString()
 		note := model.Note{
-			Identifier:  rss3uri.NewNoteInstance(id, constants.NetworkSymbolGnosisMainnet).String(),
-			Owner:       author.String(),
+			Identifier:  rss3uri.NewNoteInstance(id, constants.NetworkSymbolGnosisMainnet).UriString(),
+			Owner:       author,
 			RelatedURLs: []string{fmt.Sprintf("https://app.poap.xyz/token/%s", item.TokenId)},
 			Tags:        constants.ItemTagsNFTPOAP.ToPqStringArray(),
-			Authors:     []string{author.String()},
+			Authors:     []string{author},
 			Title:       item.PoapEventInfo.Name,
 			Summary:     item.PoapEventInfo.Description,
 			Attachments: database.MustWrapJSON(datatype.Attachments{

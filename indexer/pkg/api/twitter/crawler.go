@@ -45,10 +45,10 @@ func (tc *twitterCrawler) Work(param crawler.WorkParam) error {
 			tsp = time.Now()
 		}
 
-		author := rss3uri.NewAccountInstance(item.ScreenName, constants.PlatformSymbolTwitter).String()
+		author := rss3uri.NewAccountInstance(item.ScreenName, constants.PlatformSymbolTwitter).UriString()
 
 		note := model.Note{
-			Identifier:      rss3uri.NewNoteInstance(item.Hash, constants.NetworkSymbolTwitter).String(),
+			Identifier:      rss3uri.NewNoteInstance(item.Hash, constants.NetworkSymbolTwitter).UriString(),
 			Owner:           author,
 			RelatedURLs:     []string{item.Link},
 			Tags:            constants.ItemTagsTweet.ToPqStringArray(),

@@ -341,7 +341,7 @@ func setDB(donations []DonationInfo, networkId constants.NetworkID) {
 				"DonationApproach": v.Approach,
 			},
 			constants.ItemTagsDonationGitcoin,
-			[]string{author.String()},
+			[]string{author.UriString()},
 			"",
 			"",
 			[]model.Attachment{},

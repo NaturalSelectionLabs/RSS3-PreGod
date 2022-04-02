@@ -88,7 +88,7 @@ func Crawl(param *crawler.WorkParam, result *crawler.DefaultCrawler) (crawler.De
 				"to":      v.To,
 			},
 			constants.ItemTagsNFT,
-			[]string{author.String()},
+			[]string{author.UriString()},
 			"",
 			"",
 			attachments,

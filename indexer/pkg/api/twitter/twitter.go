@@ -115,9 +115,10 @@ func getTweetAttachments(contentInfo *fastjson.Value) datatype.Attachments {
 			}
 
 			a := datatype.Attachment{
-				Type:     "media",
-				Address:  mediaUrl,
-				MimeType: contentHeader.MIMEType,
+				Type:        "media",
+				Address:     mediaUrl,
+				MimeType:    contentHeader.MIMEType,
+				SizeInBytes: contentHeader.SizeInByte,
 			}
 
 			attachments = append(attachments, a)
