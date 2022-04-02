@@ -3,6 +3,7 @@ package database
 import (
 	"database/sql"
 	"encoding/json"
+	"gorm.io/datatypes"
 	"log"
 )
 
@@ -25,12 +26,13 @@ func UnwrapNullString(s sql.NullString) string {
 	return ""
 }
 
-func WrapJSON(value any) (json.RawMessage, error) {
+func WrapJSON(value any) (datatypes.JSON, error) {
 	bytes, err := json.Marshal(value)
+
 	return bytes, err
 }
 
-func MustWrapJSON(value any) json.RawMessage {
+func MustWrapJSON(value any) datatypes.JSON {
 	bytes, err := WrapJSON(value)
 	if err != nil {
 		log.Panicln(err)
