@@ -45,7 +45,7 @@ func (gc *crawler) initGrants() error {
 	}
 
 	for _, item := range grants {
-		if item.AdminAddress != "\"0x0\"" {
+		if item.AdminAddress != "0x0" {
 			gc.updateHostingProject(item.AdminAddress)
 
 			time.Sleep(5 * time.Second)
@@ -241,7 +241,9 @@ func (gc *crawler) zksyncRun() error {
 		return err
 	}
 
-	setDB(donations, constants.NetworkIDZksync)
+	if len(donations) > 0 {
+		setDB(donations, constants.NetworkIDZksync)
+	}
 
 	// set new from height
 	gc.zk.FromHeight = endBlockHeight

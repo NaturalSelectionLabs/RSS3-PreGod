@@ -17,7 +17,7 @@ func TestGetGrantsInfo(t *testing.T) {
 	assert.NotEmpty(t, grants)
 
 	for _, item := range grants {
-		if item.AdminAddress != "\"0x0\"" {
+		if item.AdminAddress != "0x0" {
 			// check title
 			assert.NotEmpty(t, item.Title)
 			// check address

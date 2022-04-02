@@ -1,6 +1,7 @@
 package httpx
 
 import (
+	"fmt"
 	"net/http"
 	"strconv"
 	"time"
@@ -27,6 +28,13 @@ func Get(url string, headers map[string]string) ([]byte, error) {
 
 	// Get url
 	resp, err := request.Get(url)
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.StatusCode() != 200 {
+		return nil, fmt.Errorf("StatusCode [%d]", resp.StatusCode())
+	}
 
 	return resp.Body(), err
 }
@@ -84,6 +92,7 @@ func GetContentHeader(url string) (*ContentHeader, error) {
 
 	if err != nil {
 		logger.Errorf("cannot read content type of url: %s. error is : %v", url, err)
+
 		return res, err
 	}
 
@@ -113,7 +122,8 @@ func init() {
 		client.SetProxy(config.Config.Network.Proxy)
 	}
 
-	client.SetTimeout(1 * time.Second * 10)
+	client.SetTimeout(6 * time.Second * 10)
+	client.SetRetryCount(3)
 }
 
 func getClient() *resty.Client {

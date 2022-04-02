@@ -3,6 +3,7 @@ package zksync
 import (
 	"fmt"
 
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/logger"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/httpx"
 	"github.com/valyala/fastjson"
 )
@@ -51,7 +52,7 @@ func GetTokens() ([]Token, error) {
 	parsedJson, _ := parser.Parse(string(response))
 
 	array := parsedJson.GetArray()
-	tokens := make([]Token, 0, len(array))
+	tokens := make([]Token, len(array))
 
 	for i, arr := range array {
 		tokens[i].Id = arr.GetInt64("id")
@@ -67,6 +68,7 @@ func GetTokens() ([]Token, error) {
 
 func GetTxsByBlock(blockHeight int64) ([]ZKTransaction, error) {
 	url := fmt.Sprintf("%s/api/v0.1/blocks/%d/transactions", endpoint, blockHeight)
+	logger.Infof("GetTxsByBlock, url: [%s]", url)
 	response, err := httpx.Get(url, nil)
 
 	if err != nil {

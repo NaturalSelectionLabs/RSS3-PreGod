@@ -108,8 +108,10 @@ func GetGrantsInfo() ([]GrantInfo, error) {
 
 	for _, grant := range grantArray {
 		projects := grant.GetArray()
+		title := strings.Trim(projects[0].String(), "\"")
+		adminAddress := strings.Trim(projects[1].String(), "\"")
 
-		item := GrantInfo{Title: projects[0].String(), AdminAddress: projects[1].String()}
+		item := GrantInfo{Title: title, AdminAddress: adminAddress}
 		grants = append(grants, item)
 	}
 
