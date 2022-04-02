@@ -19,8 +19,9 @@ type Crawler interface {
 }
 
 type DefaultCrawler struct {
-	Assets []model.Asset
-	Notes  []model.Note
+	Assets   []model.Asset
+	Notes    []model.Note
+	Profiles []model.Profile
 }
 
 // CrawlerResult inherits the function by default

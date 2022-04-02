@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/api/moralis"
-	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/db/model"
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database/datatype"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/config"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/httpx"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/logger"
@@ -78,10 +78,10 @@ func getENSTextValue(domain string, record *ENSTextRecord) error {
 
 	record.Text = make(map[string]string)
 
-	var attachments []model.Attachment
+	var attachments datatype.Attachments
 
 	for _, key := range getTextRecordKeyList() {
-		t, err := r.Text(key)
+		text, err := r.Text(key)
 
 		if err != nil {
 			logger.Errorf("getENSTextValue read text: %v", err)
@@ -89,23 +89,31 @@ func getENSTextValue(domain string, record *ENSTextRecord) error {
 			return err
 		}
 
-		record.Text[key] = t
+		record.Text[key] = text
 
 		// append attachments
 		switch key {
 		case "url":
-			a := *model.NewAttachment(t, nil, "text/uri-list", "websites", 0, time.Now())
+			a := datatype.Attachment{
+				Type:     "websites",
+				MimeType: "text/uri-list",
+				Content:  text,
+			}
 			attachments = append(attachments, a)
 		case "avatar":
 			// only get content headers if it's http for now
-			if strings.HasPrefix(t, "http") {
-				contentHeader, err := httpx.GetContentHeader(t)
+			if strings.HasPrefix(text, "http") {
+				contentHeader, err := httpx.GetContentHeader(text)
 
 				if err != nil {
 					logger.Errorf("GetContentHeader err: %v", err)
 				}
 
-				a := *model.NewAttachment(t, nil, contentHeader.MIMEType, "banner", contentHeader.SizeInByte, time.Now())
+				a := datatype.Attachment{
+					Type:     "banner",
+					MimeType: contentHeader.MIMEType,
+					Content:  text,
+				}
 				attachments = append(attachments, a)
 			}
 		}

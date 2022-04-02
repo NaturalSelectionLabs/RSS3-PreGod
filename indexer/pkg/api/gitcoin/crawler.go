@@ -139,6 +139,7 @@ func GetProjectsInfo(adminAddress string, title string) (ProjectInfo, error) {
 		if err == nil {
 			break
 		}
+
 		content, err = httpx.Get(url, headers)
 
 		logger.Warnf("GetProjectsInfo error [%v], times: [%d]", err, i)

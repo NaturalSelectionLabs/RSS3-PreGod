@@ -8,7 +8,7 @@ import (
 
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/autoupdater"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/crawler"
-	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/db"
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database/"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/cache"
 	_ "github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/config"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/constants"
@@ -25,8 +25,8 @@ func init() {
 
 	cache.GetRedisClient().FlushDB(context.Background())
 
-	if err := db.Setup(); err != nil {
-		log.Fatalf("web.Setup err: %v", err)
+	if err := database.Setup(); err != nil {
+		log.Fatalf("database.Setup err: %v", err)
 	}
 }
 

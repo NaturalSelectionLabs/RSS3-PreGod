@@ -7,8 +7,8 @@ import (
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/api/arweave"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/api/gitcoin"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/autoupdater"
-	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/db"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/router"
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/cache"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/config"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/logger"
@@ -21,8 +21,8 @@ func init() {
 		log.Fatalf("cache.Setup err: %v", err)
 	}
 
-	if err := db.Setup(); err != nil {
-		log.Fatalf("db.Setup err: %v", err)
+	if err := database.Setup(); err != nil {
+		log.Fatalf("database.Setup err: %v", err)
 	}
 }
 
