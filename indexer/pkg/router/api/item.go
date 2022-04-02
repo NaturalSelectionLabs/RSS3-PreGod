@@ -81,7 +81,7 @@ func GetItemHandlerFunc(c *gin.Context) {
 	}
 
 	// get items from crawler
-	result, errorBase := getItemsResult(request)
+	result, errorBase := getItemsResult(c.Request.Context(), request)
 	response.ErrorBase = errorBase
 
 	if response.ErrorBase.ErrorCode == 0 {
@@ -110,7 +110,8 @@ func addToRecentVisit(ctx context.Context, req *GetItemRequest) error {
 	return autoupdater.AddToRecentVisitQueue(ctx, param)
 }
 
-func getItemsResultFromOneNetwork(identity string,
+func getItemsResultFromOneNetwork(
+	identity string,
 	platformID constants.PlatformID,
 	networkID constants.NetworkID,
 	limit int,
@@ -147,7 +148,7 @@ func getItemsResultFromOneNetwork(identity string,
 	}, util.GetErrorBase(util.ErrorCodeSuccess)
 }
 
-func getItemsResult(request GetItemRequest) (*itemsResult, util.ErrorBase) {
+func getItemsResult(ctx context.Context, request GetItemRequest) (*itemsResult, util.ErrorBase) {
 	result := new(itemsResult)
 	result.AssetItems = make([]model.Asset, 0)
 	result.NoteItems = make([]model.Note, 0)
@@ -175,6 +176,8 @@ func getItemsResult(request GetItemRequest) (*itemsResult, util.ErrorBase) {
 			request.Limit, time.Unix(request.Timestamp, 0),
 		)
 	}
+
+	addToRecentVisit(ctx, &request)
 
 	return result, errorBase
 }
