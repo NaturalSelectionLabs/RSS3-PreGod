@@ -5,6 +5,7 @@ import (
 	"github.com/lib/pq"
 	"gorm.io/datatypes"
 	"gorm.io/gorm/schema"
+	"time"
 )
 
 var _ schema.Tabler = &Asset{}
@@ -22,6 +23,8 @@ type Asset struct {
 	MetadataNetwork string         `gorm:"column:metadata_network"`
 	MetadataProof   string         `gorm:"column:metadata_proof"`
 	Metadata        datatypes.JSON `gorm:"column:metadata"`
+	DateCreated     time.Time      `gorm:"column:date_created"`
+	DateUpdated     time.Time      `gorm:"column:date_updated"`
 
 	common.Table
 }
