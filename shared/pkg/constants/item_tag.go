@@ -1,5 +1,9 @@
 package constants
 
+import (
+	"github.com/lib/pq"
+)
+
 type itemTag string
 
 const (
@@ -29,3 +33,13 @@ var (
 	ItemTagsMisskeyNote     ItemTags = []itemTag{itemTagMisskeyNote}
 	ItemTagsJikePost        ItemTags = []itemTag{itemTagJikePost}
 )
+
+func (t ItemTags) ToPqStringArray() pq.StringArray {
+	result := make([]string, len(t))
+
+	for _, tag := range t {
+		result = append(result, string(tag))
+	}
+
+	return pq.StringArray(result)
+}

@@ -5,7 +5,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/db/model"
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database/datatype"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/httpx"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/logger"
 	jsoniter "github.com/json-iterator/go"
@@ -19,7 +19,6 @@ var (
 
 func GetUserShow(accountInfo []string) (*UserShow, error) {
 	url := "https://" + accountInfo[1] + "/api/users/show"
-	logger.Infof("url: %s", url)
 
 	username := fmt.Sprintf(`{"username":"%s"}`, accountInfo[0])
 
@@ -55,7 +54,7 @@ func GetUserShow(accountInfo []string) (*UserShow, error) {
 	return userShow, nil
 }
 
-func GetUserNoteList(address string, count int, since time.Time) ([]Note, error) {
+func GetUserNoteList(address string, count int, until time.Time) ([]Note, error) {
 	accountInfo, err := formatUserAccount(address)
 
 	if err != nil {
@@ -74,7 +73,7 @@ func GetUserNoteList(address string, count int, since time.Time) ([]Note, error)
 
 	request.UserId = userShow.Id
 	request.Limit = count
-	request.UntilDate = since.Unix() * 1000
+	request.UntilDate = until.Unix() * 1000
 	request.ExcludeNsfw = true
 	request.Renote = true
 	request.IncludeReplies = false
@@ -156,11 +155,19 @@ func formatContent(note *fastjson.Value, ns *Note, instance string) {
 
 		formatContent(note.Get("renote"), ns, instance)
 
-		quoteText := *model.NewAttachment(renoteText, nil, "text/plain", "quote_text", 0, time.Now())
+		quoteText := datatype.Attachment{
+			Type:     "quote_text",
+			MimeType: "text/plain",
+			Content:  renoteText,
+		}
 
 		address := fmt.Sprintf("https://%s/@%s/%s", instance, renoteUser, renoteId)
 
-		quoteAddress := *model.NewAttachment(address, nil, "text/uri-list", "quote_address", 0, time.Now())
+		quoteAddress := datatype.Attachment{
+			Type:     "quote_address",
+			MimeType: "text/uri-list",
+			Content:  address,
+		}
 
 		ns.Attachments = append(ns.Attachments, quoteText, quoteAddress)
 	}
@@ -173,9 +180,11 @@ func formatEmoji(emojiList []*fastjson.Value, ns *Note) {
 
 		ns.Summary = strings.Replace(ns.Summary, name, fmt.Sprintf("<img class=\"emoji\" src=\"%s\" alt=\":%s:\">", url, name), -1)
 
-		content := fmt.Sprintf("{\"name\":\"%s\",\"url\":\"%s\"}", name, url)
-
-		attachment := *model.NewAttachment(content, nil, "text/json", "emojis", 0, time.Now())
+		attachment := datatype.Attachment{
+			Type:     "emojis",
+			Content:  fmt.Sprintf("{\"name\":\"%s\",\"url\":\"%s\"}", name, url),
+			MimeType: "text/json",
+		}
 
 		ns.Attachments = append(ns.Attachments, attachment)
 	}
@@ -196,7 +205,12 @@ func formatImage(imageList []*fastjson.Value, ns *Note) {
 				logger.Errorf("Jike GetPicture err: %v", err)
 			}
 
-			attachment := *model.NewAttachment(url, nil, contentHeader.MIMEType, "quote_file", contentHeader.SizeInByte, time.Now())
+			attachment := datatype.Attachment{
+				Type:        "quote_file",
+				Address:     url,
+				MimeType:    contentHeader.MIMEType,
+				SizeInBytes: contentHeader.SizeInByte,
+			}
 
 			ns.Attachments = append(ns.Attachments, attachment)
 		}

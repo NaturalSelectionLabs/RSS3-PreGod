@@ -5,7 +5,8 @@ import (
 	"time"
 
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/crawler"
-	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/db/model"
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database"
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database/model"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/constants"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/logger"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/rss3uri"
@@ -18,8 +19,8 @@ type twitterCrawler struct {
 func NewTwitterCrawler() crawler.Crawler {
 	return &twitterCrawler{
 		crawler.DefaultCrawler{
-			Items: []*model.Item{},
-			Notes: []*model.ObjectId{},
+			Assets: []model.Asset{},
+			Notes:  []model.Note{},
 		},
 	}
 }
@@ -31,10 +32,6 @@ func (tc *twitterCrawler) Work(param crawler.WorkParam) error {
 		return fmt.Errorf("network is not twitter")
 	}
 
-	networkSymbol := constants.NetworkSymbolTwitter
-
-	networkId := networkSymbol.GetID()
-
 	contentInfos, err := GetTimeline(param.Identity, DefaultTwitterCount)
 	if err != nil {
 		logger.Error(err)
@@ -42,37 +39,32 @@ func (tc *twitterCrawler) Work(param crawler.WorkParam) error {
 		return err
 	}
 
-	author, err := rss3uri.NewInstance("account", param.Identity, string(constants.PlatformSymbolTwitter))
-	if err != nil {
-		return err
-	}
-
-	for _, contentInfo := range contentInfos {
-		tsp, err := contentInfo.GetTsp()
+	for _, item := range contentInfos {
+		tsp, err := item.GetTsp()
 		if err != nil {
 			// TODO: log error
 			logger.Error(tsp, err)
 			tsp = time.Now()
 		}
 
-		ni := model.NewItem(
-			networkId,
-			contentInfo.Hash,
-			model.Metadata{},
-			constants.ItemTagsTweet,
-			[]string{author.String()},
-			"",
-			contentInfo.PreContent,
-			[]model.Attachment{},
-			tsp,
-		)
+		author := rss3uri.NewAccountInstance(item.ScreenName, constants.PlatformSymbolTwitter).String()
 
-		tc.Items = append(tc.Items, ni)
-		tc.Notes = append(tc.Notes, &model.ObjectId{
-			NetworkID: networkId,
-			Proof:     contentInfo.Hash,
-		})
+		note := model.Note{
+			Identifier:      rss3uri.NewNoteInstance(item.ScreenName, constants.NetworkSymbolTwitter).String(),
+			Owner:           author,
+			RelatedURLs:     []string{item.Link},
+			Tags:            constants.ItemTagsTweet.ToPqStringArray(),
+			Authors:         []string{author},
+			Summary:         item.PreContent,
+			Attachments:     database.MustWrapJSON(item.Attachments),
+			Source:          constants.NoteSourceNameTwitterTweet.String(),
+			MetadataNetwork: constants.NetworkSymbolTwitter.String(),
+			MetadataProof:   item.Hash,
+			DateCreated:     tsp,
+			DateUpdated:     tsp, // TODO: does twitter support updating tweets?
+		}
 
+		tc.Notes = append(tc.Notes, note)
 	}
 
 	return nil

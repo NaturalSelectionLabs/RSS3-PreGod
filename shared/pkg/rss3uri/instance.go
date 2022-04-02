@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/constants"
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/logger"
 )
 
 type Instance interface {
@@ -66,8 +67,43 @@ func (n NetworkInstance) String() string {
 func NewAccountInstance(identity string, platform constants.PlatformSymbol) Instance {
 	r, err := NewInstance("account", identity, string(platform))
 	if err != nil {
-		// TODO ?
-		panic(err)
+		logger.Errorf("Error when creating account instance: %s", err)
+
+		return PlatformInstance{
+			Prefix:   constants.PrefixNameAccount,
+			Identity: identity,
+			Platform: platform,
+		}
+	}
+
+	return r
+}
+
+func NewNoteInstance(identity string, network constants.NetworkSymbol) Instance {
+	r, err := NewInstance("note", identity, string(network))
+	if err != nil {
+		logger.Errorf("Error when creating note instance: %s", err)
+
+		return NetworkInstance{
+			Prefix:   constants.PrefixNameNote,
+			Identity: identity,
+			Network:  network,
+		}
+	}
+
+	return r
+}
+
+func NewAssetInstance(identity string, network constants.NetworkSymbol) Instance {
+	r, err := NewInstance("asset", identity, string(network))
+	if err != nil {
+		logger.Errorf("Error when creating asset instance: %s", err)
+
+		return NetworkInstance{
+			Prefix:   constants.PrefixNameAsset,
+			Identity: identity,
+			Network:  network,
+		}
 	}
 
 	return r

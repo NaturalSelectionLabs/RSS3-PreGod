@@ -3,7 +3,7 @@ package crawler
 import (
 	"time"
 
-	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/db/model"
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database/model"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/constants"
 	jsoniter "github.com/json-iterator/go"
 )
@@ -19,11 +19,8 @@ type Crawler interface {
 }
 
 type DefaultCrawler struct {
-	Profiles   []*model.Profile
-	Assets     []*model.ObjectId
-	Notes      []*model.ObjectId
-	Items      []*model.Item
-	AssetItems []*model.Item
+	Assets []model.Asset
+	Notes  []model.Note
 }
 
 // CrawlerResult inherits the function by default

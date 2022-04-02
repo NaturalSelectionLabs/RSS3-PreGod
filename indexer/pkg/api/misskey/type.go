@@ -3,7 +3,7 @@ package misskey
 import (
 	"time"
 
-	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/db/model"
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database/datatype"
 )
 
 //nolint:tagliatelle // format is required by Misskey API
@@ -22,7 +22,7 @@ type Note struct {
 	CreatedAt   time.Time
 	Summary     string
 	Author      string
-	Attachments []model.Attachment
+	Attachments datatype.Attachments
 	Link        string
 }
 

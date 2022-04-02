@@ -3,7 +3,7 @@ package jike
 import (
 	"time"
 
-	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/db/model"
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database/datatype"
 )
 
 //nolint:tagliatelle // format is required by Jike API
@@ -17,7 +17,7 @@ type Timeline struct {
 	Timestamp   time.Time
 	Summary     string
 	Author      string
-	Attachments []model.Attachment
+	Attachments []datatype.Attachment
 	Link        string
 }
 

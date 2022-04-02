@@ -1,6 +1,10 @@
 package twitter
 
-import "time"
+import (
+	"time"
+
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database/datatype"
+)
 
 type UserShow struct {
 	Name        string
@@ -10,10 +14,12 @@ type UserShow struct {
 }
 
 type ContentInfo struct {
-	PreContent string
-	Timestamp  string
-	Hash       string
-	Link       string
+	PreContent  string
+	Timestamp   string
+	Hash        string
+	Link        string
+	ScreenName  string
+	Attachments datatype.Attachments
 }
 
 func (i ContentInfo) GetTsp() (time.Time, error) {

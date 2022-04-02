@@ -18,8 +18,7 @@ func GetActions(user string) ([]PoapResponse, error) {
 		return []PoapResponse{}, err
 	}
 
-	url := fmt.Sprintf("%s/actions/scan/%s",
-		endpoint, user)
+	url := fmt.Sprintf("%s/actions/scan/%s", endpoint, user)
 	response, err := httpx.Get(url, nil)
 
 	if err != nil {
