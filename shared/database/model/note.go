@@ -2,21 +2,29 @@ package model
 
 import (
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database/common"
+	"github.com/lib/pq"
+	"gorm.io/datatypes"
 	"gorm.io/gorm/schema"
 )
 
-var _ schema.Tabler = &Account{}
+var _ schema.Tabler = &Note{}
 
 type Note struct {
-	ID string `gorm:"column:id;index:index_account_id"`
-	// Platform        int    `gorm:"column:platform;index:index_account_platform"`
-	// ProfileID       string `gorm:"column:profile_id;index:index_account_profile_id"`
-	// ProfilePlatform int    `gorm:"column:profile_platform;index:index_profile_platform"`
-	// Source          int    `gorm:"column:source;index:index_account_source"`
+	Identifier  string         `gorm:"column:identifier"`
+	RelatedURLs pq.StringArray `gorm:"column:related_urls;type:text[]"`
+	Links       string         `gorm:"column:links"`
+	BackLinks   string         `gorm:"column:backlinks"`
+	Tags        pq.StringArray `gorm:"column:tags;type:text[]"`
+	Authors     pq.StringArray `gorm:"column:authors;type:text[]"`
+	Title       string         `gorm:"column:title"`
+	Summary     string         `gorm:"column:summary"`
+	Attachments datatypes.JSON `gorm:"column:attachments"`
+	Source      string         `gorm:"column:source"`
+	Metadata    datatypes.JSON `gorm:"column:metadata"`
 
 	common.Table
 }
 
-func (_ Note) TableName() string {
-	return "account"
+func (Note) TableName() string {
+	return "note"
 }
