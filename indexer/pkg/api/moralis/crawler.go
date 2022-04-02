@@ -111,8 +111,10 @@ func (c *moralisCrawler) Work(param crawler.WorkParam) error {
 		}
 
 		if !hasObject {
-			// TODO: get object
-			logger.Warnf("Asset " + nftTransfer.String() + "doesn't has the metadata.")
+			theAsset, err = GetMetadataByToken(nftTransfer.TokenAddress, nftTransfer.TokenId, chainType, getApiKey())
+			if err != nil {
+				logger.Warnf("fail to get metadata of token: " + nftTransfer.String())
+			}
 		}
 
 		noteItem := model.NewItem(
@@ -121,11 +123,11 @@ func (c *moralisCrawler) Work(param crawler.WorkParam) error {
 			model.Metadata{
 				"from":           nftTransfer.FromAddress,
 				"to":             nftTransfer.ToAddress,
-				"token_standard": theAsset.ContractType,
-				"token_id":       theAsset.TokenId,
+				"token_standard": nftTransfer.ContractType,
+				"token_id":       nftTransfer.TokenId,
 				"token_symbol":   theAsset.Symbol,
 
-				"collection_address": theAsset.TokenAddress,
+				"collection_address": nftTransfer.TokenAddress,
 				"collection_name":    theAsset.Name,
 			},
 			constants.ItemTagsNFT,
@@ -140,11 +142,11 @@ func (c *moralisCrawler) Work(param crawler.WorkParam) error {
 			networkId,
 			theAsset.GetAssetProof(),
 			model.Metadata{
-				"token_standard": theAsset.ContractType,
-				"token_id":       theAsset.TokenId,
+				"token_standard": nftTransfer.ContractType,
+				"token_id":       nftTransfer.TokenId,
 				"token_symbol":   theAsset.Symbol,
 
-				"collection_address": theAsset.TokenAddress,
+				"collection_address": nftTransfer.TokenAddress,
 				"collection_name":    theAsset.Name,
 			},
 			constants.ItemTagsNFT,

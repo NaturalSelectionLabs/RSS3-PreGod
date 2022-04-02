@@ -16,20 +16,29 @@ var (
 	parser fastjson.Parser
 )
 
-func GetNFTs(userAddress string, chainType ChainType, apiKey string) (NFTResult, error) {
+func requestMoralisApi(url string, apiKey string) ([]byte, error) {
 	var headers = map[string]string{
 		"accept":    "application/json",
 		"X-API-Key": apiKey,
 	}
 
-	// Gets all NFT items of user
-	url := fmt.Sprintf("%s/api/v2/%s/nft?chain=%s&format=decimal",
-		endpoint, userAddress, chainType)
-
 	response, err := httpx.Get(url, headers)
 	if err != nil {
 		logger.Errorf("http get error: [%v]", err)
 
+		return nil, err
+	}
+	return response, nil
+}
+
+func GetNFTs(userAddress string, chainType ChainType, apiKey string) (NFTResult, error) {
+	// Gets all NFT items of user
+	url := fmt.Sprintf("%s/api/v2/%s/nft?chain=%s&format=decimal",
+		endpoint, userAddress, chainType)
+
+	response, err := requestMoralisApi(url, apiKey)
+
+	if err != nil {
 		return NFTResult{}, err
 	}
 
@@ -44,19 +53,12 @@ func GetNFTs(userAddress string, chainType ChainType, apiKey string) (NFTResult,
 }
 
 func GetNFTTransfers(userAddress string, chainType ChainType, apiKey string) (NFTTransferResult, error) {
-	var headers = map[string]string{
-		"accept":    "application/json",
-		"X-API-Key": apiKey,
-	}
-
 	// Gets all NFT transfers of user
 	url := fmt.Sprintf("%s/api/v2/%s/nft/transfers?chain=%s&format=decimal&direction=both",
 		endpoint, userAddress, chainType)
+	response, err := requestMoralisApi(url, apiKey)
 
-	response, err := httpx.Get(url, headers)
 	if err != nil {
-		logger.Errorf("http get error: [%v]", err)
-
 		return NFTTransferResult{}, err
 	}
 
@@ -71,19 +73,11 @@ func GetNFTTransfers(userAddress string, chainType ChainType, apiKey string) (NF
 }
 
 func GetLogs(fromBlock int64, toBlock int64, address string, topic string, chainType string, apiKey string) (*GetLogsResult, error) {
-	var headers = map[string]string{
-		"accept":    "application/json",
-		"X-API-Key": apiKey,
-	}
-
 	url := fmt.Sprintf("%s/api/v2/%s/logs?chain=%s&from_block=%d&to_block=%d&topic0=%s",
 		endpoint, address, chainType, fromBlock, toBlock, topic)
-	logger.Info("url: ", url)
+	response, err := requestMoralisApi(url, apiKey)
 
-	response, err := httpx.Get(url, headers)
 	if err != nil {
-		logger.Errorf("http get error: [%v]", err)
-
 		return nil, err
 	}
 
@@ -99,21 +93,15 @@ func GetLogs(fromBlock int64, toBlock int64, address string, topic string, chain
 	return res, nil
 }
 
-// this function is used by ENS indexer
+// Gets all NFT items of user
 func GetNFTByContract(userAddress string, contactAddress string, chainType ChainType, apiKey string) (NFTResult, error) {
-	var headers = map[string]string{
-		"accept":    "application/json",
-		"X-API-Key": apiKey,
-	}
-
-	// Gets all NFT items of user
+	// this function is used by ENS indexer.
 	url := fmt.Sprintf("%s/api/v2/%s/nft?chain=%s&format=decimal&token_addresses=%s",
 		endpoint, userAddress, chainType, contactAddress)
 
-	response, err := httpx.Get(url, headers)
-	if err != nil {
-		logger.Errorf("http get error: [%v]", err)
+	response, err := requestMoralisApi(url, apiKey)
 
+	if err != nil {
 		return NFTResult{}, err
 	}
 
@@ -129,22 +117,15 @@ func GetNFTByContract(userAddress string, contactAddress string, chainType Chain
 
 // GetTxByToken is used by ENS indexer
 func GetTxByToken(tokenAddress string, tokenId string, chainType ChainType, apiKey string) (NFTTransferItem, error) {
-	var headers = map[string]string{
-		"accept":    "application/json",
-		"X-API-Key": apiKey,
-	}
-
 	url := fmt.Sprintf("%s/api/v2/nft/%s/%s/transfers?chain=%s&format=decimal&limit=1",
 		endpoint, tokenAddress, tokenId, chainType)
+	response, err := requestMoralisApi(url, apiKey)
+
+	if err != nil {
+		return NFTTransferItem{}, err
+	}
 
 	res := new(NFTTransferItem)
-
-	response, err := httpx.Get(url, headers)
-	if err != nil {
-		logger.Errorf("http get error: [%v]", err)
-
-		return *res, err
-	}
 
 	parsedJson, err := parser.Parse(string(response))
 
@@ -154,5 +135,22 @@ func GetTxByToken(tokenAddress string, tokenId string, chainType ChainType, apiK
 		logger.Errorf("GetTxByToken: %v", err)
 	}
 
+	return *res, nil
+}
+
+func GetMetadataByToken(tokenAddress string, tokenId string, chainType ChainType, apiKey string) (NFTItem, error) {
+	url := fmt.Sprintf("%s/api/v2/nft/%s/%s?chain=%s&format=decimal&limit=1",
+		endpoint, tokenAddress, tokenId, chainType)
+	response, err := requestMoralisApi(url, apiKey)
+	if err != nil {
+		return NFTItem{}, err
+	}
+
+	res := new(NFTItem)
+
+	err = jsoni.Unmarshal(response, &res)
+	if err != nil {
+		return NFTItem{}, nil
+	}
 	return *res, nil
 }
