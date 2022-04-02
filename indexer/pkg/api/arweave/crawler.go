@@ -7,8 +7,9 @@ import (
 	"os/signal"
 	"time"
 
-	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/db"
-	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/db/model"
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database"
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database/datatype"
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database/model"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/constants"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/logger"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/rss3uri"
@@ -102,15 +103,15 @@ func (ar *crawler) parseMirrorArticles(from, to int64, owner ArAccount) error {
 		return err
 	}
 
-	logger.Info("Got articles:", len(articles))
-
-	items := make([]*model.Item, 0)
+	items := make([]model.Note, 0)
 
 	for _, article := range articles {
-		attachment := model.Attachment{
-			Type:     "body",
-			Content:  article.Content,
-			MimeType: "text/markdown",
+		attachment := datatype.Attachments{
+			{
+				Type:     "body",
+				Content:  article.Content,
+				MimeType: "text/markdown",
+			},
 		}
 
 		tsp := time.Unix(article.Timestamp, 0)
@@ -125,31 +126,40 @@ func (ar *crawler) parseMirrorArticles(from, to int64, owner ArAccount) error {
 
 		logger.Infof("author: [%v]", author)
 
-		ni := model.NewItem(
-			constants.NetworkIDArweaveMainnet,
-			article.TxHash,
-			model.Metadata{
-				"network": constants.NetworkSymbolArweaveMainnet,
-				"proof":   article.Digest,
+		note := model.Note{
+			Identifier: rss3uri.NewNoteInstance(article.Author, constants.NetworkSymbolArweaveMainnet).String(),
+			Owner:      author.String(),
+			RelatedURLs: []string{
+				"https://arweave.net/" + article.TxHash,
+				"https://mirror.xyz/" + article.Author + "/" + article.OriginalDigest,
 			},
-			constants.ItemTagsMirrorEntry,
-			[]string{author.String()},
-			article.Title,
-			article.Content, // TODO: According to RIP4, if the body is too long, then only record part of the body, followed by ... at the end
-			[]model.Attachment{attachment},
-			tsp,
-		)
+			Tags:            constants.ItemTagsMirrorEntry.ToPqStringArray(),
+			Authors:         []string{author.String()},
+			Title:           article.Title,
+			Summary:         article.Content, // TODO: According to RIP4, if the body is too long, then only record part of the body, followed by ... at the end
+			Attachments:     database.MustWrapJSON(attachment),
+			Source:          constants.NoteSourceNameMirrorEntry.String(),
+			MetadataNetwork: constants.NetworkSymbolArweaveMainnet.String(),
+			MetadataProof:   article.TxHash,
+			Metadata:        database.MustWrapJSON(map[string]interface{}{}),
+			DateCreated:     tsp,
+			DateUpdated:     tsp,
+		}
 
-		items = append(items, ni)
-		notes := []*model.ObjectId{{
-			NetworkID: constants.NetworkIDArweaveMainnet,
-			Proof:     article.TxHash,
-		}}
-		instance := rss3uri.NewAccountInstance(article.Author, constants.PlatformSymbolArweave)
-		db.AppendNotes(instance, notes)
+		items = append(items, note)
+	}
+	tx := database.DB.Begin()
+	defer tx.Rollback()
+
+	if items != nil && len(items) > 0 {
+		if _, err := database.CreateNotes(tx, items, true); err != nil {
+			return err
+		}
 	}
 
-	db.InsertItems(items, constants.NetworkIDArweaveMainnet)
+	if err = tx.Commit().Error; err != nil {
+		return err
+	}
 
 	return nil
 }

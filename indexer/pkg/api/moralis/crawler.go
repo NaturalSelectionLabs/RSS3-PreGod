@@ -116,7 +116,7 @@ func (c *moralisCrawler) Work(param crawler.WorkParam) error {
 			Summary:         m.Description,
 			Attachments:     database.MustWrapJSON(utils.Meta2NoteAtt(m)),
 			Source:          constants.NoteSourceNameEthereumNFT.String(),
-			MetadataNetwork: string(networkSymbol),
+			MetadataNetwork: networkSymbol.String(),
 			MetadataProof:   item.TransactionHash,
 			Metadata: database.MustWrapJSON(map[string]interface{}{
 				"from":               item.FromAddress,
