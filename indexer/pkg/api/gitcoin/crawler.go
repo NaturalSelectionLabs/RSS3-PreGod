@@ -51,6 +51,8 @@ func (gc *crawler) initGrants() error {
 			time.Sleep(5 * time.Second)
 		}
 	}
+
+	return nil
 }
 
 // UpdateZksToken update Token by tokenId
