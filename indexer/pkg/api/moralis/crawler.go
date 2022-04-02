@@ -7,7 +7,8 @@ import (
 
 	utils "github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/api/nft_utils"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/crawler"
-	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/db/model"
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database"
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database/model"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/config"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/constants"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/logger"
@@ -21,10 +22,8 @@ type moralisCrawler struct {
 func NewMoralisCrawler() crawler.Crawler {
 	return &moralisCrawler{
 		crawler.DefaultCrawler{
-			Assets:     []*model.ObjectId{},
-			Notes:      []*model.ObjectId{},
-			Items:      []*model.Item{},
-			AssetItems: []*model.Item{},
+			Assets: []model.Asset{},
+			Notes:  []model.Note{},
 		},
 	}
 }
@@ -46,7 +45,6 @@ func (c *moralisCrawler) Work(param crawler.WorkParam) error {
 	}
 
 	networkSymbol := chainType.GetNetworkSymbol()
-	networkId := networkSymbol.GetID()
 	nftTransfers, err := GetNFTTransfers(param.Identity, chainType, getApiKey())
 
 	if err != nil {
@@ -58,25 +56,14 @@ func (c *moralisCrawler) Work(param crawler.WorkParam) error {
 	if err != nil {
 		return err
 	}
-	//parser
-	for _, nftTransfer := range nftTransfers.Result {
-		c.Notes = append(c.Notes, &model.ObjectId{
-			NetworkID: networkId,
-			Proof:     nftTransfer.TransactionHash,
-		})
-	}
 
+	// check if each asset has a proof (only for logging issues)
 	for _, asset := range assets.Result {
 		hasProof := false
 
 		for _, nftTransfer := range nftTransfers.Result {
 			if nftTransfer.EqualsToToken(asset) {
 				hasProof = true
-
-				c.Assets = append(c.Assets, &model.ObjectId{
-					NetworkID: networkId,
-					Proof:     nftTransfer.TransactionHash,
-				})
 			}
 		}
 
@@ -86,10 +73,10 @@ func (c *moralisCrawler) Work(param crawler.WorkParam) error {
 	}
 
 	// make the item list complete
-	for _, nftTransfer := range nftTransfers.Result {
-		tsp, err := nftTransfer.GetTsp()
+	for _, item := range nftTransfers.Result {
+		tsp, err := item.GetTsp()
 		if err != nil {
-			logger.Warnf("asset: %s fails at GetTsp(): %v", nftTransfer.String(), err)
+			logger.Warnf("asset: %s fails at GetTsp(): %v", item.String(), err)
 
 			tsp = time.Now()
 		}
@@ -97,70 +84,79 @@ func (c *moralisCrawler) Work(param crawler.WorkParam) error {
 		author := rss3uri.NewAccountInstance(param.Identity, constants.PlatformSymbolEthereum)
 
 		hasObject := false
+
 		var theAsset NFTItem
 
 		for _, asset := range assets.Result {
-			if nftTransfer.EqualsToToken(asset) && asset.MetaData != "" {
+			if item.EqualsToToken(asset) && asset.MetaData != "" {
 				hasObject = true
 				theAsset = asset
 			}
 		}
+
 		m, err := utils.ParseNFTMetadata(theAsset.MetaData)
 		if err != nil {
 			logger.Warnf("%v", err)
 		}
 
 		if !hasObject {
-			theAsset, err = GetMetadataByToken(nftTransfer.TokenAddress, nftTransfer.TokenId, chainType, getApiKey())
+			theAsset, err = GetMetadataByToken(item.TokenAddress, item.TokenId, chainType, getApiKey())
 			if err != nil {
-				logger.Warnf("fail to get metadata of token: " + nftTransfer.String())
+				logger.Warnf("fail to get metadata of token: " + item.String())
 			}
 		}
 
-		noteItem := model.NewItem(
-			networkId,
-			nftTransfer.TransactionHash,
-			model.Metadata{
-				"from":           nftTransfer.FromAddress,
-				"to":             nftTransfer.ToAddress,
-				"token_standard": nftTransfer.ContractType,
-				"token_id":       nftTransfer.TokenId,
-				"token_symbol":   theAsset.Symbol,
-
-				"collection_address": nftTransfer.TokenAddress,
+		note := model.Note{
+			Identifier:      rss3uri.NewNoteInstance(item.TransactionHash, networkSymbol).String(),
+			Owner:           author.String(),
+			RelatedURLs:     GetTxRelatedURLs(networkSymbol, item.TokenAddress, item.TokenId, &item.TransactionHash),
+			Tags:            constants.ItemTagsNFT.ToPqStringArray(),
+			Authors:         []string{author.String()},
+			Title:           m.Name,
+			Summary:         m.Description,
+			Attachments:     database.MustWrapJSON(utils.Meta2NoteAtt(m)),
+			Source:          constants.NoteSourceNameEthereumNFT.String(),
+			MetadataNetwork: string(networkSymbol),
+			MetadataProof:   item.TransactionHash,
+			Metadata: database.MustWrapJSON(map[string]interface{}{
+				"from":               item.FromAddress,
+				"to":                 item.ToAddress,
+				"token_standard":     item.ContractType,
+				"token_id":           item.TokenId,
+				"token_symbol":       theAsset.Symbol,
+				"collection_address": item.TokenAddress,
 				"collection_name":    theAsset.Name,
-			},
-			constants.ItemTagsNFT,
-			[]string{author.String()},
-			"", // title
-			"", // summary
-			utils.Meta2AssetAtt(m),
-			tsp,
-		)
+			}),
+			DateCreated: tsp,
+			DateUpdated: tsp,
+		}
 
-		assetItem := model.NewItem(
-			networkId,
-			theAsset.GetAssetProof(),
-			model.Metadata{
-				"token_standard": nftTransfer.ContractType,
-				"token_id":       nftTransfer.TokenId,
-				"token_symbol":   theAsset.Symbol,
-
-				"collection_address": nftTransfer.TokenAddress,
+		assetProof := item.GetAssetProof()
+		asset := model.Asset{
+			Identifier:      rss3uri.NewAssetInstance(assetProof, networkSymbol).String(),
+			Owner:           author.String(),
+			RelatedURLs:     GetTxRelatedURLs(networkSymbol, item.TokenAddress, item.TokenId, nil),
+			Tags:            constants.ItemTagsNFT.ToPqStringArray(),
+			Authors:         []string{author.String()},
+			Title:           m.Name,
+			Summary:         m.Description,
+			Attachments:     database.MustWrapJSON(utils.Meta2AssetAtt(m)),
+			Source:          constants.AssetSourceNameEthereumNFT.String(),
+			MetadataNetwork: string(networkSymbol),
+			MetadataProof:   assetProof,
+			Metadata: database.MustWrapJSON(map[string]interface{}{
+				"token_standard":     item.ContractType,
+				"token_id":           item.TokenId,
+				"token_symbol":       theAsset.Symbol,
+				"collection_address": item.TokenAddress,
 				"collection_name":    theAsset.Name,
-			},
-			constants.ItemTagsNFT,
-			[]string{author.String()},
-			m.Name,        // title
-			m.Description, // summary
-			utils.Meta2NoteAtt(m),
-			tsp,
-		)
+			}),
+			DateCreated: tsp,
+			DateUpdated: tsp,
+		}
 
-		c.Items = append(c.Items, noteItem)
-
-		c.AssetItems = append(c.AssetItems, assetItem)
-
+		c.Notes = append(c.Notes, note)
+		c.Assets = append(c.Assets, asset)
 	}
 
 	return nil

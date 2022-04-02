@@ -3,7 +3,7 @@ package nft_utils
 import (
 	"fmt"
 
-	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/db/model"
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database/datatype"
 	"github.com/valyala/fastjson"
 )
 
@@ -50,11 +50,11 @@ func ParseNFTMetadata(metadata string) (Metadata, error) {
 	}, nil
 }
 
-func getCommAtt(meta Metadata) []model.Attachment {
-	att := []model.Attachment{}
+func getCommAtt(meta Metadata) []datatype.Attachment {
+	att := []datatype.Attachment{}
 
 	if len(meta.ExternalLink) != 0 {
-		att = append(att, model.Attachment{
+		att = append(att, datatype.Attachment{
 			Type:     "external_url",
 			Content:  meta.ExternalLink,
 			MimeType: "text/uri-list",
@@ -62,7 +62,7 @@ func getCommAtt(meta Metadata) []model.Attachment {
 	}
 
 	if len(meta.Preview) != 0 {
-		att = append(att, model.Attachment{
+		att = append(att, datatype.Attachment{
 			Type:     "preview",
 			Content:  meta.Preview,
 			MimeType: "", // TODO
@@ -70,7 +70,7 @@ func getCommAtt(meta Metadata) []model.Attachment {
 	}
 
 	if len(meta.Object) != 0 {
-		att = append(att, model.Attachment{
+		att = append(att, datatype.Attachment{
 			Type:     "object",
 			Content:  meta.Object,
 			MimeType: "", // TODO
@@ -78,7 +78,7 @@ func getCommAtt(meta Metadata) []model.Attachment {
 	}
 
 	if len(meta.Attributes) != 0 {
-		att = append(att, model.Attachment{
+		att = append(att, datatype.Attachment{
 			Type:     "attributes",
 			Content:  meta.Attributes, //TODO: extract trait_type/value
 			MimeType: "",              // TODO
@@ -91,10 +91,10 @@ func getCommAtt(meta Metadata) []model.Attachment {
 }
 
 // Convert metadata to attachment of asset
-func Meta2AssetAtt(meta Metadata) []model.Attachment {
-	att := []model.Attachment{}
+func Meta2AssetAtt(meta Metadata) []datatype.Attachment {
+	att := []datatype.Attachment{}
 	if len(meta.Name) != 0 {
-		att = append(att, model.Attachment{
+		att = append(att, datatype.Attachment{
 			Type:     "name",
 			Content:  meta.Name,
 			MimeType: "text/plain",
@@ -102,7 +102,7 @@ func Meta2AssetAtt(meta Metadata) []model.Attachment {
 	}
 
 	if len(meta.Description) != 0 {
-		att = append(att, model.Attachment{
+		att = append(att, datatype.Attachment{
 			Type:     "description",
 			Content:  meta.Description,
 			MimeType: "text/plain",
@@ -115,10 +115,10 @@ func Meta2AssetAtt(meta Metadata) []model.Attachment {
 }
 
 // Convert metadata to attachment of note
-func Meta2NoteAtt(meta Metadata) []model.Attachment {
-	att := []model.Attachment{}
+func Meta2NoteAtt(meta Metadata) []datatype.Attachment {
+	att := []datatype.Attachment{}
 
 	att = append(att, getCommAtt(meta)...)
-	return att
 
+	return att
 }

@@ -103,9 +103,8 @@ func addToRecentVisit(ctx context.Context, req *GetItemRequest) error {
 		Identity:   req.Identity,
 		NetworkID:  req.NetworkID,
 		PlatformID: req.PlatformID,
-		// NOTE looks like only for misskey
-		Limit:     req.Limit,
-		Timestamp: time.Unix(req.Timestamp, 0),
+		Limit:      req.Limit,
+		Timestamp:  time.Unix(req.Timestamp, 0),
 	}
 
 	return autoupdater.AddToRecentVisitQueue(ctx, param)

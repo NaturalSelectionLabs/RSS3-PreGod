@@ -98,7 +98,7 @@ func (i NFTItem) String() string {
 		i.TokenAddress, i.TokenId, i.OwnerOf, i.TokenURI)
 }
 
-func (i NFTItem) GetAssetProof() string {
+func (i NFTTransferItem) GetAssetProof() string {
 	return i.TokenAddress + "-" + i.TokenId
 }
 
@@ -175,4 +175,45 @@ type GetLogsResult struct {
 	Page     int64         `json:"page"`
 	PageSize int64         `json:"page_size"`
 	Result   []GetLogsItem `json:"result"`
+}
+
+// Returns related urls based on the network and contract tx hash.
+func GetTxRelatedURLs(
+	network constants.NetworkSymbol,
+	contractAddress string,
+	tokenId string,
+	transactionHash *string,
+) []string {
+	urls := []string{}
+
+	switch network {
+	case constants.NetworkSymbolEthereum:
+		if transactionHash != nil {
+			urls = append(urls, "https://etherscan.io/tx/%s"+(*transactionHash))
+		}
+		urls = append(urls, "https://etherscan.io/nft/"+contractAddress+"/"+tokenId)
+		urls = append(urls, "https://opensea.io/assets/"+contractAddress+"/"+tokenId)
+	case constants.NetworkSymbolPolygon:
+		if transactionHash != nil {
+			urls = append(urls, "https://polygonscan.com/tx/%s"+(*transactionHash))
+		}
+		urls = append(urls, "https://polygonscan.com/nft/"+contractAddress+"/"+tokenId)
+		urls = append(urls, "https://opensea.io/assets/matic/"+contractAddress+"/"+tokenId)
+	case constants.NetworkSymbolBNBChain:
+		if transactionHash != nil {
+			urls = append(urls, "https://bscscan.com/tx/%s"+(*transactionHash))
+		}
+		urls = append(urls, "https://bscscan.com/nft/"+contractAddress+"/"+tokenId)
+	case constants.NetworkSymbolAvalanche:
+		if transactionHash != nil {
+			urls = append(urls, "https://avascan.info/blockchain/c/tx/%s"+(*transactionHash))
+		}
+	case constants.NetworkSymbolFantom:
+		if transactionHash != nil {
+			urls = append(urls, "https://ftmscan.com/tx/%s"+(*transactionHash))
+		}
+		urls = append(urls, "https://ftmscan.com/nft/"+contractAddress+"/"+tokenId)
+	}
+
+	return urls
 }
