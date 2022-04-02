@@ -116,54 +116,6 @@ func GetGrantsInfo() ([]GrantInfo, error) {
 	return grants, nil
 }
 
-// GetProjectsInfo returns project infos from gitcoin
-func GetProjectsInfo(adminAddress string, title string) (ProjectInfo, error) {
-	var project ProjectInfo
-
-	headers := make(map[string]string)
-	httpx.SetCommonHeader(headers)
-
-	url := grantsApi + "?admin_address=" + adminAddress
-	content, err := httpx.Get(url, headers)
-
-	if err != nil {
-		logger.Errorf("gitcoin get project info error: [%v]", err)
-
-		return project, err
-	}
-
-	var parser fastjson.Parser
-	parsedJson, parseErr := parser.Parse(string(content))
-
-	if parseErr != nil {
-		logger.Errorf("gitcoin parse json error: [%v]", parseErr)
-
-		return project, parseErr
-	}
-
-	if "[]" == string(content) {
-		// project is inactive
-		project.Active = false
-		project.AdminAddress = adminAddress
-		project.Title = title
-	} else {
-		// project is active
-		project.Active = true
-		project.AdminAddress = adminAddress
-		project.Title = title
-		project.Id = parsedJson.GetInt64("id")
-		project.Slug = string(parsedJson.GetStringBytes("slug"))
-		project.Description = string(parsedJson.GetStringBytes("description"))
-		project.ReferUrl = string(parsedJson.GetStringBytes("reference_url"))
-		project.Logo = string(parsedJson.GetStringBytes("logo"))
-		project.TokenAddress = string(parsedJson.GetStringBytes("token_address"))
-		project.TokenSymbol = string(parsedJson.GetStringBytes("token_symbol"))
-		project.ContractAddress = string(parsedJson.GetStringBytes("contract_address"))
-	}
-
-	return project, nil
-}
-
 // GetZkSyncDonations returns donations from zksync
 func (gc *crawler) GetZkSyncDonations(fromBlock, toBlock int64) ([]DonationInfo, error) {
 	donations := make([]DonationInfo, 0)
@@ -198,6 +150,8 @@ func (gc *crawler) GetZkSyncDonations(fromBlock, toBlock int64) ([]DonationInfo,
 				inactive, err = gc.updateHostingProject(adminAddress)
 				if err != nil {
 					logger.Errorf("updateHostingProject error: [%v]", err)
+
+					continue
 				}
 			}
 

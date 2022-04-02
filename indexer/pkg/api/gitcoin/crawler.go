@@ -11,8 +11,10 @@ import (
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/db"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/db/model"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/constants"
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/httpx"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/logger"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/rss3uri"
+	"github.com/valyala/fastjson"
 )
 
 type crawler struct {
@@ -33,6 +35,21 @@ func NewCrawler(ethParam, polygonParam, zkParam crawlerConfig) *crawler {
 		make(map[int64]zksync.Token),
 		make(map[string]bool),
 		make(map[string]ProjectInfo),
+	}
+}
+
+func (gc *crawler) initGrants() error {
+	grants, err := GetGrantsInfo()
+	if err != nil {
+		return err
+	}
+
+	for _, item := range grants {
+		if item.AdminAddress != "\"0x0\"" {
+			gc.updateHostingProject(item.AdminAddress)
+
+			time.Sleep(5 * time.Second)
+		}
 	}
 }
 
@@ -77,9 +94,13 @@ func (gc *crawler) hostingProject(adminAddress string) (ProjectInfo, bool) {
 }
 
 func (gc *crawler) needUpdateProject(adminAddress string) bool {
+	if len(gc.hostingProjectsCache) == 0 {
+		return true
+	}
+
 	p, ok := gc.hostingProject(adminAddress)
 
-	return !(ok && p.Active)
+	return ok && !p.Active
 }
 
 func (gc *crawler) updateHostingProject(adminAddress string) (inactive bool, err error) {
@@ -100,6 +121,66 @@ func (gc *crawler) updateHostingProject(adminAddress string) (inactive bool, err
 	return
 }
 
+// GetProjectsInfo returns project info from gitcoin
+func GetProjectsInfo(adminAddress string, title string) (ProjectInfo, error) {
+	var project ProjectInfo
+
+	headers := make(map[string]string)
+	httpx.SetCommonHeader(headers)
+
+	url := grantsApi + "?admin_address=" + adminAddress
+
+	maxRetries := 3
+	content, err := httpx.Get(url, headers)
+
+	for i := 1; i <= maxRetries; i++ {
+		if err == nil {
+			break
+		}
+		content, err = httpx.Get(url, headers)
+
+		logger.Warnf("GetProjectsInfo error [%v], times: [%d]", err, i)
+		time.Sleep(5 * time.Second)
+	}
+
+	if err != nil {
+		logger.Errorf("gitcoin get project info error: [%v]", err)
+
+		return project, err
+	}
+
+	var parser fastjson.Parser
+	parsedJson, parseErr := parser.Parse(string(content))
+
+	if parseErr != nil {
+		logger.Errorf("gitcoin parse json error: [%v]", parseErr)
+
+		return project, parseErr
+	}
+
+	if "[]" == string(content) {
+		// project is inactive
+		project.Active = false
+		project.AdminAddress = adminAddress
+		project.Title = title
+	} else {
+		// project is active
+		project.Active = true
+		project.AdminAddress = adminAddress
+		project.Title = title
+		project.Id = parsedJson.GetInt64("id")
+		project.Slug = string(parsedJson.GetStringBytes("slug"))
+		project.Description = string(parsedJson.GetStringBytes("description"))
+		project.ReferUrl = string(parsedJson.GetStringBytes("reference_url"))
+		project.Logo = string(parsedJson.GetStringBytes("logo"))
+		project.TokenAddress = string(parsedJson.GetStringBytes("token_address"))
+		project.TokenSymbol = string(parsedJson.GetStringBytes("token_symbol"))
+		project.ContractAddress = string(parsedJson.GetStringBytes("contract_address"))
+	}
+
+	return project, nil
+}
+
 func (gc *crawler) zksyncRun() error {
 	logger.Info("Starting run zksync")
 
@@ -115,6 +196,11 @@ func (gc *crawler) zksyncRun() error {
 		for _, token := range tokens {
 			gc.zksTokensCache[token.Id] = token
 		}
+	}
+
+	// get grants
+	if len(gc.hostingProjectsCache) == 0 {
+		gc.initGrants()
 	}
 
 	latestConfirmedBlockHeight, err := zksync.GetLatestBlockHeightWithConfirmations(gc.zk.Confirmations)
@@ -281,7 +367,7 @@ func (gc *crawler) ZkStart() error {
 			return nil
 		default:
 			gc.zksyncRun()
-			time.Sleep(500 * time.Millisecond)
+			time.Sleep(5 * time.Second)
 		}
 	}
 }

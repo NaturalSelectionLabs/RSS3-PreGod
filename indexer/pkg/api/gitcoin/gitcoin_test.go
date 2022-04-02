@@ -4,6 +4,7 @@ If it fails, the APIs may not be accessible (often because of bot authentication
 package gitcoin_test
 
 import (
+	"log"
 	"testing"
 
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/api/gitcoin"
@@ -28,6 +29,7 @@ func TestGetGrantsInfo(t *testing.T) {
 func TestGetProjectsInfo(t *testing.T) {
 	res, err := gitcoin.GetProjectsInfo("0x8c23B96f2fb77AaE1ac2832debEE30f09da7af3C", "RSS3")
 	assert.Nil(t, err)
+	log.Println(res.TokenSymbol, res.AdminAddress, res.Description)
 	assert.NotEmpty(t, res)
 }
 
