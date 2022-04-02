@@ -109,10 +109,7 @@ func getTweetAttachments(contentInfo *fastjson.Value) datatype.Attachments {
 			// TODO: video
 			mediaUrl := string(mediaItem.GetStringBytes("media_url_https"))
 
-			contentHeader, err := httpx.GetContentHeader(mediaUrl)
-			if err != nil {
-				logger.Errorf("get content header error: %s", err)
-			}
+			contentHeader, _ := httpx.GetContentHeader(mediaUrl)
 
 			a := datatype.Attachment{
 				Type:     "media",

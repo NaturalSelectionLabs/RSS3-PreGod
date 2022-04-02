@@ -2,8 +2,10 @@ package nft_utils
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database/datatype"
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/httpx"
 	"github.com/valyala/fastjson"
 )
 
@@ -50,6 +52,29 @@ func ParseNFTMetadata(metadata string) (Metadata, error) {
 	}, nil
 }
 
+func getMimeType(uri string) string {
+	// 1. is base64 encode?
+	if strings.Contains(uri, ";base64,") {
+		return strings.Split(uri, ",")[0]
+	}
+
+	// 2. is ipfs?
+	if strings.HasPrefix(uri, "ipfs://") {
+		cid := strings.Split(uri, "ipfs://")[1]
+		url := "https://cloudflare-ipfs.com/ipfs/" + cid
+		contentHeader, _ := httpx.GetContentHeader(url)
+		return contentHeader.MIMEType
+	}
+
+	// 3. is http?
+	if strings.HasPrefix(uri, "https://") || strings.HasPrefix(uri, "http://") {
+		contentHeader, _ := httpx.GetContentHeader(uri)
+		return contentHeader.MIMEType
+	}
+
+	return ""
+}
+
 func getCommAtt(meta Metadata) []datatype.Attachment {
 	att := []datatype.Attachment{}
 
@@ -65,7 +90,7 @@ func getCommAtt(meta Metadata) []datatype.Attachment {
 		att = append(att, datatype.Attachment{
 			Type:     "preview",
 			Content:  meta.Preview,
-			MimeType: "", // TODO
+			MimeType: getMimeType(meta.Preview),
 		})
 	}
 
@@ -73,7 +98,7 @@ func getCommAtt(meta Metadata) []datatype.Attachment {
 		att = append(att, datatype.Attachment{
 			Type:     "object",
 			Content:  meta.Object,
-			MimeType: "", // TODO
+			MimeType: getMimeType(meta.Object),
 		})
 	}
 

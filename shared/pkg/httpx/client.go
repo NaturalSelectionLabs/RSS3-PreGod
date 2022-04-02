@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/config"
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/logger"
 	"github.com/go-resty/resty/v2"
 )
 
@@ -82,6 +83,7 @@ func GetContentHeader(url string) (*ContentHeader, error) {
 	header, err := Head(url)
 
 	if err != nil {
+		logger.Errorf("cannot read content type of url: %s. error is : %v", url, err)
 		return res, err
 	}
 

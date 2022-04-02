@@ -199,11 +199,7 @@ func formatImage(imageList []*fastjson.Value, ns *Note) {
 
 			ns.Summary += fmt.Sprintf("<img class=\"media\" src=\"%s\">", url)
 
-			contentHeader, err := httpx.GetContentHeader(url)
-
-			if err != nil {
-				logger.Errorf("Jike GetPicture err: %v", err)
-			}
+			contentHeader, _ := httpx.GetContentHeader(url)
 
 			attachment := datatype.Attachment{
 				Type:        "quote_file",

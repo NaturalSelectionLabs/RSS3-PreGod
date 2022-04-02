@@ -103,11 +103,7 @@ func getENSTextValue(domain string, record *ENSTextRecord) error {
 		case "avatar":
 			// only get content headers if it's http for now
 			if strings.HasPrefix(text, "http") {
-				contentHeader, err := httpx.GetContentHeader(text)
-
-				if err != nil {
-					logger.Errorf("GetContentHeader err: %v", err)
-				}
+				contentHeader, _ := httpx.GetContentHeader(text)
 
 				a := datatype.Attachment{
 					Type:     "banner",

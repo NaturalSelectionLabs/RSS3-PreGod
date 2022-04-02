@@ -392,11 +392,7 @@ func getPicture(node *fastjson.Value) []datatype.Attachment {
 			url = string(picture.GetStringBytes("thumbnailUrl"))
 		}
 
-		contentHeader, err := httpx.GetContentHeader(url)
-
-		if err != nil {
-			logger.Errorf("Jike GetPicture err: %v", err)
-		}
+		contentHeader, _ := httpx.GetContentHeader(url)
 
 		// qMedia := model.NewAttachment(url, address, contentHeader.MIMEType, "quote_media", contentHeader.SizeInByte, time.Now())
 		qMedia := datatype.Attachment{
