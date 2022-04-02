@@ -134,18 +134,46 @@ func QueryLinksByTo(db *gorm.DB, _type int, to string, linkSources []int, limit 
 	return links, nil
 }
 
-func CreateNote(db *gorm.DB, note *model.Note) (*model.Note, error) {
-	if err := db.Model(note).Clauses(clause.Returning{}).Create(&note).Error; err != nil {
+func CreateNote(db *gorm.DB, note *model.Note, updateAll bool) (*model.Note, error) {
+	if err := db.Model(note).Clauses(NewCreateClauses(updateAll)...).Create(note).Error; err != nil {
 		return nil, err
 	}
 
 	return note, nil
 }
 
-func CreateAsset(db *gorm.DB, asset *model.Asset) (*model.Asset, error) {
-	if err := db.Clauses(clause.Returning{}).Create(&asset).Error; err != nil {
+func CreateAsset(db *gorm.DB, asset *model.Asset, updateAll bool) (*model.Asset, error) {
+	if err := db.Clauses(NewCreateClauses(updateAll)...).Create(asset).Error; err != nil {
 		return nil, err
 	}
 
 	return asset, nil
+}
+
+func CreateNotes(db *gorm.DB, notes []model.Note, updateAll bool) ([]model.Note, error) {
+	if err := db.Clauses(NewCreateClauses(updateAll)...).Create(&notes).Error; err != nil {
+		return nil, err
+	}
+
+	return notes, nil
+}
+
+func CreateAssets(db *gorm.DB, assets []model.Asset, updateAll bool) ([]model.Asset, error) {
+	if err := db.Clauses(NewCreateClauses(updateAll)...).Create(&assets).Error; err != nil {
+		return nil, err
+	}
+
+	return assets, nil
+}
+
+func NewCreateClauses(updateAll bool) []clause.Expression {
+	clauses := []clause.Expression{clause.Returning{}}
+
+	if updateAll {
+		clauses = append(clauses, clause.OnConflict{UpdateAll: true})
+	} else {
+		clauses = append(clauses, clause.OnConflict{DoNothing: true})
+	}
+
+	return clauses
 }

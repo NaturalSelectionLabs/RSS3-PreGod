@@ -10,7 +10,7 @@ import (
 var _ schema.Tabler = &Asset{}
 
 type Asset struct {
-	Identifier      string         `gorm:"column:identifier"`
+	Identifier      string         `gorm:"column:identifier;primaryKey"`
 	Owner           string         `gorm:"colum:owner"`
 	RelatedURLs     pq.StringArray `gorm:"column:related_urls;type:text[]"`
 	Links           string         `gorm:"column:links"`
