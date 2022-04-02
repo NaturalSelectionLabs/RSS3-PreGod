@@ -21,7 +21,11 @@ var (
 	parser       fastjson.Parser
 )
 
-func New() {
+func init() {
+	initLogin()
+}
+
+func initLogin() {
 	Login()
 
 	// everyday at 00:00, refresh Jike tokens
