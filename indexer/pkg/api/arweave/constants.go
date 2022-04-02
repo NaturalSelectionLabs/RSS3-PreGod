@@ -10,7 +10,7 @@ const (
 
 const (
 	DefaultCrawlStep     = 100
-	DefaultFromHeight    = 591647
+	DefaultFromHeight    = 571518 // MirrorUploader account was created at block #559678
 	DefaultConfirmations = 10
 	DefaultCrawlMinStep  = 10
 )

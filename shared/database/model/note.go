@@ -2,21 +2,33 @@ package model
 
 import (
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database/common"
+	"github.com/lib/pq"
+	"gorm.io/datatypes"
 	"gorm.io/gorm/schema"
+	"time"
 )
 
-var _ schema.Tabler = &Account{}
+var _ schema.Tabler = &Note{}
 
 type Note struct {
-	ID string `gorm:"column:id;index:index_account_id"`
-	// Platform        int    `gorm:"column:platform;index:index_account_platform"`
-	// ProfileID       string `gorm:"column:profile_id;index:index_account_profile_id"`
-	// ProfilePlatform int    `gorm:"column:profile_platform;index:index_profile_platform"`
-	// Source          int    `gorm:"column:source;index:index_account_source"`
+	Identifier      string         `gorm:"column:identifier;primaryKey"`
+	Owner           string         `gorm:"colum:owner"`
+	RelatedURLs     pq.StringArray `gorm:"column:related_urls;type:text[]"`
+	Tags            pq.StringArray `gorm:"column:tags;type:text[]"`
+	Authors         pq.StringArray `gorm:"column:authors;type:text[]"`
+	Title           string         `gorm:"column:title"`
+	Summary         string         `gorm:"column:summary"`
+	Attachments     datatypes.JSON `gorm:"column:attachments"`
+	Source          string         `gorm:"column:source"`
+	MetadataNetwork string         `gorm:"column:metadata_network"`
+	MetadataProof   string         `gorm:"column:metadata_proof"`
+	Metadata        datatypes.JSON `gorm:"column:metadata"`
+	DateCreated     time.Time      `gorm:"column:date_created"`
+	DateUpdated     time.Time      `gorm:"column:date_updated"`
 
 	common.Table
 }
 
-func (_ Note) TableName() string {
-	return "account"
+func (Note) TableName() string {
+	return "note"
 }
