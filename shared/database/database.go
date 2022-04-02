@@ -3,11 +3,12 @@ package database
 import (
 	"time"
 
-	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/database/logger"
-	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/database/model"
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database/logger"
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database/model"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/config"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 	"gorm.io/gorm/schema"
 )
 
@@ -37,14 +38,11 @@ func Setup() error {
 	}
 
 	if err := DB.AutoMigrate(
-	//&model.Account{},
-	//&model.AccountPlatform{},
-	//&model.Instance{},
-	//&model.LinkList{},
-	//&model.Link{},
-	//&model.Signature{},
-	//&model.Asset{},
-	//&model.Note{},
+		&model.Profile{},
+		&model.Account{},
+		&model.Link{},
+		&model.Asset{},
+		&model.Note{},
 	); err != nil {
 		return err
 	}
@@ -134,4 +132,20 @@ func QueryLinksByTo(db *gorm.DB, _type int, to string, linkSources []int, limit 
 	}
 
 	return links, nil
+}
+
+func CreateNote(db *gorm.DB, note *model.Note) (*model.Note, error) {
+	if err := db.Model(note).Clauses(clause.Returning{}).Create(&note).Error; err != nil {
+		return nil, err
+	}
+
+	return note, nil
+}
+
+func CreateAsset(db *gorm.DB, asset *model.Asset) (*model.Asset, error) {
+	if err := db.Clauses(clause.Returning{}).Create(&asset).Error; err != nil {
+		return nil, err
+	}
+
+	return asset, nil
 }

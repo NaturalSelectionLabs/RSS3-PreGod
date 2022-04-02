@@ -11,48 +11,48 @@ import (
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/db/model"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/constants"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/logger"
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/rss3uri"
 )
 
 var ErrTimeout = errors.New("received timeout")
 var ErrInterrupt = errors.New("received interrupt")
 
-type arCrawler struct {
+type crawlConfig struct {
 	fromHeight    int64
 	confirmations int64
 	step          int64
 	minStep       int64
 	sleepInterval time.Duration
-	identity      string
-	interrupt     chan os.Signal
-	complete      chan error
 }
 
-func NewArCrawler(fromHeight, step, minStep, confirmations, sleepInterval int64, identity string) *arCrawler {
-	return &arCrawler{
-		fromHeight,
-		confirmations,
-		step,
-		minStep,
-		time.Duration(sleepInterval),
+type crawler struct {
+	identity  ArAccount
+	interrupt chan os.Signal
+	complete  chan error
+	cfg       *crawlConfig
+}
+
+func NewCrawler(identity ArAccount, crawlCfg *crawlConfig) *crawler {
+	return &crawler{
 		identity,
 		make(chan os.Signal, 1),
 		make(chan error),
+		crawlCfg,
 	}
 }
 
-func (ar *arCrawler) run() error {
-	step := ar.step
-	startBlockHeight := ar.fromHeight
+func (ar *crawler) run() error {
+	startBlockHeight := ar.cfg.fromHeight
+	step := ar.cfg.step
 	endBlockHeight := startBlockHeight + step
-	tempDelay := ar.sleepInterval
+	tempDelay := ar.cfg.sleepInterval
 
-	// get latest block height
-	latestBlockHeight, err := GetLatestBlockHeight()
+	latestConfirmedBlockHeight, err := GetLatestBlockHeightWithConfirmations(ar.cfg.confirmations)
 	if err != nil {
+		logger.Errorf("get latest block error: %v", err)
+
 		return err
 	}
-
-	latestConfirmedBlockHeight := latestBlockHeight - ar.confirmations
 
 	for {
 		// handle interrupt
@@ -60,38 +60,45 @@ func (ar *arCrawler) run() error {
 			return ErrInterrupt
 		}
 
-		// get articles
-		startBlockHeight = startBlockHeight + step
-		endBlockHeight = endBlockHeight + step
-
 		if latestConfirmedBlockHeight <= endBlockHeight {
-			time.Sleep(tempDelay)
+			for {
+				time.Sleep(tempDelay)
 
-			latestBlockHeight, err = GetLatestBlockHeight()
+				latestConfirmedBlockHeight, err = GetLatestBlockHeightWithConfirmations(ar.cfg.confirmations)
+				if err != nil {
+					logger.Errorf("get latest block error: %v", err)
 
-			if err != nil {
-				return err
+					return err
+				}
+
+				if latestConfirmedBlockHeight > endBlockHeight {
+					break
+				}
 			}
 
-			latestConfirmedBlockHeight = latestBlockHeight - ar.confirmations
-			step = 10
+			// use minStep if we are at the end of the chain
+			step = ar.cfg.minStep
 		}
 
 		log.Println("Getting articles from", startBlockHeight, "to", endBlockHeight,
 			"with step", step, "and temp delay", tempDelay,
 			"and latest confirmed block height", latestConfirmedBlockHeight,
 		)
-		ar.getArticles(startBlockHeight, endBlockHeight, ar.identity)
+
+		ar.parseMirrorArticles(startBlockHeight, endBlockHeight, ar.identity)
+
+		startBlockHeight = endBlockHeight
+		endBlockHeight = startBlockHeight + step
 	}
 }
 
 //TODO: I think it will be the same as other crawler formats in the future,
 // and it will return to an abstract and unified crawler
-func (ar *arCrawler) getArticles(from, to int64, owner string) error {
-	logger.Infof("Getting articles from %d to %d", from, to)
-
-	articles, err := GetArticles(from, to, owner)
+func (ar *crawler) parseMirrorArticles(from, to int64, owner ArAccount) error {
+	articles, err := GetMirrorContents(from, to, owner)
 	if err != nil {
+		logger.Errorf("GetMirrorContents error: [%v]", err)
+
 		return err
 	}
 
@@ -106,17 +113,27 @@ func (ar *arCrawler) getArticles(from, to int64, owner string) error {
 			MimeType: "text/markdown",
 		}
 
-		tsp := time.Unix(article.TimeStamp, 0)
+		tsp := time.Unix(article.Timestamp, 0)
+
+		author, err := rss3uri.NewInstance("account", article.Author, string(constants.PlatformSymbolEthereum))
+		if err != nil {
+			//TODO: may send to a error queue or whatever in the future
+			logger.Errorf("arweave NewInstance error: [%v]", err)
+
+			tsp = time.Now()
+		}
+
+		logger.Infof("author: [%v]", author)
 
 		ni := model.NewItem(
-			constants.NetworkSymbolArweaveMainnet.GetID(),
-			article.Digest,
+			constants.NetworkIDArweaveMainnet,
+			article.TxHash,
 			model.Metadata{
 				"network": constants.NetworkSymbolArweaveMainnet,
 				"proof":   article.Digest,
 			},
 			constants.ItemTagsMirrorEntry,
-			[]string{article.Author},
+			[]string{author.String()},
 			article.Title,
 			article.Content, // TODO: According to RIP4, if the body is too long, then only record part of the body, followed by ... at the end
 			[]model.Attachment{attachment},
@@ -124,16 +141,20 @@ func (ar *arCrawler) getArticles(from, to int64, owner string) error {
 		)
 
 		items = append(items, ni)
+		notes := []*model.ObjectId{{
+			NetworkID: constants.NetworkIDArweaveMainnet,
+			Proof:     article.TxHash,
+		}}
+		instance := rss3uri.NewAccountInstance(article.Author, constants.PlatformSymbolArweave)
+		db.AppendNotes(instance, notes)
 	}
 
-	if len(items) > 0 {
-		db.InsertItems(items, constants.NetworkSymbolArweaveMainnet.GetID())
-	}
+	db.InsertItems(items, constants.NetworkIDArweaveMainnet)
 
 	return nil
 }
 
-func (ar *arCrawler) Start() error {
+func (ar *crawler) Start() error {
 	signal.Notify(ar.interrupt, os.Interrupt)
 
 	log.Println("Starting Arweave crawler...")
@@ -150,7 +171,7 @@ func (ar *arCrawler) Start() error {
 	}
 }
 
-func (ar *arCrawler) gotInterrupt() bool {
+func (ar *crawler) gotInterrupt() bool {
 	select {
 	case <-ar.interrupt:
 		signal.Stop(ar.interrupt)

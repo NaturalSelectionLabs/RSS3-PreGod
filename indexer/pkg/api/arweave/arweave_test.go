@@ -42,8 +42,7 @@ func TestGetContentByTxHash(t *testing.T) {
 }
 
 func TestGetTransacitons(t *testing.T) {
-	owner := "Ky1c1Kkt-jZ9sY1hvLF5nCf6WWdBhIU5Un_BMYh-t3c"
-	response, err := arweave.GetTransactions(877250, 877250, owner)
+	response, err := arweave.GetTransactions(877250, 877250, arweave.MirrorUploader)
 	// assert for nil
 	assert.Nil(t, err)
 	assert.NotEmpty(t, response)
@@ -57,15 +56,14 @@ func TestGetTransacitons(t *testing.T) {
 }
 
 func TestGetArticles(t *testing.T) {
-	owner := "Ky1c1Kkt-jZ9sY1hvLF5nCf6WWdBhIU5Un_BMYh-t3c"
-	articles, err := arweave.GetArticles(877250, 877250, owner)
+	articles, err := arweave.GetMirrorContents(877250, 877250, arweave.MirrorUploader)
 	// assert for nil
 	assert.Nil(t, err)
 	assert.NotEmpty(t, articles)
 
 	for _, article := range articles {
 		assert.NotEmpty(t, article.Title)
-		assert.NotEmpty(t, article.TimeStamp)
+		assert.NotEmpty(t, article.Timestamp)
 		assert.NotEmpty(t, article.Content)
 		assert.NotEmpty(t, article.Author)
 		assert.NotEmpty(t, article.Link)

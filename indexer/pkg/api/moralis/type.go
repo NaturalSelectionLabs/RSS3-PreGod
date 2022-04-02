@@ -72,6 +72,19 @@ type NFTItem struct {
 	Frozen            int64  `json:"frozen"`
 }
 
+// an incomplete set of metadata returned from Moralis, mapped only what are needed for now
+type NFTMetadata struct {
+	Name        string                 `json:"name"`
+	Description string                 `json:"description"`
+	Attributes  []NFTMetadataAttribute `json:"attributes"`
+}
+
+type NFTMetadataAttribute struct {
+	TraitType   string `json:"trait_type"`
+	DisplayType string `json:"display_type"`
+	Value       int64  `json:"value"`
+}
+
 type NFTResult struct {
 	Total    int64     `json:"total"`
 	Page     int64     `json:"page"`

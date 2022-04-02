@@ -21,7 +21,11 @@ var (
 	parser       fastjson.Parser
 )
 
-func New() {
+func init() {
+	initLogin()
+}
+
+func initLogin() {
 	Login()
 
 	// everyday at 00:00, refresh Jike tokens
@@ -374,10 +378,6 @@ func getAttachment(node *fastjson.Value) *[]model.Attachment {
 func getPicture(node *fastjson.Value) *[]model.Attachment {
 	address := make([]string, 1)
 
-	var mime string
-
-	var sizeInBytes = 0
-
 	pictues := node.GetArray("pictures")
 
 	result := make([]model.Attachment, len(pictues))
@@ -385,24 +385,22 @@ func getPicture(node *fastjson.Value) *[]model.Attachment {
 	for i, picture := range pictues {
 		var url string
 
-		if picture.Exists("thumbnailUrl") {
+		if picture.Exists("picUrl") {
+			url = string(picture.GetStringBytes("picUrl"))
+		} else if picture.Exists("thumbnailUrl") {
 			url = string(picture.GetStringBytes("thumbnailUrl"))
 		}
 
-		if picture.Exists("picUrl") {
-			url = string(picture.GetStringBytes("picUrl"))
-		}
+		contentHeader, err := httpx.GetContentHeader(url)
 
-		header, err := httpx.Head(url)
-
-		if err == nil {
-			sizeInBytes, _ = strconv.Atoi(header.Get("Content-Length"))
-			mime = header.Get("Content-Type")
+		if err != nil {
+			logger.Errorf("Jike GetPicture err: %v", err)
 		}
 
 		address = append(address, url)
 
-		qMedia := *model.NewAttachment(url, address, mime, "quote_media", sizeInBytes, time.Now())
+		qMedia := *model.NewAttachment(url, address, contentHeader.MIMEType, "quote_media", contentHeader.SizeInByte, time.Now())
+
 		result[i] = qMedia
 	}
 

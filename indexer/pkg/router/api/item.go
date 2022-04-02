@@ -24,7 +24,7 @@ type GetItemRequest struct {
 	NetworkID  constants.NetworkID  `form:"network_id"`
 	ItemType   constants.ItemType   `form:"item_type"`
 	Limit      int                  `form:"limit"`
-	TimeStamp  int64                `form:"time_stamp"`
+	Timestamp  int64                `form:"timestamp"`
 }
 
 type itemsResult struct {
@@ -56,28 +56,38 @@ func GetItemHandlerFunc(c *gin.Context) {
 		request.Limit = 100 // TODO: constants.DefaultLimit?
 	}
 
-	if request.TimeStamp == 0 {
-		request.TimeStamp = time.Now().Unix()
+	if request.Timestamp == 0 {
+		request.Timestamp = time.Now().Unix()
 	}
 
 	// request validation
-	if len(request.Identity) <= 0 ||
-		!constants.IsValidPlatformSymbol(string(request.PlatformID.Symbol())) ||
-		!constants.IsValidNetworkName(string(request.NetworkID.Symbol())) {
-		logger.Errorf("parameter error")
+	var paramErrMsg string
 
-		response.ErrorBase = util.GetErrorBase(util.ErrorCodeParameterError)
-		c.JSON(http.StatusOK, response)
-
-		return
+	if request.Identity == "" {
+		paramErrMsg = "identity is empty; "
 	}
 
-	if len(request.ItemType) > 0 &&
-		request.ItemType != constants.ItemTypeAsset &&
-		request.ItemType != constants.ItemTypeNote {
-		logger.Errorf("parameter error")
+	if !constants.IsValidPlatformSymbol(string(request.PlatformID.Symbol())) {
+		paramErrMsg += "platform_id is invalid; "
+	}
 
+	if !constants.IsValidNetworkName(string(request.NetworkID.Symbol())) {
+		paramErrMsg += "network_id is invalid; "
+	}
+
+	if request.ItemType == "" {
+		paramErrMsg += "item_type is empty; "
+	}
+
+	if request.ItemType != constants.ItemTypeAsset &&
+		request.ItemType != constants.ItemTypeNote {
+		paramErrMsg += "itemtype should be one of 'note' or 'asset'; "
+	}
+
+	if paramErrMsg != "" {
 		response.ErrorBase = util.GetErrorBase(util.ErrorCodeParameterError)
+		response.ErrorBase.ErrorMsg += ": " + util.ErrorMsg(paramErrMsg)
+
 		c.JSON(http.StatusOK, response)
 
 		return
@@ -122,14 +132,14 @@ func getItemsFromDB(context context.Context, request GetItemRequest) (*itemsResu
 
 	var result = new(itemsResult)
 
-	isOld, err := db.Exists(ai)
+	isExisted, err := db.Exists(ai)
 	if err != nil {
 		return nil, fmt.Errorf("find db exists false:%s", err)
 	}
 
 	addToRecentVisit(context, &request)
 
-	if !isOld {
+	if !isExisted {
 		return nil, nil
 	}
 
@@ -191,7 +201,7 @@ func addToRecentVisit(ctx context.Context, req *GetItemRequest) error {
 		PlatformID: req.PlatformID,
 		// NOTE looks like only for misskey
 		Limit:     req.Limit,
-		TimeStamp: time.Unix(req.TimeStamp, 0),
+		Timestamp: time.Unix(req.Timestamp, 0),
 	}
 
 	return autoupdater.AddToRecentVisitQueue(ctx, param)
@@ -202,14 +212,14 @@ func getItemsResultFromOneNetwork(identity string,
 	networkID constants.NetworkID,
 	itemType constants.ItemType,
 	limit int,
-	timestamp time.Time,
+	Timestamp time.Time,
 ) (*itemsResult, util.ErrorBase) {
 	getItemHandler := crawler_handler.NewGetItemsHandler(crawler.WorkParam{
 		Identity:   identity,
 		PlatformID: platformID,
 		NetworkID:  networkID,
 		Limit:      limit,
-		TimeStamp:  timestamp,
+		Timestamp:  Timestamp,
 	})
 
 	handlerResult, err := getItemHandler.Excute()
@@ -252,7 +262,7 @@ func getItemsResult(request GetItemRequest) (*itemsResult, util.ErrorBase) {
 		for _, networkID := range networkIDs {
 			currResult, currErrorBase := getItemsResultFromOneNetwork(
 				request.Identity, request.PlatformID, networkID, request.ItemType,
-				request.Limit, time.Unix(request.TimeStamp, 0),
+				request.Limit, time.Unix(request.Timestamp, 0),
 			)
 
 			if currErrorBase.ErrorCode != util.ErrorCodeSuccess {
@@ -266,7 +276,7 @@ func getItemsResult(request GetItemRequest) (*itemsResult, util.ErrorBase) {
 	} else {
 		result, errorBase = getItemsResultFromOneNetwork(
 			request.Identity, request.PlatformID, request.NetworkID, request.ItemType,
-			request.Limit, time.Unix(request.TimeStamp, 0),
+			request.Limit, time.Unix(request.Timestamp, 0),
 		)
 	}
 

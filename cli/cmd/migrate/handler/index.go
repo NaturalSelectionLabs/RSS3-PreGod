@@ -6,9 +6,9 @@ import (
 
 	mongomodel "github.com/NaturalSelectionLabs/RSS3-PreGod/cli/cmd/migrate/model"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/cli/cmd/migrate/stats"
-	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/database"
-	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/database/common"
-	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/database/model"
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database"
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database/common"
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database/model"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/constants"
 	"gorm.io/gorm"
 )

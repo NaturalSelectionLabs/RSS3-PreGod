@@ -15,13 +15,13 @@ func NewMisskeyCrawler() crawler.Crawler {
 	return &misskeyCrawler{
 		crawler.DefaultCrawler{
 			Items: []*model.Item{},
-			Notes: []*model.ItemId{},
+			Notes: []*model.ObjectId{},
 		},
 	}
 }
 
 func (mc *misskeyCrawler) Work(param crawler.WorkParam) error {
-	noteList, err := GetUserNoteList(param.Identity, param.Limit, param.TimeStamp)
+	noteList, err := GetUserNoteList(param.Identity, param.Limit, param.Timestamp)
 
 	if err != nil {
 		logger.Errorf("%v : unable to retrieve misskey note list for %s", err, param.Identity)
@@ -46,7 +46,7 @@ func (mc *misskeyCrawler) Work(param crawler.WorkParam) error {
 		)
 		mc.Items = append(mc.Items, ni)
 
-		mc.Notes = append(mc.Notes, &model.ItemId{
+		mc.Notes = append(mc.Notes, &model.ObjectId{
 			NetworkID: param.NetworkID,
 			Proof:     note.Link,
 		})

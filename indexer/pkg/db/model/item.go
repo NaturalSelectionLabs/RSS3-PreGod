@@ -8,10 +8,6 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
-type ItemId struct {
-	NetworkID constants.NetworkID `json:"network_id" bson:"network_id"`
-	Proof     string              `json:"proof" bson:"proof"`
-}
 type Attachment struct {
 	Content    string    `json:"content" bson:"content"`
 	Address    []string  `json:"address" bson:"address"`
@@ -21,12 +17,10 @@ type Attachment struct {
 	SyncAt     time.Time `json:"sync_at" bson:"sync_at"`
 }
 
-type Metadata map[string]interface{}
-
 type Item struct {
 	mgm.DefaultModel `bson:",inline"`
 
-	ItemId            ItemId             `json:"item_id" bson:"item_id"` // Index
+	ItemId            ObjectId           `json:"item_id" bson:"item_id"` // Index
 	Metadata          Metadata           `json:"metadata" bson:"metadata"`
 	Tags              constants.ItemTags `json:"tags" bson:"tags"`
 	Authors           []string           `json:"authors" bson:"authors"`
@@ -74,9 +68,10 @@ func NewItem(
 				UpdatedAt: time.Now(),
 			},
 		},
-		ItemId: ItemId{
+		ItemId: ObjectId{
 			NetworkID: networkId,
 			Proof:     proof,
+			SyncAt:    time.Now(),
 		},
 		Metadata:          metadata,
 		Tags:              tags,

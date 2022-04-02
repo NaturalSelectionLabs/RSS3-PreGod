@@ -46,7 +46,7 @@ func TestGetBio(t *testing.T) {
 		tt := tt
 
 		t.Run(tt.name, func(t *testing.T) {
-			result := request(tt.identity, tt.platformID)
+			result, err := request(tt.identity, tt.platformID)
 			if tt.success {
 				if result.Error.ErrorCode != 0 {
 					t.Errorf("Expected success, but got error: %+v", result.Error)
@@ -57,21 +57,24 @@ func TestGetBio(t *testing.T) {
 				}
 			} else {
 				if result.Error.ErrorCode == 0 {
-					t.Errorf("Expected not success, but got response: %+v", result)
+					t.Errorf("Expected not success, but got response: %+v, err: %s", result, err)
 				}
 			}
 		})
 	}
 }
 
-func request(identity string, platformID constants.PlatformID) *crawler_handler.GetUserBioResult {
+func request(identity string, platformID constants.PlatformID) (*crawler_handler.GetUserBioResult, error) {
 	getuserBioHandler := crawler_handler.NewGetUserBioHandler(
 		crawler.WorkParam{
 			Identity:   identity,
 			PlatformID: platformID,
 		})
 
-	handlerResult := getuserBioHandler.Excute()
+	handlerResult, err := getuserBioHandler.Excute()
+	if err != nil {
+		return nil, err
+	}
 
-	return handlerResult
+	return handlerResult, nil
 }

@@ -1,11 +1,13 @@
 package gitcoin
 
 import (
+	"fmt"
 	"math/big"
 	"strings"
 
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/api/moralis"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/api/zksync"
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/config"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/httpx"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/logger"
 	"github.com/valyala/fastjson"
@@ -14,7 +16,8 @@ import (
 const grantUrl = "https://gitcoin.co/grants/grants.json"
 const grantsApi = "https://gitcoin.co/api/v0.1/grants/"
 const donationSentTopic = "0x3bb7428b25f9bdad9bd2faa4c6a7a9e5d5882657e96c1d24cc41c1d6c1910a98"
-const bulkCheckoutAddress = "0x7d655c57f71464B6f83811C55D84009Cd9f5221C"
+const bulkCheckoutAddressETH = "0x7d655c57f71464B6f83811C55D84009Cd9f5221C"
+const bulkCheckoutAddressPolygon = "0xb99080b9407436eBb2b8Fe56D45fFA47E9bb8877"
 
 type tokenMeta struct {
 	decimal int64
@@ -100,10 +103,10 @@ func GetGrantsInfo() ([]GrantInfo, error) {
 		return nil, nil
 	}
 
-	grantArrs := parsedJson.GetArray()
+	grantArray := parsedJson.GetArray()
 	grants := make([]GrantInfo, 0)
 
-	for _, grant := range grantArrs {
+	for _, grant := range grantArray {
 		projects := grant.GetArray()
 
 		item := GrantInfo{Title: projects[0].String(), AdminAddress: projects[1].String()}
@@ -124,6 +127,8 @@ func GetProjectsInfo(adminAddress string, title string) (ProjectInfo, error) {
 	content, err := httpx.Get(url, headers)
 
 	if err != nil {
+		logger.Errorf("gitcoin get project info error: [%v]", err)
+
 		return project, err
 	}
 
@@ -131,6 +136,8 @@ func GetProjectsInfo(adminAddress string, title string) (ProjectInfo, error) {
 	parsedJson, parseErr := parser.Parse(string(content))
 
 	if parseErr != nil {
+		logger.Errorf("gitcoin parse json error: [%v]", parseErr)
+
 		return project, parseErr
 	}
 
@@ -158,12 +165,14 @@ func GetProjectsInfo(adminAddress string, title string) (ProjectInfo, error) {
 }
 
 // GetZkSyncDonations returns donations from zksync
-func (gc *gitcoinCrawler) GetZkSyncDonations(fromBlock, toBlock int64) ([]DonationInfo, error) {
+func (gc *crawler) GetZkSyncDonations(fromBlock, toBlock int64) ([]DonationInfo, error) {
 	donations := make([]DonationInfo, 0)
 
 	for i := fromBlock; i <= toBlock; i++ {
 		trxs, err := zksync.GetTxsByBlock(i)
 		if err != nil {
+			logger.Errorf("get txs by block error: [%v]", err)
+
 			return nil, err
 		}
 
@@ -188,7 +197,7 @@ func (gc *gitcoinCrawler) GetZkSyncDonations(fromBlock, toBlock int64) ([]Donati
 			if gc.needUpdateProject(adminAddress) {
 				inactive, err = gc.updateHostingProject(adminAddress)
 				if err != nil {
-					logger.Error(err)
+					logger.Errorf("updateHostingProject error: [%v]", err)
 				}
 			}
 
@@ -221,14 +230,24 @@ func (gc *gitcoinCrawler) GetZkSyncDonations(fromBlock, toBlock int64) ([]Donati
 
 // GetEthDonations returns donations from ethereum and polygon
 func GetEthDonations(fromBlock int64, toBlock int64, chainType ChainType) ([]DonationInfo, error) {
-	apiKey := moralis.GetApiKey()
-	logs, err := moralis.GetLogs(fromBlock, toBlock, bulkCheckoutAddress, donationSentTopic, string(chainType), apiKey)
+	var checkoutAddress string
+	if chainType == ETH {
+		checkoutAddress = bulkCheckoutAddressETH
+	} else if chainType == Polygon {
+		checkoutAddress = bulkCheckoutAddressPolygon
+	} else {
+		return nil, fmt.Errorf("invalid chainType %s", string(chainType))
+	}
+
+	logs, err := moralis.GetLogs(fromBlock, toBlock, checkoutAddress, donationSentTopic, string(chainType), config.Config.Indexer.Moralis.ApiKey)
 
 	if err != nil {
+		logger.Errorf("getLogs error: [%v]", err)
+
 		return nil, err
 	}
 
-	donations := make([]DonationInfo, len(logs.Result))
+	donations := make([]DonationInfo, 0)
 
 	for _, item := range logs.Result {
 		donor := "0x" + item.Topic3[26:]

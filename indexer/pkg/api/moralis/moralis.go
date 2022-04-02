@@ -2,25 +2,19 @@ package moralis
 
 import (
 	"fmt"
-	"strings"
 
-	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/config"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/httpx"
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/logger"
 	jsoniter "github.com/json-iterator/go"
+	"github.com/valyala/fastjson"
 )
 
 const endpoint = "https://deep-index.moralis.io"
 
-var jsoni = jsoniter.ConfigCompatibleWithStandardLibrary
-
-func GetApiKey() string {
-	apiKey, err := jsoni.MarshalToString(config.Config.Indexer.Moralis.ApiKey)
-	if err != nil {
-		return ""
-	}
-
-	return strings.Trim(apiKey, "\"")
-}
+var (
+	jsoni  = jsoniter.ConfigCompatibleWithStandardLibrary
+	parser fastjson.Parser
+)
 
 func GetNFTs(userAddress string, chainType ChainType, apiKey string) (NFTResult, error) {
 	var headers = map[string]string{
@@ -34,6 +28,8 @@ func GetNFTs(userAddress string, chainType ChainType, apiKey string) (NFTResult,
 
 	response, err := httpx.Get(url, headers)
 	if err != nil {
+		logger.Errorf("http get error: [%v]", err)
+
 		return NFTResult{}, err
 	}
 
@@ -59,6 +55,8 @@ func GetNFTTransfers(userAddress string, chainType ChainType, apiKey string) (NF
 
 	response, err := httpx.Get(url, headers)
 	if err != nil {
+		logger.Errorf("http get error: [%v]", err)
+
 		return NFTTransferResult{}, err
 	}
 
@@ -80,19 +78,81 @@ func GetLogs(fromBlock int64, toBlock int64, address string, topic string, chain
 
 	url := fmt.Sprintf("%s/api/v2/%s/logs?chain=%s&from_block=%d&to_block=%d&topic0=%s",
 		endpoint, address, chainType, fromBlock, toBlock, topic)
+	logger.Info("url: ", url)
 
 	response, err := httpx.Get(url, headers)
 	if err != nil {
+		logger.Errorf("http get error: [%v]", err)
+
 		return nil, err
 	}
-	//fmt.Println(string(response))
 
 	res := new(GetLogsResult)
 
 	err = jsoni.Unmarshal(response, &res)
 	if err != nil {
+		logger.Errorf("unmarshal error: [%v]", err)
+
 		return nil, err
 	}
 
 	return res, nil
+}
+
+// this function is used by ENS indexer
+func GetNFTByContract(userAddress string, contactAddress string, chainType ChainType, apiKey string) (NFTResult, error) {
+	var headers = map[string]string{
+		"accept":    "application/json",
+		"X-API-Key": apiKey,
+	}
+
+	// Gets all NFT items of user
+	url := fmt.Sprintf("%s/api/v2/%s/nft?chain=%s&format=decimal&token_addresses=%s",
+		endpoint, userAddress, chainType, contactAddress)
+
+	response, err := httpx.Get(url, headers)
+	if err != nil {
+		logger.Errorf("http get error: [%v]", err)
+
+		return NFTResult{}, err
+	}
+
+	res := new(NFTResult)
+
+	err = jsoni.Unmarshal(response, &res)
+	if err != nil {
+		return NFTResult{}, err
+	}
+
+	return *res, nil
+}
+
+// GetTxByToken is used by ENS indexer
+func GetTxByToken(tokenAddress string, tokenId string, chainType ChainType, apiKey string) (NFTTransferItem, error) {
+	var headers = map[string]string{
+		"accept":    "application/json",
+		"X-API-Key": apiKey,
+	}
+
+	url := fmt.Sprintf("%s/api/v2/nft/%s/%s/transfers?chain=%s&format=decimal&limit=1",
+		endpoint, tokenAddress, tokenId, chainType)
+
+	res := new(NFTTransferItem)
+
+	response, err := httpx.Get(url, headers)
+	if err != nil {
+		logger.Errorf("http get error: [%v]", err)
+
+		return *res, err
+	}
+
+	parsedJson, err := parser.Parse(string(response))
+
+	jsoni.UnmarshalFromString(string(parsedJson.GetObject("result", "0").MarshalTo(nil)), &res)
+
+	if err != nil {
+		logger.Errorf("GetTxByToken: %v", err)
+	}
+
+	return *res, nil
 }

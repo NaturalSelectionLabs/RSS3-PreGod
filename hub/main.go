@@ -3,8 +3,8 @@ package main
 import (
 	"log"
 
-	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/database"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/internal/router"
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/cache"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/config"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/logger"

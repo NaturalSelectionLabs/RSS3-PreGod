@@ -13,6 +13,7 @@ func TestLogin(t *testing.T) {
 	assert.Nil(t, logger.Setup())
 
 	err := jike.Login()
+
 	assert.Nil(t, err)
 }
 

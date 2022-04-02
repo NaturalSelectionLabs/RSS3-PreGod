@@ -2,7 +2,6 @@ package misskey
 
 import (
 	"fmt"
-	"strconv"
 	"strings"
 	"time"
 
@@ -183,10 +182,6 @@ func formatEmoji(emojiList []*fastjson.Value, ns *Note) {
 }
 
 func formatImage(imageList []*fastjson.Value, ns *Note) {
-	var mime string
-
-	var sizeInBytes = 0
-
 	for _, image := range imageList {
 		_type := string(image.GetStringBytes("type"))
 
@@ -195,14 +190,13 @@ func formatImage(imageList []*fastjson.Value, ns *Note) {
 
 			ns.Summary += fmt.Sprintf("<img class=\"media\" src=\"%s\">", url)
 
-			res, err := httpx.Head(url)
+			contentHeader, err := httpx.GetContentHeader(url)
 
-			if err == nil {
-				sizeInBytes, _ = strconv.Atoi(res.Get("Content-Length"))
-				mime = res.Get("Content-Type")
+			if err != nil {
+				logger.Errorf("Jike GetPicture err: %v", err)
 			}
 
-			attachment := *model.NewAttachment(url, nil, mime, "quote_file", sizeInBytes, time.Now())
+			attachment := *model.NewAttachment(url, nil, contentHeader.MIMEType, "quote_file", contentHeader.SizeInByte, time.Now())
 
 			ns.Attachments = append(ns.Attachments, attachment)
 		}

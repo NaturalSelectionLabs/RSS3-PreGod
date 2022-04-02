@@ -66,6 +66,7 @@ func (n NetworkInstance) String() string {
 func NewAccountInstance(identity string, platform constants.PlatformSymbol) Instance {
 	r, err := NewInstance("account", identity, string(platform))
 	if err != nil {
+		// TODO ?
 		panic(err)
 	}
 
