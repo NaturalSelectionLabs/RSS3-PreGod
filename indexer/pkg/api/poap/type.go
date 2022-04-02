@@ -4,6 +4,8 @@ import (
 	"time"
 )
 
+const ContractAddress = "0x22C1f6050E56d2876009903609a2cC3fEf83B415"
+
 type PoapEventInfo struct {
 	Id          int    `json:"id"`
 	FancyId     string `json:"fancy_id"`

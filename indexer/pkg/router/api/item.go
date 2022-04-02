@@ -94,18 +94,18 @@ func GetItemHandlerFunc(c *gin.Context) {
 	}
 
 	// get items from db
-	dbResult, err := getItemsFromDB(c.Request.Context(), request)
-	if err != nil {
-		logger.Errorf("get items from db error: %s", err.Error())
-	}
+	// dbResult, err := getItemsFromDB(c.Request.Context(), request)
+	// if err != nil {
+	// 	logger.Errorf("get items from db error: %s", err.Error())
+	// }
 
-	if dbResult != nil {
-		response.ItemsResult = *dbResult
+	// if dbResult != nil {
+	// 	response.ItemsResult = *dbResult
 
-		c.JSON(http.StatusOK, response)
+	// 	c.JSON(http.StatusOK, response)
 
-		return
-	}
+	// 	return
+	// }
 
 	// get items from crawler
 	result, errorBase := getItemsResult(request)
