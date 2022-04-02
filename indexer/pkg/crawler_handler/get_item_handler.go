@@ -72,7 +72,7 @@ func (pt *GetItemsHandler) Excute() (*GetItemsResult, error) {
 		if dbAssets, err := database.CreateAssets(tx, r.Assets, true); err != nil {
 			return result, err
 		} else {
-			result.Result.Assets = dbAssets
+			r.Assets = dbAssets
 		}
 	}
 
@@ -80,7 +80,7 @@ func (pt *GetItemsHandler) Excute() (*GetItemsResult, error) {
 		if dbNotes, err := database.CreateNotes(tx, r.Notes, true); err != nil {
 			return result, err
 		} else {
-			result.Result.Notes = dbNotes
+			r.Notes = dbNotes
 		}
 	}
 
