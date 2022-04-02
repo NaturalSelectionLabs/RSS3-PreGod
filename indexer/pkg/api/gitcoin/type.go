@@ -27,7 +27,7 @@ type crawlerConfig struct {
 }
 
 var DefaultEthConfig = &crawlerConfig{
-	FromHeight:    13774660,
+	FromHeight:    10245999, // gitcoin bulkCheckout contract was created at block #10245999
 	Step:          50,
 	MinStep:       10,
 	Confirmations: 15,
@@ -36,7 +36,7 @@ var DefaultEthConfig = &crawlerConfig{
 }
 
 var DefaultPolygonConfig = &crawlerConfig{
-	FromHeight:    22013924,
+	FromHeight:    18682002, // gitcoin bulkCheckout contract was created at block #10245999
 	Step:          50,
 	MinStep:       10,
 	Confirmations: 120,
@@ -45,7 +45,7 @@ var DefaultPolygonConfig = &crawlerConfig{
 }
 
 var DefaultZksyncConfig = &crawlerConfig{
-	FromHeight:    1,
+	FromHeight:    2600,
 	Step:          50,
 	MinStep:       10,
 	Confirmations: 15,
