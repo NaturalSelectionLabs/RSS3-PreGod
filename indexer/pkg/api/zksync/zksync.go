@@ -51,7 +51,7 @@ func GetTokens() ([]Token, error) {
 	parsedJson, _ := parser.Parse(string(response))
 
 	array := parsedJson.GetArray()
-	tokens := make([]Token, len(array))
+	tokens := make([]Token, 0, len(array))
 
 	for i, arr := range array {
 		tokens[i].Id = arr.GetInt64("id")

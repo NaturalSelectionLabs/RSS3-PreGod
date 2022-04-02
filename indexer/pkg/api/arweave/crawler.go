@@ -103,7 +103,7 @@ func (ar *crawler) parseMirrorArticles(from, to int64, owner ArAccount) error {
 		return err
 	}
 
-	items := make([]model.Note, 0)
+	items := make([]model.Note, 0, len(articles))
 
 	for _, article := range articles {
 		attachment := datatype.Attachments{
@@ -116,27 +116,19 @@ func (ar *crawler) parseMirrorArticles(from, to int64, owner ArAccount) error {
 
 		tsp := time.Unix(article.Timestamp, 0)
 
-		author, err := rss3uri.NewInstance("account", article.Author, string(constants.PlatformSymbolEthereum))
-		if err != nil {
-			//TODO: may send to a error queue or whatever in the future
-			logger.Errorf("arweave NewInstance error: [%v]", err)
-
-			tsp = time.Now()
-		}
-
-		logger.Infof("author: [%v]", author)
-
+		author := rss3uri.NewAccountInstance(article.Author, constants.PlatformSymbolEthereum).UriString()
 		note := model.Note{
-			Identifier: rss3uri.NewNoteInstance(article.Author, constants.NetworkSymbolArweaveMainnet).String(),
-			Owner:      author.String(),
+			Identifier: rss3uri.NewNoteInstance(article.Author, constants.NetworkSymbolArweaveMainnet).UriString(),
+			Owner:      author,
 			RelatedURLs: []string{
 				"https://arweave.net/" + article.TxHash,
 				"https://mirror.xyz/" + article.Author + "/" + article.OriginalDigest,
 			},
-			Tags:            constants.ItemTagsMirrorEntry.ToPqStringArray(),
-			Authors:         []string{author.String()},
-			Title:           article.Title,
-			Summary:         article.Content, // TODO: According to RIP4, if the body is too long, then only record part of the body, followed by ... at the end
+			Tags:    constants.ItemTagsMirrorEntry.ToPqStringArray(),
+			Authors: []string{author},
+			Title:   article.Title,
+			// TODO: Summary - According to RIP4, if the body is too long, then only record part of the body, followed by ... at the end
+			Summary:         article.Content,
 			Attachments:     database.MustWrapJSON(attachment),
 			Source:          constants.NoteSourceNameMirrorEntry.String(),
 			MetadataNetwork: constants.NetworkSymbolArweaveMainnet.String(),
@@ -148,12 +140,13 @@ func (ar *crawler) parseMirrorArticles(from, to int64, owner ArAccount) error {
 
 		items = append(items, note)
 	}
+
 	tx := database.DB.Begin()
 	defer tx.Rollback()
 
 	if items != nil && len(items) > 0 {
-		if _, err := database.CreateNotes(tx, items, true); err != nil {
-			return err
+		if _, dbErr := database.CreateNotes(tx, items, true); dbErr != nil {
+			return dbErr
 		}
 	}
 

@@ -13,6 +13,7 @@ type Instance interface {
 	GetPrefix() string
 	GetIdentity() string
 	GetSuffix() string
+	UriString() string
 }
 
 var (
@@ -42,6 +43,10 @@ func (p PlatformInstance) String() string {
 	return fmt.Sprintf("%s:%s@%s", p.Prefix, p.Identity, p.Platform)
 }
 
+func (n PlatformInstance) UriString() string {
+	return fmt.Sprintf("%s://%s", n.Prefix, n.String())
+}
+
 type NetworkInstance struct {
 	Prefix   constants.PrefixName    `json:"prefix"`
 	Identity string                  `json:"identity"`
@@ -62,6 +67,10 @@ func (n NetworkInstance) GetSuffix() string {
 
 func (n NetworkInstance) String() string {
 	return fmt.Sprintf("%s:%s@%s", n.Prefix, n.Identity, n.Network)
+}
+
+func (n NetworkInstance) UriString() string {
+	return fmt.Sprintf("%s://%s", n.Prefix, n.String())
 }
 
 func NewAccountInstance(identity string, platform constants.PlatformSymbol) Instance {

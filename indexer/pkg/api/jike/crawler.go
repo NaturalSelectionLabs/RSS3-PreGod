@@ -30,7 +30,7 @@ func (mc *jikeCrawler) Work(param crawler.WorkParam) error {
 
 	for _, item := range timeline {
 		note := model.Note{
-			Identifier:      rss3uri.NewNoteInstance(item.Id, constants.NetworkSymbolJike).String(),
+			Identifier:      rss3uri.NewNoteInstance(item.Id, constants.NetworkSymbolJike).UriString(),
 			Owner:           item.Author,
 			RelatedURLs:     []string{item.Link},
 			Tags:            constants.ItemTagsJikePost.ToPqStringArray(),

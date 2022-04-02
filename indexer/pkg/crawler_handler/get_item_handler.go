@@ -36,8 +36,6 @@ func NewGetItemsResult() *GetItemsResult {
 }
 
 func (pt *GetItemsHandler) Excute() (*GetItemsResult, error) {
-	var err error
-
 	var c crawler.Crawler
 
 	var r *crawler.DefaultCrawler
@@ -51,17 +49,15 @@ func (pt *GetItemsHandler) Excute() (*GetItemsResult, error) {
 		return result, fmt.Errorf("unsupported network id[%d]", pt.WorkParam.NetworkID)
 	}
 
-	metadata, err := database.QueryCrawlerMetadata(database.DB, pt.WorkParam.Identity, pt.WorkParam.NetworkID)
+	metadata, dbQcmErr := database.QueryCrawlerMetadata(database.DB, pt.WorkParam.Identity, pt.WorkParam.NetworkID)
 
 	// the error here does not affect the execution of the crawler
-	if err == nil {
+	if dbQcmErr == nil {
 		pt.WorkParam.BlockHeight = metadata.LastBlock
 		pt.WorkParam.Timestamp = metadata.UpdatedAt
 	}
 
-	err = c.Work(pt.WorkParam)
-
-	if err != nil {
+	if err := c.Work(pt.WorkParam); err != nil {
 		result.Error = util.GetErrorBase(util.ErrorCodeNotSupportedNetwork)
 
 		return result, fmt.Errorf("crawler fails while working: %s", err)
@@ -73,14 +69,18 @@ func (pt *GetItemsHandler) Excute() (*GetItemsResult, error) {
 	defer tx.Rollback()
 
 	if r.Assets != nil && len(r.Assets) > 0 {
-		if _, err := database.CreateAssets(tx, r.Assets, true); err != nil {
+		if dbAssets, err := database.CreateAssets(tx, r.Assets, true); err != nil {
 			return result, err
+		} else {
+			r.Assets = dbAssets
 		}
 	}
 
 	if r.Notes != nil && len(r.Notes) > 0 {
-		if _, err := database.CreateNotes(tx, r.Notes, true); err != nil {
+		if dbNotes, err := database.CreateNotes(tx, r.Notes, true); err != nil {
 			return result, err
+		} else {
+			r.Notes = dbNotes
 		}
 	}
 
@@ -92,7 +92,7 @@ func (pt *GetItemsHandler) Excute() (*GetItemsResult, error) {
 		return result, err
 	}
 
-	if err = tx.Commit().Error; err != nil {
+	if err := tx.Commit().Error; err != nil {
 		return result, err
 	}
 

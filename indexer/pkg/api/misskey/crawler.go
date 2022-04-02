@@ -33,7 +33,7 @@ func (mc *misskeyCrawler) Work(param crawler.WorkParam) error {
 
 	for _, item := range noteList {
 		note := model.Note{
-			Identifier:      rss3uri.NewNoteInstance(item.Id, constants.NetworkSymbolMisskey).String(),
+			Identifier:      rss3uri.NewNoteInstance(item.Id, constants.NetworkSymbolMisskey).UriString(),
 			Owner:           item.Author,
 			RelatedURLs:     []string{item.Link},
 			Tags:            constants.ItemTagsMisskeyNote.ToPqStringArray(),
