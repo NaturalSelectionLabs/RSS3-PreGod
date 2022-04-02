@@ -13,8 +13,6 @@ type Asset struct {
 	Identifier      string         `gorm:"column:identifier;primaryKey"`
 	Owner           string         `gorm:"colum:owner"`
 	RelatedURLs     pq.StringArray `gorm:"column:related_urls;type:text[]"`
-	Links           string         `gorm:"column:links"`
-	BackLinks       string         `gorm:"column:backlinks"`
 	Tags            pq.StringArray `gorm:"column:tags;type:text[]"`
 	Authors         pq.StringArray `gorm:"column:authors;type:text[]"`
 	Title           string         `gorm:"column:title"`
