@@ -1,6 +1,7 @@
 package gitcoin
 
 import (
+	"fmt"
 	"math/big"
 	"os"
 	"time"
@@ -26,7 +27,7 @@ type crawlerConfig struct {
 }
 
 var DefaultEthConfig = &crawlerConfig{
-	FromHeight:    1,
+	FromHeight:    13774660,
 	Step:          50,
 	MinStep:       10,
 	Confirmations: 15,
@@ -35,7 +36,7 @@ var DefaultEthConfig = &crawlerConfig{
 }
 
 var DefaultPolygonConfig = &crawlerConfig{
-	FromHeight:    1,
+	FromHeight:    22013924,
 	Step:          50,
 	MinStep:       10,
 	Confirmations: 120,
@@ -90,4 +91,9 @@ type DonationInfo struct {
 	Timestamp      string
 	TxHash         string
 	Approach       DonationApproach
+}
+
+func (d DonationInfo) String() string {
+	return fmt.Sprintf(`Donor: %s, AdminAddress: %s, TokenAddress: %s, Amount: %s, Symbol: %s, TxHash: %s`,
+		d.Donor, d.AdminAddress, d.TokenAddress, d.Amount, d.Symbol, d.TxHash)
 }
