@@ -166,6 +166,22 @@ func CreateAssets(db *gorm.DB, assets []model.Asset, updateAll bool) ([]model.As
 	return assets, nil
 }
 
+func CreateProfile(db *gorm.DB, profile *model.Profile, updateAll bool) (*model.Profile, error) {
+	if err := db.Clauses(NewCreateClauses(updateAll)...).Create(profile).Error; err != nil {
+		return nil, err
+	}
+
+	return profile, nil
+}
+
+func CreateProfiles(db *gorm.DB, profiles []model.Profile, updateAll bool) ([]model.Profile, error) {
+	if err := db.Clauses(NewCreateClauses(updateAll)...).Create(&profiles).Error; err != nil {
+		return nil, err
+	}
+
+	return profiles, nil
+}
+
 func NewCreateClauses(updateAll bool) []clause.Expression {
 	clauses := []clause.Expression{clause.Returning{}}
 
