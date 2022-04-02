@@ -25,14 +25,12 @@ func NewTwitterCrawler() crawler.Crawler {
 	}
 }
 
-const DefaultTwitterCount = 200
-
 func (tc *twitterCrawler) Work(param crawler.WorkParam) error {
 	if param.NetworkID != constants.NetworkIDTwitter {
 		return fmt.Errorf("network is not twitter")
 	}
 
-	contentInfos, err := GetTimeline(param.Identity, DefaultTwitterCount)
+	contentInfos, err := GetTimeline(param.Identity, uint32(param.Limit))
 	if err != nil {
 		logger.Error(err)
 
@@ -50,7 +48,7 @@ func (tc *twitterCrawler) Work(param crawler.WorkParam) error {
 		author := rss3uri.NewAccountInstance(item.ScreenName, constants.PlatformSymbolTwitter).String()
 
 		note := model.Note{
-			Identifier:      rss3uri.NewNoteInstance(item.ScreenName, constants.NetworkSymbolTwitter).String(),
+			Identifier:      rss3uri.NewNoteInstance(item.Hash, constants.NetworkSymbolTwitter).String(),
 			Owner:           author,
 			RelatedURLs:     []string{item.Link},
 			Tags:            constants.ItemTagsTweet.ToPqStringArray(),
