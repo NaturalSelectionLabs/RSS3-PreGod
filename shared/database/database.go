@@ -3,8 +3,8 @@ package database
 import (
 	"time"
 
-	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/database/logger"
-	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/database/model"
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database/logger"
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database/model"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/config"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
