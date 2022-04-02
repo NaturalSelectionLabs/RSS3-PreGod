@@ -113,7 +113,7 @@ func (ar *crawler) parseMirrorArticles(from, to int64, owner ArAccount) error {
 			MimeType: "text/markdown",
 		}
 
-		tsp := time.Unix(article.TimeStamp, 0)
+		tsp := time.Unix(article.Timestamp, 0)
 
 		author, err := rss3uri.NewInstance("account", article.Author, string(constants.PlatformSymbolEthereum))
 		if err != nil {

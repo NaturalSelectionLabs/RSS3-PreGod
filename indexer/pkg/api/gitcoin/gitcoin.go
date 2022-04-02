@@ -230,8 +230,6 @@ func (gc *crawler) GetZkSyncDonations(fromBlock, toBlock int64) ([]DonationInfo,
 
 // GetEthDonations returns donations from ethereum and polygon
 func GetEthDonations(fromBlock int64, toBlock int64, chainType ChainType) ([]DonationInfo, error) {
-	logs, err := moralis.GetLogs(fromBlock, toBlock, bulkCheckoutAddress, donationSentTopic, string(chainType), config.Config.Indexer.Moralis.ApiKey)
-
 	var checkoutAddress string
 	if chainType == ETH {
 		checkoutAddress = bulkCheckoutAddressETH
