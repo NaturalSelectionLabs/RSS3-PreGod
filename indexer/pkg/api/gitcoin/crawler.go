@@ -185,7 +185,9 @@ func GetProjectsInfo(adminAddress string, title string) (ProjectInfo, error) {
 }
 
 func (gc *crawler) zksyncRun() error {
-	logger.Info("Starting run zksync")
+	if gc.zk.NextRoundTime.After(time.Now()) {
+		return nil
+	}
 
 	// token cache
 	if len(gc.zksTokensCache) == 0 {
@@ -216,22 +218,16 @@ func (gc *crawler) zksyncRun() error {
 	// scan the latest block content periodically
 	endBlockHeight := gc.zk.FromHeight + gc.zk.Step
 	if latestConfirmedBlockHeight < endBlockHeight {
-		time.Sleep(gc.zk.SleepInterval)
-
-		latestConfirmedBlockHeight, err = zksync.GetLatestBlockHeightWithConfirmations(gc.zk.Confirmations)
-		if err != nil {
-			logger.Errorf("zksync get latest block error: %v", err)
-
-			return err
-		}
-
-		if latestConfirmedBlockHeight < endBlockHeight {
-			return nil
-		}
-
+		gc.zk.NextRoundTime = gc.zk.NextRoundTime.Add(gc.zk.SleepInterval)
 		// use minStep when catching up with the latest block height
 		gc.zk.Step = gc.zk.MinStep
+
+		logger.Info("zksync catch up with the latest block height")
+
+		return nil
 	}
+
+	logger.Infof("get zksync donations, from [%d] to [%d]", gc.zk.FromHeight, endBlockHeight)
 
 	// get zksync donations
 	donations, err := gc.GetZkSyncDonations(gc.zk.FromHeight, endBlockHeight)
@@ -245,7 +241,7 @@ func (gc *crawler) zksyncRun() error {
 		setDB(donations, constants.NetworkIDZksync)
 	}
 
-	// set new from height
+	// set new fromHeight
 	gc.zk.FromHeight = endBlockHeight
 
 	return nil
@@ -259,32 +255,26 @@ func (gc *crawler) xscanRun(networkId constants.NetworkID) error {
 		p = &gc.polygon
 	}
 
+	if p.NextRoundTime.After(time.Now()) {
+		return nil
+	}
+
 	latestConfirmedBlockHeight, err := xscan.GetLatestBlockHeightWithConfirmations(networkId, p.Confirmations)
 	if err != nil {
-		logger.Errorf("xscan get latest block error: %v", err)
+		logger.Errorf("[%s] get latest block error: %v", networkId.Symbol(), err)
 
 		return err
 	}
 
 	endBlockHeight := p.FromHeight + p.Step
 	if latestConfirmedBlockHeight < endBlockHeight {
-		for {
-			time.Sleep(p.SleepInterval)
-
-			latestConfirmedBlockHeight, err = xscan.GetLatestBlockHeightWithConfirmations(networkId, p.Confirmations)
-			if err != nil {
-				logger.Errorf("xscan get latest block error: %v", err)
-
-				return err
-			}
-
-			if latestConfirmedBlockHeight > endBlockHeight {
-				break
-			}
-		}
-
+		p.NextRoundTime = p.NextRoundTime.Add(p.SleepInterval)
 		// use minStep when catching up with the latest block height
 		p.Step = p.MinStep
+
+		logger.Infof("gitcoin [%s] catch up with the latest block height", networkId.Symbol())
+
+		return nil
 	}
 
 	var chainType ChainType
@@ -294,6 +284,8 @@ func (gc *crawler) xscanRun(networkId constants.NetworkID) error {
 		chainType = Polygon
 	}
 
+	logger.Infof("get [%s] donations, from [%d] to [%d]", networkId.Symbol(), p.FromHeight, endBlockHeight)
+
 	donations, err := GetEthDonations(p.FromHeight, endBlockHeight, chainType)
 	if err != nil {
 		logger.Errorf("[%s] get donations error: %v", networkId.Symbol(), err)
@@ -301,17 +293,18 @@ func (gc *crawler) xscanRun(networkId constants.NetworkID) error {
 		return err
 	}
 
-	setDB(donations, networkId)
+	if len(donations) > 0 {
+		setDB(donations, networkId)
+	}
 
-	// set new from height
+	// set new fromHeight
 	p.FromHeight = endBlockHeight
 
 	return nil
 }
 
 func setDB(donations []DonationInfo, networkId constants.NetworkID) {
-	logger.Infof("set db, network: [%s]", networkId.Symbol())
-
+	//logger.Infof("set db, network: [%s]", networkId.Symbol())
 	items := make([]*model.Item, 0)
 
 	for _, v := range donations {
@@ -363,37 +356,41 @@ func setDB(donations []DonationInfo, networkId constants.NetworkID) {
 }
 
 func (gc *crawler) ZkStart() error {
-	logger.Info("Start crawling gitcoin zksync")
 	signal.Notify(gc.zk.Interrupt, os.Interrupt)
 
 	for {
 		select {
 		case <-gc.zk.Interrupt:
+			logger.Info("ZkStart gets interrupt signal")
+
 			return nil
 		default:
 			gc.zksyncRun()
-			time.Sleep(5 * time.Second)
+			time.Sleep(500 * time.Millisecond)
 		}
 	}
 }
 
 func (gc *crawler) EthStart() error {
-	logger.Info("Start crawling gitcoin eth")
 	signal.Notify(gc.eth.Interrupt, os.Interrupt)
 
 	for {
 		select {
 		case <-gc.eth.Interrupt:
+			logger.Info("EthStart gets interrupt signal")
+
 			return nil
 		default:
-			gc.xscanRun(constants.NetworkIDEthereum)
+			if err := gc.xscanRun(constants.NetworkIDEthereum); err != nil {
+				logger.Infof("xscanRun error: [%v]", err)
+			}
+
 			time.Sleep(500 * time.Millisecond)
 		}
 	}
 }
 
 func (gc *crawler) PolygonStart() error {
-	logger.Info("Start crawling gitcoin polygon")
 	signal.Notify(gc.polygon.Interrupt, os.Interrupt)
 
 	for {

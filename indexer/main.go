@@ -42,7 +42,7 @@ func RunHTTPServer(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-// runs every 10 minutes
+// RunAutoUpdater runs every 10 minutes
 func RunAutoUpdater(cmd *cobra.Command, args []string) error {
 	logger.Info("Start refreshing recent visiters' data")
 

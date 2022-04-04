@@ -24,12 +24,12 @@ type crawlConfig struct {
 	step          int64
 	minStep       int64
 	sleepInterval time.Duration
+	nextRoundTime time.Time
 }
 
 type crawler struct {
 	identity  ArAccount
 	interrupt chan os.Signal
-	complete  chan error
 	cfg       *crawlConfig
 }
 
@@ -37,59 +37,56 @@ func NewCrawler(identity ArAccount, crawlCfg *crawlConfig) *crawler {
 	return &crawler{
 		identity,
 		make(chan os.Signal, 1),
-		make(chan error),
 		crawlCfg,
 	}
 }
 
 func (ar *crawler) run() error {
-	startBlockHeight := ar.cfg.fromHeight
-	step := ar.cfg.step
-	endBlockHeight := startBlockHeight + step
-	tempDelay := ar.cfg.sleepInterval
-
-	latestConfirmedBlockHeight, err := GetLatestBlockHeightWithConfirmations(ar.cfg.confirmations)
-	if err != nil {
-		logger.Errorf("get latest block error: %v", err)
-
-		return err
-	}
-
 	for {
 		// handle interrupt
 		if ar.gotInterrupt() {
 			return ErrInterrupt
 		}
 
-		if latestConfirmedBlockHeight <= endBlockHeight {
-			for {
-				time.Sleep(tempDelay)
+		if ar.cfg.nextRoundTime.After(time.Now()) {
+			time.Sleep(1 * time.Second)
 
-				latestConfirmedBlockHeight, err = GetLatestBlockHeightWithConfirmations(ar.cfg.confirmations)
-				if err != nil {
-					logger.Errorf("get latest block error: %v", err)
-
-					return err
-				}
-
-				if latestConfirmedBlockHeight > endBlockHeight {
-					break
-				}
-			}
-
-			// use minStep if we are at the end of the chain
-			step = ar.cfg.minStep
+			continue
 		}
 
-		log.Println("Getting articles from", startBlockHeight, "to", endBlockHeight,
-			"with step", step, "and temp delay", tempDelay,
-			"and latest confirmed block height", latestConfirmedBlockHeight,
-		)
+		startBlockHeight := ar.cfg.fromHeight
+		endBlockHeight := ar.cfg.fromHeight + ar.cfg.step
 
+		// check latest confirmed block height
+		latestConfirmedBlockHeight, err := GetLatestBlockHeightWithConfirmations(ar.cfg.confirmations)
+		if err != nil {
+			logger.Errorf("get latest block error: %v", err)
+
+			return err
+		}
+
+		if latestConfirmedBlockHeight <= endBlockHeight {
+			logger.Info("catch up with the latest block height...")
+
+			ar.cfg.nextRoundTime = ar.cfg.nextRoundTime.Add(ar.cfg.sleepInterval)
+
+			// use minStep if we are at the end of the chain
+			ar.cfg.step = ar.cfg.minStep
+
+			logger.Info("arweave catch up with the latest block height")
+
+			continue
+		}
+
+		logger.Infof("Getting articles from [%d] to [%d], with step [%d] and latest confirmed block height [%d]",
+			startBlockHeight, endBlockHeight, ar.cfg.step, latestConfirmedBlockHeight)
 		ar.parseMirrorArticles(startBlockHeight, endBlockHeight, ar.identity)
 
-		startBlockHeight = endBlockHeight
-		endBlockHeight = startBlockHeight + step
+		// set new fromHeight for next round
+		ar.cfg.fromHeight = endBlockHeight
+
+		// sleep 0.5 second per round
+		time.Sleep(500 * time.Millisecond)
 	}
 }
 
@@ -115,6 +112,11 @@ func (ar *crawler) parseMirrorArticles(from, to int64, owner ArAccount) error {
 		}
 
 		tsp := time.Unix(article.Timestamp, 0)
+
+		// ignore empty item
+		if article.Author == "" {
+			continue
+		}
 
 		author := rss3uri.NewAccountInstance(article.Author, constants.PlatformSymbolEthereum).UriString()
 		note := model.Note{
@@ -162,16 +164,13 @@ func (ar *crawler) Start() error {
 
 	log.Println("Starting Arweave crawler...")
 
-	go func() {
-		ar.complete <- ar.run()
-	}()
+	if err := ar.run(); err != nil {
+		logger.Errorf("arweave crawler errro [%v]", err)
 
-	for {
-		select {
-		case err := <-ar.complete:
-			return err
-		}
+		return err
 	}
+
+	return nil
 }
 
 func (ar *crawler) gotInterrupt() bool {

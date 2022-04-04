@@ -23,6 +23,7 @@ type crawlerConfig struct {
 	MinStep       int64
 	Confirmations int64
 	SleepInterval time.Duration
+	NextRoundTime time.Time
 	Interrupt     chan os.Signal
 }
 
@@ -32,6 +33,7 @@ var DefaultEthConfig = &crawlerConfig{
 	MinStep:       10,
 	Confirmations: 15,
 	SleepInterval: 600 * time.Second,
+	NextRoundTime: time.Now(),
 	Interrupt:     make(chan os.Signal, 1),
 }
 
@@ -41,6 +43,7 @@ var DefaultPolygonConfig = &crawlerConfig{
 	MinStep:       10,
 	Confirmations: 120,
 	SleepInterval: 600 * time.Second,
+	NextRoundTime: time.Now(),
 	Interrupt:     make(chan os.Signal, 1),
 }
 
@@ -50,6 +53,7 @@ var DefaultZksyncConfig = &crawlerConfig{
 	MinStep:       10,
 	Confirmations: 15,
 	SleepInterval: 600 * time.Second,
+	NextRoundTime: time.Now(),
 	Interrupt:     make(chan os.Signal, 1),
 }
 

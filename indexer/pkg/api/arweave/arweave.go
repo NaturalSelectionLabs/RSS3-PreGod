@@ -80,8 +80,6 @@ func GetMirrorContents(from, to int64, owner ArAccount) ([]MirrorContent, error)
 		return nil, nil
 	}
 
-	//log.Println(string(response))
-
 	var parser fastjson.Parser
 
 	parsedJson, parseErr := parser.Parse(string(response))

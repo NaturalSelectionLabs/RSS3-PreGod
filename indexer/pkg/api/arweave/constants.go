@@ -21,4 +21,5 @@ var DefaultCrawlConfig = &crawlConfig{
 	DefaultCrawlStep,
 	DefaultCrawlMinStep,
 	time.Duration(600),
+	time.Now(),
 }
