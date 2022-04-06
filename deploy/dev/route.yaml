@@ -12,3 +12,17 @@ spec:
     services:
     - name: pregod-hub-api
       port: 8080
+    middlewares:
+      - pregod-hub-ratelimit
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: Middleware
+metadata:
+  name: pregod-hub-ratelimit
+spec:
+  rateLimit:
+    period: 1m
+    average: 600
+    sourceCriterion:
+      ipStrategy:
+        depth: 2
