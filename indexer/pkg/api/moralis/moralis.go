@@ -28,6 +28,7 @@ func requestMoralisApi(url string, apiKey string) ([]byte, error) {
 
 		return nil, err
 	}
+
 	return response, nil
 }
 
@@ -142,6 +143,7 @@ func GetMetadataByToken(tokenAddress string, tokenId string, chainType ChainType
 	url := fmt.Sprintf("%s/api/v2/nft/%s/%s?chain=%s&format=decimal&limit=1",
 		endpoint, tokenAddress, tokenId, chainType)
 	response, err := requestMoralisApi(url, apiKey)
+
 	if err != nil {
 		return NFTItem{}, err
 	}
@@ -152,5 +154,6 @@ func GetMetadataByToken(tokenAddress string, tokenId string, chainType ChainType
 	if err != nil {
 		return NFTItem{}, nil
 	}
+
 	return *res, nil
 }

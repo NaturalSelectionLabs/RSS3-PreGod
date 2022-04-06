@@ -3,8 +3,9 @@ package database
 import (
 	"database/sql"
 	"encoding/json"
-	"gorm.io/datatypes"
 	"log"
+
+	"gorm.io/datatypes"
 )
 
 func WrapNullString(s string) sql.NullString {

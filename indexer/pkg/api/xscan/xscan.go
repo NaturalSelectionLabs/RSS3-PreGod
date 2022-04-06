@@ -16,7 +16,9 @@ var jsoni = jsoniter.ConfigCompatibleWithStandardLibrary
 
 func GetApiKey(networkId constants.NetworkID) string {
 	var err error
+
 	var apiKey string
+
 	if networkId == constants.NetworkIDEthereum {
 		apiKey, err = jsoni.MarshalToString(config.Config.Indexer.EtherScan.ApiKey)
 	} else if networkId == constants.NetworkIDPolygon {

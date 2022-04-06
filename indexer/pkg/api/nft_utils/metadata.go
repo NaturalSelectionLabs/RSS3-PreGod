@@ -63,12 +63,14 @@ func getMimeType(uri string) string {
 		cid := strings.Split(uri, "ipfs://")[1]
 		url := "https://cloudflare-ipfs.com/ipfs/" + cid
 		contentHeader, _ := httpx.GetContentHeader(url)
+
 		return contentHeader.MIMEType
 	}
 
 	// 3. is http?
 	if strings.HasPrefix(uri, "https://") || strings.HasPrefix(uri, "http://") {
 		contentHeader, _ := httpx.GetContentHeader(uri)
+
 		return contentHeader.MIMEType
 	}
 

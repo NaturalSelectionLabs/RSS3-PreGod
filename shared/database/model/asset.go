@@ -1,11 +1,12 @@
 package model
 
 import (
+	"time"
+
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database/common"
 	"github.com/lib/pq"
 	"gorm.io/datatypes"
 	"gorm.io/gorm/schema"
-	"time"
 )
 
 var _ schema.Tabler = &Asset{}
