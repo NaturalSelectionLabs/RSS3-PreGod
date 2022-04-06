@@ -2,15 +2,15 @@ package twitter
 
 import (
 	"fmt"
-	"regexp"
-	"strings"
-
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/util"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database/datatype"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/config"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/httpx"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/logger"
+	lop "github.com/samber/lo/parallel"
 	"github.com/valyala/fastjson"
+	"regexp"
+	"strings"
 )
 
 const endpoint = "https://api.twitter.com/1.1"
@@ -60,6 +60,7 @@ func GetTimeline(name string, count uint32) ([]*ContentInfo, error) {
 	url := fmt.Sprintf("%s/statuses/user_timeline.json?screen_name=%s&count=%d&exclude_replies=true", endpoint, name, count)
 
 	response, err := httpx.Get(url, headers)
+
 	if err != nil {
 		return nil, err
 	}
@@ -106,10 +107,11 @@ func getTweetAttachments(contentInfo *fastjson.Value) datatype.Attachments {
 	// media
 	extendedEntitiesValue := contentInfo.Get("extended_entities")
 	if extendedEntitiesValue != nil {
-		media := extendedEntitiesValue.GetArray("media")
-		for _, mediaItem := range media {
+		medias := extendedEntitiesValue.GetArray("media")
+
+		as := lop.Map(medias, func(media *fastjson.Value, _ int) datatype.Attachment {
 			// TODO: video
-			mediaUrl := string(mediaItem.GetStringBytes("media_url_https"))
+			mediaUrl := string(media.GetStringBytes("media_url_https"))
 
 			contentHeader, _ := httpx.GetContentHeader(mediaUrl)
 
@@ -120,8 +122,10 @@ func getTweetAttachments(contentInfo *fastjson.Value) datatype.Attachments {
 				SizeInBytes: contentHeader.SizeInByte,
 			}
 
-			attachments = append(attachments, a)
-		}
+			return a
+		})
+
+		attachments = append(attachments, as...)
 	}
 
 	// quote address
