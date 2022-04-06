@@ -1,8 +1,10 @@
 package handler
 
 import (
+	"database/sql"
 	"encoding/json"
 	"fmt"
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/internal/api"
 	"net/http"
 	"time"
 
@@ -54,7 +56,7 @@ func GetAssetListHandlerFunc(c *gin.Context) {
 	//}
 
 	// Query assets form database
-	assetModels, err := database.QueryAssets(database.DB)
+	assetModels, err := database.QueryAssets(database.DB, []string{rss3uri.New(instance).String()})
 	if err != nil {
 		_ = c.Error(err)
 
@@ -63,6 +65,7 @@ func GetAssetListHandlerFunc(c *gin.Context) {
 
 	uri := rss3uri.New(instance)
 
+	var dateUpdated sql.NullTime
 	assetList := make([]protocol.Item, 0, len(assetModels))
 	for i, assetModel := range assetModels {
 		attachmentList := make([]protocol.ItemAttachment, 0)
@@ -70,6 +73,11 @@ func GetAssetListHandlerFunc(c *gin.Context) {
 			_ = c.Error(err)
 
 			return
+		}
+
+		if !dateUpdated.Valid {
+			dateUpdated.Valid = true
+			dateUpdated.Time = assetModel.DateUpdated
 		}
 
 		assetList[i] = protocol.Item{
@@ -85,6 +93,12 @@ func GetAssetListHandlerFunc(c *gin.Context) {
 			Summary:     assetModel.Summary,
 			Attachments: attachmentList,
 		}
+	}
+
+	if len(assetList) == 0 {
+		_ = c.Error(api.ErrorNotFound)
+
+		return
 	}
 
 	c.JSON(http.StatusOK, protocol.File{
