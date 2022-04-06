@@ -1,6 +1,7 @@
 package database
 
 import (
+	"strings"
 	"time"
 
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database/logger"
@@ -152,6 +153,11 @@ func CreateAsset(db *gorm.DB, asset *model.Asset, updateAll bool) (*model.Asset,
 }
 
 func CreateNotes(db *gorm.DB, notes []model.Note, updateAll bool) ([]model.Note, error) {
+	for i := range notes {
+		notes[i].Identifier = strings.ToLower(notes[i].Identifier)
+		notes[i].Owner = strings.ToLower(notes[i].Owner)
+	}
+
 	if err := db.Clauses(NewCreateClauses(updateAll)...).Create(&notes).Error; err != nil {
 		return nil, err
 	}
@@ -160,6 +166,11 @@ func CreateNotes(db *gorm.DB, notes []model.Note, updateAll bool) ([]model.Note,
 }
 
 func CreateAssets(db *gorm.DB, assets []model.Asset, updateAll bool) ([]model.Asset, error) {
+	for i := range assets {
+		assets[i].Identifier = strings.ToLower(assets[i].Identifier)
+		assets[i].Owner = strings.ToLower(assets[i].Owner)
+	}
+
 	if err := db.Clauses(NewCreateClauses(updateAll)...).Create(&assets).Error; err != nil {
 		return nil, err
 	}
