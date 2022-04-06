@@ -3,14 +3,13 @@ package handler
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/internal/protocol"
-	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database"
-	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/rss3uri"
 	"net/http"
 	"time"
 
-	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/internal/indexer"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/internal/middleware"
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/internal/protocol"
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database"
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/rss3uri"
 	"github.com/gin-gonic/gin"
 )
 
@@ -34,7 +33,7 @@ func GetAssetListHandlerFunc(c *gin.Context) {
 	}
 
 	request := GetAssetListRequest{}
-	if err := c.ShouldBindQuery(&request); err != nil {
+	if err = c.ShouldBindQuery(&request); err != nil {
 		_ = c.Error(err)
 
 		return
@@ -47,11 +46,12 @@ func GetAssetListHandlerFunc(c *gin.Context) {
 		return
 	}
 
-	if err := indexer.GetItems(profiles); err != nil {
-		_ = c.Error(err)
-
-		return
-	}
+	fmt.Println(profiles)
+	//if err := indexer.GetItems(profiles); err != nil {
+	//	_ = c.Error(err)
+	//
+	//	return
+	//}
 
 	// Query assets form database
 	assetModels, err := database.QueryAssets(database.DB)
@@ -66,7 +66,7 @@ func GetAssetListHandlerFunc(c *gin.Context) {
 	assetList := make([]protocol.Item, 0, len(assetModels))
 	for i, assetModel := range assetModels {
 		attachmentList := make([]protocol.ItemAttachment, 0)
-		if err := json.Unmarshal(assetModel.Attachments, &attachmentList); err != nil {
+		if err = json.Unmarshal(assetModel.Attachments, &attachmentList); err != nil {
 			_ = c.Error(err)
 
 			return

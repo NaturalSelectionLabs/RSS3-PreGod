@@ -3,17 +3,17 @@ package handler
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/internal/protocol"
-	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database"
-	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/constants"
-	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/logger"
-	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/rss3uri"
 	"net/http"
 	"strings"
 	"time"
 
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/internal/indexer"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/internal/middleware"
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/internal/protocol"
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database"
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database/model"
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/constants"
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/rss3uri"
 	"github.com/gin-gonic/gin"
 )
 
@@ -51,16 +51,19 @@ func GetNoteListHandlerFunc(c *gin.Context) {
 	}
 
 	uris := make([]string, 0)
+	accounts := make([]model.Account, 0)
 
 	for _, profile := range profiles {
-		accounts, err := database.QueryAccounts(database.DB, profile.ID, profile.Platform, 0)
+		internalAccounts, err := database.QueryAccounts(database.DB, profile.ID, profile.Platform, 0)
 		if err != nil {
 			_ = c.Error(err)
 
 			return
 		}
 
-		for _, account := range accounts {
+		accounts = append(accounts, internalAccounts...)
+
+		for _, account := range internalAccounts {
 			uris = append(uris, strings.ToLower(
 				rss3uri.New(
 					rss3uri.NewAccountInstance(account.ID, constants.PlatformID(account.Platform).Symbol()),
@@ -69,7 +72,7 @@ func GetNoteListHandlerFunc(c *gin.Context) {
 		}
 	}
 
-	if err := indexer.GetItems(profiles); err != nil {
+	if err = indexer.GetItems(accounts); err != nil {
 		_ = c.Error(err)
 
 		return
@@ -85,13 +88,10 @@ func GetNoteListHandlerFunc(c *gin.Context) {
 
 	uri := rss3uri.New(instance)
 
-	logger.Info(len(noteModels))
 	noteList := make([]protocol.Item, len(noteModels))
-	logger.Info(len(noteList))
 	for i, noteModel := range noteModels {
-		logger.Info(i)
 		attachmentList := make([]protocol.ItemAttachment, 0)
-		if err := json.Unmarshal(noteModel.Attachments, &attachmentList); err != nil {
+		if err = json.Unmarshal(noteModel.Attachments, &attachmentList); err != nil {
 			_ = c.Error(err)
 
 			return
