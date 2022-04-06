@@ -9,7 +9,7 @@ import (
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/cli/cmd/migrate/handler"
 	mongomodel "github.com/NaturalSelectionLabs/RSS3-PreGod/cli/cmd/migrate/model"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/cli/cmd/migrate/stats"
-	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/database/model"
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database/model"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"

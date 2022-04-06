@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"time"
 
-	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/isotime"
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/timex"
 )
 
 var _ json.Marshaler = &Link{}
@@ -20,7 +20,7 @@ type Link struct {
 
 func (l Link) MarshalJSON() ([]byte, error) {
 	return json.Marshal(&magicLink{
-		DateCreated: l.DateCreated.Format(isotime.ISO8601),
+		DateCreated: l.DateCreated.Format(timex.ISO8601),
 		From:        l.From,
 		To:          l.To,
 		Type:        l.Type,

@@ -7,9 +7,10 @@ import (
 	_ "net/http/pprof"
 
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/api/arweave"
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/api/gitcoin"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/autoupdater"
-	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/db"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/router"
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/cache"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/config"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/logger"
@@ -22,8 +23,8 @@ func init() {
 		log.Fatalf("cache.Setup err: %v", err)
 	}
 
-	if err := db.Setup(); err != nil {
-		log.Fatalf("db.Setup err: %v", err)
+	if err := database.Setup(); err != nil {
+		log.Fatalf("database.Setup err: %v", err)
 	}
 }
 
@@ -43,7 +44,7 @@ func RunHTTPServer(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-// runs every 10 minutes
+// RunAutoUpdater runs every 10 minutes
 func RunAutoUpdater(cmd *cobra.Command, args []string) error {
 	logger.Info("Start refreshing recent visiters' data")
 
@@ -51,7 +52,16 @@ func RunAutoUpdater(cmd *cobra.Command, args []string) error {
 }
 
 func RunAutoCrawler(cmd *cobra.Command, args []string) error {
-	logger.Info("Start crawling arweave and gitcoin")
+	logger.Info("Start crawling gitcoin")
+
+	// gitcoin crawler
+	gc := gitcoin.NewCrawler(*gitcoin.DefaultEthConfig, *gitcoin.DefaultPolygonConfig, *gitcoin.DefaultZksyncConfig)
+	go gc.PolygonStart()
+	go gc.EthStart()
+	go gc.ZkStart()
+
+	logger.Info("Start crawling arweave")
+
 	// arweave crawler
 	ar := arweave.NewCrawler(arweave.MirrorUploader, arweave.DefaultCrawlConfig)
 

@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"time"
 
-	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/isotime"
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/timex"
 )
 
 const (
@@ -25,7 +25,7 @@ type File struct {
 func (f File) MarshalJSON() ([]byte, error) {
 	return json.Marshal(&magicFile{
 		Version:        Version,
-		DateUpdated:    f.DateUpdated.Format(isotime.ISO8601),
+		DateUpdated:    f.DateUpdated.Format(timex.ISO8601),
 		Identifier:     f.Identifier,
 		IdentifierNext: f.IdentifierNext,
 		Total:          f.Total,

@@ -1,7 +1,7 @@
 package model
 
 import (
-	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/database/common"
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database/common"
 	"gorm.io/gorm/schema"
 )
 

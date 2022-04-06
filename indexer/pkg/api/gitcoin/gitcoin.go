@@ -1,6 +1,7 @@
 package gitcoin
 
 import (
+	"fmt"
 	"math/big"
 	"strings"
 
@@ -15,7 +16,8 @@ import (
 const grantUrl = "https://gitcoin.co/grants/grants.json"
 const grantsApi = "https://gitcoin.co/api/v0.1/grants/"
 const donationSentTopic = "0x3bb7428b25f9bdad9bd2faa4c6a7a9e5d5882657e96c1d24cc41c1d6c1910a98"
-const bulkCheckoutAddress = "0x7d655c57f71464B6f83811C55D84009Cd9f5221C"
+const bulkCheckoutAddressETH = "0x7d655c57f71464B6f83811C55D84009Cd9f5221C"
+const bulkCheckoutAddressPolygon = "0xb99080b9407436eBb2b8Fe56D45fFA47E9bb8877"
 
 type tokenMeta struct {
 	decimal int64
@@ -106,56 +108,14 @@ func GetGrantsInfo() ([]GrantInfo, error) {
 
 	for _, grant := range grantArray {
 		projects := grant.GetArray()
+		title := strings.Trim(projects[0].String(), "\"")
+		adminAddress := strings.Trim(projects[1].String(), "\"")
 
-		item := GrantInfo{Title: projects[0].String(), AdminAddress: projects[1].String()}
+		item := GrantInfo{Title: title, AdminAddress: adminAddress}
 		grants = append(grants, item)
 	}
 
 	return grants, nil
-}
-
-// GetProjectsInfo returns project infos from gitcoin
-func GetProjectsInfo(adminAddress string, title string) (ProjectInfo, error) {
-	var project ProjectInfo
-
-	headers := make(map[string]string)
-	httpx.SetCommonHeader(headers)
-
-	url := grantsApi + "?admin_address=" + adminAddress
-	content, err := httpx.Get(url, headers)
-
-	if err != nil {
-		return project, err
-	}
-
-	var parser fastjson.Parser
-	parsedJson, parseErr := parser.Parse(string(content))
-
-	if parseErr != nil {
-		return project, parseErr
-	}
-
-	if "[]" == string(content) {
-		// project is inactive
-		project.Active = false
-		project.AdminAddress = adminAddress
-		project.Title = title
-	} else {
-		// project is active
-		project.Active = true
-		project.AdminAddress = adminAddress
-		project.Title = title
-		project.Id = parsedJson.GetInt64("id")
-		project.Slug = string(parsedJson.GetStringBytes("slug"))
-		project.Description = string(parsedJson.GetStringBytes("description"))
-		project.ReferUrl = string(parsedJson.GetStringBytes("reference_url"))
-		project.Logo = string(parsedJson.GetStringBytes("logo"))
-		project.TokenAddress = string(parsedJson.GetStringBytes("token_address"))
-		project.TokenSymbol = string(parsedJson.GetStringBytes("token_symbol"))
-		project.ContractAddress = string(parsedJson.GetStringBytes("contract_address"))
-	}
-
-	return project, nil
 }
 
 // GetZkSyncDonations returns donations from zksync
@@ -165,6 +125,8 @@ func (gc *crawler) GetZkSyncDonations(fromBlock, toBlock int64) ([]DonationInfo,
 	for i := fromBlock; i <= toBlock; i++ {
 		trxs, err := zksync.GetTxsByBlock(i)
 		if err != nil {
+			logger.Errorf("get txs by block error: [%v]", err)
+
 			return nil, err
 		}
 
@@ -189,7 +151,9 @@ func (gc *crawler) GetZkSyncDonations(fromBlock, toBlock int64) ([]DonationInfo,
 			if gc.needUpdateProject(adminAddress) {
 				inactive, err = gc.updateHostingProject(adminAddress)
 				if err != nil {
-					logger.Error(err)
+					logger.Errorf("updateHostingProject error: [%v]", err)
+
+					continue
 				}
 			}
 
@@ -222,13 +186,24 @@ func (gc *crawler) GetZkSyncDonations(fromBlock, toBlock int64) ([]DonationInfo,
 
 // GetEthDonations returns donations from ethereum and polygon
 func GetEthDonations(fromBlock int64, toBlock int64, chainType ChainType) ([]DonationInfo, error) {
-	logs, err := moralis.GetLogs(fromBlock, toBlock, bulkCheckoutAddress, donationSentTopic, string(chainType), config.Config.Indexer.Moralis.ApiKey)
+	var checkoutAddress string
+	if chainType == ETH {
+		checkoutAddress = bulkCheckoutAddressETH
+	} else if chainType == Polygon {
+		checkoutAddress = bulkCheckoutAddressPolygon
+	} else {
+		return nil, fmt.Errorf("invalid chainType %s", string(chainType))
+	}
+
+	logs, err := moralis.GetLogs(fromBlock, toBlock, checkoutAddress, donationSentTopic, string(chainType), config.Config.Indexer.Moralis.ApiKey)
 
 	if err != nil {
+		logger.Errorf("getLogs error: [%v]", err)
+
 		return nil, err
 	}
 
-	donations := make([]DonationInfo, len(logs.Result))
+	donations := make([]DonationInfo, 0)
 
 	for _, item := range logs.Result {
 		donor := "0x" + item.Topic3[26:]

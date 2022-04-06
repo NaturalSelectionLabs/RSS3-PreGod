@@ -2,9 +2,11 @@ package misskey
 
 import (
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/crawler"
-	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/db/model"
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database"
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database/model"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/constants"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/logger"
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/rss3uri"
 )
 
 type misskeyCrawler struct {
@@ -14,8 +16,8 @@ type misskeyCrawler struct {
 func NewMisskeyCrawler() crawler.Crawler {
 	return &misskeyCrawler{
 		crawler.DefaultCrawler{
-			Items: []*model.Item{},
-			Notes: []*model.ObjectId{},
+			Assets: []model.Asset{},
+			Notes:  []model.Note{},
 		},
 	}
 }
@@ -29,27 +31,28 @@ func (mc *misskeyCrawler) Work(param crawler.WorkParam) error {
 		return err
 	}
 
-	for _, note := range noteList {
-		ni := model.NewItem(
-			param.NetworkID,
-			note.Link,
-			model.Metadata{
-				"network": constants.NetworkSymbolMisskey,
-				"from":    note.Author,
-			},
-			constants.ItemTagsMisskeyNote,
-			[]string{note.Author},
-			"",
-			note.Summary,
-			note.Attachments,
-			note.CreatedAt,
-		)
-		mc.Items = append(mc.Items, ni)
+	author := rss3uri.NewAccountInstance(param.Identity, constants.PlatformSymbolMisskey).UriString()
 
-		mc.Notes = append(mc.Notes, &model.ObjectId{
-			NetworkID: param.NetworkID,
-			Proof:     note.Link,
-		})
+	for _, item := range noteList {
+		note := model.Note{
+			Identifier:      rss3uri.NewNoteInstance(item.Id, constants.NetworkSymbolMisskey).UriString(),
+			Owner:           author,
+			RelatedURLs:     []string{item.Link},
+			Tags:            constants.ItemTagsMisskeyNote.ToPqStringArray(),
+			Authors:         []string{author},
+			Summary:         item.Summary,
+			Attachments:     database.MustWrapJSON(item.Attachments),
+			Source:          constants.NoteSourceNameMisskeyNote.String(),
+			MetadataNetwork: constants.NetworkSymbolMisskey.String(),
+			MetadataProof:   item.Id + "-" + item.Host,
+			Metadata: database.MustWrapJSON(map[string]interface{}{
+				"from": item.Author,
+			}),
+			DateCreated: item.CreatedAt,
+			DateUpdated: item.CreatedAt, // TODO: check if updatedAt is available
+		}
+
+		mc.Notes = append(mc.Notes, note)
 	}
 
 	return nil

@@ -3,8 +3,8 @@ package model
 import (
 	"database/sql"
 
-	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/database/common"
-	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/database/datatype"
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database/common"
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database/datatype"
 	"github.com/lib/pq"
 	"gorm.io/gorm/schema"
 )

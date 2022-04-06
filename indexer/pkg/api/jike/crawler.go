@@ -2,8 +2,10 @@ package jike
 
 import (
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/crawler"
-	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/db/model"
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database"
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database/model"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/constants"
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/rss3uri"
 )
 
 type jikeCrawler struct {
@@ -13,8 +15,8 @@ type jikeCrawler struct {
 func NewJikeCrawler() crawler.Crawler {
 	return &jikeCrawler{
 		crawler.DefaultCrawler{
-			Items: []*model.Item{},
-			Notes: []*model.ObjectId{},
+			Assets: []model.Asset{},
+			Notes:  []model.Note{},
 		},
 	}
 }
@@ -27,26 +29,25 @@ func (mc *jikeCrawler) Work(param crawler.WorkParam) error {
 	}
 
 	for _, item := range timeline {
-		ni := model.NewItem(
-			param.NetworkID,
-			item.Link,
-			model.Metadata{
-				"network": constants.NetworkSymbolJike,
-				"from":    item.Author,
-			},
-			constants.ItemTagsJikePost,
-			[]string{item.Author},
-			"",
-			item.Summary,
-			item.Attachments,
-			item.Timestamp,
-		)
-		mc.Items = append(mc.Items, ni)
+		note := model.Note{
+			Identifier:      rss3uri.NewNoteInstance(item.Id, constants.NetworkSymbolJike).UriString(),
+			Owner:           item.Author,
+			RelatedURLs:     []string{item.Link},
+			Tags:            constants.ItemTagsJikePost.ToPqStringArray(),
+			Authors:         []string{item.Author},
+			Summary:         item.Summary,
+			Attachments:     database.MustWrapJSON(item.Attachments),
+			Source:          constants.NoteSourceNameJikePost.String(),
+			MetadataNetwork: constants.NetworkSymbolJike.String(),
+			MetadataProof:   item.Id,
+			Metadata: database.MustWrapJSON(map[string]interface{}{
+				"from": item.Author,
+			}),
+			DateCreated: item.Timestamp,
+			DateUpdated: item.Timestamp,
+		}
 
-		mc.Notes = append(mc.Notes, &model.ObjectId{
-			NetworkID: param.NetworkID,
-			Proof:     item.Link,
-		})
+		mc.Notes = append(mc.Notes, note)
 	}
 
 	return nil

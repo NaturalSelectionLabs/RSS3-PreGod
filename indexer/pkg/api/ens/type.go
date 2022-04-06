@@ -3,14 +3,14 @@ package ens
 import (
 	"time"
 
-	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/db/model"
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database/datatype"
 )
 
 type ENSTextRecord struct {
 	Domain      string
 	Description string
 	Text        map[string]string
-	Attachments []model.Attachment
+	Attachments datatype.Attachments
 	CreatedAt   time.Time
 	TxHash      string
 }

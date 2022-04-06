@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/database/datatype"
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database/datatype"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 	. "gorm.io/gorm/utils/tests"
