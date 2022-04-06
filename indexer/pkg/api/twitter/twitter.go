@@ -79,14 +79,13 @@ func GetTimeline(name string, count uint32) ([]*ContentInfo, error) {
 		return contentInfos, err
 	}
 
-	for _, contentValue := range contentArray {
+	cs := lop.Map(contentArray, func(contentValue *fastjson.Value, _ int) *ContentInfo {
 		contentInfo := new(ContentInfo)
 
 		contentInfo.PreContent, err = formatTweetText(contentValue)
 		if err != nil {
 			logger.Errorf("format tweet text error: %s", err)
-
-			continue
+			return nil
 		}
 
 		contentInfo.Timestamp = string(contentValue.GetStringBytes("created_at"))
@@ -95,8 +94,10 @@ func GetTimeline(name string, count uint32) ([]*ContentInfo, error) {
 		contentInfo.Attachments = getTweetAttachments(contentValue)
 		contentInfo.ScreenName = string(contentValue.GetStringBytes("user", "screen_name"))
 
-		contentInfos = append(contentInfos, contentInfo)
-	}
+		return contentInfo
+	})
+
+	contentInfos = append(contentInfos, cs...)
 
 	return contentInfos, nil
 }
