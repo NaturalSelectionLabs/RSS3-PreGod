@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/util"
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database/datatype"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/config"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/httpx"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/logger"
@@ -46,6 +47,8 @@ func GetUserShow(name string) (*UserShow, error) {
 	return userShow, nil
 }
 
+// TODO: offset?
+// See https://developer.twitter.com/en/docs/twitter-api/v1/tweets/timelines/api-reference/get-statuses-user_timeline
 func GetTimeline(name string, count uint32) ([]*ContentInfo, error) {
 	key := util.GotKey("round-robin", "Twitter", config.Config.Indexer.Twitter.Tokens)
 	authorization := fmt.Sprintf("Bearer %s", key)
@@ -77,16 +80,19 @@ func GetTimeline(name string, count uint32) ([]*ContentInfo, error) {
 
 	for _, contentValue := range contentArray {
 		contentInfo := new(ContentInfo)
-		contentInfo.Timestamp = string(contentValue.GetStringBytes("created_at"))
-		contentInfo.Hash = string(contentValue.GetStringBytes("id_str"))
-		contentInfo.Link = fmt.Sprintf("https://twitter.com/%s/status/%s", name, contentInfo.Hash)
-		contentInfo.PreContent, err = formatTweetText(contentValue)
 
+		contentInfo.PreContent, err = formatTweetText(contentValue)
 		if err != nil {
 			logger.Errorf("format tweet text error: %s", err)
 
 			continue
 		}
+
+		contentInfo.Timestamp = string(contentValue.GetStringBytes("created_at"))
+		contentInfo.Hash = string(contentValue.GetStringBytes("id_str"))
+		contentInfo.Link = fmt.Sprintf("https://twitter.com/%s/status/%s", name, contentInfo.Hash)
+		contentInfo.Attachments = getTweetAttachments(contentValue)
+		contentInfo.ScreenName = string(contentValue.GetStringBytes("user", "screen_name"))
 
 		contentInfos = append(contentInfos, contentInfo)
 	}
@@ -94,8 +100,60 @@ func GetTimeline(name string, count uint32) ([]*ContentInfo, error) {
 	return contentInfos, nil
 }
 
+func getTweetAttachments(contentInfo *fastjson.Value) datatype.Attachments {
+	attachments := datatype.Attachments{}
+
+	// media
+	extendedEntitiesValue := contentInfo.Get("extended_entities")
+	if extendedEntitiesValue != nil {
+		media := extendedEntitiesValue.GetArray("media")
+		for _, mediaItem := range media {
+			// TODO: video
+			mediaUrl := string(mediaItem.GetStringBytes("media_url_https"))
+
+			contentHeader, _ := httpx.GetContentHeader(mediaUrl)
+
+			a := datatype.Attachment{
+				Type:        "media",
+				Address:     mediaUrl,
+				MimeType:    contentHeader.MIMEType,
+				SizeInBytes: contentHeader.SizeInByte,
+			}
+
+			attachments = append(attachments, a)
+		}
+	}
+
+	// quote address
+	quotedStatusValue := contentInfo.Get("quoted_status")
+	if quotedStatusValue != nil {
+		quotedStatusId := string(quotedStatusValue.GetStringBytes("id_str"))
+		quotedStatusLink := fmt.Sprintf("https://twitter.com/%s/status/%s", string(quotedStatusValue.GetStringBytes("user", "screen_name")), quotedStatusId)
+
+		qa := datatype.Attachment{
+			Type:     "quote_address",
+			Address:  quotedStatusLink,
+			MimeType: "text/uri-list",
+		}
+
+		attachments = append(attachments, qa)
+
+		text := string(quotedStatusValue.GetStringBytes("text"))
+		qc := datatype.Attachment{
+			Type:     "quote_content",
+			Address:  text,
+			MimeType: "text/plain",
+		}
+
+		attachments = append(attachments, qc)
+	}
+
+	return attachments
+}
+
+// TODO: is this logic correct?
 func formatTweetText(contentValue *fastjson.Value) (string, error) {
-	var text = contentValue.GetStringBytes("text")
+	text := contentValue.GetStringBytes("text")
 
 	matched, err := regexp.Match("(https://t.co/[a-zA-Z0-9]+)$", text)
 	if err != nil {

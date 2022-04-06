@@ -1,11 +1,13 @@
 package httpx
 
 import (
+	"fmt"
 	"net/http"
 	"strconv"
 	"time"
 
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/config"
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/logger"
 	"github.com/go-resty/resty/v2"
 )
 
@@ -26,6 +28,13 @@ func Get(url string, headers map[string]string) ([]byte, error) {
 
 	// Get url
 	resp, err := request.Get(url)
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.StatusCode() != 200 {
+		return nil, fmt.Errorf("StatusCode [%d]", resp.StatusCode())
+	}
 
 	return resp.Body(), err
 }
@@ -82,6 +91,8 @@ func GetContentHeader(url string) (*ContentHeader, error) {
 	header, err := Head(url)
 
 	if err != nil {
+		logger.Errorf("cannot read content type of url: %s. error is : %v", url, err)
+
 		return res, err
 	}
 
@@ -111,7 +122,8 @@ func init() {
 		client.SetProxy(config.Config.Network.Proxy)
 	}
 
-	client.SetTimeout(1 * time.Second * 10)
+	client.SetTimeout(6 * time.Second * 10)
+	client.SetRetryCount(3)
 }
 
 func getClient() *resty.Client {

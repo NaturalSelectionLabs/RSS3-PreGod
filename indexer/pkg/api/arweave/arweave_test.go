@@ -63,7 +63,7 @@ func TestGetArticles(t *testing.T) {
 
 	for _, article := range articles {
 		assert.NotEmpty(t, article.Title)
-		assert.NotEmpty(t, article.TimeStamp)
+		assert.NotEmpty(t, article.Timestamp)
 		assert.NotEmpty(t, article.Content)
 		assert.NotEmpty(t, article.Author)
 		assert.NotEmpty(t, article.Link)

@@ -1,4 +1,4 @@
-package isotime
+package timex
 
 // YYYY-MM-DDTHH:mm:ss.sssZ
 const (

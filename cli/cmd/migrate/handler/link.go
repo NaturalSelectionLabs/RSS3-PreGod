@@ -6,8 +6,8 @@ import (
 
 	mongomodel "github.com/NaturalSelectionLabs/RSS3-PreGod/cli/cmd/migrate/model"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/cli/cmd/migrate/stats"
-	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/database/common"
-	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/database/model"
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database/common"
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database/model"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/constants"
 	"gorm.io/gorm"
 )
@@ -16,7 +16,7 @@ func MigrateLinkList(db *gorm.DB, file mongomodel.File) error {
 	return db.Transaction(func(tx *gorm.DB) error {
 		splits := strings.Split(file.Path, "-")
 
-		links := make([]model.Link, len(file.Content.Links))
+		links := make([]model.Link, 0, len(file.Content.Links))
 		for _, targetIdentity := range file.Content.List {
 			links = append(links, model.Link{
 				Type:   constants.LinkTypeFollowing.Int(),

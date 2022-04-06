@@ -2,10 +2,11 @@ package jike
 
 import (
 	"fmt"
+	"log"
 	"strconv"
 	"time"
 
-	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/db/model"
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database/datatype"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/config"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/httpx"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/logger"
@@ -21,7 +22,11 @@ var (
 	parser       fastjson.Parser
 )
 
-func New() {
+func init() {
+	initLogin()
+}
+
+func initLogin() {
 	Login()
 
 	// everyday at 00:00, refresh Jike tokens
@@ -258,6 +263,8 @@ func GetUserTimeline(name string) ([]Timeline, error) {
 
 	response, err := httpx.PostRaw(url, headers, json)
 
+	log.Println(string(response.Body()))
+
 	if err != nil {
 		logger.Errorf("Jike GetUserTimeline err: %v", err)
 
@@ -265,6 +272,8 @@ func GetUserTimeline(name string) ([]Timeline, error) {
 	}
 
 	parsedJson, err := parser.Parse(string(response.Body()))
+
+	author := string(parsedJson.GetStringBytes("data", "userProfile", "username"))
 
 	parsedObject := parsedJson.GetArray("data", "userProfile", "feeds", "nodes")
 
@@ -281,11 +290,11 @@ func GetUserTimeline(name string) ([]Timeline, error) {
 			return nil, timeErr
 		}
 
-		result[i].Author = string(parsedJson.GetStringBytes("username"))
+		result[i].Author = author
 		result[i].Timestamp = t
 		result[i].Summary = string(node.GetStringBytes("content"))
 		result[i].Link = fmt.Sprintf("https://web.okjike.com/originalPost/%s", id)
-		result[i].Attachments = *getAttachment(node)
+		result[i].Attachments = getAttachment(node)
 	}
 
 	if err != nil {
@@ -332,51 +341,54 @@ func formatFeed(node *fastjson.Value) string {
 	return text
 }
 
-// TODO: handle video attachments
-func getAttachment(node *fastjson.Value) *[]model.Attachment {
+func getAttachment(node *fastjson.Value) []datatype.Attachment {
 	var content string
 
-	attachments := make([]model.Attachment, 0)
+	attachments := make([]datatype.Attachment, 0)
 
 	// process the original post attachments
-	attachments = append(attachments, *getPicture(node.Get("pictures"))...)
+	attachments = append(attachments, getPicture(node)...)
+
+	// TODO: handle video attachments
+	// attachments = append(attachments, getVideo(node)...)
 
 	// a 'status' field often means the report target is unavailable, e.g, DELETED
 	if !node.Exists("target", "status") {
 		if node.Exists("target") {
 			node = node.Get("target")
+
 			// store quote_address
-
-			content = "https://web.okjike.com/originalPost/" + string(node.GetStringBytes("id"))
-
-			syncAt := time.Now()
-
-			qAddress := *model.NewAttachment(content, nil, "text/uri-list", "quote_address", 0, syncAt)
+			qAddress := datatype.Attachment{
+				Content:  "https://web.okjike.com/originalPost/" + string(node.GetStringBytes("id")),
+				MimeType: "text/uri-list",
+				Type:     "quote_address",
+			}
 
 			// store quote_text
-
 			content = string(node.GetStringBytes("content"))
-			qText := *model.NewAttachment(content, nil, "text/plain", "quote_text", 0, syncAt)
+			qText := datatype.Attachment{
+				Content:  content,
+				MimeType: "text/plain",
+				Type:     "quote_text",
+			}
 
 			attachments = append(attachments, qAddress, qText)
 
 			// store quote_media
 
 			if node.Exists("pictures") {
-				attachments = append(attachments, *getPicture(node)...)
+				attachments = append(attachments, getPicture(node)...)
 			}
 		}
 	}
 
-	return &attachments
+	return attachments
 }
 
-func getPicture(node *fastjson.Value) *[]model.Attachment {
-	address := make([]string, 1)
-
+func getPicture(node *fastjson.Value) []datatype.Attachment {
 	pictues := node.GetArray("pictures")
 
-	result := make([]model.Attachment, len(pictues))
+	result := make([]datatype.Attachment, len(pictues))
 
 	for i, picture := range pictues {
 		var url string
@@ -387,18 +399,18 @@ func getPicture(node *fastjson.Value) *[]model.Attachment {
 			url = string(picture.GetStringBytes("thumbnailUrl"))
 		}
 
-		contentHeader, err := httpx.GetContentHeader(url)
+		contentHeader, _ := httpx.GetContentHeader(url)
 
-		if err != nil {
-			logger.Errorf("Jike GetPicture err: %v", err)
+		// qMedia := model.NewAttachment(url, address, contentHeader.MIMEType, "quote_media", contentHeader.SizeInByte, time.Now())
+		qMedia := datatype.Attachment{
+			Type:        "quote_media",
+			Address:     url,
+			MimeType:    contentHeader.MIMEType,
+			SizeInBytes: contentHeader.SizeInByte,
 		}
-
-		address = append(address, url)
-
-		qMedia := *model.NewAttachment(url, address, contentHeader.MIMEType, "quote_media", contentHeader.SizeInByte, time.Now())
 
 		result[i] = qMedia
 	}
 
-	return &result
+	return result
 }

@@ -3,7 +3,7 @@ package crawler
 import (
 	"time"
 
-	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/db/model"
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database/model"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/constants"
 	jsoniter "github.com/json-iterator/go"
 )
@@ -19,10 +19,9 @@ type Crawler interface {
 }
 
 type DefaultCrawler struct {
-	Profiles []*model.Profile
-	Assets   []*model.ObjectId
-	Notes    []*model.ObjectId
-	Items    []*model.Item
+	Assets   []model.Asset
+	Notes    []model.Note
+	Profiles []model.Profile
 }
 
 // CrawlerResult inherits the function by default
@@ -40,12 +39,12 @@ func (cr *DefaultCrawler) GetUserBio(Identity string) (string, error) {
 }
 
 type WorkParam struct {
-	Identity   string
-	NetworkID  constants.NetworkID
-	PlatformID constants.PlatformID // optional
-	Limit      int                  // optional, aka Count, limit the number of items to be crawled
-
-	Timestamp time.Time // optional, if provided, only index items newer than this time
+	Identity    string
+	NetworkID   constants.NetworkID
+	PlatformID  constants.PlatformID // optional
+	Limit       int                  // optional, aka Count, limit the number of items to be crawled
+	BlockHeight int                  // optional, used by [X]scan
+	Timestamp   time.Time            // optional, if provided, only index items newer than this time
 }
 
 type userBios struct {

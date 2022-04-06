@@ -3,11 +3,13 @@ package database
 import (
 	"time"
 
-	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/database/logger"
-	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/database/model"
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database/logger"
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database/model"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/config"
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/constants"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 	"gorm.io/gorm/schema"
 )
 
@@ -37,14 +39,11 @@ func Setup() error {
 	}
 
 	if err := DB.AutoMigrate(
-	//&model.Account{},
-	//&model.AccountPlatform{},
-	//&model.Instance{},
-	//&model.LinkList{},
-	//&model.Link{},
-	//&model.Signature{},
-	//&model.Asset{},
-	//&model.Note{},
+		&model.Profile{},
+		&model.Account{},
+		&model.Link{},
+		&model.Asset{},
+		&model.Note{},
 	); err != nil {
 		return err
 	}
@@ -134,4 +133,84 @@ func QueryLinksByTo(db *gorm.DB, _type int, to string, linkSources []int, limit 
 	}
 
 	return links, nil
+}
+
+func CreateNote(db *gorm.DB, note *model.Note, updateAll bool) (*model.Note, error) {
+	if err := db.Model(note).Clauses(NewCreateClauses(updateAll)...).Create(note).Error; err != nil {
+		return nil, err
+	}
+
+	return note, nil
+}
+
+func CreateAsset(db *gorm.DB, asset *model.Asset, updateAll bool) (*model.Asset, error) {
+	if err := db.Clauses(NewCreateClauses(updateAll)...).Create(asset).Error; err != nil {
+		return nil, err
+	}
+
+	return asset, nil
+}
+
+func CreateNotes(db *gorm.DB, notes []model.Note, updateAll bool) ([]model.Note, error) {
+	if err := db.Clauses(NewCreateClauses(updateAll)...).Create(&notes).Error; err != nil {
+		return nil, err
+	}
+
+	return notes, nil
+}
+
+func CreateAssets(db *gorm.DB, assets []model.Asset, updateAll bool) ([]model.Asset, error) {
+	if err := db.Clauses(NewCreateClauses(updateAll)...).Create(&assets).Error; err != nil {
+		return nil, err
+	}
+
+	return assets, nil
+}
+
+func CreateProfile(db *gorm.DB, profile *model.Profile, updateAll bool) (*model.Profile, error) {
+	if err := db.Clauses(NewCreateClauses(updateAll)...).Create(profile).Error; err != nil {
+		return nil, err
+	}
+
+	return profile, nil
+}
+
+func CreateProfiles(db *gorm.DB, profiles []model.Profile, updateAll bool) ([]model.Profile, error) {
+	if err := db.Clauses(NewCreateClauses(updateAll)...).Create(&profiles).Error; err != nil {
+		return nil, err
+	}
+
+	return profiles, nil
+}
+
+func CreateCrawlerMetadata(db *gorm.DB, crawler *model.CrawlerMetadata, updateAll bool) (*model.CrawlerMetadata, error) {
+	if err := db.Clauses(NewCreateClauses(updateAll)...).Create(&crawler).Error; err != nil {
+		return nil, err
+	}
+
+	return crawler, nil
+}
+
+func QueryCrawlerMetadata(db *gorm.DB, identity string, networkId constants.NetworkID) (*model.CrawlerMetadata, error) {
+	var crawler model.CrawlerMetadata
+	if err := db.Where(&model.CrawlerMetadata{
+		AccountInstance: identity,
+		NetworkId:       networkId,
+	}).Find(&crawler).Error; err != nil {
+		return nil, err
+	}
+
+	return &crawler, nil
+}
+
+func NewCreateClauses(updateAll bool) []clause.Expression {
+	clauses := []clause.Expression{clause.Returning{}}
+
+	if updateAll {
+		clauses = append(clauses, clause.OnConflict{UpdateAll: true})
+	} else {
+		clauses = append(clauses, clause.OnConflict{DoNothing: true})
+	}
+
+	return clauses
 }

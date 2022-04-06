@@ -4,9 +4,9 @@ import (
 	"fmt"
 
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/crawler"
-	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/db"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/util"
-	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/rss3uri"
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database"
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database/model"
 )
 
 type GetItemsHandler struct {
@@ -36,15 +36,11 @@ func NewGetItemsResult() *GetItemsResult {
 }
 
 func (pt *GetItemsHandler) Excute() (*GetItemsResult, error) {
-	var err error
-
 	var c crawler.Crawler
 
 	var r *crawler.DefaultCrawler
 
 	result := NewGetItemsResult()
-
-	instance := rss3uri.NewAccountInstance(pt.WorkParam.Identity, pt.WorkParam.PlatformID.Symbol())
 
 	c = MakeCrawlers(pt.WorkParam.NetworkID)
 	if c == nil {
@@ -53,25 +49,51 @@ func (pt *GetItemsHandler) Excute() (*GetItemsResult, error) {
 		return result, fmt.Errorf("unsupported network id[%d]", pt.WorkParam.NetworkID)
 	}
 
-	err = c.Work(pt.WorkParam)
+	metadata, dbQcmErr := database.QueryCrawlerMetadata(database.DB, pt.WorkParam.Identity, pt.WorkParam.NetworkID)
 
-	if err != nil {
+	// the error here does not affect the execution of the crawler
+	if dbQcmErr == nil {
+		pt.WorkParam.BlockHeight = metadata.LastBlock
+		pt.WorkParam.Timestamp = metadata.UpdatedAt
+	}
+
+	if err := c.Work(pt.WorkParam); err != nil {
 		result.Error = util.GetErrorBase(util.ErrorCodeNotSupportedNetwork)
 
 		return result, fmt.Errorf("crawler fails while working: %s", err)
 	}
 
 	r = c.GetResult()
-	if r.Items != nil {
-		db.InsertItems(r.Items, pt.WorkParam.NetworkID)
+
+	tx := database.DB.Begin()
+	defer tx.Rollback()
+
+	if r.Assets != nil && len(r.Assets) > 0 {
+		if dbAssets, err := database.CreateAssets(tx, r.Assets, true); err != nil {
+			return result, err
+		} else {
+			r.Assets = dbAssets
+		}
 	}
 
-	if r.Assets != nil {
-		db.SetAssets(instance, r.Assets, pt.WorkParam.NetworkID)
+	if r.Notes != nil && len(r.Notes) > 0 {
+		if dbNotes, err := database.CreateNotes(tx, r.Notes, true); err != nil {
+			return result, err
+		} else {
+			r.Notes = dbNotes
+		}
 	}
 
-	if r.Notes != nil {
-		db.AppendNotes(instance, r.Notes)
+	// stores the crawler last worked metadata
+	if _, err := database.CreateCrawlerMetadata(tx, &model.CrawlerMetadata{
+		AccountInstance: pt.WorkParam.Identity,
+		NetworkId:       pt.WorkParam.NetworkID,
+	}, true); err != nil {
+		return result, err
+	}
+
+	if err := tx.Commit().Error; err != nil {
+		return result, err
 	}
 
 	result.Result = r

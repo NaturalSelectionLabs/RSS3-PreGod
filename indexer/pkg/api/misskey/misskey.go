@@ -5,7 +5,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/db/model"
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database/datatype"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/httpx"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/logger"
 	jsoniter "github.com/json-iterator/go"
@@ -19,9 +19,8 @@ var (
 
 func GetUserShow(accountInfo []string) (*UserShow, error) {
 	url := "https://" + accountInfo[1] + "/api/users/show"
-	logger.Infof("url: %s", url)
 
-	username := fmt.Sprintf(`{"username":"%s"}`, accountInfo[0])
+	username := fmt.Sprintf(`{"username":"%s","host":null}`, accountInfo[0])
 
 	response, requestErr := httpx.Post(url, nil, username)
 
@@ -35,12 +34,13 @@ func GetUserShow(accountInfo []string) (*UserShow, error) {
 		return nil, requestErr
 	}
 
-	errorObj := parsedJson.Get("error")
+	// check response error
+	errorMsg := string(parsedJson.GetStringBytes("error", "message"))
+	if errorMsg != "" {
+		param := string(parsedJson.GetStringBytes("error", "info", "param"))
+		reason := string(parsedJson.GetStringBytes("error", "info", "reason"))
 
-	if errorObj != nil {
-		errorMsg := string(errorObj.GetStringBytes("message"))
-
-		return nil, fmt.Errorf("Get misskey userinfo error: %s", errorMsg)
+		return nil, fmt.Errorf("Get misskey user show error: %s; %s; %s", errorMsg, param, reason)
 	}
 
 	userShow := new(UserShow)
@@ -55,8 +55,9 @@ func GetUserShow(accountInfo []string) (*UserShow, error) {
 	return userShow, nil
 }
 
-func GetUserNoteList(address string, count int, since time.Time) ([]Note, error) {
+func GetUserNoteList(address string, count int, until time.Time) ([]Note, error) {
 	accountInfo, err := formatUserAccount(address)
+	misskeyHost := accountInfo[1]
 
 	if err != nil {
 		return nil, err
@@ -68,13 +69,13 @@ func GetUserNoteList(address string, count int, since time.Time) ([]Note, error)
 		return nil, getUserIdErr
 	}
 
-	url := "https://" + accountInfo[1] + "/api/users/notes"
+	url := "https://" + misskeyHost + "/api/users/notes"
 
 	request := new(TimelineRequest)
 
 	request.UserId = userShow.Id
 	request.Limit = count
-	request.UntilDate = since.Unix() * 1000
+	request.UntilDate = until.Unix() * 1000
 	request.ExcludeNsfw = true
 	request.Renote = true
 	request.IncludeReplies = false
@@ -113,8 +114,9 @@ func GetUserNoteList(address string, count int, since time.Time) ([]Note, error)
 		formatContent(note, ns, accountInfo[1])
 
 		ns.Id = string(note.GetStringBytes("id"))
-		ns.Author = string(note.GetStringBytes("userId"))
+		ns.Author = string(note.GetStringBytes("user", "username"))
 		ns.Link = fmt.Sprintf("https://%s/notes/%s", accountInfo[1], ns.Id)
+		ns.Host = misskeyHost
 
 		t, timeErr := time.Parse(time.RFC3339, string(note.GetStringBytes("createdAt")))
 
@@ -147,20 +149,28 @@ func formatContent(note *fastjson.Value, ns *Note, instance string) {
 	renoteId := string(note.GetStringBytes("renoteId"))
 
 	// format renote if any
-	if renoteId != "null" {
+	if renoteId != "" {
 		renoteUser := string(note.GetStringBytes("renote", "user", "username"))
 
 		renoteText := string(note.GetStringBytes("renote", "text"))
 
-		ns.Summary = fmt.Sprintf("%s Renote @%s: %s", ns.Summary, renoteUser, renoteText)
+		// ns.Summary = fmt.Sprintf("%s Renote @%s: %s", ns.Summary, renoteUser, renoteText)
 
 		formatContent(note.Get("renote"), ns, instance)
 
-		quoteText := *model.NewAttachment(renoteText, nil, "text/plain", "quote_text", 0, time.Now())
+		quoteText := datatype.Attachment{
+			Type:     "quote_text",
+			MimeType: "text/plain",
+			Content:  renoteText,
+		}
 
 		address := fmt.Sprintf("https://%s/@%s/%s", instance, renoteUser, renoteId)
 
-		quoteAddress := *model.NewAttachment(address, nil, "text/uri-list", "quote_address", 0, time.Now())
+		quoteAddress := datatype.Attachment{
+			Type:     "quote_address",
+			MimeType: "text/uri-list",
+			Content:  address,
+		}
 
 		ns.Attachments = append(ns.Attachments, quoteText, quoteAddress)
 	}
@@ -173,9 +183,11 @@ func formatEmoji(emojiList []*fastjson.Value, ns *Note) {
 
 		ns.Summary = strings.Replace(ns.Summary, name, fmt.Sprintf("<img class=\"emoji\" src=\"%s\" alt=\":%s:\">", url, name), -1)
 
-		content := fmt.Sprintf("{\"name\":\"%s\",\"url\":\"%s\"}", name, url)
-
-		attachment := *model.NewAttachment(content, nil, "text/json", "emojis", 0, time.Now())
+		attachment := datatype.Attachment{
+			Type:     "emojis",
+			Content:  fmt.Sprintf("{\"name\":\"%s\",\"url\":\"%s\"}", name, url),
+			MimeType: "text/json",
+		}
 
 		ns.Attachments = append(ns.Attachments, attachment)
 	}
@@ -190,13 +202,14 @@ func formatImage(imageList []*fastjson.Value, ns *Note) {
 
 			ns.Summary += fmt.Sprintf("<img class=\"media\" src=\"%s\">", url)
 
-			contentHeader, err := httpx.GetContentHeader(url)
+			contentHeader, _ := httpx.GetContentHeader(url)
 
-			if err != nil {
-				logger.Errorf("Jike GetPicture err: %v", err)
+			attachment := datatype.Attachment{
+				Type:        "quote_file",
+				Address:     url,
+				MimeType:    contentHeader.MIMEType,
+				SizeInBytes: contentHeader.SizeInByte,
 			}
-
-			attachment := *model.NewAttachment(url, nil, contentHeader.MIMEType, "quote_file", contentHeader.SizeInByte, time.Now())
 
 			ns.Attachments = append(ns.Attachments, attachment)
 		}
@@ -207,7 +220,7 @@ func formatImage(imageList []*fastjson.Value, ns *Note) {
 func formatUserAccount(address string) ([]string, error) {
 	res := strings.Split(address, "@")
 
-	if len(res) < 2 {
+	if len(res) != 2 {
 		err := fmt.Errorf("invalid misskey address: %s", address)
 		logger.Errorf("%v", err)
 

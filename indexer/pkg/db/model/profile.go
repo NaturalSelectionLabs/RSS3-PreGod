@@ -1,8 +1,11 @@
 package model
 
 import (
+	"time"
+
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/constants"
 	"github.com/kamva/mgm/v3"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type Profile struct {
@@ -21,9 +24,19 @@ func NewProfile(networkId constants.NetworkID, proof string, metadata map[string
 	name string, bio string, avatars []string,
 	attachments []Attachment, connectedAccounts []string) *Profile {
 	return &Profile{
+		DefaultModel: mgm.DefaultModel{
+			IDField: mgm.IDField{
+				ID: primitive.NewObjectID(),
+			},
+			DateFields: mgm.DateFields{
+				CreatedAt: time.Now(),
+				UpdatedAt: time.Now(),
+			},
+		},
 		ProfileId: ObjectId{
 			NetworkID: networkId,
 			Proof:     proof,
+			SyncAt:    time.Now(),
 		},
 		Metadata:          metadata,
 		Name:              name,

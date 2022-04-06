@@ -7,8 +7,9 @@ import (
 	"os/signal"
 	"time"
 
-	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/db"
-	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/db/model"
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database"
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database/datatype"
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database/model"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/constants"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/logger"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/rss3uri"
@@ -21,13 +22,14 @@ type crawlConfig struct {
 	fromHeight    int64
 	confirmations int64
 	step          int64
+	minStep       int64
 	sleepInterval time.Duration
+	nextRoundTime time.Time
 }
 
 type crawler struct {
 	identity  ArAccount
 	interrupt chan os.Signal
-	complete  chan error
 	cfg       *crawlConfig
 }
 
@@ -35,56 +37,56 @@ func NewCrawler(identity ArAccount, crawlCfg *crawlConfig) *crawler {
 	return &crawler{
 		identity,
 		make(chan os.Signal, 1),
-		make(chan error),
 		crawlCfg,
 	}
 }
 
 func (ar *crawler) run() error {
-	startBlockHeight := ar.cfg.fromHeight
-	step := ar.cfg.step
-	endBlockHeight := startBlockHeight + step
-	tempDelay := ar.cfg.sleepInterval
-
-	latestConfirmedBlockHeight, err := GetLatestBlockHeightWithConfirmations(ar.cfg.confirmations)
-	if err != nil {
-		return err
-	}
-
 	for {
 		// handle interrupt
 		if ar.gotInterrupt() {
 			return ErrInterrupt
 		}
 
-		if latestConfirmedBlockHeight <= endBlockHeight {
-			for {
-				time.Sleep(tempDelay)
+		if ar.cfg.nextRoundTime.After(time.Now()) {
+			time.Sleep(1 * time.Second)
 
-				latestConfirmedBlockHeight, err = GetLatestBlockHeightWithConfirmations(ar.cfg.confirmations)
-				if err != nil {
-					return err
-				}
-
-				step = DefaultCrawlStep // reset step to default if we are at the end of the chain
-
-				if latestConfirmedBlockHeight <= endBlockHeight {
-					break
-				}
-			}
-		} else {
-			step = ar.cfg.step
+			continue
 		}
 
-		log.Println("Getting articles from", startBlockHeight, "to", endBlockHeight,
-			"with step", step, "and temp delay", tempDelay,
-			"and latest confirmed block height", latestConfirmedBlockHeight,
-		)
+		startBlockHeight := ar.cfg.fromHeight
+		endBlockHeight := ar.cfg.fromHeight + ar.cfg.step
 
+		// check latest confirmed block height
+		latestConfirmedBlockHeight, err := GetLatestBlockHeightWithConfirmations(ar.cfg.confirmations)
+		if err != nil {
+			logger.Errorf("get latest block error: %v", err)
+
+			return err
+		}
+
+		if latestConfirmedBlockHeight <= endBlockHeight {
+			logger.Info("catch up with the latest block height...")
+
+			ar.cfg.nextRoundTime = ar.cfg.nextRoundTime.Add(ar.cfg.sleepInterval)
+
+			// use minStep if we are at the end of the chain
+			ar.cfg.step = ar.cfg.minStep
+
+			logger.Info("arweave catch up with the latest block height")
+
+			continue
+		}
+
+		logger.Infof("Getting articles from [%d] to [%d], with step [%d] and latest confirmed block height [%d]",
+			startBlockHeight, endBlockHeight, ar.cfg.step, latestConfirmedBlockHeight)
 		ar.parseMirrorArticles(startBlockHeight, endBlockHeight, ar.identity)
 
-		startBlockHeight = startBlockHeight + step
-		endBlockHeight = endBlockHeight + step
+		// set new fromHeight for next round
+		ar.cfg.fromHeight = endBlockHeight
+
+		// sleep 0.5 second per round
+		time.Sleep(500 * time.Millisecond)
 	}
 }
 
@@ -93,55 +95,66 @@ func (ar *crawler) run() error {
 func (ar *crawler) parseMirrorArticles(from, to int64, owner ArAccount) error {
 	articles, err := GetMirrorContents(from, to, owner)
 	if err != nil {
+		logger.Errorf("GetMirrorContents error: [%v]", err)
+
 		return err
 	}
 
-	logger.Info("Got articles:", len(articles))
-
-	items := make([]*model.Item, 0)
+	items := make([]model.Note, 0, len(articles))
 
 	for _, article := range articles {
-		attachment := model.Attachment{
-			Type:     "body",
-			Content:  article.Content,
-			MimeType: "text/markdown",
-		}
-
-		tsp := time.Unix(article.TimeStamp, 0)
-
-		author, err := rss3uri.NewInstance("account", article.Author, string(constants.PlatformSymbolEthereum))
-		if err != nil {
-			//TODO: may send to a error queue or whatever in the future
-			logger.Error(err)
-
-			tsp = time.Now()
-		}
-
-		ni := model.NewItem(
-			constants.NetworkIDArweaveMainnet,
-			article.TxHash,
-			model.Metadata{
-				"network": constants.NetworkSymbolArweaveMainnet,
-				"proof":   article.Digest,
+		attachment := datatype.Attachments{
+			{
+				Type:     "body",
+				Content:  article.Content,
+				MimeType: "text/markdown",
 			},
-			constants.ItemTagsMirrorEntry,
-			[]string{author.String()},
-			article.Title,
-			article.Content, // TODO: According to RIP4, if the body is too long, then only record part of the body, followed by ... at the end
-			[]model.Attachment{attachment},
-			tsp,
-		)
+		}
 
-		items = append(items, ni)
-		notes := []*model.ObjectId{{
-			NetworkID: constants.NetworkIDArweaveMainnet,
-			Proof:     article.TxHash,
-		}}
-		instance := rss3uri.NewAccountInstance(article.Author, constants.PlatformSymbolArweave)
-		db.AppendNotes(instance, notes)
+		tsp := time.Unix(article.Timestamp, 0)
+
+		// ignore empty item
+		if article.Author == "" {
+			continue
+		}
+
+		author := rss3uri.NewAccountInstance(article.Author, constants.PlatformSymbolEthereum).UriString()
+		note := model.Note{
+			Identifier: rss3uri.NewNoteInstance(article.Author, constants.NetworkSymbolArweaveMainnet).UriString(),
+			Owner:      author,
+			RelatedURLs: []string{
+				"https://arweave.net/" + article.TxHash,
+				"https://mirror.xyz/" + article.Author + "/" + article.OriginalDigest,
+			},
+			Tags:    constants.ItemTagsMirrorEntry.ToPqStringArray(),
+			Authors: []string{author},
+			Title:   article.Title,
+			// TODO: Summary - According to RIP4, if the body is too long, then only record part of the body, followed by ... at the end
+			Summary:         article.Content,
+			Attachments:     database.MustWrapJSON(attachment),
+			Source:          constants.NoteSourceNameMirrorEntry.String(),
+			MetadataNetwork: constants.NetworkSymbolArweaveMainnet.String(),
+			MetadataProof:   article.TxHash,
+			Metadata:        database.MustWrapJSON(map[string]interface{}{}),
+			DateCreated:     tsp,
+			DateUpdated:     tsp,
+		}
+
+		items = append(items, note)
 	}
 
-	db.InsertItems(items, constants.NetworkIDArweaveMainnet)
+	tx := database.DB.Begin()
+	defer tx.Rollback()
+
+	if items != nil && len(items) > 0 {
+		if _, dbErr := database.CreateNotes(tx, items, true); dbErr != nil {
+			return dbErr
+		}
+	}
+
+	if err = tx.Commit().Error; err != nil {
+		return err
+	}
 
 	return nil
 }
@@ -151,16 +164,13 @@ func (ar *crawler) Start() error {
 
 	log.Println("Starting Arweave crawler...")
 
-	go func() {
-		ar.complete <- ar.run()
-	}()
+	if err := ar.run(); err != nil {
+		logger.Errorf("arweave crawler errro [%v]", err)
 
-	for {
-		select {
-		case err := <-ar.complete:
-			return err
-		}
+		return err
 	}
+
+	return nil
 }
 
 func (ar *crawler) gotInterrupt() bool {

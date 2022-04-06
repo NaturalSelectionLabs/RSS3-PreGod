@@ -36,9 +36,10 @@ func GetNFTTransfers(owner string) ([]NFTTransferItem, error) {
 		return nil, parseErr
 	}
 
-	result := make([]NFTTransferItem, 0)
-
 	array := parsedJson.GetArray("result")
+
+	result := make([]NFTTransferItem, 0, len(array))
+
 	for _, v := range array {
 		var item NFTTransferItem
 		item.TokenAddress = string(v.GetStringBytes("contractAddress"))
@@ -69,9 +70,10 @@ func GetNFTs(owner string) ([]NFTItem, error) {
 		return nil, parseErr
 	}
 
+	array := parsedJson.GetArray("result")
+
 	nfts := make(map[string]NFTItem)
 
-	array := parsedJson.GetArray("result")
 	for _, v := range array {
 		var nft NFTItem
 		nft.TokenAddress = string(v.GetStringBytes("contractAddress"))
@@ -91,7 +93,7 @@ func GetNFTs(owner string) ([]NFTItem, error) {
 		nfts[nft.TokenId] = nft
 	}
 
-	result := make([]NFTItem, 0)
+	result := make([]NFTItem, 0, len(nfts))
 
 	for _, v := range nfts {
 		v.TokenURI = GetTokenURI(v.TokenAddress)

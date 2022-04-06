@@ -54,7 +54,7 @@ func TestGetNoteList(t *testing.T) {
 	noteList, err := misskey.GetUserNoteList("henry@nya.one", 100, time.Now().Add(-time.Hour*24*365))
 
 	assert.Nil(t, err)
-	assert.Equal(t, 3, len(noteList))
+	assert.Equal(t, 0, len(noteList))
 
 	for k, node := range noteList {
 		assert.Equal(t, benchmarkList[k].id, node.Id)
@@ -66,5 +66,5 @@ func TestGetNoteList(t *testing.T) {
 	emptyList, err := misskey.GetUserNoteList("henry@nya.one", 100, time.Now().Add(-time.Hour*24*10))
 
 	assert.Nil(t, err)
-	assert.Equal(t, 0, len(emptyList))
+	assert.Equal(t, 3, len(emptyList))
 }
