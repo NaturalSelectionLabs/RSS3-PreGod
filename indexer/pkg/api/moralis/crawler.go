@@ -161,10 +161,8 @@ func (c *moralisCrawler) Work(param crawler.WorkParam) error {
 			DateCreated: tsp,
 			DateUpdated: tsp,
 		}
-		if strings.ToLower(item.FromAddress) != strings.ToLower(param.Identity) {
-			// transfer into account
-			c.Assets = append(c.Assets, asset)
-		} else {
+
+		if strings.ToLower(item.FromAddress) == strings.ToLower(param.Identity) {
 			// transfer from account
 			// 1. delete the asset if it exists
 			for i, asset := range c.Assets {
@@ -177,6 +175,11 @@ func (c *moralisCrawler) Work(param crawler.WorkParam) error {
 			if _, err := database.DeleteAsset(database.DB, &asset); err != nil {
 				logger.Warnf("fail to delete asset: %+v", asset)
 			}
+		}
+
+		if strings.ToLower(item.ToAddress) == strings.ToLower(param.Identity) {
+			// transfer into account
+			c.Assets = append(c.Assets, asset)
 		}
 	}
 
