@@ -5,30 +5,32 @@ import (
 
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/httpx"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/logger"
-	"github.com/valyala/fastjson"
+	jsoniter "github.com/json-iterator/go"
 )
 
 const arweaveEndpoint string = "https://arweave.net"
 const arweaveGraphqlEndpoint string = "https://arweave.net/graphql"
 const mirrorHost = "https://mirror.xyz/"
 
+var (
+	jsoni = jsoniter.ConfigCompatibleWithStandardLibrary
+)
+
 // GetLatestBlockHeight gets the latest block height for arweave
 func GetLatestBlockHeight() (int64, error) {
 	response, err := httpx.Get(arweaveEndpoint, nil)
 	if err != nil {
-		return 0, nil
+		return 0, err
 	}
 
-	var parser fastjson.Parser
-	parsedJson, parseErr := parser.Parse(string(response))
+	latestBlockResult := new(ArLatestBlockResult)
+	if err := jsoni.UnmarshalFromString(string(response), latestBlockResult); err != nil {
+		logger.Errorf("arweave GetLatestBlockHeight unmarshalFromString error: %v", err)
 
-	if parseErr != nil {
-		return 0, nil
+		return 0, err
 	}
 
-	blockHeight := parsedJson.GetInt64("height")
-
-	return blockHeight, nil
+	return latestBlockResult.Height, nil
 }
 
 func GetLatestBlockHeightWithConfirmations(confirmations int64) (int64, error) {
@@ -80,98 +82,88 @@ func GetMirrorContents(from, to int64, owner ArAccount) ([]MirrorContent, error)
 		return nil, nil
 	}
 
-	var parser fastjson.Parser
+	graphqlResult := new(GraphqlResult)
+	if err := jsoni.UnmarshalFromString(string(response), graphqlResult); err != nil {
+		logger.Errorf("arweave unmarshalFromString error: %v", err)
 
-	parsedJson, parseErr := parser.Parse(string(response))
-	if parseErr != nil {
-		logger.Errorf("Parse json  error: [%v]", parseErr)
-
-		return nil, nil
+		return nil, err
 	}
-
 	// edges
-	edges := parsedJson.GetArray("data", "transactions", "edges")
-	result := make([]MirrorContent, len(edges))
+	edges := graphqlResult.Data.Transactions.Edges
+	results := make([]MirrorContent, 0)
 
 	for i := 0; i < len(edges); i++ {
-		result[i], err = parseGraphqlNode(edges[i].String())
+		res, err := parseGraphqlNode(edges[i])
 		if err != nil {
 			return nil, nil
 		}
+
+		if res != nil {
+			results = append(results, *res)
+		}
 	}
 
-	return result, nil
+	return results, nil
 }
 
-func parseGraphqlNode(node string) (MirrorContent, error) {
-	var parser fastjson.Parser
+func parseGraphqlNode(node GraphqlResultEdges) (*MirrorContent, error) {
+	article := new(MirrorContent)
 
-	parsedJson, err := parser.Parse(node)
-	if err != nil {
-		return MirrorContent{}, err
-	}
+	var appName string
 
-	article := MirrorContent{}
-
-	tags := parsedJson.GetArray("node", "tags")
+	tags := node.Node.Tags
 	for _, tag := range tags {
-		// only parse tags with "MirrorXYZ"
-		appName := string(tag.GetStringBytes("App-Name"))
-		if appName != "MirrorXYZ" {
-			continue
-		}
-
-		name := string(tag.GetStringBytes("name"))
-		value := string(tag.GetStringBytes("value"))
-
-		switch name {
+		switch tag.Name {
+		case "App-Name":
+			appName = tag.Value
 		case "Contributor":
-			article.Author = value
+			article.Author = tag.Value
 		case "Content-Digest":
-			article.Digest = value
+			article.Digest = tag.Value
 		case "Original-Content-Digest":
-			article.OriginalDigest = value
+			article.OriginalDigest = tag.Value
 		}
 	}
 
-	id := parsedJson.GetStringBytes("node", "id")
-	content, err := GetContentByTxHash(string(id))
+	// only parse tags with "MirrorXYZ"
+	if appName != "MirrorXYZ" {
+		return nil, nil
+	}
+
+	id := node.Node.Id
+	if id == "" {
+		return nil, nil
+	}
+
+	content, err := GetContentByTxHash(id)
 
 	if err != nil {
 		logger.Errorf("GetContentByTxHash error: [%v]", err)
 
-		return article, err
+		return nil, err
 	}
 
-	//log.Println(string(content))
+	originalMirrorContent := new(OriginalMirrorContent)
+	if err := jsoni.UnmarshalFromString(string(content), &originalMirrorContent); err != nil {
+		logger.Errorf("arweave unmarshalFromString error: %v", err)
 
-	parsedJson, err = parser.Parse(string(content))
-	if err != nil {
-		return article, err
+		return nil, err
 	}
 
 	// title
-	article.Title = string(parsedJson.GetStringBytes("content", "title"))
+	article.Title = originalMirrorContent.Content.Title
 	// timestamp
-	article.Timestamp = parsedJson.GetInt64("content", "timestamp")
+	article.Timestamp = originalMirrorContent.Content.Timestamp
 	// content
-	article.Content = string(parsedJson.GetStringBytes("content", "body")) // timestamp
+	article.Content = originalMirrorContent.Content.Body
 	// txHash
 	article.TxHash = string(id)
-
-	// parse digest and author, in case of empty fields in tags, eg: arweave block #591647
 	// Author
-	if article.Author == "" {
-		article.Author = string(parsedJson.GetStringBytes("authorship", "contributor"))
-	}
+	article.Author = originalMirrorContent.Authorship.Contributor
 	// parse Content-Digest
-	if article.Digest == "" {
-		article.Digest = string(parsedJson.GetStringBytes("digest"))
-	}
+	article.Digest = originalMirrorContent.Digest
 	// parse OriginalDigest
-	if article.OriginalDigest == "" {
-		article.OriginalDigest = string(parsedJson.GetStringBytes("originalDigest"))
-	}
+	article.OriginalDigest = originalMirrorContent.OriginalDigest
 	// Link
 	if article.Author != "" && article.OriginalDigest != "" {
 		article.Link = mirrorHost + "/" + article.Author + "/" + article.OriginalDigest
