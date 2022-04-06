@@ -1,10 +1,9 @@
 package handler
 
 import (
-	"database/sql"
-	"errors"
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/internal/api"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/internal/middleware"
@@ -13,8 +12,6 @@ import (
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/constants"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/rss3uri"
 	"github.com/gin-gonic/gin"
-	"golang.org/x/text/cases"
-	"golang.org/x/text/language"
 )
 
 type GetLinkListRequest struct {
@@ -34,7 +31,7 @@ func GetLinkListHandlerFunc(c *gin.Context) {
 
 	request := GetLinkListRequest{}
 	if err = c.ShouldBindQuery(&request); err != nil {
-		_ = c.Error(errors.New("invalid params"))
+		_ = c.Error(api.ErrorInvalidParams)
 
 		return
 	}
@@ -53,7 +50,7 @@ func GetLinkListHandlerFunc(c *gin.Context) {
 		request.Limit,
 	)
 	if err != nil {
-		_ = c.Error(errors.New("invalid params"))
+		_ = c.Error(api.ErrorInvalidParams)
 
 		return
 	}
@@ -68,35 +65,27 @@ func GetLinkListHandlerFunc(c *gin.Context) {
 			Type:        constants.LinkTypeID(linkModel.Type).String(),
 			Source:      constants.ProfileSourceID(linkModel.Source).Name().String(),
 			Metadata: protocol.LinkMetadata{
-				Network: cases.Title(language.English, cases.NoLower).String(constants.NetworkSymbolCrossbell.String()),
+				Network: constants.NetworkSymbolCrossbell.String(),
 				Proof:   "TODO",
 			},
 		})
 	}
 
-	var dateUpdated sql.NullTime
+	var dateUpdated *time.Time
 
 	for _, link := range links {
-		if !dateUpdated.Valid {
-			dateUpdated.Valid = true
-			dateUpdated.Time = link.DateCreated
+		if dateUpdated == nil {
+			dateUpdated = &link.DateCreated
+		} else if dateUpdated.Before(link.DateCreated) {
+			dateUpdated = &link.DateCreated
 		}
-
-		if dateUpdated.Time.Before(link.DateCreated) {
-			dateUpdated.Time = link.DateCreated
-		}
-	}
-
-	if len(links) == 0 {
-		_ = c.Error(api.ErrorNotFound)
-
-		return
 	}
 
 	c.JSON(http.StatusOK, protocol.File{
-		Identifier:  fmt.Sprintf("%s/links", rss3uri.New(instance)),
-		DateUpdated: dateUpdated.Time,
-		Total:       len(links),
-		List:        links,
+		Identifier:     fmt.Sprintf("%s/links", rss3uri.New(instance)),
+		IdentifierNext: fmt.Sprintf("%s/links", rss3uri.New(instance)),
+		DateUpdated:    dateUpdated,
+		Total:          len(links),
+		List:           links,
 	})
 }

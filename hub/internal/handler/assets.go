@@ -1,16 +1,18 @@
 package handler
 
 import (
-	"database/sql"
 	"encoding/json"
 	"fmt"
-	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/internal/api"
 	"net/http"
+	"strings"
 	"time"
 
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/internal/indexer"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/internal/middleware"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/internal/protocol"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database"
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database/model"
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/constants"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/rss3uri"
 	"github.com/gin-gonic/gin"
 )
@@ -48,15 +50,37 @@ func GetAssetListHandlerFunc(c *gin.Context) {
 		return
 	}
 
-	fmt.Println(profiles)
-	//if err := indexer.GetItems(profiles); err != nil {
-	//	_ = c.Error(err)
-	//
-	//	return
-	//}
+	uris := make([]string, 0)
+	uris = append(uris, rss3uri.New(instance).String())
+
+	accounts := make([]model.Account, 0)
+
+	for _, profile := range profiles {
+		internalAccounts, err := database.QueryAccounts(database.DB, profile.ID, profile.Platform, 0)
+		if err != nil {
+			_ = c.Error(err)
+
+			return
+		}
+
+		accounts = append(accounts, internalAccounts...)
+
+		for _, account := range internalAccounts {
+			uris = append(uris, strings.ToLower(
+				rss3uri.New(
+					rss3uri.NewAccountInstance(account.ID, constants.PlatformID(account.Platform).Symbol()),
+				).String(),
+			))
+		}
+	}
+	if err := indexer.GetItems(accounts); err != nil {
+		_ = c.Error(err)
+
+		return
+	}
 
 	// Query assets form database
-	assetModels, err := database.QueryAssets(database.DB, []string{rss3uri.New(instance).String()})
+	assetModels, err := database.QueryAssets(database.DB, uris)
 	if err != nil {
 		_ = c.Error(err)
 
@@ -65,8 +89,8 @@ func GetAssetListHandlerFunc(c *gin.Context) {
 
 	uri := rss3uri.New(instance)
 
-	var dateUpdated sql.NullTime
-	assetList := make([]protocol.Item, 0, len(assetModels))
+	var dateUpdated *time.Time
+	assetList := make([]protocol.Item, len(assetModels))
 	for i, assetModel := range assetModels {
 		attachmentList := make([]protocol.ItemAttachment, 0)
 		if err = json.Unmarshal(assetModel.Attachments, &attachmentList); err != nil {
@@ -75,9 +99,8 @@ func GetAssetListHandlerFunc(c *gin.Context) {
 			return
 		}
 
-		if !dateUpdated.Valid {
-			dateUpdated.Valid = true
-			dateUpdated.Time = assetModel.DateUpdated
+		if dateUpdated == nil {
+			dateUpdated = &assetModel.DateUpdated
 		}
 
 		assetList[i] = protocol.Item{
@@ -95,17 +118,11 @@ func GetAssetListHandlerFunc(c *gin.Context) {
 		}
 	}
 
-	if len(assetList) == 0 {
-		_ = c.Error(api.ErrorNotFound)
-
-		return
-	}
-
 	c.JSON(http.StatusOK, protocol.File{
-		DateUpdated: time.Now(),
+		DateUpdated: dateUpdated,
 		// TODO
-		Identifier:     uri.String(),
-		IdentifierNext: uri.String(),
+		Identifier:     fmt.Sprintf("%s/assets", uri.String()),
+		IdentifierNext: fmt.Sprintf("%s/assets", uri.String()),
 		Total:          len(assetList),
 		List:           assetList,
 	})

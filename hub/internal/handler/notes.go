@@ -1,10 +1,8 @@
 package handler
 
 import (
-	"database/sql"
 	"encoding/json"
 	"fmt"
-	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/internal/api"
 	"net/http"
 	"strings"
 	"time"
@@ -53,6 +51,7 @@ func GetNoteListHandlerFunc(c *gin.Context) {
 	}
 
 	uris := make([]string, 0)
+	uris = append(uris, rss3uri.New(instance).String())
 	accounts := make([]model.Account, 0)
 
 	for _, profile := range profiles {
@@ -80,7 +79,7 @@ func GetNoteListHandlerFunc(c *gin.Context) {
 		return
 	}
 
-	// Query assets form database
+	// Query notes form database
 	noteModels, err := database.QueryNotes(database.DB, uris)
 	if err != nil {
 		_ = c.Error(err)
@@ -90,7 +89,7 @@ func GetNoteListHandlerFunc(c *gin.Context) {
 
 	uri := rss3uri.New(instance)
 
-	var dateUpdated sql.NullTime
+	var dateUpdated *time.Time
 	noteList := make([]protocol.Item, len(noteModels))
 	for i, noteModel := range noteModels {
 		attachmentList := make([]protocol.ItemAttachment, 0)
@@ -100,11 +99,10 @@ func GetNoteListHandlerFunc(c *gin.Context) {
 			return
 		}
 
-		if !dateUpdated.Valid {
-			dateUpdated.Valid = true
-			dateUpdated.Time = noteModel.DateUpdated
-		} else if dateUpdated.Time.Before(noteModel.DateUpdated) {
-			dateUpdated.Time = noteModel.DateUpdated
+		if dateUpdated == nil {
+			dateUpdated = &noteModel.DateUpdated
+		} else if dateUpdated.Before(noteModel.DateUpdated) {
+			dateUpdated = &noteModel.DateUpdated
 		}
 
 		noteList[i] = protocol.Item{
@@ -122,17 +120,11 @@ func GetNoteListHandlerFunc(c *gin.Context) {
 		}
 	}
 
-	if len(noteList) == 0 {
-		_ = c.Error(api.ErrorNotFound)
-
-		return
-	}
-
 	c.JSON(http.StatusOK, protocol.File{
-		DateUpdated: dateUpdated.Time,
+		DateUpdated: dateUpdated,
 		// TODO
-		Identifier:     uri.String(),
-		IdentifierNext: uri.String(),
+		Identifier:     fmt.Sprintf("%s/notes", uri.String()),
+		IdentifierNext: fmt.Sprintf("%s/notes", uri.String()),
 		Total:          len(noteList),
 		List:           noteList,
 	})

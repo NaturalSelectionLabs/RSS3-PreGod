@@ -39,16 +39,15 @@ func Setup() error {
 		return err
 	}
 
-	//if err := DB.AutoMigrate(
-	//	&model.Profile{},
-	//	&model.Account{},
-	//	&model.Link{},
-	//	&model.Asset{},
-	//	&model.Note{},
-	//	&model.CrawlerMetadata{},
-	//); err != nil {
-	//	return err
-	//}
+	if err := DB.AutoMigrate(
+		&model.Profile{},
+		&model.Account{},
+		&model.Link{},
+		&model.Asset{},
+		&model.Note{},
+	); err != nil {
+		return err
+	}
 
 	return nil
 }
