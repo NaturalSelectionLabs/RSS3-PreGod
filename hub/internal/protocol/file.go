@@ -14,18 +14,23 @@ const (
 var _ json.Marshaler = &File{}
 
 type File struct {
-	Version        string    `json:"version"`
-	DateUpdated    time.Time `json:"date_updated"`
-	Identifier     string    `json:"identifier"`
-	IdentifierNext string    `json:"identifier_next,omitempty"`
-	Total          int       `json:"total"`
-	List           any       `json:"list,omitempty"`
+	Version        string     `json:"version"`
+	DateUpdated    *time.Time `json:"date_updated,omitempty"`
+	Identifier     string     `json:"identifier"`
+	IdentifierNext string     `json:"identifier_next,omitempty"`
+	Total          int        `json:"total"`
+	List           any        `json:"list"`
 }
 
 func (f File) MarshalJSON() ([]byte, error) {
+	dateUpdated := ""
+	if f.DateUpdated != nil {
+		dateUpdated = f.DateUpdated.Format(timex.ISO8601)
+	}
+
 	return json.Marshal(&magicFile{
 		Version:        Version,
-		DateUpdated:    f.DateUpdated.Format(timex.ISO8601),
+		DateUpdated:    dateUpdated,
 		Identifier:     f.Identifier,
 		IdentifierNext: f.IdentifierNext,
 		Total:          f.Total,
@@ -35,9 +40,9 @@ func (f File) MarshalJSON() ([]byte, error) {
 
 type magicFile struct {
 	Version        string `json:"version"`
-	DateUpdated    string `json:"date_updated"`
+	DateUpdated    string `json:"date_updated,omitempty"`
 	Identifier     string `json:"identifier"`
 	IdentifierNext string `json:"identifier_next,omitempty"`
 	Total          int    `json:"total"`
-	List           any    `json:"list,omitempty"`
+	List           any    `json:"list"`
 }

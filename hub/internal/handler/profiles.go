@@ -1,10 +1,10 @@
 package handler
 
 import (
-	"database/sql"
 	"errors"
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/internal/api"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/internal/middleware"
@@ -43,7 +43,7 @@ func GetProfileListHandlerFunc(c *gin.Context) {
 		profileList, err = getPlatformInstanceProfileList(value, request)
 		if err != nil {
 			if !errors.Is(err, api.ErrorNotFound) {
-				err = api.ErrorDatabaseError
+				err = api.ErrorDatabase
 			}
 
 			_ = c.Error(err)
@@ -58,20 +58,17 @@ func GetProfileListHandlerFunc(c *gin.Context) {
 		return
 	}
 
-	var dateUpdated sql.NullTime
+	var dateUpdated *time.Time
 	for _, profile := range profileList {
-		if !dateUpdated.Valid {
-			dateUpdated.Valid = true
-			dateUpdated.Time = profile.DateUpdated
-		}
-
-		if dateUpdated.Time.Before(profile.DateCreated) {
-			dateUpdated.Time = profile.DateUpdated
+		if dateUpdated == nil {
+			dateUpdated = &profile.DateUpdated
+		} else if dateUpdated.Before(profile.DateCreated) {
+			dateUpdated = &profile.DateUpdated
 		}
 	}
 
 	c.JSON(http.StatusOK, protocol.File{
-		DateUpdated: dateUpdated.Time,
+		DateUpdated: dateUpdated,
 		Identifier:  fmt.Sprintf("%s/profiles", rss3uri.New(instance)),
 		Total:       len(profileList),
 		List:        profileList,
@@ -79,15 +76,12 @@ func GetProfileListHandlerFunc(c *gin.Context) {
 }
 
 func getPlatformInstanceProfileList(instance *rss3uri.PlatformInstance, request GetProfileListRequest) ([]protocol.Profile, error) {
-	tx := database.DB.Begin()
-	defer tx.Rollback()
-
 	profileSources := make([]int, 0)
 	for _, profileSource := range request.ProfileSources {
 		profileSources = append(profileSources, constants.ProfileSourceName(profileSource).ID().Int())
 	}
 
-	profileModels, err := database.QueryProfiles(tx, instance.GetIdentity(), instance.Platform.ID().Int(), profileSources)
+	profileModels, err := database.QueryProfiles(database.DB, instance.GetIdentity(), instance.Platform.ID().Int(), profileSources)
 	if err != nil {
 		return nil, err
 	}
@@ -108,7 +102,8 @@ func getPlatformInstanceProfileList(instance *rss3uri.PlatformInstance, request 
 		connectedAccounts := make([]string, 0)
 
 		accountModels, err := database.QueryAccounts(
-			tx, instance.GetIdentity(),
+			database.DB,
+			instance.GetIdentity(),
 			instance.Platform.ID().Int(),
 			// TODO
 			constants.ProfileSourceIDCrossbell.Int(),
@@ -141,12 +136,6 @@ func getPlatformInstanceProfileList(instance *rss3uri.PlatformInstance, request 
 			},
 		})
 	}
-
-	if len(profiles) == 0 {
-		return nil, api.ErrorNotFound
-	}
-
-	tx.Commit()
 
 	return profiles, nil
 }
