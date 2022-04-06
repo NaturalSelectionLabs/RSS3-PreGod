@@ -34,8 +34,9 @@ func (mc *misskeyCrawler) Work(param crawler.WorkParam) error {
 	author := rss3uri.NewAccountInstance(param.Identity, constants.PlatformSymbolMisskey).UriString()
 
 	for _, item := range noteList {
+		proof := item.Id + "-" + item.Host
 		note := model.Note{
-			Identifier:      rss3uri.NewNoteInstance(item.Id, constants.NetworkSymbolMisskey).UriString(),
+			Identifier:      rss3uri.NewNoteInstance(proof, constants.NetworkSymbolMisskey).UriString(),
 			Owner:           author,
 			RelatedURLs:     []string{item.Link},
 			Tags:            constants.ItemTagsMisskeyNote.ToPqStringArray(),
@@ -44,12 +45,10 @@ func (mc *misskeyCrawler) Work(param crawler.WorkParam) error {
 			Attachments:     database.MustWrapJSON(item.Attachments),
 			Source:          constants.NoteSourceNameMisskeyNote.String(),
 			MetadataNetwork: constants.NetworkSymbolMisskey.String(),
-			MetadataProof:   item.Id + "-" + item.Host,
-			Metadata: database.MustWrapJSON(map[string]interface{}{
-				"from": item.Author,
-			}),
-			DateCreated: item.CreatedAt,
-			DateUpdated: item.CreatedAt, // TODO: check if updatedAt is available
+			MetadataProof:   proof,
+			Metadata:        database.MustWrapJSON(map[string]interface{}{}),
+			DateCreated:     item.CreatedAt,
+			DateUpdated:     item.CreatedAt, // misskey doesn't have updatedAt
 		}
 
 		mc.Notes = append(mc.Notes, note)

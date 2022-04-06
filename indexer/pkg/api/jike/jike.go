@@ -2,6 +2,7 @@ package jike
 
 import (
 	"fmt"
+	"log"
 	"strconv"
 	"time"
 
@@ -262,6 +263,8 @@ func GetUserTimeline(name string) ([]Timeline, error) {
 
 	response, err := httpx.PostRaw(url, headers, json)
 
+	log.Println(string(response.Body()))
+
 	if err != nil {
 		logger.Errorf("Jike GetUserTimeline err: %v", err)
 
@@ -269,6 +272,8 @@ func GetUserTimeline(name string) ([]Timeline, error) {
 	}
 
 	parsedJson, err := parser.Parse(string(response.Body()))
+
+	author := string(parsedJson.GetStringBytes("data", "userProfile", "username"))
 
 	parsedObject := parsedJson.GetArray("data", "userProfile", "feeds", "nodes")
 
@@ -285,7 +290,7 @@ func GetUserTimeline(name string) ([]Timeline, error) {
 			return nil, timeErr
 		}
 
-		result[i].Author = string(parsedJson.GetStringBytes("username"))
+		result[i].Author = author
 		result[i].Timestamp = t
 		result[i].Summary = string(node.GetStringBytes("content"))
 		result[i].Link = fmt.Sprintf("https://web.okjike.com/originalPost/%s", id)
@@ -336,14 +341,16 @@ func formatFeed(node *fastjson.Value) string {
 	return text
 }
 
-// TODO: handle video attachments
 func getAttachment(node *fastjson.Value) []datatype.Attachment {
 	var content string
 
 	attachments := make([]datatype.Attachment, 0)
 
 	// process the original post attachments
-	attachments = append(attachments, getPicture(node.Get("pictures"))...)
+	attachments = append(attachments, getPicture(node)...)
+
+	// TODO: handle video attachments
+	// attachments = append(attachments, getVideo(node)...)
 
 	// a 'status' field often means the report target is unavailable, e.g, DELETED
 	if !node.Exists("target", "status") {
