@@ -172,7 +172,7 @@ func (gc *crawler) GetZkSyncDonations(fromBlock, toBlock int64) ([]DonationInfo,
 					Symbol:         token.Symbol,
 					FormatedAmount: formatedAmount,
 					Decimals:       token.Decimals,
-					Timestamp:      tx.CreatedAt,
+					Timestamp:      tx.CreatedAt.String(),
 					TxHash:         tx.TxHash,
 					Approach:       DonationApproachZksync,
 				}
