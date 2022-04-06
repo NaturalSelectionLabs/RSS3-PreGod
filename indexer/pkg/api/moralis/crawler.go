@@ -46,6 +46,10 @@ func (c *moralisCrawler) Work(param crawler.WorkParam) error {
 
 	networkSymbol := chainType.GetNetworkSymbol()
 	nftTransfers, err := GetNFTTransfers(param.Identity, chainType, param.BlockHeight, getApiKey())
+	// reverse the order of transfers to calculate the asset balances
+	for i, j := 0, len(nftTransfers.Result)-1; i < j; i, j = i+1, j-1 {
+		nftTransfers.Result[i], nftTransfers.Result[j] = nftTransfers.Result[j], nftTransfers.Result[i]
+	}
 
 	if err != nil {
 		return err
@@ -131,6 +135,9 @@ func (c *moralisCrawler) Work(param crawler.WorkParam) error {
 			DateUpdated: tsp,
 		}
 
+		c.Notes = append(c.Notes, note)
+
+		// asset
 		assetProof := item.GetAssetProof()
 		asset := model.Asset{
 			Identifier:      rss3uri.NewAssetInstance(assetProof, networkSymbol).UriString(),
@@ -154,9 +161,23 @@ func (c *moralisCrawler) Work(param crawler.WorkParam) error {
 			DateCreated: tsp,
 			DateUpdated: tsp,
 		}
-
-		c.Notes = append(c.Notes, note)
-		c.Assets = append(c.Assets, asset)
+		if strings.ToLower(item.FromAddress) != strings.ToLower(param.Identity) {
+			// transfer into account
+			c.Assets = append(c.Assets, asset)
+		} else {
+			// transfer from account
+			// 1. delete the asset if it exists
+			for i, asset := range c.Assets {
+				if asset.MetadataProof == assetProof {
+					c.Assets = append(c.Assets[:i], c.Assets[i+1:]...)
+					break
+				}
+			}
+			// 2. delete the asset from database
+			if _, err := database.DeleteAsset(database.DB, &asset); err != nil {
+				logger.Warnf("fail to delete asset: %+v", asset)
+			}
+		}
 	}
 
 	return nil

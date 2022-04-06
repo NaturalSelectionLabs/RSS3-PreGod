@@ -39,15 +39,16 @@ func Setup() error {
 		return err
 	}
 
-	if err := DB.AutoMigrate(
-		&model.Profile{},
-		&model.Account{},
-		&model.Link{},
-		&model.Asset{},
-		&model.Note{},
-	); err != nil {
-		return err
-	}
+	//if err := DB.AutoMigrate(
+	//	&model.Profile{},
+	//	&model.Account{},
+	//	&model.Link{},
+	//	&model.Asset{},
+	//	&model.Note{},
+	//	&model.CrawlerMetadata{},
+	//); err != nil {
+	//	return err
+	//}
 
 	return nil
 }
@@ -176,6 +177,14 @@ func CreateAssets(db *gorm.DB, assets []model.Asset, updateAll bool) ([]model.As
 	}
 
 	return assets, nil
+}
+
+func DeleteAsset(db *gorm.DB, asset *model.Asset) (*model.Asset, error) {
+	if err := db.Clauses(clause.Returning{}).Delete(&asset).Error; err != nil {
+		return nil, err
+	}
+
+	return asset, nil
 }
 
 func QueryAssets(db *gorm.DB, uris []string) ([]model.Asset, error) {
