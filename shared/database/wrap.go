@@ -33,6 +33,14 @@ func WrapJSON(value any) (datatypes.JSON, error) {
 	return bytes, err
 }
 
+func UnwrapJSON[T any](value datatypes.JSON) (T, error) {
+	var a T
+
+	err := json.Unmarshal(value, &a)
+
+	return a, err
+}
+
 func MustWrapJSON(value any) datatypes.JSON {
 	bytes, err := WrapJSON(value)
 	if err != nil {
@@ -41,3 +49,4 @@ func MustWrapJSON(value any) datatypes.JSON {
 
 	return bytes
 }
+
