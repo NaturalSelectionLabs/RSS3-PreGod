@@ -24,6 +24,7 @@ type Note struct {
 	Author      string
 	Attachments datatype.Attachments
 	Link        string
+	Host        string // misskey host
 }
 
 type UserShow struct {

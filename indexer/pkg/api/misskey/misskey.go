@@ -20,7 +20,7 @@ var (
 func GetUserShow(accountInfo []string) (*UserShow, error) {
 	url := "https://" + accountInfo[1] + "/api/users/show"
 
-	username := fmt.Sprintf(`{"username":"%s"}`, accountInfo[0])
+	username := fmt.Sprintf(`{"username":"%s","host":null}`, accountInfo[0])
 
 	response, requestErr := httpx.Post(url, nil, username)
 
@@ -34,12 +34,13 @@ func GetUserShow(accountInfo []string) (*UserShow, error) {
 		return nil, requestErr
 	}
 
-	errorObj := parsedJson.Get("error")
+	// check response error
+	errorMsg := string(parsedJson.GetStringBytes("error", "message"))
+	if errorMsg != "" {
+		param := string(parsedJson.GetStringBytes("error", "info", "param"))
+		reason := string(parsedJson.GetStringBytes("error", "info", "reason"))
 
-	if errorObj != nil {
-		errorMsg := string(errorObj.GetStringBytes("message"))
-
-		return nil, fmt.Errorf("Get misskey userinfo error: %s", errorMsg)
+		return nil, fmt.Errorf("Get misskey user show error: %s; %s; %s", errorMsg, param, reason)
 	}
 
 	userShow := new(UserShow)
@@ -56,6 +57,7 @@ func GetUserShow(accountInfo []string) (*UserShow, error) {
 
 func GetUserNoteList(address string, count int, until time.Time) ([]Note, error) {
 	accountInfo, err := formatUserAccount(address)
+	misskeyHost := accountInfo[1]
 
 	if err != nil {
 		return nil, err
@@ -67,7 +69,7 @@ func GetUserNoteList(address string, count int, until time.Time) ([]Note, error)
 		return nil, getUserIdErr
 	}
 
-	url := "https://" + accountInfo[1] + "/api/users/notes"
+	url := "https://" + misskeyHost + "/api/users/notes"
 
 	request := new(TimelineRequest)
 
@@ -112,8 +114,9 @@ func GetUserNoteList(address string, count int, until time.Time) ([]Note, error)
 		formatContent(note, ns, accountInfo[1])
 
 		ns.Id = string(note.GetStringBytes("id"))
-		ns.Author = string(note.GetStringBytes("userId"))
+		ns.Author = string(note.GetStringBytes("user", "username"))
 		ns.Link = fmt.Sprintf("https://%s/notes/%s", accountInfo[1], ns.Id)
+		ns.Host = misskeyHost
 
 		t, timeErr := time.Parse(time.RFC3339, string(note.GetStringBytes("createdAt")))
 
@@ -146,12 +149,12 @@ func formatContent(note *fastjson.Value, ns *Note, instance string) {
 	renoteId := string(note.GetStringBytes("renoteId"))
 
 	// format renote if any
-	if renoteId != "null" {
+	if renoteId != "" {
 		renoteUser := string(note.GetStringBytes("renote", "user", "username"))
 
 		renoteText := string(note.GetStringBytes("renote", "text"))
 
-		ns.Summary = fmt.Sprintf("%s Renote @%s: %s", ns.Summary, renoteUser, renoteText)
+		// ns.Summary = fmt.Sprintf("%s Renote @%s: %s", ns.Summary, renoteUser, renoteText)
 
 		formatContent(note.Get("renote"), ns, instance)
 
@@ -217,7 +220,7 @@ func formatImage(imageList []*fastjson.Value, ns *Note) {
 func formatUserAccount(address string) ([]string, error) {
 	res := strings.Split(address, "@")
 
-	if len(res) < 2 {
+	if len(res) != 2 {
 		err := fmt.Errorf("invalid misskey address: %s", address)
 		logger.Errorf("%v", err)
 
