@@ -2,7 +2,6 @@ package jike
 
 import (
 	"fmt"
-	"log"
 	"strconv"
 	"time"
 
@@ -263,8 +262,6 @@ func GetUserTimeline(name string) ([]Timeline, error) {
 
 	response, err := httpx.PostRaw(url, headers, json)
 
-	log.Println(string(response.Body()))
-
 	if err != nil {
 		logger.Errorf("Jike GetUserTimeline err: %v", err)
 
@@ -348,9 +345,7 @@ func getAttachment(node *fastjson.Value) []datatype.Attachment {
 
 	// process the original post attachments
 	attachments = append(attachments, getPicture(node)...)
-
-	// TODO: handle video attachments
-	// attachments = append(attachments, getVideo(node)...)
+	attachments = append(attachments, getVideo(node)...)
 
 	// a 'status' field often means the report target is unavailable, e.g, DELETED
 	if !node.Exists("target", "status") {
@@ -413,4 +408,23 @@ func getPicture(node *fastjson.Value) []datatype.Attachment {
 	}
 
 	return result
+}
+
+func getVideo(node *fastjson.Value) []datatype.Attachment {
+	videoPic := string(node.GetStringBytes("video", "image", "picUrl"))
+
+	if videoPic != "" {
+		contentHeader, _ := httpx.GetContentHeader(videoPic)
+
+		videoAttachment := datatype.Attachment{
+			Type:        "quote_media",
+			Address:     videoPic,
+			MimeType:    contentHeader.MIMEType,
+			SizeInBytes: contentHeader.SizeInByte,
+		}
+
+		return []datatype.Attachment{videoAttachment}
+	}
+
+	return nil
 }
