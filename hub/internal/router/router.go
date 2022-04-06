@@ -12,7 +12,7 @@ import (
 )
 
 func Initialize() (router *gin.Engine) {
-	if config.Config.HubServer.RunMode == "debug" {
+	if config.Config.Hub.Server.RunMode == "debug" {
 		router = gin.Default()
 	} else {
 		router = gin.New()

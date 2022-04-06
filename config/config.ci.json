@@ -1,9 +1,12 @@
 {
-  "hub_server": {
-    "run_mode": "debug",
-    "http_port": 8080,
-    "read_timeout": 60,
-    "write_timeout": 60
+  "hub": {
+    "server": {
+      "run_mode": "debug",
+      "http_port": 8080,
+      "read_timeout": 60,
+      "write_timeout": 60
+    },
+    "indexer_endpoint": "http://pregod-indexer-api.pregod.traefik.mesh:3000"
   },
   "redis": {
     "addr": "localhost:6379",

@@ -2,11 +2,6 @@ package indexer
 
 import "time"
 
-const (
-	Endpoint     = "http://localhost:8081"
-	EndpointItem = "http://localhost:8081/item"
-)
-
 type Response struct {
 	Error struct {
 		Code int    `json:"code"`

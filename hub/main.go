@@ -31,10 +31,10 @@ func init() {
 
 func main() {
 	srv := &web.Server{
-		RunMode:      config.Config.HubServer.RunMode,
-		HttpPort:     config.Config.HubServer.HttpPort,
-		ReadTimeout:  config.Config.HubServer.ReadTimeout,
-		WriteTimeout: config.Config.HubServer.WriteTimeout,
+		RunMode:      config.Config.Hub.Server.RunMode,
+		HttpPort:     config.Config.Hub.Server.HttpPort,
+		ReadTimeout:  config.Config.Hub.Server.ReadTimeout,
+		WriteTimeout: config.Config.Hub.Server.WriteTimeout,
 		Handler:      router.Initialize(),
 	}
 

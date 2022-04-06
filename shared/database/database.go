@@ -167,6 +167,24 @@ func CreateAssets(db *gorm.DB, assets []model.Asset, updateAll bool) ([]model.As
 	return assets, nil
 }
 
+func QueryAssets(db *gorm.DB, uris []string) ([]model.Asset, error) {
+	var assets []model.Asset
+	if err := db.Where("owner IN ?", uris).Order("date_created DESC").Error; err != nil {
+		return nil, err
+	}
+
+	return assets, nil
+}
+
+func QueryNotes(db *gorm.DB, uris []string) ([]model.Note, error) {
+	var notes []model.Note
+	if err := db.Where("owner IN ?", uris).Order("date_created DESC").Find(&notes).Error; err != nil {
+		return nil, err
+	}
+
+	return notes, nil
+}
+
 func CreateProfile(db *gorm.DB, profile *model.Profile, updateAll bool) (*model.Profile, error) {
 	if err := db.Clauses(NewCreateClauses(updateAll)...).Create(profile).Error; err != nil {
 		return nil, err

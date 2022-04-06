@@ -2,10 +2,12 @@ package indexer
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 	"strconv"
 
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database/model"
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/config"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/constants"
 	"github.com/go-resty/resty/v2"
 	"golang.org/x/sync/errgroup"
@@ -26,7 +28,7 @@ func GetItems(accounts []model.Account) error {
 			}
 			request.SetQueryParams(params)
 			// TODO request.SetResult()
-			response, err := request.Get(EndpointItem)
+			response, err := request.Get(fmt.Sprintf("%s/item", config.Config.Hub.IndexerEndpoint))
 			if err != nil {
 				return err
 			}

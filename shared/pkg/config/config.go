@@ -136,16 +136,21 @@ type IndexerStruct struct {
 	Infura      InfuraStruct      `koanf:"infura"`
 }
 
+type HubStruct struct {
+	Server          ServerStruct `koanf:"server"`
+	IndexerEndpoint string       `koanf:"indexer_endpoint"`
+}
+
 type ConfigStruct struct {
-	Protocol  ProtocolStruct `koanf:"protocol"`
-	HubServer ServerStruct   `koanf:"hub_server"`
-	Redis     RedisStruct    `koanf:"redis"`
-	Postgres  PostgresStruct `koanf:"postgres"`
-	Mongo     MongoStruct    `koanf:"mongo"`
-	Broker    BrokerStruct   `koanf:"broker"`
-	Logger    LoggerStruct   `koanf:"logger"`
-	Network   NetWorkStruct  `koanf:"network"`
-	Indexer   IndexerStruct  `koanf:"indexer"`
+	Protocol ProtocolStruct `koanf:"protocol"`
+	Hub      HubStruct      `koanf:"hub"`
+	Redis    RedisStruct    `koanf:"redis"`
+	Postgres PostgresStruct `koanf:"postgres"`
+	Mongo    MongoStruct    `koanf:"mongo"`
+	Broker   BrokerStruct   `koanf:"broker"`
+	Logger   LoggerStruct   `koanf:"logger"`
+	Network  NetWorkStruct  `koanf:"network"`
+	Indexer  IndexerStruct  `koanf:"indexer"`
 }
 
 var (
@@ -169,8 +174,8 @@ func Setup() error {
 		return err
 	}
 
-	Config.HubServer.ReadTimeout = Config.HubServer.ReadTimeout * time.Second
-	Config.HubServer.WriteTimeout = Config.HubServer.WriteTimeout * time.Second
+	Config.Hub.Server.ReadTimeout = Config.Hub.Server.ReadTimeout * time.Second
+	Config.Hub.Server.WriteTimeout = Config.Hub.Server.WriteTimeout * time.Second
 
 	Config.Indexer.Server.ReadTimeout = Config.Indexer.Server.ReadTimeout * time.Second
 	Config.Indexer.Server.WriteTimeout = Config.Indexer.Server.WriteTimeout * time.Second
