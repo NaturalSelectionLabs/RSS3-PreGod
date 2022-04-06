@@ -1,6 +1,7 @@
 package gitcoin
 
 import (
+	"fmt"
 	"os"
 	"os/signal"
 	"strings"
@@ -22,7 +23,7 @@ type crawler struct {
 	polygon crawlerConfig
 	zk      crawlerConfig
 
-	zksTokensCache       map[int64]zksync.Token
+	ZksTokensCache       map[int64]zksync.Token
 	inactiveAdminsCache  map[string]bool
 	hostingProjectsCache map[string]ProjectInfo
 }
@@ -38,7 +39,22 @@ func NewCrawler(ethParam, polygonParam, zkParam crawlerConfig) *crawler {
 	}
 }
 
-func (gc *crawler) initGrants() error {
+func (gc *crawler) InitZksTokenCache() error {
+	tokens, err := zksync.GetTokens()
+	if err != nil {
+		logger.Errorf("zksync get tokens error: %v", err)
+
+		return err
+	}
+
+	for _, token := range tokens {
+		gc.ZksTokensCache[token.Id] = token
+	}
+
+	return nil
+}
+
+func (gc *crawler) InitGrants() error {
 	grants, err := GetGrantsInfo()
 	if err != nil {
 		return err
@@ -48,7 +64,7 @@ func (gc *crawler) initGrants() error {
 		if item.AdminAddress != "0x0" {
 			gc.updateHostingProject(item.AdminAddress)
 
-			time.Sleep(5 * time.Second)
+			time.Sleep(10 * time.Second)
 		}
 	}
 
@@ -65,7 +81,7 @@ func (gc *crawler) UpdateZksToken() error {
 	}
 
 	for _, token := range tokens {
-		gc.zksTokensCache[token.Id] = token
+		gc.ZksTokensCache[token.Id] = token
 	}
 
 	return nil
@@ -73,7 +89,7 @@ func (gc *crawler) UpdateZksToken() error {
 
 // GetZksToken returns Token by tokenId
 func (gc *crawler) GetZksToken(id int64) zksync.Token {
-	return gc.zksTokensCache[id]
+	return gc.ZksTokensCache[id]
 }
 
 // inactiveAdminAddress checks an admin address is active or not
@@ -106,6 +122,7 @@ func (gc *crawler) needUpdateProject(adminAddress string) bool {
 }
 
 func (gc *crawler) updateHostingProject(adminAddress string) (inactive bool, err error) {
+
 	project, err := GetProjectsInfo(adminAddress, "")
 	if err != nil {
 		logger.Errorf("zksync get projects info error: %v", err)
@@ -143,7 +160,7 @@ func GetProjectsInfo(adminAddress string, title string) (ProjectInfo, error) {
 		content, err = httpx.Get(url, headers)
 
 		logger.Warnf("GetProjectsInfo error [%v], times: [%d]", err, i)
-		time.Sleep(5 * time.Second)
+		time.Sleep(10 * time.Second)
 	}
 
 	if err != nil {
@@ -151,6 +168,14 @@ func GetProjectsInfo(adminAddress string, title string) (ProjectInfo, error) {
 
 		return project, err
 	}
+
+	// check reCAPTCHA
+	if strings.Contains(string(content), "Hold up, the bots want to know if you're one of them") {
+		err = fmt.Errorf("gitcoin get project info error, reCAPTCHA")
+		return project, err
+	}
+
+	logger.Infof("GetProjectsInfo success, url: [%s]", url)
 
 	var parser fastjson.Parser
 	parsedJson, parseErr := parser.Parse(string(content))
@@ -187,25 +212,6 @@ func GetProjectsInfo(adminAddress string, title string) (ProjectInfo, error) {
 func (gc *crawler) zksyncRun() error {
 	if gc.zk.NextRoundTime.After(time.Now()) {
 		return nil
-	}
-
-	// token cache
-	if len(gc.zksTokensCache) == 0 {
-		tokens, err := zksync.GetTokens()
-		if err != nil {
-			logger.Errorf("zksync get tokens error: %v", err)
-
-			return err
-		}
-
-		for _, token := range tokens {
-			gc.zksTokensCache[token.Id] = token
-		}
-	}
-
-	// get grants
-	if len(gc.hostingProjectsCache) == 0 {
-		gc.initGrants()
 	}
 
 	latestConfirmedBlockHeight, err := zksync.GetLatestBlockHeightWithConfirmations(gc.zk.Confirmations)

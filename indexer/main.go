@@ -56,13 +56,18 @@ func RunAutoCrawler(cmd *cobra.Command, args []string) error {
 
 	// gitcoin crawler
 	gc := gitcoin.NewCrawler(*gitcoin.DefaultEthConfig, *gitcoin.DefaultPolygonConfig, *gitcoin.DefaultZksyncConfig)
+	// token cache
+	gc.InitZksTokenCache()
+	// init grants
+	gc.InitGrants()
+
 	go gc.PolygonStart()
 	go gc.EthStart()
 	go gc.ZkStart()
 
 	logger.Info("Start crawling arweave")
 
-	// arweave crawler
+	//arweave crawler
 	ar := arweave.NewCrawler(arweave.MirrorUploader, arweave.DefaultCrawlConfig)
 
 	go func() {
@@ -70,12 +75,6 @@ func RunAutoCrawler(cmd *cobra.Command, args []string) error {
 			logger.Errorf("arweave crawler start error: %v", err)
 		}
 	}()
-
-	// gitcoin crawler
-	// gc := gitcoin.NewCrawler(*gitcoin.DefaultEthConfig, *gitcoin.DefaultPolygonConfig, *gitcoin.DefaultZksyncConfig)
-	// go gc.PolygonStart()
-	// go gc.EthStart()
-	// go gc.ZkStart()
 
 	return http.ListenAndServe("0.0.0.0:8080", nil)
 }
