@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"log"
+	"net/http"
 	_ "net/http/pprof"
 
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/api/arweave"
@@ -53,11 +54,12 @@ func RunAutoCrawler(cmd *cobra.Command, args []string) error {
 	logger.Info("Start crawling arweave and gitcoin")
 	// arweave crawler
 	ar := arweave.NewCrawler(arweave.MirrorUploader, arweave.DefaultCrawlConfig)
-	ar.Start()
 
-	if err := ar.Start(); err != nil {
-		logger.Errorf("arweave crawler start error: %v", err)
-	}
+	go func() {
+		if err := ar.Start(); err != nil {
+			logger.Errorf("arweave crawler start error: %v", err)
+		}
+	}()
 
 	// gitcoin crawler
 	// gc := gitcoin.NewCrawler(*gitcoin.DefaultEthConfig, *gitcoin.DefaultPolygonConfig, *gitcoin.DefaultZksyncConfig)
@@ -65,7 +67,7 @@ func RunAutoCrawler(cmd *cobra.Command, args []string) error {
 	// go gc.EthStart()
 	// go gc.ZkStart()
 
-	return nil
+	return http.ListenAndServe("0.0.0.0:8080", nil)
 }
 
 var rootCmd = &cobra.Command{Use: "indexer"}

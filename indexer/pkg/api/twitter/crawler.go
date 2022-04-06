@@ -72,7 +72,6 @@ func (tc *twitterCrawler) Work(param crawler.WorkParam) error {
 			NetworkID: networkId,
 			Proof:     contentInfo.Hash,
 		})
-
 	}
 
 	return nil
