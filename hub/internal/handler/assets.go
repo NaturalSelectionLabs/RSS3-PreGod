@@ -13,6 +13,7 @@ import (
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database/model"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/constants"
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/logger"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/rss3uri"
 	"github.com/gin-gonic/gin"
 )
@@ -51,7 +52,8 @@ func GetAssetListHandlerFunc(c *gin.Context) {
 	}
 
 	uris := make([]string, 0)
-	uris = append(uris, rss3uri.New(instance).String())
+	// TODO Filter
+	uris = append(uris, strings.ToLower(rss3uri.New(instance).String()))
 
 	accounts := make([]model.Account, 0)
 
@@ -78,6 +80,8 @@ func GetAssetListHandlerFunc(c *gin.Context) {
 
 		return
 	}
+
+	logger.Info(uris)
 
 	// Query assets form database
 	assetModels, err := database.QueryAssets(database.DB, uris)

@@ -188,7 +188,7 @@ func DeleteAsset(db *gorm.DB, asset *model.Asset) (*model.Asset, error) {
 
 func QueryAssets(db *gorm.DB, uris []string) ([]model.Asset, error) {
 	var assets []model.Asset
-	if err := db.Where("owner IN ?", uris).Order("date_created DESC").Error; err != nil {
+	if err := db.Where("owner IN ?", uris).Order("date_created DESC").Find(&assets).Error; err != nil {
 		return nil, err
 	}
 
