@@ -44,7 +44,7 @@ func (p PlatformInstance) String() string {
 }
 
 func (n PlatformInstance) UriString() string {
-	return fmt.Sprintf("%s://%s", "rss3://", n.String())
+	return fmt.Sprintf("%s://%s", Scheme, n.String())
 }
 
 type NetworkInstance struct {
@@ -70,7 +70,7 @@ func (n NetworkInstance) String() string {
 }
 
 func (n NetworkInstance) UriString() string {
-	return fmt.Sprintf("%s://%s", "rss3://", n.String())
+	return fmt.Sprintf("%s://%s", Scheme, n.String())
 }
 
 func NewAccountInstance(identity string, platform constants.PlatformSymbol) Instance {

@@ -47,6 +47,8 @@ func GetUserShow(name string) (*UserShow, error) {
 	return userShow, nil
 }
 
+// TODO: offset?
+// See https://developer.twitter.com/en/docs/twitter-api/v1/tweets/timelines/api-reference/get-statuses-user_timeline
 func GetTimeline(name string, count uint32) ([]*ContentInfo, error) {
 	key := util.GotKey("round-robin", "Twitter", config.Config.Indexer.Twitter.Tokens)
 	authorization := fmt.Sprintf("Bearer %s", key)
