@@ -3,6 +3,7 @@ package handler
 import (
 	"errors"
 	"fmt"
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/logger"
 	"net/http"
 
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/internal/api"
@@ -18,7 +19,7 @@ import (
 )
 
 type GetProfileListRequest struct {
-	ProfileSources []string `form:"profile_sources"`
+	ProfileSources []int `form:"profile_sources"`
 }
 
 func GetProfileListHandlerFunc(c *gin.Context) {
@@ -35,6 +36,8 @@ func GetProfileListHandlerFunc(c *gin.Context) {
 
 		return
 	}
+
+	logger.Info(request.ProfileSources)
 
 	profileList := make([]protocol.Profile, 0)
 
@@ -78,12 +81,7 @@ func GetProfileListHandlerFunc(c *gin.Context) {
 }
 
 func getPlatformInstanceProfileList(instance *rss3uri.PlatformInstance, request GetProfileListRequest) ([]protocol.Profile, error) {
-	profileSources := make([]int, 0)
-	for _, profileSource := range request.ProfileSources {
-		profileSources = append(profileSources, constants.ProfileSourceName(profileSource).ID().Int())
-	}
-
-	profileModels, err := database.QueryProfiles(database.DB, instance.GetIdentity(), instance.Platform.ID().Int(), profileSources)
+	profileModels, err := database.QueryProfiles(database.DB, instance.GetIdentity(), instance.Platform.ID().Int(), request.ProfileSources)
 	if err != nil {
 		return nil, err
 	}
