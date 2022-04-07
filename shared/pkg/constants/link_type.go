@@ -34,16 +34,16 @@ func (l LinkTypeName) ID() LinkTypeID {
 }
 
 const (
-	LinkTypeUnknown LinkTypeID = 0
+	LinkTypeUnknown LinkTypeID = -1
 
-	LinkTypeFollowing  LinkTypeID = 1
-	LinkTypeComment    LinkTypeID = 2
-	LinkTypeLike       LinkTypeID = 3
-	LinkTypeCollection LinkTypeID = 4
+	LinkTypeFollow     LinkTypeID = 0
+	LinkTypeComment    LinkTypeID = 1
+	LinkTypeLike       LinkTypeID = 2
+	LinkTypeCollection LinkTypeID = 3
 
 	LinkTypeNameUnknown LinkTypeName = "unknown"
 
-	LinkTypeNameFollowing  LinkTypeName = "following"
+	LinkTypeNameFollow     LinkTypeName = "follow"
 	LinkTypeNameComment    LinkTypeName = "comment"
 	LinkTypeNameLike       LinkTypeName = "like"
 	LinkTypeNameCollection LinkTypeName = "collection"
@@ -52,7 +52,7 @@ const (
 var LinkTypeMap = map[LinkTypeID]string{
 	LinkTypeUnknown: "unknown",
 
-	LinkTypeFollowing:  "following",
+	LinkTypeFollow:     "follow",
 	LinkTypeComment:    "comment",
 	LinkTypeLike:       "like",
 	LinkTypeCollection: "collection",
@@ -73,7 +73,7 @@ var (
 	linkTypeNameMap = map[LinkTypeID]LinkTypeName{
 		LinkTypeUnknown: LinkTypeNameUnknown,
 
-		LinkTypeFollowing:  LinkTypeNameFollowing,
+		LinkTypeFollow:     LinkTypeNameFollow,
 		LinkTypeComment:    LinkTypeNameComment,
 		LinkTypeLike:       LinkTypeNameLike,
 		LinkTypeCollection: LinkTypeNameCollection,

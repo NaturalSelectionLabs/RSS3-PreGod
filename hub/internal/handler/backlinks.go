@@ -41,9 +41,16 @@ func GetBackLinkListHandlerFunc(c *gin.Context) {
 		linkSources = append(linkSources, constants.LinkSourceName(linkSource).ID().Int())
 	}
 
+	var linkType *int
+
+	if request.Type != "" {
+		internalLinkType := constants.LinkTypeName(request.Type).ID().Int()
+		linkType = &internalLinkType
+	}
+
 	linkModels, err := database.QueryLinksByTo(
 		database.DB,
-		constants.LinkTypeName(request.Type).ID().Int(),
+		linkType,
 		instance.Identity,
 		linkSources,
 		request.Limit,

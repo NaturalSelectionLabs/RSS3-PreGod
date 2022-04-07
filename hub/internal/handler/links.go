@@ -41,10 +41,16 @@ func GetLinkListHandlerFunc(c *gin.Context) {
 		linkSources = append(linkSources, constants.LinkSourceName(linkSource).ID().Int())
 	}
 
+	var linkType *int
+
+	if request.Type != "" {
+		internalLinkType := constants.LinkTypeName(request.Type).ID().Int()
+		linkType = &internalLinkType
+	}
+
 	linkModels, err := database.QueryLinks(
 		database.DB,
-		// TODO ID cannot be 0 (Golang default value)
-		constants.LinkTypeName(request.Type).ID().Int(),
+		linkType,
 		instance.Identity,
 		linkSources,
 		request.Limit,

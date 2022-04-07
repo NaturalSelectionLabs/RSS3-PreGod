@@ -44,11 +44,11 @@ func Setup() error {
 	}
 
 	if err := DB.AutoMigrate(
-	//&model.Profile{},
-	//&model.Account{},
-	//&model.Link{},
-	//&model.Asset{},
-	//&model.Note{},
+		&model.Profile{},
+		&model.Account{},
+		&model.Link{},
+		&model.Asset{},
+		&model.Note{},
 	); err != nil {
 		return err
 	}
@@ -94,13 +94,16 @@ func QueryAccounts(db *gorm.DB, profileID string, profilePlatform int, source in
 	return accounts, nil
 }
 
-func QueryLinks(db *gorm.DB, _type int, form string, linkSources []int, limit int) ([]model.Link, error) {
+func QueryLinks(db *gorm.DB, _type *int, form string, linkSources []int, limit int) ([]model.Link, error) {
 	var links []model.Link
 
 	internalDB := db.Where(&model.Link{
-		Type: _type,
 		From: form,
 	})
+
+	if _type != nil {
+		internalDB = internalDB.Where("type = ?", *_type)
+	}
 
 	if len(linkSources) > 0 {
 		internalDB.Where("source IN ?", linkSources)
@@ -121,13 +124,16 @@ func QueryLinks(db *gorm.DB, _type int, form string, linkSources []int, limit in
 	return links, nil
 }
 
-func QueryLinksByTo(db *gorm.DB, _type int, to string, linkSources []int, limit int) ([]model.Link, error) {
+func QueryLinksByTo(db *gorm.DB, _type *int, to string, linkSources []int, limit int) ([]model.Link, error) {
 	var links []model.Link
 
 	internalDB := db.Where(&model.Link{
-		Type: _type,
-		To:   to,
+		To: to,
 	})
+
+	if _type != nil {
+		internalDB = internalDB.Where("type = ?", *_type)
+	}
 
 	if len(linkSources) > 0 {
 		internalDB.Where("source IN ?", linkSources)
