@@ -14,5 +14,5 @@ type CrawlerMetadata struct {
 }
 
 func (CrawlerMetadata) TableName() string {
-	return "crawler"
+	return "crawler_metadata"
 }
