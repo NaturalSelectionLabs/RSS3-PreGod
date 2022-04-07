@@ -9,6 +9,7 @@ import (
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/httpx"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/logger"
 	jsoniter "github.com/json-iterator/go"
+	lop "github.com/samber/lo/parallel"
 	"github.com/valyala/fastjson"
 )
 
@@ -105,9 +106,9 @@ func GetUserNoteList(address string, count int, until time.Time) ([]Note, error)
 
 	parsedObject := parsedJson.GetArray()
 
-	var noteList = make([]Note, 0, 10)
+	var noteList = make([]Note, len(parsedObject))
 
-	for _, note := range parsedObject {
+	lop.ForEach(parsedObject, func(note *fastjson.Value, i int) {
 		ns := new(Note)
 
 		ns.Summary = string(note.GetStringBytes("text"))
@@ -119,15 +120,15 @@ func GetUserNoteList(address string, count int, until time.Time) ([]Note, error)
 		ns.Host = misskeyHost
 
 		t, timeErr := time.Parse(time.RFC3339, string(note.GetStringBytes("createdAt")))
-
 		if timeErr != nil {
-			return nil, timeErr
+			logger.Errorf("Jike GetUserTimeline timestamp parsing err: %v", timeErr)
+			t = time.Time{} // set to zero value
 		}
 
 		ns.CreatedAt = t
 
-		noteList = append(noteList, *ns)
-	}
+		noteList[i] = *ns
+	})
 
 	return noteList, nil
 }
@@ -202,18 +203,22 @@ func formatImage(imageList []*fastjson.Value, ns *Note) {
 
 			ns.Summary += fmt.Sprintf("<img class=\"media\" src=\"%s\">", url)
 
-			contentHeader, _ := httpx.GetContentHeader(url)
-
 			attachment := datatype.Attachment{
-				Type:        "quote_file",
-				Address:     url,
-				MimeType:    contentHeader.MIMEType,
-				SizeInBytes: contentHeader.SizeInByte,
+				Type:    "quote_file",
+				Address: url,
 			}
 
 			ns.Attachments = append(ns.Attachments, attachment)
 		}
 	}
+
+	lop.ForEach(ns.Attachments, func(a datatype.Attachment, i int) {
+		if a.Address != "" {
+			contentHeader, _ := httpx.GetContentHeader(a.Address)
+			ns.Attachments[i].MimeType = contentHeader.MIMEType
+			ns.Attachments[i].SizeInBytes = contentHeader.SizeInByte
+		}
+	})
 }
 
 // returns [username, instance]

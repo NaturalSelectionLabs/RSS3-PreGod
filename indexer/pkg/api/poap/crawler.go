@@ -62,8 +62,9 @@ func (pc *poapCrawler) Work(param crawler.WorkParam) error {
 			Attachments: database.MustWrapJSON(datatype.Attachments{
 				{
 					Type:     "preview",
-					Content:  item.PoapEventInfo.ImageUrl,
+					Address:  item.PoapEventInfo.ImageUrl,
 					MimeType: "image/png",
+					// TODO: get the SizeInBytes
 				},
 				{
 					Type:     "external_url",
