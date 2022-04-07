@@ -19,6 +19,7 @@ apiVersion: traefik.containo.us/v1alpha1
 kind: Middleware
 metadata:
   name: pregod-hub-ratelimit
+  namespace: pregod
 spec:
   rateLimit:
     period: 1m
