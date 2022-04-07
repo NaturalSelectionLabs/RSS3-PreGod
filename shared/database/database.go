@@ -49,6 +49,7 @@ func Setup() error {
 		&model.Link{},
 		&model.Asset{},
 		&model.Note{},
+		&model.CrawlerMetadata{},
 	); err != nil {
 		return err
 	}
@@ -155,6 +156,9 @@ func QueryLinksByTo(db *gorm.DB, _type *int, to string, linkSources []int, limit
 }
 
 func CreateNote(db *gorm.DB, note *model.Note, updateAll bool) (*model.Note, error) {
+	note.Identifier = strings.ToLower(note.Identifier)
+	note.Owner = strings.ToLower(note.Owner)
+
 	if err := db.Model(note).Clauses(NewCreateClauses(updateAll)...).Create(note).Error; err != nil {
 		return nil, err
 	}
@@ -163,6 +167,9 @@ func CreateNote(db *gorm.DB, note *model.Note, updateAll bool) (*model.Note, err
 }
 
 func CreateAsset(db *gorm.DB, asset *model.Asset, updateAll bool) (*model.Asset, error) {
+	asset.Identifier = strings.ToLower(asset.Identifier)
+	asset.Owner = strings.ToLower(asset.Owner)
+
 	if err := db.Clauses(NewCreateClauses(updateAll)...).Create(asset).Error; err != nil {
 		return nil, err
 	}

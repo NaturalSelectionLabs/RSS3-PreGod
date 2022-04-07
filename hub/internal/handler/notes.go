@@ -53,8 +53,17 @@ func GetNoteListHandlerFunc(c *gin.Context) {
 	}
 
 	uris := make([]string, 0)
-	uris = append(uris, rss3uri.New(instance).String())
+	uris = append(uris, strings.ToLower(rss3uri.New(instance).String()))
+
+	// TODO
 	accounts := make([]model.Account, 0)
+	accounts = append(accounts, model.Account{
+		ID:              instance.Identity,
+		Platform:        int(constants.PlatformSymbol(instance.GetSuffix()).ID()),
+		ProfileID:       instance.Identity,
+		ProfilePlatform: int(constants.PlatformSymbol(instance.GetSuffix()).ID()),
+		Source:          0,
+	})
 
 	for _, profile := range profiles {
 		var internalAccounts []model.Account

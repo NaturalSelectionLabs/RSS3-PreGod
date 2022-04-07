@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/internal/api"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database/model"
@@ -25,11 +26,11 @@ func GetItems(instance rss3uri.Instance, accounts []model.Account) error {
 		eg.Go(func() error {
 			request := client.NewRequest()
 			params := map[string]string{
-				"proof":             account.ID,
+				"proof":             strings.ToLower(account.ID),
 				"platform_id":       strconv.Itoa(account.Platform),
 				"network_id":        strconv.Itoa(int(constants.NetworkSymbol(constants.PlatformID(account.Platform).Symbol()).ID())),
-				"owner_id":          instance.GetIdentity(),
-				"owner_platform_id": instance.GetSuffix(),
+				"owner_id":          strings.ToLower(instance.GetIdentity()),
+				"owner_platform_id": strconv.Itoa(constants.PlatformSymbol(instance.GetSuffix()).ID().Int()),
 			}
 			result := Response{}
 			response, err := request.
