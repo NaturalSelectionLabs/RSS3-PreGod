@@ -122,7 +122,7 @@ func getCommAtt(meta Metadata) []datatype.Attachment {
 	return as
 }
 
-// Convert metadata to attachment of asset
+// Convert metadata to attachment of asset.
 func Meta2AssetAtt(meta Metadata) []datatype.Attachment {
 	var att []datatype.Attachment
 
@@ -147,7 +147,10 @@ func Meta2AssetAtt(meta Metadata) []datatype.Attachment {
 	return att
 }
 
-// Convert metadata to attachment of note
+// Meta2NoteAtt converts metadata to attachment of note.
+// Note that this function does NOT include the MimeType and SizeInBytes of the attachment.
+// You may need to call CompleteMimeTypes to complete them later
+// (for parallel requests).
 func Meta2NoteAtt(meta Metadata) []datatype.Attachment {
 	var att []datatype.Attachment
 

@@ -36,6 +36,10 @@ func (pc *poapCrawler) Work(param crawler.WorkParam) error {
 		return fmt.Errorf("poap [%s] get actions error:", err)
 	}
 
+	// those two should be expected to be equal actually
+	owner := rss3uri.NewAccountInstance(param.OwnerID, param.OwnerPlatformID.Symbol()).UriString()
+	author := rss3uri.NewAccountInstance(param.Identity, constants.PlatformSymbolEthereum).UriString()
+
 	//TODO: Since we are getting the full amount of interfaces,
 	// I hope to get incremental interfaces in the future and use other methods to improve efficiency
 	for _, item := range poapResps {
@@ -47,10 +51,9 @@ func (pc *poapCrawler) Work(param crawler.WorkParam) error {
 		}
 
 		id := ContractAddress + "-" + item.TokenId
-		author := rss3uri.NewAccountInstance(param.Identity, constants.PlatformSymbolEthereum).UriString()
 		note := model.Note{
 			Identifier:  rss3uri.NewNoteInstance(id, constants.NetworkSymbolGnosisMainnet).UriString(),
-			Owner:       author,
+			Owner:       owner,
 			RelatedURLs: []string{fmt.Sprintf("https://app.poap.xyz/token/%s", item.TokenId)},
 			Tags:        constants.ItemTagsNFTPOAP.ToPqStringArray(),
 			Authors:     []string{author},

@@ -37,6 +37,9 @@ func (tc *twitterCrawler) Work(param crawler.WorkParam) error {
 		return err
 	}
 
+	owner := rss3uri.NewAccountInstance(param.OwnerID, param.OwnerPlatformID.Symbol()).UriString()
+	author := rss3uri.NewAccountInstance(param.Identity, constants.PlatformSymbolTwitter).UriString()
+
 	for _, item := range contentInfos {
 		tsp, err := item.GetTsp()
 		if err != nil {
@@ -45,14 +48,12 @@ func (tc *twitterCrawler) Work(param crawler.WorkParam) error {
 			tsp = time.Now()
 		}
 
-		author := rss3uri.NewAccountInstance(item.ScreenName, constants.PlatformSymbolTwitter).UriString()
-
 		note := model.Note{
 			Identifier:      rss3uri.NewNoteInstance(item.Hash, constants.NetworkSymbolTwitter).UriString(),
-			Owner:           author,
+			Owner:           owner,
 			RelatedURLs:     []string{item.Link},
 			Tags:            constants.ItemTagsTweet.ToPqStringArray(),
-			Authors:         []string{author},
+			Authors:         []string{owner, author},
 			Summary:         item.PreContent,
 			Attachments:     database.MustWrapJSON(item.Attachments),
 			Source:          constants.NoteSourceNameTwitterTweet.String(),

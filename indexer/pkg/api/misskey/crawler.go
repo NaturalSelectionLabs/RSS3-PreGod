@@ -31,16 +31,17 @@ func (mc *misskeyCrawler) Work(param crawler.WorkParam) error {
 		return err
 	}
 
+	owner := rss3uri.NewAccountInstance(param.OwnerID, param.OwnerPlatformID.Symbol()).UriString()
 	author := rss3uri.NewAccountInstance(param.Identity, constants.PlatformSymbolMisskey).UriString()
 
 	for _, item := range noteList {
 		proof := item.Id + "-" + item.Host
 		note := model.Note{
 			Identifier:      rss3uri.NewNoteInstance(proof, constants.NetworkSymbolMisskey).UriString(),
-			Owner:           author,
+			Owner:           owner,
 			RelatedURLs:     []string{item.Link},
 			Tags:            constants.ItemTagsMisskeyNote.ToPqStringArray(),
-			Authors:         []string{author},
+			Authors:         []string{owner, author},
 			Summary:         item.Summary,
 			Attachments:     database.MustWrapJSON(item.Attachments),
 			Source:          constants.NoteSourceNameMisskeyNote.String(),

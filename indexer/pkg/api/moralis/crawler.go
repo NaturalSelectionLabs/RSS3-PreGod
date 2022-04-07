@@ -79,6 +79,10 @@ func (c *moralisCrawler) Work(param crawler.WorkParam) error {
 		}
 	}
 
+	// those two should be expected to be equal actually
+	owner := rss3uri.NewAccountInstance(param.OwnerID, param.OwnerPlatformID.Symbol()).UriString()
+	author := rss3uri.NewAccountInstance(param.Identity, constants.PlatformSymbolEthereum).UriString()
+
 	// make the item list complete
 	for _, item := range nftTransfers.Result {
 		tsp, err := item.GetTsp()
@@ -87,8 +91,6 @@ func (c *moralisCrawler) Work(param crawler.WorkParam) error {
 
 			tsp = time.Now()
 		}
-
-		author := rss3uri.NewAccountInstance(param.Identity, constants.PlatformSymbolEthereum).UriString()
 
 		hasObject := false
 
@@ -115,7 +117,7 @@ func (c *moralisCrawler) Work(param crawler.WorkParam) error {
 
 		note := model.Note{
 			Identifier:      rss3uri.NewNoteInstance(item.TransactionHash, networkSymbol).UriString(),
-			Owner:           author,
+			Owner:           owner,
 			RelatedURLs:     GetTxRelatedURLs(networkSymbol, item.TokenAddress, item.TokenId, &item.TransactionHash),
 			Tags:            constants.ItemTagsNFT.ToPqStringArray(),
 			Authors:         []string{author},
@@ -144,7 +146,7 @@ func (c *moralisCrawler) Work(param crawler.WorkParam) error {
 		assetProof := item.GetAssetProof()
 		asset := model.Asset{
 			Identifier:      rss3uri.NewAssetInstance(assetProof, networkSymbol).UriString(),
-			Owner:           author,
+			Owner:           owner,
 			RelatedURLs:     GetTxRelatedURLs(networkSymbol, item.TokenAddress, item.TokenId, nil),
 			Tags:            constants.ItemTagsNFT.ToPqStringArray(),
 			Authors:         []string{author},
