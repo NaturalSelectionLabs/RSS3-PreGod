@@ -2,19 +2,19 @@ package moralis
 
 import (
 	"fmt"
-	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database/datatype"
-	lop "github.com/samber/lo/parallel"
 	"strings"
 	"time"
 
 	utils "github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/api/nft_utils"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/crawler"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database"
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database/datatype"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database/model"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/config"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/constants"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/logger"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/rss3uri"
+	lop "github.com/samber/lo/parallel"
 )
 
 type moralisCrawler struct {
@@ -39,7 +39,7 @@ func getApiKey() string {
 	return strings.Trim(apiKey, "\"")
 }
 
-//nolint:funlen // disable line length check
+//nolint:funlen,gocognit // disable line length check
 func (c *moralisCrawler) Work(param crawler.WorkParam) error {
 	chainType := GetChainType(param.NetworkID)
 	if chainType == Unknown {
@@ -171,6 +171,7 @@ func (c *moralisCrawler) Work(param crawler.WorkParam) error {
 			for i, asset := range c.Assets {
 				if asset.MetadataProof == assetProof {
 					c.Assets = append(c.Assets[:i], c.Assets[i+1:]...)
+
 					break
 				}
 			}

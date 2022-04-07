@@ -29,6 +29,7 @@ type GetAssetListRequest struct {
 	ProfileSource string    `form:"profile_source"`
 }
 
+// nolint:funlen // TODO
 func GetAssetListHandlerFunc(c *gin.Context) {
 	instance, err := middleware.GetPlatformInstance(c)
 	if err != nil {
@@ -58,7 +59,9 @@ func GetAssetListHandlerFunc(c *gin.Context) {
 	accounts := make([]model.Account, 0)
 
 	for _, profile := range profiles {
-		internalAccounts, err := database.QueryAccounts(database.DB, profile.ID, profile.Platform, 0)
+		var internalAccounts []model.Account
+
+		internalAccounts, err = database.QueryAccounts(database.DB, profile.ID, profile.Platform, 0)
 		if err != nil {
 			_ = c.Error(err)
 
@@ -75,7 +78,8 @@ func GetAssetListHandlerFunc(c *gin.Context) {
 			))
 		}
 	}
-	if err := indexer.GetItems(accounts); err != nil {
+
+	if err = indexer.GetItems(accounts); err != nil {
 		_ = c.Error(err)
 
 		return
@@ -94,7 +98,9 @@ func GetAssetListHandlerFunc(c *gin.Context) {
 	uri := rss3uri.New(instance)
 
 	var dateUpdated *time.Time
+
 	assetList := make([]protocol.Item, len(assetModels))
+
 	for i, assetModel := range assetModels {
 		attachmentList := make([]protocol.ItemAttachment, 0)
 		if err = json.Unmarshal(assetModel.Attachments, &attachmentList); err != nil {
@@ -104,6 +110,10 @@ func GetAssetListHandlerFunc(c *gin.Context) {
 		}
 
 		if dateUpdated == nil {
+			// nolint:exportloopref // TODO
+			dateUpdated = &assetModel.DateUpdated
+		} else if dateUpdated.Before(assetModel.DateUpdated) {
+			// nolint:exportloopref // TODO
 			dateUpdated = &assetModel.DateUpdated
 		}
 

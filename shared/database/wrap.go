@@ -49,4 +49,3 @@ func MustWrapJSON(value any) datatypes.JSON {
 
 	return bytes
 }
-

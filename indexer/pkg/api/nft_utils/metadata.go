@@ -2,11 +2,11 @@ package nft_utils
 
 import (
 	"fmt"
-	lop "github.com/samber/lo/parallel"
 	"strings"
 
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database/datatype"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/httpx"
+	lop "github.com/samber/lo/parallel"
 	"github.com/valyala/fastjson"
 )
 

@@ -73,8 +73,10 @@ func GetBackLinkListHandlerFunc(c *gin.Context) {
 	var dateUpdated *time.Time
 	for _, link := range links {
 		if dateUpdated == nil {
+			// nolint:exportloopref // TODO
 			dateUpdated = &link.DateCreated
 		} else if dateUpdated.Before(link.DateCreated) {
+			// nolint:exportloopref // TODO
 			dateUpdated = &link.DateCreated
 		}
 	}

@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
-	"time"
 
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/internal/api"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database/model"
@@ -21,8 +20,8 @@ func GetItems(accounts []model.Account) error {
 
 	for _, account := range accounts {
 		account := account
+
 		eg.Go(func() error {
-			start := time.Now()
 			request := client.NewRequest()
 			params := map[string]string{
 				"proof":       account.ID,
@@ -44,7 +43,6 @@ func GetItems(accounts []model.Account) error {
 				return api.ErrorIndexer
 			}
 
-			logger.Info(account.ID, account.Platform, start, time.Now().Sub(start))
 			return nil
 		})
 	}

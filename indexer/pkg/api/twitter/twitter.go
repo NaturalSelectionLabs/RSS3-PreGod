@@ -2,6 +2,9 @@ package twitter
 
 import (
 	"fmt"
+	"regexp"
+	"strings"
+
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/util"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database/datatype"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/config"
@@ -9,8 +12,6 @@ import (
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/logger"
 	lop "github.com/samber/lo/parallel"
 	"github.com/valyala/fastjson"
-	"regexp"
-	"strings"
 )
 
 const endpoint = "https://api.twitter.com/1.1"
@@ -85,6 +86,7 @@ func GetTimeline(name string, count uint32) ([]*ContentInfo, error) {
 		contentInfo.PreContent, err = formatTweetText(contentValue)
 		if err != nil {
 			logger.Errorf("format tweet text error: %s", err)
+
 			return nil
 		}
 

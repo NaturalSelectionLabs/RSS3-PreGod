@@ -61,8 +61,10 @@ func GetProfileListHandlerFunc(c *gin.Context) {
 	var dateUpdated *time.Time
 	for _, profile := range profileList {
 		if dateUpdated == nil {
+			// nolint:exportloopref // TODO
 			dateUpdated = &profile.DateUpdated
 		} else if dateUpdated.Before(profile.DateCreated) {
+			// nolint:exportloopref // TODO
 			dateUpdated = &profile.DateUpdated
 		}
 	}
