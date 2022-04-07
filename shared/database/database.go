@@ -14,6 +14,10 @@ import (
 	"gorm.io/gorm/schema"
 )
 
+const (
+	MaxLimit = 100
+)
+
 var DB *gorm.DB
 
 func Setup() error {
@@ -40,11 +44,11 @@ func Setup() error {
 	}
 
 	if err := DB.AutoMigrate(
-		&model.Profile{},
-		&model.Account{},
-		&model.Link{},
-		&model.Asset{},
-		&model.Note{},
+	//&model.Profile{},
+	//&model.Account{},
+	//&model.Link{},
+	//&model.Asset{},
+	//&model.Note{},
 	); err != nil {
 		return err
 	}
@@ -103,6 +107,10 @@ func QueryLinks(db *gorm.DB, _type int, form string, linkSources []int, limit in
 	}
 
 	if limit > 0 {
+		if limit > MaxLimit {
+			limit = MaxLimit
+		}
+
 		internalDB = internalDB.Limit(limit)
 	}
 
@@ -126,6 +134,10 @@ func QueryLinksByTo(db *gorm.DB, _type int, to string, linkSources []int, limit 
 	}
 
 	if limit > 0 {
+		if limit > MaxLimit {
+			limit = MaxLimit
+		}
+
 		internalDB = internalDB.Limit(limit)
 	}
 
@@ -194,6 +206,10 @@ func QueryAssets(db *gorm.DB, uris []string, limit int) ([]model.Asset, error) {
 		Order("date_created DESC")
 
 	if limit > 0 {
+		if limit > MaxLimit {
+			limit = MaxLimit
+		}
+
 		internalDB = internalDB.Limit(limit)
 	}
 
@@ -212,6 +228,10 @@ func QueryNotes(db *gorm.DB, uris []string, limit int) ([]model.Note, error) {
 		Order("date_created DESC")
 
 	if limit > 0 {
+		if limit > MaxLimit {
+			limit = MaxLimit
+		}
+
 		internalDB = internalDB.Limit(limit)
 	}
 
