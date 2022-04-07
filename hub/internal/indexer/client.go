@@ -25,11 +25,11 @@ func GetItems(instance rss3uri.Instance, accounts []model.Account) error {
 		eg.Go(func() error {
 			request := client.NewRequest()
 			params := map[string]string{
-				"proof":          account.ID,
-				"platform_id":    strconv.Itoa(account.Platform),
-				"network_id":     strconv.Itoa(int(constants.NetworkSymbol(constants.PlatformID(account.Platform).Symbol()).ID())),
-				"owner_id":       instance.GetIdentity(),
-				"owner_platform": instance.GetSuffix(),
+				"proof":             account.ID,
+				"platform_id":       strconv.Itoa(account.Platform),
+				"network_id":        strconv.Itoa(int(constants.NetworkSymbol(constants.PlatformID(account.Platform).Symbol()).ID())),
+				"owner_id":          instance.GetIdentity(),
+				"owner_platform_id": instance.GetSuffix(),
 			}
 			result := Response{}
 			response, err := request.
