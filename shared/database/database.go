@@ -233,6 +233,20 @@ func QueryAssets(db *gorm.DB, uris []string, limit int) ([]model.Asset, error) {
 	return assets, nil
 }
 
+func QueryAllAssets(db *gorm.DB, uris []string) ([]model.Asset, error) {
+	var assets []model.Asset
+
+	internalDB := db.
+		Where("owner IN ?", uris).
+		Order("date_created DESC")
+
+	if err := internalDB.Find(&assets).Error; err != nil {
+		return nil, err
+	}
+
+	return assets, nil
+}
+
 func QueryNotes(db *gorm.DB, uris []string, limit int) ([]model.Note, error) {
 	var notes []model.Note
 

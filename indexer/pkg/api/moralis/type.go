@@ -98,7 +98,7 @@ func (i NFTItem) String() string {
 		i.TokenAddress, i.TokenId, i.OwnerOf, i.TokenURI)
 }
 
-func (i NFTTransferItem) GetAssetProof() string {
+func (i NFTItem) GetAssetProof() string {
 	return i.TokenAddress + "-" + i.TokenId
 }
 
@@ -188,6 +188,7 @@ func GetTxRelatedURLs(
 	if transactionHash != nil {
 		urls = append(urls, GetTxHashURL(network, *transactionHash))
 	}
+
 	switch network {
 	case constants.NetworkSymbolEthereum:
 		if transactionHash != nil {
@@ -246,5 +247,4 @@ func GetTxHashURL(
 	default:
 		return ""
 	}
-
 }

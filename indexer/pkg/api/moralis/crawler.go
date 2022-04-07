@@ -14,7 +14,9 @@ import (
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/constants"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/logger"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/rss3uri"
+	"github.com/samber/lo"
 	lop "github.com/samber/lo/parallel"
+	"golang.org/x/sync/errgroup"
 )
 
 type moralisCrawler struct {
@@ -48,17 +50,13 @@ func (c *moralisCrawler) Work(param crawler.WorkParam) error {
 
 	networkSymbol := chainType.GetNetworkSymbol()
 
+	// nftTransfers for notes
 	nftTransfers, err := GetNFTTransfers(param.Identity, chainType, param.BlockHeight, getApiKey())
 	if err != nil {
 		return err
 	}
 
-	// reverse the order of transfers to calculate the asset balances
-	for i, j := 0, len(nftTransfers.Result)-1; i < j; i, j = i+1, j-1 {
-		nftTransfers.Result[i], nftTransfers.Result[j] = nftTransfers.Result[j], nftTransfers.Result[i]
-	}
-
-	//TODO: tsp
+	// get nft for assets
 	assets, err := GetNFTs(param.Identity, chainType, getApiKey())
 	if err != nil {
 		return err
@@ -83,7 +81,7 @@ func (c *moralisCrawler) Work(param crawler.WorkParam) error {
 	owner := rss3uri.NewAccountInstance(param.OwnerID, param.OwnerPlatformID.Symbol()).UriString()
 	author := rss3uri.NewAccountInstance(param.Identity, constants.PlatformSymbolEthereum).UriString()
 
-	// make the item list complete
+	// complete the note list
 	for _, item := range nftTransfers.Result {
 		tsp, err := item.GetTsp()
 		if err != nil {
@@ -141,13 +139,32 @@ func (c *moralisCrawler) Work(param crawler.WorkParam) error {
 		}
 
 		c.Notes = append(c.Notes, note)
+	}
 
-		// asset
-		assetProof := item.GetAssetProof()
+	// complete the asset list
+	for _, asset := range assets.Result {
+		proof := asset.TokenAddress + "-" + asset.TokenId
+
+		m, err := utils.ParseNFTMetadata(asset.MetaData)
+		if err != nil {
+			logger.Warnf("%v", err)
+		}
+
+		// find the note that has the same proof to get the tsp
+		var tsp time.Time
+
+		for _, note := range c.Notes {
+			if note.MetadataProof == proof {
+				tsp = note.DateCreated
+
+				break
+			}
+		}
+
 		asset := model.Asset{
-			Identifier:      rss3uri.NewAssetInstance(assetProof, networkSymbol).UriString(),
+			Identifier:      rss3uri.NewAssetInstance(proof, networkSymbol).UriString(),
 			Owner:           owner,
-			RelatedURLs:     GetTxRelatedURLs(networkSymbol, item.TokenAddress, item.TokenId, nil),
+			RelatedURLs:     GetTxRelatedURLs(networkSymbol, asset.TokenAddress, asset.TokenId, nil),
 			Tags:            constants.ItemTagsNFT.ToPqStringArray(),
 			Authors:         []string{author},
 			Title:           m.Name,
@@ -155,71 +172,74 @@ func (c *moralisCrawler) Work(param crawler.WorkParam) error {
 			Attachments:     database.MustWrapJSON(utils.Meta2AssetAtt(m)),
 			Source:          constants.AssetSourceNameEthereumNFT.String(),
 			MetadataNetwork: string(networkSymbol),
-			MetadataProof:   assetProof,
+			MetadataProof:   proof,
 			Metadata: database.MustWrapJSON(map[string]interface{}{
-				"token_standard":     item.ContractType,
-				"token_id":           item.TokenId,
-				"token_symbol":       theAsset.Symbol,
-				"collection_address": item.TokenAddress,
-				"collection_name":    theAsset.Name,
+				"token_standard":     asset.ContractType,
+				"token_id":           asset.TokenId,
+				"token_symbol":       asset.Symbol,
+				"collection_address": asset.TokenAddress,
+				"collection_name":    m.Name,
 			}),
 			DateCreated: tsp,
 			DateUpdated: tsp,
 		}
 
-		if strings.ToLower(item.FromAddress) == strings.ToLower(param.Identity) {
-			// transfer from account
-			// 1. delete the asset if it exists
-			for i, asset := range c.Assets {
-				if asset.MetadataProof == assetProof {
-					c.Assets = append(c.Assets[:i], c.Assets[i+1:]...)
+		c.Assets = append(c.Assets, asset)
+	}
 
-					break
+	// find old data in the database
+	newAssetProofs := lo.Map(c.Assets, func(asset model.Asset, _ int) string {
+		return asset.MetadataProof
+	})
+
+	oldAssets, err := database.QueryAllAssets(database.DB, []string{owner})
+	if err != nil {
+		logger.Warnf("fail to query old assets: %v", err)
+	} else {
+		lop.ForEach(oldAssets, func(oldAsset model.Asset, _ int) {
+			if !lo.Contains(newAssetProofs, oldAsset.MetadataProof) {
+				// remove this old asset from database
+				if _, err := database.DeleteAsset(database.DB, &oldAsset); err != nil {
+					logger.Warnf("fail to delete old asset: %v", err)
 				}
 			}
-			// 2. delete the asset from database
-			if _, err := database.DeleteAsset(database.DB, &asset); err != nil {
-				logger.Warnf("fail to delete asset: %+v", asset)
-			}
-		}
-
-		if strings.ToLower(item.ToAddress) == strings.ToLower(param.Identity) {
-			// transfer into account
-			c.Assets = append(c.Assets, asset)
-		}
+		})
 	}
 
 	// complete attachments in parallel
-	lop.ForEach(c.Notes, func(note model.Note, i int) {
-		if note.Attachments != nil {
-			as, err := database.UnwrapJSON[datatype.Attachments](note.Attachments)
-			if err != nil {
-				return
+	g := new(errgroup.Group)
+
+	g.Go(func() error {
+		lop.ForEach(c.Notes, func(note model.Note, i int) {
+			if note.Attachments != nil {
+				as, err := database.UnwrapJSON[datatype.Attachments](note.Attachments)
+				if err != nil {
+					return
+				}
+				utils.CompleteMimeTypes(as)
+				c.Notes[i].Attachments = database.MustWrapJSON(as)
 			}
-			utils.CompleteMimeTypes(as)
-			c.Notes[i].Attachments = database.MustWrapJSON(as)
-		}
+		})
+
+		return nil
 	})
 
-	lop.ForEach(c.Assets, func(asset model.Asset, i int) {
-		if asset.Attachments != nil {
-			as, err := database.UnwrapJSON[datatype.Attachments](asset.Attachments)
-			if err != nil {
-				return
+	g.Go(func() error {
+		lop.ForEach(c.Assets, func(asset model.Asset, i int) {
+			if asset.Attachments != nil {
+				as, err := database.UnwrapJSON[datatype.Attachments](asset.Attachments)
+				if err != nil {
+					return
+				}
+				utils.CompleteMimeTypes(as)
+				c.Assets[i].Attachments = database.MustWrapJSON(as)
 			}
-			utils.CompleteMimeTypes(as)
-			c.Assets[i].Attachments = database.MustWrapJSON(as)
-		}
+		})
+
+		return nil
 	})
 
-	// reverse assets and notes to make sure the latest one is on top
-	for i, j := 0, len(c.Assets)-1; i < j; i, j = i+1, j-1 {
-		c.Assets[i], c.Assets[j] = c.Assets[j], c.Assets[i]
-	}
-
-	for i, j := 0, len(c.Notes)-1; i < j; i, j = i+1, j-1 {
-		c.Notes[i], c.Notes[j] = c.Notes[j], c.Notes[i]
-	}
+	_ = g.Wait()
 
 	return nil
 }
