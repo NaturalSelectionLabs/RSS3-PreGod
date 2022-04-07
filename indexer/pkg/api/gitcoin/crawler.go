@@ -64,7 +64,7 @@ func (gc *crawler) InitGrants() error {
 
 	for _, item := range grants {
 		if item.AdminAddress != "0x0" {
-			gc.updateHostingProject(item.AdminAddress) // get grant project detailed info
+			gc.updateHostingProject(item) // get grant project detailed info
 
 			time.Sleep(10 * time.Second)
 		}
@@ -123,9 +123,9 @@ func (gc *crawler) needUpdateProject(adminAddress string) bool {
 	return ok && !p.Active
 }
 
-func (gc *crawler) updateHostingProject(adminAddress string) (inactive bool, err error) {
+func (gc *crawler) updateHostingProject(info GrantInfo) (inactive bool, err error) {
 
-	project, err := GetProjectsInfo(adminAddress, "")
+	project, err := GetProjectsInfo(info.AdminAddress, info.Title)
 	if err != nil {
 		logger.Errorf("zksync get projects info error: %v", err)
 
@@ -133,10 +133,10 @@ func (gc *crawler) updateHostingProject(adminAddress string) (inactive bool, err
 	}
 
 	if !project.Active {
-		gc.addInactiveAdminAddress(adminAddress)
+		gc.addInactiveAdminAddress(info.AdminAddress)
 	}
 
-	gc.hostingProjectsCache[adminAddress] = project // TODO: add to db
+	gc.hostingProjectsCache[info.AdminAddress] = project // TODO: add to db
 	inactive = !project.Active
 
 	return
