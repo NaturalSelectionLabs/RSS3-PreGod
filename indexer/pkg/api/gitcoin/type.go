@@ -7,15 +7,25 @@ import (
 	"time"
 )
 
-type ChainType string
+type GitcoinPlatform string
 
 const (
-	Unknown ChainType = "unknown"
+	Unknown GitcoinPlatform = "unknown"
 
-	ETH     ChainType = "eth"
-	Polygon ChainType = "polygon"
-	ZKSYNC  ChainType = "zksync"
+	ETH     GitcoinPlatform = "eth"
+	Polygon GitcoinPlatform = "polygon"
+	ZKSYNC  GitcoinPlatform = "zksync"
 )
+
+func (p GitcoinPlatform) getContractAddress() string {
+	if p == ETH {
+		return bulkCheckoutAddressETH
+	}
+	if p == Polygon {
+		return bulkCheckoutAddressPolygon
+	}
+	return ""
+}
 
 type crawlerConfig struct {
 	FromHeight    int64
@@ -60,7 +70,8 @@ var DefaultZksyncConfig = &crawlerConfig{
 type DonationApproach string
 
 const (
-	DonationApproachStandard = "Standard"
+	DonationApproachEthereum = "Standard"
+	DonationApproachPolygon  = "Polygon"
 	DonationApproachZksync   = "zkSync"
 )
 
@@ -100,4 +111,17 @@ type DonationInfo struct {
 func (d DonationInfo) String() string {
 	return fmt.Sprintf(`Donor: %s, AdminAddress: %s, TokenAddress: %s, Amount: %s, Symbol: %s, TxHash: %s`,
 		d.Donor, d.AdminAddress, d.TokenAddress, d.Amount, d.Symbol, d.TxHash)
+}
+
+func (d DonationInfo) GetTxTo() string {
+	if d.Approach == DonationApproachEthereum {
+		return bulkCheckoutAddressETH
+	}
+	if d.Approach == DonationApproachPolygon {
+		return bulkCheckoutAddressPolygon
+	}
+	if d.Approach == DonationApproachZksync {
+		return d.AdminAddress
+	}
+	return ""
 }

@@ -51,7 +51,7 @@ func GetTokens() ([]Token, error) {
 	}
 
 	var tokens []Token
-	if err = jsoni.UnmarshalFromString(string(response), tokens); err != nil {
+	if err = jsoni.UnmarshalFromString(string(response), &tokens); err != nil {
 		return nil, fmt.Errorf("GetTokens UnmarshalFromString error: [%v]", err)
 	}
 

@@ -185,7 +185,9 @@ func GetTxRelatedURLs(
 	transactionHash *string,
 ) []string {
 	urls := []string{}
-
+	if transactionHash != nil {
+		urls = append(urls, GetTxHashURL(network, *transactionHash))
+	}
 	switch network {
 	case constants.NetworkSymbolEthereum:
 		if transactionHash != nil {
@@ -220,4 +222,29 @@ func GetTxRelatedURLs(
 	}
 
 	return urls
+}
+
+// Returns related urls based on the network and contract tx hash.
+func GetTxHashURL(
+	network constants.NetworkSymbol,
+	transactionHash string,
+) string {
+	switch network {
+	case constants.NetworkSymbolEthereum:
+		return "https://etherscan.io/tx/%s" + (transactionHash)
+
+	case constants.NetworkSymbolPolygon:
+		return "https://polygonscan.com/tx/%s" + (transactionHash)
+
+	case constants.NetworkSymbolBNBChain:
+		return "https://bscscan.com/tx/%s" + (transactionHash)
+
+	case constants.NetworkSymbolAvalanche:
+		return "https://avascan.info/blockchain/c/tx/%s" + (transactionHash)
+	case constants.NetworkSymbolFantom:
+		return "https://ftmscan.com/tx/%s" + (transactionHash)
+	default:
+		return ""
+	}
+
 }
