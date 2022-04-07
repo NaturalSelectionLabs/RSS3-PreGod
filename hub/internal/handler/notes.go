@@ -77,7 +77,7 @@ func GetNoteListHandlerFunc(c *gin.Context) {
 		}
 	}
 
-	if err = indexer.GetItems(accounts); err != nil {
+	if err = indexer.GetItems(instance, accounts); err != nil {
 		_ = c.Error(err)
 
 		return

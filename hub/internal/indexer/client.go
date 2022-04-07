@@ -10,11 +10,12 @@ import (
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/config"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/constants"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/logger"
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/rss3uri"
 	"github.com/go-resty/resty/v2"
 	"golang.org/x/sync/errgroup"
 )
 
-func GetItems(accounts []model.Account) error {
+func GetItems(instance rss3uri.Instance, accounts []model.Account) error {
 	eg := errgroup.Group{}
 	client := resty.New()
 
@@ -24,9 +25,11 @@ func GetItems(accounts []model.Account) error {
 		eg.Go(func() error {
 			request := client.NewRequest()
 			params := map[string]string{
-				"proof":       account.ID,
-				"platform_id": strconv.Itoa(account.Platform),
-				"network_id":  strconv.Itoa(int(constants.NetworkSymbol(constants.PlatformID(account.Platform).Symbol()).ID())),
+				"proof":          account.ID,
+				"platform_id":    strconv.Itoa(account.Platform),
+				"network_id":     strconv.Itoa(int(constants.NetworkSymbol(constants.PlatformID(account.Platform).Symbol()).ID())),
+				"owner_id":       instance.GetIdentity(),
+				"owner_platform": instance.GetSuffix(),
 			}
 			result := Response{}
 			response, err := request.
