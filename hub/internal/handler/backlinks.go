@@ -4,13 +4,13 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"time"
 
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/internal/middleware"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/internal/protocol"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/constants"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/rss3uri"
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/timex"
 	"github.com/gin-gonic/gin"
 )
 
@@ -58,7 +58,7 @@ func GetBackLinkListHandlerFunc(c *gin.Context) {
 
 	for _, linkModel := range linkModels {
 		links = append(links, protocol.Link{
-			DateCreated: linkModel.CreatedAt,
+			DateCreated: timex.Time(linkModel.CreatedAt),
 			From:        linkModel.From,
 			To:          linkModel.To,
 			Type:        constants.LinkTypeID(linkModel.Type).String(),
@@ -70,14 +70,14 @@ func GetBackLinkListHandlerFunc(c *gin.Context) {
 		})
 	}
 
-	var dateUpdated *time.Time
+	var dateUpdated *timex.Time
+
 	for _, link := range links {
+		internalTime := link.DateCreated
 		if dateUpdated == nil {
-			// nolint:exportloopref // TODO
-			dateUpdated = &link.DateCreated
-		} else if dateUpdated.Before(link.DateCreated) {
-			// nolint:exportloopref // TODO
-			dateUpdated = &link.DateCreated
+			dateUpdated = &internalTime
+		} else if dateUpdated.Time().Before(link.DateCreated.Time()) {
+			dateUpdated = &internalTime
 		}
 	}
 

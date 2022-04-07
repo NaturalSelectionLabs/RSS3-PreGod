@@ -31,7 +31,6 @@ func GetInstanceHandlerFunc(c *gin.Context) {
 	instanceList := protocol.NewInstanceList(instance)
 
 	c.JSON(http.StatusOK, protocol.File{
-		Version:    protocol.Version,
 		Identifier: rss3uri.New(instance).String(),
 		Total:      len(instanceList),
 		List:       instanceList,

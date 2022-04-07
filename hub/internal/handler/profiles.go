@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"time"
 
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/internal/api"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/internal/middleware"
@@ -12,6 +11,7 @@ import (
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/constants"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/rss3uri"
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/timex"
 	"github.com/gin-gonic/gin"
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
@@ -58,14 +58,14 @@ func GetProfileListHandlerFunc(c *gin.Context) {
 		return
 	}
 
-	var dateUpdated *time.Time
+	var dateUpdated *timex.Time
+
 	for _, profile := range profileList {
+		internalTime := profile.DateUpdated
 		if dateUpdated == nil {
-			// nolint:exportloopref // TODO
-			dateUpdated = &profile.DateUpdated
-		} else if dateUpdated.Before(profile.DateCreated) {
-			// nolint:exportloopref // TODO
-			dateUpdated = &profile.DateUpdated
+			dateUpdated = &internalTime
+		} else if dateUpdated.Time().Before(profile.DateUpdated.Time()) {
+			dateUpdated = &internalTime
 		}
 	}
 
@@ -122,8 +122,8 @@ func getPlatformInstanceProfileList(instance *rss3uri.PlatformInstance, request 
 		}
 
 		profiles = append(profiles, protocol.Profile{
-			DateCreated:       profileModel.CreatedAt,
-			DateUpdated:       profileModel.UpdatedAt,
+			DateCreated:       timex.Time(profileModel.CreatedAt),
+			DateUpdated:       timex.Time(profileModel.UpdatedAt),
 			Name:              database.UnwrapNullString(profileModel.Name),
 			Avatars:           profileModel.Avatars,
 			Bio:               database.UnwrapNullString(profileModel.Bio),

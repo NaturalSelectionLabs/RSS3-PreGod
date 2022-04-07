@@ -1,11 +1,13 @@
 package protocol
 
-import "time"
+import (
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/timex"
+)
 
 type Item struct {
 	Identifier  string           `json:"identifier"`
-	DateCreated time.Time        `json:"date_created"`
-	DateUpdated time.Time        `json:"date_updated"`
+	DateCreated timex.Time       `json:"date_created"`
+	DateUpdated timex.Time       `json:"date_updated"`
 	RelatedURLs []string         `json:"related_urls,omitempty"`
 	Links       string           `json:"links"`
 	BackLinks   string           `json:"backlinks"`

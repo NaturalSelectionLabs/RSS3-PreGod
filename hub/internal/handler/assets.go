@@ -15,6 +15,7 @@ import (
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/constants"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/logger"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/rss3uri"
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/timex"
 	"github.com/gin-gonic/gin"
 )
 
@@ -97,10 +98,11 @@ func GetAssetListHandlerFunc(c *gin.Context) {
 
 	uri := rss3uri.New(instance)
 
-	var dateUpdated *time.Time
+	var dateUpdated *timex.Time
 
 	assetList := make([]protocol.Item, len(assetModels))
 
+	// nolint:dupl // TODO
 	for i, assetModel := range assetModels {
 		attachmentList := make([]protocol.ItemAttachment, 0)
 		if err = json.Unmarshal(assetModel.Attachments, &attachmentList); err != nil {
@@ -109,18 +111,17 @@ func GetAssetListHandlerFunc(c *gin.Context) {
 			return
 		}
 
+		internalTime := timex.Time(assetModel.DateUpdated)
 		if dateUpdated == nil {
-			// nolint:exportloopref // TODO
-			dateUpdated = &assetModel.DateUpdated
-		} else if dateUpdated.Before(assetModel.DateUpdated) {
-			// nolint:exportloopref // TODO
-			dateUpdated = &assetModel.DateUpdated
+			dateUpdated = &internalTime
+		} else if dateUpdated.Time().Before(assetModel.DateUpdated) {
+			dateUpdated = &internalTime
 		}
 
 		assetList[i] = protocol.Item{
 			Identifier:  assetModel.Identifier,
-			DateCreated: assetModel.DateCreated,
-			DateUpdated: assetModel.DateUpdated,
+			DateCreated: timex.Time(assetModel.DateCreated),
+			DateUpdated: timex.Time(assetModel.DateUpdated),
 			RelatedURLs: assetModel.RelatedURLs,
 			Links:       fmt.Sprintf("%s/links", uri.String()),
 			BackLinks:   fmt.Sprintf("%s/backlinks", uri.String()),

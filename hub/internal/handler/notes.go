@@ -14,6 +14,7 @@ import (
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database/model"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/constants"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/rss3uri"
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/timex"
 	"github.com/gin-gonic/gin"
 )
 
@@ -92,10 +93,11 @@ func GetNoteListHandlerFunc(c *gin.Context) {
 
 	uri := rss3uri.New(instance)
 
-	var dateUpdated *time.Time
+	var dateUpdated *timex.Time
 
 	noteList := make([]protocol.Item, len(noteModels))
 
+	// nolint:dupl // TODO
 	for i, noteModel := range noteModels {
 		attachmentList := make([]protocol.ItemAttachment, 0)
 		if err = json.Unmarshal(noteModel.Attachments, &attachmentList); err != nil {
@@ -104,18 +106,17 @@ func GetNoteListHandlerFunc(c *gin.Context) {
 			return
 		}
 
+		internalTime := timex.Time(noteModel.DateUpdated)
 		if dateUpdated == nil {
-			// nolint:exportloopref // TODO
-			dateUpdated = &noteModel.DateUpdated
-		} else if dateUpdated.Before(noteModel.DateUpdated) {
-			// nolint:exportloopref // TODO
-			dateUpdated = &noteModel.DateUpdated
+			dateUpdated = &internalTime
+		} else if dateUpdated.Time().Before(noteModel.DateUpdated) {
+			dateUpdated = &internalTime
 		}
 
 		noteList[i] = protocol.Item{
 			Identifier:  noteModel.Identifier,
-			DateCreated: noteModel.DateCreated,
-			DateUpdated: noteModel.DateUpdated,
+			DateCreated: timex.Time(noteModel.DateCreated),
+			DateUpdated: timex.Time(noteModel.DateUpdated),
 			RelatedURLs: noteModel.RelatedURLs,
 			Links:       fmt.Sprintf("%s/links", uri.String()),
 			BackLinks:   fmt.Sprintf("%s/backlinks", uri.String()),
