@@ -126,6 +126,8 @@ jobs:
             yq -i '.spec.template.spec.containers[0].image = "${{ env.IMAGE_NAME_INDEXER }}:${{ steps.meta.outputs.version }}"' ./deploy/dev/deploy-indexer.yaml
             yq -i '.spec.template.spec.containers[0].image = "${{ env.IMAGE_NAME_INDEXER }}:${{ steps.meta.outputs.version }}"' ./deploy/dev/deploy-indexer-autocrawler.yaml
             yq -i '.spec.jobTemplate.spec.template.spec.containers[0].image = "${{ env.IMAGE_NAME_INDEXER }}:${{ steps.meta.outputs.version }}"' ./deploy/dev/cronjob-indexer.yaml
+            sed -i 's/NOLIMITHEADER/${{ secrets.NOLIMITHEADER }}/g' ./deploy/dev/route.yaml
+            sed -i 's/NOLIMITVALUE/${{ secrets.NOLIMITVALUE}}/g' ./deploy/dev/route.yaml
       - run: aws eks update-kubeconfig --region us-west-2 --name development
       - run: |
           kubectl apply -f deploy/dev
@@ -159,6 +161,8 @@ jobs:
             yq -i '.spec.template.spec.containers[0].image = "${{ env.IMAGE_NAME_INDEXER }}:${{ steps.meta.outputs.version }}"' ./deploy/prod/deploy-indexer.yaml
             yq -i '.spec.template.spec.containers[0].image = "${{ env.IMAGE_NAME_INDEXER }}:${{ steps.meta.outputs.version }}"' ./deploy/prod/deploy-indexer-autocrawler.yaml
             yq -i '.spec.jobTemplate.spec.template.spec.containers[0].image = "${{ env.IMAGE_NAME_INDEXER }}:${{ steps.meta.outputs.version }}"' ./deploy/prod/cronjob-indexer.yaml
+            sed -i 's/NOLIMITHEADER/${{ secrets.NOLIMITHEADER }}/g' ./deploy/prod/route.yaml
+            sed -i 's/NOLIMITVALUE/${{ secrets.NOLIMITVALUE}}/g' ./deploy/prod/route.yaml
       - run: aws eks update-kubeconfig --region us-west-2 --name production
       - run: |
           kubectl apply -f deploy/prod
