@@ -14,6 +14,10 @@ import (
 	"gorm.io/gorm/schema"
 )
 
+const (
+	MaxLimit = 100
+)
+
 var DB *gorm.DB
 
 func Setup() error {
@@ -90,19 +94,26 @@ func QueryAccounts(db *gorm.DB, profileID string, profilePlatform int, source in
 	return accounts, nil
 }
 
-func QueryLinks(db *gorm.DB, _type int, form string, linkSources []int, limit int) ([]model.Link, error) {
+func QueryLinks(db *gorm.DB, _type *int, form string, linkSources []int, limit int) ([]model.Link, error) {
 	var links []model.Link
 
 	internalDB := db.Where(&model.Link{
-		Type: _type,
 		From: form,
 	})
+
+	if _type != nil {
+		internalDB = internalDB.Where("type = ?", *_type)
+	}
 
 	if len(linkSources) > 0 {
 		internalDB.Where("source IN ?", linkSources)
 	}
 
 	if limit > 0 {
+		if limit > MaxLimit {
+			limit = MaxLimit
+		}
+
 		internalDB = internalDB.Limit(limit)
 	}
 
@@ -113,19 +124,26 @@ func QueryLinks(db *gorm.DB, _type int, form string, linkSources []int, limit in
 	return links, nil
 }
 
-func QueryLinksByTo(db *gorm.DB, _type int, to string, linkSources []int, limit int) ([]model.Link, error) {
+func QueryLinksByTo(db *gorm.DB, _type *int, to string, linkSources []int, limit int) ([]model.Link, error) {
 	var links []model.Link
 
 	internalDB := db.Where(&model.Link{
-		Type: _type,
-		To:   to,
+		To: to,
 	})
+
+	if _type != nil {
+		internalDB = internalDB.Where("type = ?", *_type)
+	}
 
 	if len(linkSources) > 0 {
 		internalDB.Where("source IN ?", linkSources)
 	}
 
 	if limit > 0 {
+		if limit > MaxLimit {
+			limit = MaxLimit
+		}
+
 		internalDB = internalDB.Limit(limit)
 	}
 
@@ -178,18 +196,52 @@ func CreateAssets(db *gorm.DB, assets []model.Asset, updateAll bool) ([]model.As
 	return assets, nil
 }
 
-func QueryAssets(db *gorm.DB, uris []string) ([]model.Asset, error) {
+func DeleteAsset(db *gorm.DB, asset *model.Asset) (*model.Asset, error) {
+	if err := db.Clauses(clause.Returning{}).Delete(&asset).Error; err != nil {
+		return nil, err
+	}
+
+	return asset, nil
+}
+
+func QueryAssets(db *gorm.DB, uris []string, limit int) ([]model.Asset, error) {
 	var assets []model.Asset
-	if err := db.Where("owner IN ?", uris).Order("date_created DESC").Error; err != nil {
+
+	internalDB := db.
+		Where("owner IN ?", uris).
+		Order("date_created DESC")
+
+	if limit > 0 {
+		if limit > MaxLimit {
+			limit = MaxLimit
+		}
+
+		internalDB = internalDB.Limit(limit)
+	}
+
+	if err := internalDB.Find(&assets).Error; err != nil {
 		return nil, err
 	}
 
 	return assets, nil
 }
 
-func QueryNotes(db *gorm.DB, uris []string) ([]model.Note, error) {
+func QueryNotes(db *gorm.DB, uris []string, limit int) ([]model.Note, error) {
 	var notes []model.Note
-	if err := db.Where("owner IN ?", uris).Order("date_created DESC").Find(&notes).Error; err != nil {
+
+	internalDB := db.
+		Where("owner IN ?", uris).
+		Order("date_created DESC")
+
+	if limit > 0 {
+		if limit > MaxLimit {
+			limit = MaxLimit
+		}
+
+		internalDB = internalDB.Limit(limit)
+	}
+
+	if err := internalDB.Find(&notes).Error; err != nil {
 		return nil, err
 	}
 

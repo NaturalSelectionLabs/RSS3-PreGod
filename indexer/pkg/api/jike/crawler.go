@@ -28,15 +28,16 @@ func (mc *jikeCrawler) Work(param crawler.WorkParam) error {
 		return err
 	}
 
+	owner := rss3uri.NewAccountInstance(param.OwnerID, param.OwnerPlatformID.Symbol()).UriString()
 	author := rss3uri.NewAccountInstance(param.Identity, constants.PlatformSymbolJike).UriString()
 
 	for _, item := range timeline {
 		note := model.Note{
 			Identifier:      rss3uri.NewNoteInstance(item.Id, constants.NetworkSymbolJike).UriString(),
-			Owner:           author,
+			Owner:           owner,
 			RelatedURLs:     []string{item.Link},
 			Tags:            constants.ItemTagsJikePost.ToPqStringArray(),
-			Authors:         []string{author},
+			Authors:         []string{owner, author},
 			Summary:         item.Summary,
 			Attachments:     database.MustWrapJSON(item.Attachments),
 			Source:          constants.NoteSourceNameJikePost.String(),

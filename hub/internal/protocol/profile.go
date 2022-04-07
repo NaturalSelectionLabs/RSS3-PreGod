@@ -1,10 +1,12 @@
 package protocol
 
-import "time"
+import (
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/timex"
+)
 
 type Profile struct {
-	DateCreated       time.Time           `json:"date_created"`
-	DateUpdated       time.Time           `json:"date_updated"`
+	DateCreated       timex.Time          `json:"date_created"`
+	DateUpdated       timex.Time          `json:"date_updated"`
 	Name              string              `json:"name"`
 	Avatars           []string            `json:"avatars"`
 	Bio               string              `json:"bio"`

@@ -2,7 +2,7 @@ package protocol
 
 import (
 	"encoding/json"
-	"time"
+	"fmt"
 
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/timex"
 )
@@ -11,33 +11,19 @@ const (
 	Version = "v0.4.0"
 )
 
-var _ json.Marshaler = &File{}
+var _ json.Marshaler = version{}
+
+type version []byte
+
+func (v version) MarshalJSON() ([]byte, error) {
+	return []byte(fmt.Sprintf(`"%s"`, Version)), nil
+}
 
 type File struct {
-	Version        string    `json:"version"`
-	DateUpdated    time.Time `json:"date_updated"`
-	Identifier     string    `json:"identifier"`
-	IdentifierNext string    `json:"identifier_next,omitempty"`
-	Total          int       `json:"total"`
-	List           any       `json:"list,omitempty"`
-}
-
-func (f File) MarshalJSON() ([]byte, error) {
-	return json.Marshal(&magicFile{
-		Version:        Version,
-		DateUpdated:    f.DateUpdated.Format(timex.ISO8601),
-		Identifier:     f.Identifier,
-		IdentifierNext: f.IdentifierNext,
-		Total:          f.Total,
-		List:           f.List,
-	})
-}
-
-type magicFile struct {
-	Version        string `json:"version"`
-	DateUpdated    string `json:"date_updated"`
-	Identifier     string `json:"identifier"`
-	IdentifierNext string `json:"identifier_next,omitempty"`
-	Total          int    `json:"total"`
-	List           any    `json:"list,omitempty"`
+	Version        version     `json:"version"`
+	DateUpdated    *timex.Time `json:"date_updated,omitempty"`
+	Identifier     string      `json:"identifier"`
+	IdentifierNext string      `json:"identifier_next,omitempty"`
+	Total          int         `json:"total"`
+	List           any         `json:"list"`
 }

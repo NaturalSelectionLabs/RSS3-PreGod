@@ -1,21 +1,17 @@
 package handler
 
 import (
-	"database/sql"
 	"errors"
 	"fmt"
 	"net/http"
-	"time"
 
-	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/internal/api"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/internal/middleware"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/internal/protocol"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/constants"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/rss3uri"
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/timex"
 	"github.com/gin-gonic/gin"
-	"golang.org/x/text/cases"
-	"golang.org/x/text/language"
 )
 
 type GetBackLinkListRequest struct {
@@ -45,9 +41,16 @@ func GetBackLinkListHandlerFunc(c *gin.Context) {
 		linkSources = append(linkSources, constants.LinkSourceName(linkSource).ID().Int())
 	}
 
+	var linkType *int
+
+	if request.Type != "" {
+		internalLinkType := constants.LinkTypeName(request.Type).ID().Int()
+		linkType = &internalLinkType
+	}
+
 	linkModels, err := database.QueryLinksByTo(
 		database.DB,
-		constants.LinkTypeName(request.Type).ID().Int(),
+		linkType,
 		instance.Identity,
 		linkSources,
 		request.Limit,
@@ -62,40 +65,32 @@ func GetBackLinkListHandlerFunc(c *gin.Context) {
 
 	for _, linkModel := range linkModels {
 		links = append(links, protocol.Link{
-			DateCreated: linkModel.CreatedAt,
+			DateCreated: timex.Time(linkModel.CreatedAt),
 			From:        linkModel.From,
 			To:          linkModel.To,
 			Type:        constants.LinkTypeID(linkModel.Type).String(),
 			Source:      constants.ProfileSourceID(linkModel.Source).Name().String(),
 			Metadata: protocol.LinkMetadata{
-				Network: cases.Title(language.English, cases.NoLower).String(constants.NetworkSymbolCrossbell.String()),
+				Network: constants.NetworkSymbolCrossbell.String(),
 				Proof:   "TODO",
 			},
 		})
 	}
 
-	var dateUpdated sql.NullTime
+	var dateUpdated *timex.Time
 
 	for _, link := range links {
-		if !dateUpdated.Valid {
-			dateUpdated.Valid = true
-			dateUpdated.Time = link.DateCreated
+		internalTime := link.DateCreated
+		if dateUpdated == nil {
+			dateUpdated = &internalTime
+		} else if dateUpdated.Time().Before(link.DateCreated.Time()) {
+			dateUpdated = &internalTime
 		}
-
-		if dateUpdated.Time.Before(link.DateCreated) {
-			dateUpdated.Time = link.DateCreated
-		}
-	}
-
-	if len(links) == 0 {
-		_ = c.Error(api.ErrorNotFound)
-
-		return
 	}
 
 	c.JSON(http.StatusOK, protocol.File{
 		Identifier:  fmt.Sprintf("%s/backlinks", rss3uri.New(instance)),
-		DateUpdated: time.Now(),
+		DateUpdated: dateUpdated,
 		Total:       len(links),
 		List:        links,
 	})

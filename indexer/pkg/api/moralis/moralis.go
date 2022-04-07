@@ -73,9 +73,9 @@ func GetNFTTransfers(userAddress string, chainType ChainType, blockHeight int, a
 	return *res, nil
 }
 
-func GetLogs(fromBlock int64, toBlock int64, address string, topic string, chainType string, apiKey string) (*GetLogsResult, error) {
+func GetLogs(fromBlock int64, toBlock int64, address string, topic string, chainType ChainType, apiKey string) (*GetLogsResult, error) {
 	url := fmt.Sprintf("%s/api/v2/%s/logs?chain=%s&from_block=%d&to_block=%d&topic0=%s",
-		endpoint, address, chainType, fromBlock, toBlock, topic)
+		endpoint, address, string(chainType), fromBlock, toBlock, topic)
 	response, err := requestMoralisApi(url, apiKey)
 
 	if err != nil {

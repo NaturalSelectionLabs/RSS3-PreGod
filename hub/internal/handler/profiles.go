@@ -1,7 +1,6 @@
 package handler
 
 import (
-	"database/sql"
 	"errors"
 	"fmt"
 	"net/http"
@@ -11,14 +10,16 @@ import (
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/internal/protocol"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/constants"
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/logger"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/rss3uri"
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/timex"
 	"github.com/gin-gonic/gin"
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
 )
 
 type GetProfileListRequest struct {
-	ProfileSources []string `form:"profile_sources"`
+	ProfileSources []int `form:"profile_sources"`
 }
 
 func GetProfileListHandlerFunc(c *gin.Context) {
@@ -36,6 +37,8 @@ func GetProfileListHandlerFunc(c *gin.Context) {
 		return
 	}
 
+	logger.Info(request.ProfileSources)
+
 	profileList := make([]protocol.Profile, 0)
 
 	switch value := instance.(type) {
@@ -43,7 +46,7 @@ func GetProfileListHandlerFunc(c *gin.Context) {
 		profileList, err = getPlatformInstanceProfileList(value, request)
 		if err != nil {
 			if !errors.Is(err, api.ErrorNotFound) {
-				err = api.ErrorDatabaseError
+				err = api.ErrorDatabase
 			}
 
 			_ = c.Error(err)
@@ -58,20 +61,19 @@ func GetProfileListHandlerFunc(c *gin.Context) {
 		return
 	}
 
-	var dateUpdated sql.NullTime
-	for _, profile := range profileList {
-		if !dateUpdated.Valid {
-			dateUpdated.Valid = true
-			dateUpdated.Time = profile.DateUpdated
-		}
+	var dateUpdated *timex.Time
 
-		if dateUpdated.Time.Before(profile.DateCreated) {
-			dateUpdated.Time = profile.DateUpdated
+	for _, profile := range profileList {
+		internalTime := profile.DateUpdated
+		if dateUpdated == nil {
+			dateUpdated = &internalTime
+		} else if dateUpdated.Time().Before(profile.DateUpdated.Time()) {
+			dateUpdated = &internalTime
 		}
 	}
 
 	c.JSON(http.StatusOK, protocol.File{
-		DateUpdated: dateUpdated.Time,
+		DateUpdated: dateUpdated,
 		Identifier:  fmt.Sprintf("%s/profiles", rss3uri.New(instance)),
 		Total:       len(profileList),
 		List:        profileList,
@@ -79,15 +81,7 @@ func GetProfileListHandlerFunc(c *gin.Context) {
 }
 
 func getPlatformInstanceProfileList(instance *rss3uri.PlatformInstance, request GetProfileListRequest) ([]protocol.Profile, error) {
-	tx := database.DB.Begin()
-	defer tx.Rollback()
-
-	profileSources := make([]int, 0)
-	for _, profileSource := range request.ProfileSources {
-		profileSources = append(profileSources, constants.ProfileSourceName(profileSource).ID().Int())
-	}
-
-	profileModels, err := database.QueryProfiles(tx, instance.GetIdentity(), instance.Platform.ID().Int(), profileSources)
+	profileModels, err := database.QueryProfiles(database.DB, instance.GetIdentity(), instance.Platform.ID().Int(), request.ProfileSources)
 	if err != nil {
 		return nil, err
 	}
@@ -108,7 +102,8 @@ func getPlatformInstanceProfileList(instance *rss3uri.PlatformInstance, request 
 		connectedAccounts := make([]string, 0)
 
 		accountModels, err := database.QueryAccounts(
-			tx, instance.GetIdentity(),
+			database.DB,
+			instance.GetIdentity(),
 			instance.Platform.ID().Int(),
 			// TODO
 			constants.ProfileSourceIDCrossbell.Int(),
@@ -125,8 +120,8 @@ func getPlatformInstanceProfileList(instance *rss3uri.PlatformInstance, request 
 		}
 
 		profiles = append(profiles, protocol.Profile{
-			DateCreated:       profileModel.CreatedAt,
-			DateUpdated:       profileModel.UpdatedAt,
+			DateCreated:       timex.Time(profileModel.CreatedAt),
+			DateUpdated:       timex.Time(profileModel.UpdatedAt),
 			Name:              database.UnwrapNullString(profileModel.Name),
 			Avatars:           profileModel.Avatars,
 			Bio:               database.UnwrapNullString(profileModel.Bio),
@@ -141,12 +136,6 @@ func getPlatformInstanceProfileList(instance *rss3uri.PlatformInstance, request 
 			},
 		})
 	}
-
-	if len(profiles) == 0 {
-		return nil, api.ErrorNotFound
-	}
-
-	tx.Commit()
 
 	return profiles, nil
 }

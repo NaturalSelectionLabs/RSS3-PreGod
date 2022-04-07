@@ -2,8 +2,8 @@ package jike
 
 import (
 	"fmt"
-	"log"
 	"strconv"
+	"sync"
 	"time"
 
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database/datatype"
@@ -12,6 +12,7 @@ import (
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/logger"
 	jsoniter "github.com/json-iterator/go"
 	"github.com/robfig/cron/v3"
+	lop "github.com/samber/lo/parallel"
 	"github.com/valyala/fastjson"
 )
 
@@ -263,8 +264,6 @@ func GetUserTimeline(name string) ([]Timeline, error) {
 
 	response, err := httpx.PostRaw(url, headers, json)
 
-	log.Println(string(response.Body()))
-
 	if err != nil {
 		logger.Errorf("Jike GetUserTimeline err: %v", err)
 
@@ -279,15 +278,15 @@ func GetUserTimeline(name string) ([]Timeline, error) {
 
 	result := make([]Timeline, len(parsedObject))
 
-	for i, node := range parsedObject {
+	lop.ForEach(parsedObject, func(node *fastjson.Value, i int) {
 		id := string(node.GetStringBytes("id"))
 		result[i].Id = id
 
 		t, timeErr := time.Parse(time.RFC3339, string(node.GetStringBytes("createdAt")))
-		if err != nil {
+		if timeErr != nil {
 			logger.Errorf("Jike GetUserTimeline timestamp parsing err: %v", timeErr)
 
-			return nil, timeErr
+			t = time.Time{} // set to zero value
 		}
 
 		result[i].Author = author
@@ -295,7 +294,7 @@ func GetUserTimeline(name string) ([]Timeline, error) {
 		result[i].Summary = string(node.GetStringBytes("content"))
 		result[i].Link = fmt.Sprintf("https://web.okjike.com/originalPost/%s", id)
 		result[i].Attachments = getAttachment(node)
-	}
+	})
 
 	if err != nil {
 		logger.Errorf("Jike GetUserTimeline err: %v", "error parsing response")
@@ -347,10 +346,21 @@ func getAttachment(node *fastjson.Value) []datatype.Attachment {
 	attachments := make([]datatype.Attachment, 0)
 
 	// process the original post attachments
-	attachments = append(attachments, getPicture(node)...)
+	var wg sync.WaitGroup
 
-	// TODO: handle video attachments
-	// attachments = append(attachments, getVideo(node)...)
+	wg.Add(2)
+
+	go func() {
+		attachments = append(attachments, getPicture(node)...)
+
+		wg.Done()
+	}()
+
+	go func() {
+		attachments = append(attachments, getVideo(node)...)
+
+		wg.Done()
+	}()
 
 	// a 'status' field often means the report target is unavailable, e.g, DELETED
 	if !node.Exists("target", "status") {
@@ -382,21 +392,23 @@ func getAttachment(node *fastjson.Value) []datatype.Attachment {
 		}
 	}
 
+	wg.Wait()
+
 	return attachments
 }
 
 func getPicture(node *fastjson.Value) []datatype.Attachment {
-	pictues := node.GetArray("pictures")
+	pics := node.GetArray("pictures")
 
-	result := make([]datatype.Attachment, len(pictues))
+	result := make([]datatype.Attachment, len(pics))
 
-	for i, picture := range pictues {
+	lop.ForEach(pics, func(pic *fastjson.Value, i int) {
 		var url string
 
-		if picture.Exists("picUrl") {
-			url = string(picture.GetStringBytes("picUrl"))
-		} else if picture.Exists("thumbnailUrl") {
-			url = string(picture.GetStringBytes("thumbnailUrl"))
+		if pic.Exists("picUrl") {
+			url = string(pic.GetStringBytes("picUrl"))
+		} else if pic.Exists("thumbnailUrl") {
+			url = string(pic.GetStringBytes("thumbnailUrl"))
 		}
 
 		contentHeader, _ := httpx.GetContentHeader(url)
@@ -410,7 +422,26 @@ func getPicture(node *fastjson.Value) []datatype.Attachment {
 		}
 
 		result[i] = qMedia
-	}
+	})
 
 	return result
+}
+
+func getVideo(node *fastjson.Value) []datatype.Attachment {
+	videoPic := string(node.GetStringBytes("video", "image", "picUrl"))
+
+	if videoPic != "" {
+		contentHeader, _ := httpx.GetContentHeader(videoPic)
+
+		videoAttachment := datatype.Attachment{
+			Type:        "quote_media",
+			Address:     videoPic,
+			MimeType:    contentHeader.MIMEType,
+			SizeInBytes: contentHeader.SizeInByte,
+		}
+
+		return []datatype.Attachment{videoAttachment}
+	}
+
+	return nil
 }

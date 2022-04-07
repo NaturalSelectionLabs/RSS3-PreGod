@@ -21,6 +21,10 @@ type GetItemRequest struct {
 	NetworkID  constants.NetworkID  `form:"network_id"`
 	Limit      int                  `form:"limit"`
 	Timestamp  int64                `form:"timestamp"`
+
+	// to know the real owner of this account
+	OwnerID         string               `form:"owner_id" binding:"required"`
+	OwnerPlatformID constants.PlatformID `form:"owner_platform_id" binding:"required"`
 }
 
 type itemsResult struct {
@@ -100,11 +104,13 @@ func GetItemHandlerFunc(c *gin.Context) {
 
 func addToRecentVisit(ctx context.Context, req *GetItemRequest) error {
 	param := &crawler.WorkParam{
-		Identity:   req.Identity,
-		NetworkID:  req.NetworkID,
-		PlatformID: req.PlatformID,
-		Limit:      req.Limit,
-		Timestamp:  time.Unix(req.Timestamp, 0),
+		Identity:        req.Identity,
+		NetworkID:       req.NetworkID,
+		PlatformID:      req.PlatformID,
+		Limit:           req.Limit,
+		Timestamp:       time.Unix(req.Timestamp, 0),
+		OwnerID:         req.OwnerID,
+		OwnerPlatformID: req.OwnerPlatformID,
 	}
 
 	return autoupdater.AddToRecentVisitQueue(ctx, param)
@@ -116,13 +122,17 @@ func getItemsResultFromOneNetwork(
 	networkID constants.NetworkID,
 	limit int,
 	Timestamp time.Time,
+	ownerID string,
+	ownerPlatformID constants.PlatformID,
 ) (*itemsResult, util.ErrorBase) {
 	getItemHandler := crawler_handler.NewGetItemsHandler(crawler.WorkParam{
-		Identity:   identity,
-		PlatformID: platformID,
-		NetworkID:  networkID,
-		Limit:      limit,
-		Timestamp:  Timestamp,
+		Identity:        identity,
+		PlatformID:      platformID,
+		NetworkID:       networkID,
+		Limit:           limit,
+		Timestamp:       Timestamp,
+		OwnerID:         ownerID,
+		OwnerPlatformID: ownerPlatformID,
 	})
 
 	handlerResult, err := getItemHandler.Excute()
@@ -160,6 +170,7 @@ func getItemsResult(ctx context.Context, request GetItemRequest) (*itemsResult, 
 			currResult, currErrorBase := getItemsResultFromOneNetwork(
 				request.Identity, request.PlatformID, networkID,
 				request.Limit, time.Unix(request.Timestamp, 0),
+				request.OwnerID, request.OwnerPlatformID,
 			)
 
 			if currErrorBase.ErrorCode != util.ErrorCodeSuccess {
@@ -174,6 +185,7 @@ func getItemsResult(ctx context.Context, request GetItemRequest) (*itemsResult, 
 		result, errorBase = getItemsResultFromOneNetwork(
 			request.Identity, request.PlatformID, request.NetworkID,
 			request.Limit, time.Unix(request.Timestamp, 0),
+			request.OwnerID, request.OwnerPlatformID,
 		)
 	}
 

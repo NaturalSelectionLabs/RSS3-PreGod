@@ -8,11 +8,13 @@ import (
 	utils "github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/api/nft_utils"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/crawler"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database"
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database/datatype"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database/model"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/config"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/constants"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/logger"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/rss3uri"
+	lop "github.com/samber/lo/parallel"
 )
 
 type moralisCrawler struct {
@@ -37,7 +39,7 @@ func getApiKey() string {
 	return strings.Trim(apiKey, "\"")
 }
 
-//nolint:funlen // disable line length check
+//nolint:funlen,gocognit // disable line length check
 func (c *moralisCrawler) Work(param crawler.WorkParam) error {
 	chainType := GetChainType(param.NetworkID)
 	if chainType == Unknown {
@@ -45,10 +47,15 @@ func (c *moralisCrawler) Work(param crawler.WorkParam) error {
 	}
 
 	networkSymbol := chainType.GetNetworkSymbol()
-	nftTransfers, err := GetNFTTransfers(param.Identity, chainType, param.BlockHeight, getApiKey())
 
+	nftTransfers, err := GetNFTTransfers(param.Identity, chainType, param.BlockHeight, getApiKey())
 	if err != nil {
 		return err
+	}
+
+	// reverse the order of transfers to calculate the asset balances
+	for i, j := 0, len(nftTransfers.Result)-1; i < j; i, j = i+1, j-1 {
+		nftTransfers.Result[i], nftTransfers.Result[j] = nftTransfers.Result[j], nftTransfers.Result[i]
 	}
 
 	//TODO: tsp
@@ -72,6 +79,10 @@ func (c *moralisCrawler) Work(param crawler.WorkParam) error {
 		}
 	}
 
+	// those two should be expected to be equal actually
+	owner := rss3uri.NewAccountInstance(param.OwnerID, param.OwnerPlatformID.Symbol()).UriString()
+	author := rss3uri.NewAccountInstance(param.Identity, constants.PlatformSymbolEthereum).UriString()
+
 	// make the item list complete
 	for _, item := range nftTransfers.Result {
 		tsp, err := item.GetTsp()
@@ -80,8 +91,6 @@ func (c *moralisCrawler) Work(param crawler.WorkParam) error {
 
 			tsp = time.Now()
 		}
-
-		author := rss3uri.NewAccountInstance(param.Identity, constants.PlatformSymbolEthereum).UriString()
 
 		hasObject := false
 
@@ -108,7 +117,7 @@ func (c *moralisCrawler) Work(param crawler.WorkParam) error {
 
 		note := model.Note{
 			Identifier:      rss3uri.NewNoteInstance(item.TransactionHash, networkSymbol).UriString(),
-			Owner:           author,
+			Owner:           owner,
 			RelatedURLs:     GetTxRelatedURLs(networkSymbol, item.TokenAddress, item.TokenId, &item.TransactionHash),
 			Tags:            constants.ItemTagsNFT.ToPqStringArray(),
 			Authors:         []string{author},
@@ -131,10 +140,13 @@ func (c *moralisCrawler) Work(param crawler.WorkParam) error {
 			DateUpdated: tsp,
 		}
 
+		c.Notes = append(c.Notes, note)
+
+		// asset
 		assetProof := item.GetAssetProof()
 		asset := model.Asset{
 			Identifier:      rss3uri.NewAssetInstance(assetProof, networkSymbol).UriString(),
-			Owner:           author,
+			Owner:           owner,
 			RelatedURLs:     GetTxRelatedURLs(networkSymbol, item.TokenAddress, item.TokenId, nil),
 			Tags:            constants.ItemTagsNFT.ToPqStringArray(),
 			Authors:         []string{author},
@@ -155,8 +167,58 @@ func (c *moralisCrawler) Work(param crawler.WorkParam) error {
 			DateUpdated: tsp,
 		}
 
-		c.Notes = append(c.Notes, note)
-		c.Assets = append(c.Assets, asset)
+		if strings.ToLower(item.FromAddress) == strings.ToLower(param.Identity) {
+			// transfer from account
+			// 1. delete the asset if it exists
+			for i, asset := range c.Assets {
+				if asset.MetadataProof == assetProof {
+					c.Assets = append(c.Assets[:i], c.Assets[i+1:]...)
+
+					break
+				}
+			}
+			// 2. delete the asset from database
+			if _, err := database.DeleteAsset(database.DB, &asset); err != nil {
+				logger.Warnf("fail to delete asset: %+v", asset)
+			}
+		}
+
+		if strings.ToLower(item.ToAddress) == strings.ToLower(param.Identity) {
+			// transfer into account
+			c.Assets = append(c.Assets, asset)
+		}
+	}
+
+	// complete attachments in parallel
+	lop.ForEach(c.Notes, func(note model.Note, i int) {
+		if note.Attachments != nil {
+			as, err := database.UnwrapJSON[datatype.Attachments](note.Attachments)
+			if err != nil {
+				return
+			}
+			utils.CompleteMimeTypes(as)
+			c.Notes[i].Attachments = database.MustWrapJSON(as)
+		}
+	})
+
+	lop.ForEach(c.Assets, func(asset model.Asset, i int) {
+		if asset.Attachments != nil {
+			as, err := database.UnwrapJSON[datatype.Attachments](asset.Attachments)
+			if err != nil {
+				return
+			}
+			utils.CompleteMimeTypes(as)
+			c.Assets[i].Attachments = database.MustWrapJSON(as)
+		}
+	})
+
+	// reverse assets and notes to make sure the latest one is on top
+	for i, j := 0, len(c.Assets)-1; i < j; i, j = i+1, j-1 {
+		c.Assets[i], c.Assets[j] = c.Assets[j], c.Assets[i]
+	}
+
+	for i, j := 0, len(c.Notes)-1; i < j; i, j = i+1, j-1 {
+		c.Notes[i], c.Notes[j] = c.Notes[j], c.Notes[i]
 	}
 
 	return nil

@@ -6,6 +6,7 @@ import (
 
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database/datatype"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/httpx"
+	lop "github.com/samber/lo/parallel"
 	"github.com/valyala/fastjson"
 )
 
@@ -19,11 +20,15 @@ type Metadata struct {
 }
 
 func ParseNFTMetadata(metadata string) (Metadata, error) {
+	if metadata == "" {
+		return Metadata{}, fmt.Errorf("metadata is an empty string")
+	}
+
 	var parser fastjson.Parser
 	v, err := parser.Parse(metadata)
 
 	if err != nil {
-		return Metadata{}, fmt.Errorf("got error: %v when parsing nft metadata: [%s]", err, metadata)
+		return Metadata{}, fmt.Errorf("got error: %v when parsing nft metadata: %+v", err, metadata)
 	}
 
 	name := v.GetStringBytes("name")
@@ -52,10 +57,13 @@ func ParseNFTMetadata(metadata string) (Metadata, error) {
 	}, nil
 }
 
-func getMimeType(uri string) string {
+func getContentHeader(uri string) *httpx.ContentHeader {
 	// 1. is base64 encode?
 	if strings.Contains(uri, ";base64,") {
-		return strings.Split(uri, ",")[0]
+		return &httpx.ContentHeader{
+			MIMEType:   strings.Split(uri, ",")[0],
+			SizeInByte: len([]byte(strings.Split(uri, ",")[1])),
+		}
 	}
 
 	// 2. is ipfs?
@@ -64,62 +72,60 @@ func getMimeType(uri string) string {
 		url := "https://cloudflare-ipfs.com/ipfs/" + cid
 		contentHeader, _ := httpx.GetContentHeader(url)
 
-		return contentHeader.MIMEType
+		return contentHeader
 	}
 
 	// 3. is http?
 	if strings.HasPrefix(uri, "https://") || strings.HasPrefix(uri, "http://") {
 		contentHeader, _ := httpx.GetContentHeader(uri)
 
-		return contentHeader.MIMEType
+		return contentHeader
 	}
 
-	return ""
+	return nil
 }
 
 func getCommAtt(meta Metadata) []datatype.Attachment {
-	att := []datatype.Attachment{}
+	var as []datatype.Attachment
 
 	if len(meta.ExternalLink) != 0 {
-		att = append(att, datatype.Attachment{
-			Type:     "external_url",
-			Content:  meta.ExternalLink,
-			MimeType: "text/uri-list",
+		as = append(as, datatype.Attachment{
+			Type:    "external_url",
+			Content: meta.ExternalLink,
 		})
 	}
 
 	if len(meta.Preview) != 0 {
-		att = append(att, datatype.Attachment{
-			Type:     "preview",
-			Content:  meta.Preview,
-			MimeType: getMimeType(meta.Preview),
+		as = append(as, datatype.Attachment{
+			Type:    "preview",
+			Address: meta.Preview,
 		})
 	}
 
 	if len(meta.Object) != 0 {
-		att = append(att, datatype.Attachment{
-			Type:     "object",
-			Content:  meta.Object,
-			MimeType: getMimeType(meta.Object),
+		as = append(as, datatype.Attachment{
+			Type:    "object",
+			Address: meta.Object,
 		})
 	}
 
 	if len(meta.Attributes) != 0 {
-		att = append(att, datatype.Attachment{
+		as = append(as, datatype.Attachment{
 			Type:     "attributes",
 			Content:  meta.Attributes, //TODO: extract trait_type/value
-			MimeType: "",              // TODO
+			MimeType: "text/json",
 		})
 	}
 
 	// TODO: make other unparsed values
 
-	return att
+	return as
 }
 
-// Convert metadata to attachment of asset
+// Convert metadata to attachment of asset.
 func Meta2AssetAtt(meta Metadata) []datatype.Attachment {
-	att := []datatype.Attachment{}
+	var att []datatype.Attachment
+
 	if len(meta.Name) != 0 {
 		att = append(att, datatype.Attachment{
 			Type:     "name",
@@ -141,11 +147,27 @@ func Meta2AssetAtt(meta Metadata) []datatype.Attachment {
 	return att
 }
 
-// Convert metadata to attachment of note
+// Meta2NoteAtt converts metadata to attachment of note.
+// Note that this function does NOT include the MimeType and SizeInBytes of the attachment.
+// You may need to call CompleteMimeTypes to complete them later
+// (for parallel requests).
 func Meta2NoteAtt(meta Metadata) []datatype.Attachment {
-	att := []datatype.Attachment{}
+	var att []datatype.Attachment
 
 	att = append(att, getCommAtt(meta)...)
 
 	return att
+}
+
+func CompleteMimeTypes(as []datatype.Attachment) {
+	// get mimetypes
+	lop.ForEach(as, func(a datatype.Attachment, i int) {
+		if a.Address != "" {
+			contentHeader := getContentHeader(a.Address)
+			if contentHeader != nil {
+				as[i].MimeType = contentHeader.MIMEType
+				as[i].SizeInBytes = contentHeader.SizeInByte
+			}
+		}
+	})
 }

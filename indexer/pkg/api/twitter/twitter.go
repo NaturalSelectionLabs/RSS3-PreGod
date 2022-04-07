@@ -10,6 +10,7 @@ import (
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/config"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/httpx"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/logger"
+	lop "github.com/samber/lo/parallel"
 	"github.com/valyala/fastjson"
 )
 
@@ -60,6 +61,7 @@ func GetTimeline(name string, count uint32) ([]*ContentInfo, error) {
 	url := fmt.Sprintf("%s/statuses/user_timeline.json?screen_name=%s&count=%d&exclude_replies=true", endpoint, name, count)
 
 	response, err := httpx.Get(url, headers)
+
 	if err != nil {
 		return nil, err
 	}
@@ -78,14 +80,14 @@ func GetTimeline(name string, count uint32) ([]*ContentInfo, error) {
 		return contentInfos, err
 	}
 
-	for _, contentValue := range contentArray {
+	cs := lop.Map(contentArray, func(contentValue *fastjson.Value, _ int) *ContentInfo {
 		contentInfo := new(ContentInfo)
 
 		contentInfo.PreContent, err = formatTweetText(contentValue)
 		if err != nil {
 			logger.Errorf("format tweet text error: %s", err)
 
-			continue
+			return nil
 		}
 
 		contentInfo.Timestamp = string(contentValue.GetStringBytes("created_at"))
@@ -94,8 +96,10 @@ func GetTimeline(name string, count uint32) ([]*ContentInfo, error) {
 		contentInfo.Attachments = getTweetAttachments(contentValue)
 		contentInfo.ScreenName = string(contentValue.GetStringBytes("user", "screen_name"))
 
-		contentInfos = append(contentInfos, contentInfo)
-	}
+		return contentInfo
+	})
+
+	contentInfos = append(contentInfos, cs...)
 
 	return contentInfos, nil
 }
@@ -106,10 +110,11 @@ func getTweetAttachments(contentInfo *fastjson.Value) datatype.Attachments {
 	// media
 	extendedEntitiesValue := contentInfo.Get("extended_entities")
 	if extendedEntitiesValue != nil {
-		media := extendedEntitiesValue.GetArray("media")
-		for _, mediaItem := range media {
+		medias := extendedEntitiesValue.GetArray("media")
+
+		as := lop.Map(medias, func(media *fastjson.Value, _ int) datatype.Attachment {
 			// TODO: video
-			mediaUrl := string(mediaItem.GetStringBytes("media_url_https"))
+			mediaUrl := string(media.GetStringBytes("media_url_https"))
 
 			contentHeader, _ := httpx.GetContentHeader(mediaUrl)
 
@@ -120,8 +125,10 @@ func getTweetAttachments(contentInfo *fastjson.Value) datatype.Attachments {
 				SizeInBytes: contentHeader.SizeInByte,
 			}
 
-			attachments = append(attachments, a)
-		}
+			return a
+		})
+
+		attachments = append(attachments, as...)
 	}
 
 	// quote address
