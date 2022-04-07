@@ -186,18 +186,36 @@ func DeleteAsset(db *gorm.DB, asset *model.Asset) (*model.Asset, error) {
 	return asset, nil
 }
 
-func QueryAssets(db *gorm.DB, uris []string) ([]model.Asset, error) {
+func QueryAssets(db *gorm.DB, uris []string, limit int) ([]model.Asset, error) {
 	var assets []model.Asset
-	if err := db.Where("owner IN ?", uris).Order("date_created DESC").Find(&assets).Error; err != nil {
+
+	internalDB := db.
+		Where("owner IN ?", uris).
+		Order("date_created DESC")
+
+	if limit > 0 {
+		internalDB = internalDB.Limit(limit)
+	}
+
+	if err := internalDB.Find(&assets).Error; err != nil {
 		return nil, err
 	}
 
 	return assets, nil
 }
 
-func QueryNotes(db *gorm.DB, uris []string) ([]model.Note, error) {
+func QueryNotes(db *gorm.DB, uris []string, limit int) ([]model.Note, error) {
 	var notes []model.Note
-	if err := db.Where("owner IN ?", uris).Order("date_created DESC").Find(&notes).Error; err != nil {
+
+	internalDB := db.
+		Where("owner IN ?", uris).
+		Order("date_created DESC")
+
+	if limit > 0 {
+		internalDB = internalDB.Limit(limit)
+	}
+
+	if err := internalDB.Find(&notes).Error; err != nil {
 		return nil, err
 	}
 

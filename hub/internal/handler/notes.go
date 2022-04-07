@@ -80,7 +80,7 @@ func GetNoteListHandlerFunc(c *gin.Context) {
 	}
 
 	// Query notes form database
-	noteModels, err := database.QueryNotes(database.DB, uris)
+	noteModels, err := database.QueryNotes(database.DB, uris, request.Limit)
 	if err != nil {
 		_ = c.Error(err)
 

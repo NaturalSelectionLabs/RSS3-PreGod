@@ -84,7 +84,7 @@ func GetAssetListHandlerFunc(c *gin.Context) {
 	logger.Info(uris)
 
 	// Query assets form database
-	assetModels, err := database.QueryAssets(database.DB, uris)
+	assetModels, err := database.QueryAssets(database.DB, uris, request.Limit)
 	if err != nil {
 		_ = c.Error(err)
 
