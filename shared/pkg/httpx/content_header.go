@@ -12,15 +12,17 @@ import (
 func GetContentHeader(url string) (*ContentHeader, error) {
 	ckey := getCacheKey(url)
 
-	var contentHeader *ContentHeader
-
-	if err := cache.Get(context.Background(), ckey, contentHeader); err != nil {
-		logger.Error(err)
-
-		return nil, err
+	var contentHeader = &ContentHeader{
+		SizeInByte: 0,
+		MIMEType:   "",
 	}
 
-	if contentHeader != nil {
+	if err := cache.Get(context.Background(), ckey, contentHeader); err != nil {
+		if err != cache.Nil {
+			logger.Error(err)
+			return nil, err
+		}
+	} else {
 		return contentHeader, nil
 	}
 
@@ -57,10 +59,7 @@ func GetContentHeader(url string) (*ContentHeader, error) {
 	}()
 
 	// return a fake "nil" content header
-	return &ContentHeader{
-		SizeInByte: 0,
-		MIMEType:   "",
-	}, nil
+	return contentHeader, nil
 }
 
 // TODO: should we manage cache keys in the cache package?
