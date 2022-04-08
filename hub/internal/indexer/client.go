@@ -26,7 +26,7 @@ func GetItems(instance rss3uri.Instance, accounts []model.Account) error {
 		eg.Go(func() error {
 			request := client.NewRequest()
 			params := map[string]string{
-				"proof":             strings.ToLower(account.ID),
+				"proof":             strings.ToLower(account.Identity),
 				"platform_id":       strconv.Itoa(account.Platform),
 				"network_id":        strconv.Itoa(int(constants.NetworkSymbol(constants.PlatformID(account.Platform).Symbol()).ID())),
 				"owner_id":          strings.ToLower(instance.GetIdentity()),

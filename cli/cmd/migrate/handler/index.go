@@ -69,7 +69,7 @@ func MigrateIndex(db *gorm.DB, file mongomodel.File) error {
 			accountID := strings.Join(splits[1:], "-")
 
 			if err := tx.Create(&model.Account{
-				ID:              strings.Trim(accountID, "@"),
+				Identity:        strings.Trim(accountID, "@"),
 				Platform:        platformID,
 				ProfileID:       file.Content.ID,
 				ProfilePlatform: int(constants.PlatformIDEthereum),

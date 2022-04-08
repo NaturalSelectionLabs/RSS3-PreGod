@@ -8,7 +8,7 @@ import (
 var _ schema.Tabler = &Account{}
 
 type Account struct {
-	ID              string `gorm:"column:id;index:index_account_id"`
+	Identity        string `gorm:"column:identity;index:index_account_id"`
 	Platform        int    `gorm:"column:platform;index:index_account_platform"`
 	ProfileID       string `gorm:"column:profile_id;index:index_account_profile_id"`
 	ProfilePlatform int    `gorm:"column:profile_platform;index:index_profile_platform"`

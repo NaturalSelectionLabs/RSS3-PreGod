@@ -115,7 +115,7 @@ func getPlatformInstanceProfileList(instance *rss3uri.PlatformInstance, request 
 		for _, accountModel := range accountModels {
 			connectedAccounts = append(
 				connectedAccounts,
-				rss3uri.New(rss3uri.NewAccountInstance(accountModel.ID, constants.PlatformID(accountModel.Platform).Symbol())).String(),
+				rss3uri.New(rss3uri.NewAccountInstance(accountModel.Identity, constants.PlatformID(accountModel.Platform).Symbol())).String(),
 			)
 		}
 

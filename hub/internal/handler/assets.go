@@ -59,7 +59,7 @@ func GetAssetListHandlerFunc(c *gin.Context) {
 	// TODO
 	accounts := make([]model.Account, 0)
 	accounts = append(accounts, model.Account{
-		ID:              instance.Identity,
+		Identity:        instance.Identity,
 		Platform:        int(constants.PlatformSymbol(instance.GetSuffix()).ID()),
 		ProfileID:       instance.Identity,
 		ProfilePlatform: int(constants.PlatformSymbol(instance.GetSuffix()).ID()),
@@ -81,7 +81,7 @@ func GetAssetListHandlerFunc(c *gin.Context) {
 		for _, account := range internalAccounts {
 			uris = append(uris, strings.ToLower(
 				rss3uri.New(
-					rss3uri.NewAccountInstance(account.ID, constants.PlatformID(account.Platform).Symbol()),
+					rss3uri.NewAccountInstance(account.Identity, constants.PlatformID(account.Platform).Symbol()),
 				).String(),
 			))
 		}
