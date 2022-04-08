@@ -64,10 +64,32 @@ func GetBackLinkListHandlerFunc(c *gin.Context) {
 	links := make([]protocol.Link, 0)
 
 	for _, linkModel := range linkModels {
+		fromInstance, err := rss3uri.NewInstance(
+			constants.InstanceTypeID(linkModel.FromInstanceType).String(),
+			linkModel.From,
+			constants.PlatformID(linkModel.FromPlatformID).Symbol().String(),
+		)
+		if err != nil {
+			_ = c.Error(err)
+
+			return
+		}
+
+		toInstance, err := rss3uri.NewInstance(
+			constants.InstanceTypeID(linkModel.ToInstanceType).String(),
+			linkModel.From,
+			constants.PlatformID(linkModel.ToPlatformID).Symbol().String(),
+		)
+		if err != nil {
+			_ = c.Error(err)
+
+			return
+		}
+
 		links = append(links, protocol.Link{
 			DateCreated: timex.Time(linkModel.CreatedAt),
-			From:        linkModel.From,
-			To:          linkModel.To,
+			From:        rss3uri.New(fromInstance).String(),
+			To:          rss3uri.New(toInstance).String(),
 			Type:        constants.LinkTypeID(linkModel.Type).String(),
 			Source:      constants.ProfileSourceID(linkModel.Source).Name().String(),
 			Metadata: protocol.LinkMetadata{
