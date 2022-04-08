@@ -151,7 +151,10 @@ func (gc *crawler) GetZkSyncDonations(fromBlock, toBlock int64) ([]DonationInfo,
 			// update project info
 			inactive := false
 			if gc.needUpdateProject(adminAddress) {
-				inactive, err = gc.updateHostingProject(adminAddress)
+				inactive, err = gc.updateHostingProject(GrantInfo{
+					Title:        "",
+					AdminAddress: "adminAddress",
+				})
 				if err != nil {
 					logger.Errorf("updateHostingProject error: [%v]", err)
 
