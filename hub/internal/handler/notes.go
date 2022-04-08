@@ -44,19 +44,7 @@ func GetNoteListHandlerFunc(c *gin.Context) {
 		return
 	}
 
-	//var lastTime *time.Time
-	//if request.LastTime != "" {
-	//	internalLastTime, err := timex.Parse(request.LastTime)
-	//	if err != nil {
-	//		_ = c.Error(api.ErrorInvalidParams)
-	//
-	//		return
-	//	}
-	//
-	//	t := internalLastTime.Time()
-	//
-	//	lastTime = &t
-	//}
+	// TODO Parse last time
 
 	var noteModels []model.Note
 	if len(request.LinkSources) != 0 || request.LinkType != "" {
@@ -153,6 +141,7 @@ func getNoteListByInstance(instance rss3uri.Instance, request GetNoteListRequest
 	notes := make([]model.Note, 0)
 	if err := database.DB.
 		Where("owner = ?", strings.ToLower(rss3uri.New(instance).String())).
+		Limit(request.Limit).
 		Order("date_created DESC").
 		Find(&notes).Error; err != nil {
 		return nil, err
@@ -207,6 +196,7 @@ func getNoteListsByLink(instance rss3uri.Instance, request GetNoteListRequest) (
 	notes := make([]model.Note, 0)
 	if err := database.DB.
 		Where("owner IN ?", owners).
+		Limit(request.Limit).
 		Order("date_created DESC").
 		Find(&notes).Error; err != nil {
 		return nil, err
