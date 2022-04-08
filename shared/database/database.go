@@ -114,9 +114,11 @@ func QueryLinks(db *gorm.DB, _type *int, form string, linkSources []int, limit i
 		if limit > MaxLimit {
 			limit = MaxLimit
 		}
-
-		internalDB = internalDB.Limit(limit)
+	} else {
+		limit = MaxLimit
 	}
+
+	internalDB = internalDB.Limit(limit)
 
 	if err := internalDB.Find(&links).Error; err != nil {
 		return nil, err
@@ -144,9 +146,11 @@ func QueryLinksByTo(db *gorm.DB, _type *int, to string, linkSources []int, limit
 		if limit > MaxLimit {
 			limit = MaxLimit
 		}
-
-		internalDB = internalDB.Limit(limit)
+	} else {
+		limit = MaxLimit
 	}
+
+	internalDB = internalDB.Limit(limit)
 
 	if err := internalDB.Find(&links).Error; err != nil {
 		return nil, err
@@ -222,9 +226,11 @@ func QueryAssets(db *gorm.DB, uris []string, limit int) ([]model.Asset, error) {
 		if limit > MaxLimit {
 			limit = MaxLimit
 		}
-
-		internalDB = internalDB.Limit(limit)
+	} else {
+		limit = MaxLimit
 	}
+
+	internalDB = internalDB.Limit(limit)
 
 	if err := internalDB.Find(&assets).Error; err != nil {
 		return nil, err
@@ -258,9 +264,11 @@ func QueryNotes(db *gorm.DB, uris []string, limit int) ([]model.Note, error) {
 		if limit > MaxLimit {
 			limit = MaxLimit
 		}
-
-		internalDB = internalDB.Limit(limit)
+	} else {
+		limit = MaxLimit
 	}
+
+	internalDB = internalDB.Limit(limit)
 
 	if err := internalDB.Find(&notes).Error; err != nil {
 		return nil, err
