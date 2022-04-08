@@ -2,14 +2,11 @@ package twitter
 
 import (
 	"fmt"
-	"regexp"
-	"strings"
 
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/util"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database/datatype"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/config"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/httpx"
-	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/logger"
 	lop "github.com/samber/lo/parallel"
 	"github.com/valyala/fastjson"
 )
@@ -83,13 +80,7 @@ func GetTimeline(name string, count uint32) ([]*ContentInfo, error) {
 	cs := lop.Map(contentArray, func(contentValue *fastjson.Value, _ int) *ContentInfo {
 		contentInfo := new(ContentInfo)
 
-		contentInfo.PreContent, err = formatTweetText(contentValue)
-		if err != nil {
-			logger.Errorf("format tweet text error: %s", err)
-
-			return nil
-		}
-
+		contentInfo.PreContent = formatTweetText(contentValue)
 		contentInfo.Timestamp = string(contentValue.GetStringBytes("created_at"))
 		contentInfo.Hash = string(contentValue.GetStringBytes("id_str"))
 		contentInfo.Link = fmt.Sprintf("https://twitter.com/%s/status/%s", name, contentInfo.Hash)
@@ -139,7 +130,7 @@ func getTweetAttachments(contentInfo *fastjson.Value) datatype.Attachments {
 
 		qa := datatype.Attachment{
 			Type:     "quote_address",
-			Address:  quotedStatusLink,
+			Content:  quotedStatusLink,
 			MimeType: "text/uri-list",
 		}
 
@@ -148,7 +139,7 @@ func getTweetAttachments(contentInfo *fastjson.Value) datatype.Attachments {
 		text := string(quotedStatusValue.GetStringBytes("text"))
 		qc := datatype.Attachment{
 			Type:     "quote_content",
-			Address:  text,
+			Content:  text,
 			MimeType: "text/plain",
 		}
 
@@ -158,47 +149,8 @@ func getTweetAttachments(contentInfo *fastjson.Value) datatype.Attachments {
 	return attachments
 }
 
-// TODO: is this logic correct?
-func formatTweetText(contentValue *fastjson.Value) (string, error) {
+func formatTweetText(contentValue *fastjson.Value) string {
 	text := contentValue.GetStringBytes("text")
 
-	matched, err := regexp.Match("(https://t.co/[a-zA-Z0-9]+)$", text)
-	if err != nil {
-		return "", err
-	}
-
-	if matched {
-		index := strings.Index(string(text), "https://t.co")
-		text = text[:index]
-	}
-
-	extendedEntitiesValue := contentValue.Get("extended_entities")
-	if extendedEntitiesValue != nil {
-		media := extendedEntitiesValue.GetArray("media")
-		if len(media) > 0 {
-			for _, mediaItem := range media {
-				mediaUrl := mediaItem.GetStringBytes("media_url_https")
-				imageStr := fmt.Sprintf("<img class=\"media\" src=\"%s\">", mediaUrl)
-				text = append(text, imageStr...)
-			}
-		}
-	}
-
-	quotedStatusValue := contentValue.Get("quoted_status")
-	if quotedStatusValue != nil {
-		userValue := quotedStatusValue.Get("user")
-		if userValue != nil {
-			screenName := userValue.GetStringBytes("screen_name")
-			formatTweetStr, err := formatTweetText(quotedStatusValue)
-
-			if err != nil {
-				return "", err
-			}
-
-			quotedStatusStr := fmt.Sprintf("\nRT @%s:%s ", screenName, formatTweetStr)
-			text = append(text, quotedStatusStr...)
-		}
-	}
-
-	return string(text), nil
+	return string(text)
 }
