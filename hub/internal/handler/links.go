@@ -3,12 +3,14 @@ package handler
 import (
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/internal/api"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/internal/middleware"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/internal/protocol"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/constants"
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/logger"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/rss3uri"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/timex"
 	"github.com/gin-gonic/gin"
@@ -36,6 +38,22 @@ func GetLinkListHandlerFunc(c *gin.Context) {
 		return
 	}
 
+	var lastTime *time.Time
+	if request.LastTime != "" {
+		internalLastTime, err := timex.Parse(request.LastTime)
+		if err != nil {
+			_ = c.Error(api.ErrorInvalidParams)
+
+			return
+		}
+
+		t := internalLastTime.Time()
+
+		lastTime = &t
+	}
+
+	logger.Info(request.LastTime)
+
 	var linkType *int
 
 	if request.Type != "" {
@@ -50,6 +68,7 @@ func GetLinkListHandlerFunc(c *gin.Context) {
 		request.LinkSources,
 		// TODO
 		nil,
+		lastTime,
 		request.Limit,
 	)
 	if err != nil {

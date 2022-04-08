@@ -4,7 +4,9 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"time"
 
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/internal/api"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/internal/middleware"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/internal/protocol"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database"
@@ -17,7 +19,7 @@ import (
 type GetBackLinkListRequest struct {
 	Type           string `form:"type"`
 	Limit          int    `form:"limit"`
-	LastInstance   string `form:"last_instance"`
+	LastTime       string `form:"last_time"`
 	Instance       string `form:"instance"`
 	LinkSources    []int  `form:"link_sources"`
 	ProfileSources []int  `form:"profile_sources"`
@@ -36,9 +38,18 @@ func GetBackLinkListHandlerFunc(c *gin.Context) {
 		return
 	}
 
-	linkSources := make([]int, 0)
-	for _, linkSource := range request.LinkSources {
-		linkSources = append(linkSources, constants.LinkSourceName(linkSource).ID().Int())
+	var lastTime *time.Time
+	if request.LastTime != "" {
+		internalLastTime, err := timex.Parse(request.LastTime)
+		if err != nil {
+			_ = c.Error(api.ErrorInvalidParams)
+
+			return
+		}
+
+		t := internalLastTime.Time()
+
+		lastTime = &t
 	}
 
 	var linkType *int
@@ -48,6 +59,7 @@ func GetBackLinkListHandlerFunc(c *gin.Context) {
 		linkType,
 		instance.Identity,
 		request.LinkSources,
+		lastTime,
 		request.Limit,
 	)
 	if err != nil {

@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/internal/api"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/internal/indexer"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/internal/middleware"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/internal/protocol"
@@ -19,14 +20,14 @@ import (
 )
 
 type GetNoteListRequest struct {
-	Limit         int       `form:"limit"`
-	LastTime      time.Time `form:"last_time"`
-	Tags          []string  `form:"tags"`
-	MimeTypes     []string  `form:"mime_types"`
-	ItemSources   []string  `form:"item_sources"`
-	LinkSource    string    `form:"link_source"`
-	LinkType      string    `form:"link_type"`
-	ProfileSource string    `form:"profile_source"`
+	Limit         int      `form:"limit"`
+	LastTime      string   `form:"last_time"`
+	Tags          []string `form:"tags"`
+	MimeTypes     []string `form:"mime_types"`
+	ItemSources   []string `form:"item_sources"`
+	LinkSource    string   `form:"link_source"`
+	LinkType      string   `form:"link_type"`
+	ProfileSource string   `form:"profile_source"`
 }
 
 // nolint:funlen // TODO
@@ -43,6 +44,20 @@ func GetNoteListHandlerFunc(c *gin.Context) {
 		_ = c.Error(err)
 
 		return
+	}
+
+	var lastTime *time.Time
+	if request.LastTime != "" {
+		internalLastTime, err := timex.Parse(request.LastTime)
+		if err != nil {
+			_ = c.Error(api.ErrorInvalidParams)
+
+			return
+		}
+
+		t := internalLastTime.Time()
+
+		lastTime = &t
 	}
 
 	profiles, err := database.QueryProfiles(database.DB, instance.Identity, 1, []int{})
@@ -93,7 +108,7 @@ func GetNoteListHandlerFunc(c *gin.Context) {
 	}
 
 	// Query notes form database
-	noteModels, err := database.QueryNotes(database.DB, uris, request.Limit)
+	noteModels, err := database.QueryNotes(database.DB, uris, lastTime, request.Limit)
 	if err != nil {
 		_ = c.Error(err)
 
