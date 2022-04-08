@@ -99,6 +99,10 @@ func (pc *poapCrawler) Work(param crawler.WorkParam) error {
 		}
 
 		pc.Notes = append(pc.Notes, note)
+
+		asset := note
+		asset.Identifier = rss3uri.NewAssetInstance(id, constants.NetworkSymbolGnosisMainnet).UriString()
+
 		pc.Assets = append(pc.Assets, model.Asset(note))
 	}
 

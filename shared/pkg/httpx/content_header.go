@@ -20,6 +20,7 @@ func GetContentHeader(url string) (*ContentHeader, error) {
 	if err := cache.Get(context.Background(), ckey, contentHeader); err != nil {
 		if err != cache.Nil {
 			logger.Error(err)
+
 			return nil, err
 		}
 	} else {
