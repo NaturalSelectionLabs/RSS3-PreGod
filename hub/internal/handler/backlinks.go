@@ -15,12 +15,12 @@ import (
 )
 
 type GetBackLinkListRequest struct {
-	Type          string   `form:"type"`
-	Limit         int      `form:"limit"`
-	LastInstance  string   `form:"last_instance"`
-	Instance      string   `form:"instance"`
-	LinkSources   []string `form:"link_sources"`
-	ProfileSource string   `form:"profile_source"`
+	Type           string `form:"type"`
+	Limit          int    `form:"limit"`
+	LastInstance   string `form:"last_instance"`
+	Instance       string `form:"instance"`
+	LinkSources    []int  `form:"link_sources"`
+	ProfileSources []int  `form:"profile_sources"`
 }
 
 func GetBackLinkListHandlerFunc(c *gin.Context) {
@@ -43,16 +43,11 @@ func GetBackLinkListHandlerFunc(c *gin.Context) {
 
 	var linkType *int
 
-	if request.Type != "" {
-		internalLinkType := constants.LinkTypeName(request.Type).ID().Int()
-		linkType = &internalLinkType
-	}
-
 	linkModels, err := database.QueryLinksByTo(
 		database.DB,
 		linkType,
 		instance.Identity,
-		linkSources,
+		request.LinkSources,
 		request.Limit,
 	)
 	if err != nil {

@@ -15,12 +15,12 @@ import (
 )
 
 type GetLinkListRequest struct {
-	Type          string   `form:"type"`
-	Limit         int      `form:"limit"`
-	LastInstance  string   `form:"last_instance"`
-	Instance      string   `form:"instance"`
-	LinkSources   []string `form:"link_sources"`
-	ProfileSource string   `form:"profile_source"`
+	Type           string `form:"type"`
+	Limit          int    `form:"limit"`
+	LastTime       string `form:"last_time"`
+	To             string `form:"to"`
+	LinkSources    []int  `form:"link_sources"`
+	ProfileSources []int  `form:"profile_sources"`
 }
 
 func GetLinkListHandlerFunc(c *gin.Context) {
@@ -36,11 +36,6 @@ func GetLinkListHandlerFunc(c *gin.Context) {
 		return
 	}
 
-	linkSources := make([]int, 0)
-	for _, linkSource := range request.LinkSources {
-		linkSources = append(linkSources, constants.LinkSourceName(linkSource).ID().Int())
-	}
-
 	var linkType *int
 
 	if request.Type != "" {
@@ -52,7 +47,9 @@ func GetLinkListHandlerFunc(c *gin.Context) {
 		database.DB,
 		linkType,
 		instance.Identity,
-		linkSources,
+		request.LinkSources,
+		// TODO
+		nil,
 		request.Limit,
 	)
 	if err != nil {

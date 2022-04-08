@@ -95,7 +95,7 @@ func QueryAccounts(db *gorm.DB, profileID string, profilePlatform int, source in
 	return accounts, nil
 }
 
-func QueryLinks(db *gorm.DB, _type *int, form string, linkSources []int, limit int) ([]model.Link, error) {
+func QueryLinks(db *gorm.DB, _type *int, form string, linkSources []int, profileSources []int, limit int) ([]model.Link, error) {
 	var links []model.Link
 
 	internalDB := db.Where(&model.Link{
@@ -107,7 +107,7 @@ func QueryLinks(db *gorm.DB, _type *int, form string, linkSources []int, limit i
 	}
 
 	if len(linkSources) > 0 {
-		internalDB.Where("source IN ?", linkSources)
+		internalDB = internalDB.Where("source IN ?", linkSources)
 	}
 
 	if limit > 0 {
@@ -139,7 +139,7 @@ func QueryLinksByTo(db *gorm.DB, _type *int, to string, linkSources []int, limit
 	}
 
 	if len(linkSources) > 0 {
-		internalDB.Where("source IN ?", linkSources)
+		internalDB = internalDB.Where("source IN ?", linkSources)
 	}
 
 	if limit > 0 {
