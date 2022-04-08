@@ -19,10 +19,14 @@ func MigrateLinkList(db *gorm.DB, file mongomodel.File) error {
 		links := make([]model.Link, 0, len(file.Content.Links))
 		for _, targetIdentity := range file.Content.List {
 			links = append(links, model.Link{
-				Type:   constants.LinkTypeFollow.Int(),
-				From:   splits[0],
-				To:     targetIdentity,
-				Source: constants.ProfileSourceIDCrossbell.Int(),
+				Type:             constants.LinkTypeFollow.Int(),
+				From:             splits[0],
+				FromInstanceType: int(constants.InstanceTypeAccount),
+				FromPlatformID:   constants.PlatformIDEthereum.Int(),
+				To:               targetIdentity,
+				ToInstanceType:   int(constants.InstanceTypeAccount),
+				ToPlatformID:     constants.PlatformIDEthereum.Int(),
+				Source:           constants.ProfileSourceIDCrossbell.Int(),
 				Table: common.Table{
 					CreatedAt: file.Content.DateCreated,
 					UpdatedAt: file.Content.DateUpdated,
