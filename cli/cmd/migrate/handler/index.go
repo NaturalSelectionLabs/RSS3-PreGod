@@ -14,6 +14,7 @@ import (
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database/model"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/constants"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 func MigrateIndex(db *gorm.DB, file mongomodel.File) error {
@@ -37,7 +38,9 @@ func MigrateIndex(db *gorm.DB, file mongomodel.File) error {
 			})
 		}
 
-		tx.Create(&model.Profile{
+		tx.Clauses(clause.OnConflict{
+			UpdateAll: true,
+		}).Create(&model.Profile{
 			ID:          file.Path,
 			Platform:    int(constants.PlatformIDEthereum),
 			Name:        database.WrapNullString(file.Content.Profile.Name),
@@ -68,7 +71,9 @@ func MigrateIndex(db *gorm.DB, file mongomodel.File) error {
 
 			accountID := strings.Join(splits[1:], "-")
 
-			if err := tx.Create(&model.Account{
+			if err := tx.Clauses(clause.OnConflict{
+				UpdateAll: true,
+			}).Create(&model.Account{
 				ID:              strings.Trim(accountID, "@"),
 				Platform:        platformID,
 				ProfileID:       file.Content.ID,

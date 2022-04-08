@@ -10,6 +10,7 @@ import (
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database/model"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/constants"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 func MigrateLinkList(db *gorm.DB, file mongomodel.File) error {
@@ -34,7 +35,9 @@ func MigrateLinkList(db *gorm.DB, file mongomodel.File) error {
 			})
 		}
 
-		if err := tx.CreateInBatches(links, 1024).Error; err != nil {
+		if err := tx.Clauses(clause.OnConflict{
+			UpdateAll: true,
+		}).CreateInBatches(links, 1024).Error; err != nil {
 			return err
 		}
 
