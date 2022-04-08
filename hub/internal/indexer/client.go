@@ -5,8 +5,8 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 
-	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/internal/api"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database/model"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/config"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/constants"
@@ -18,37 +18,46 @@ import (
 
 func GetItems(instance rss3uri.Instance, accounts []model.Account) error {
 	eg := errgroup.Group{}
-	client := resty.New()
 
 	for _, account := range accounts {
 		account := account
 
-		eg.Go(func() error {
-			request := client.NewRequest()
-			params := map[string]string{
-				"proof":             strings.ToLower(account.Identity),
-				"platform_id":       strconv.Itoa(account.Platform),
-				"network_id":        strconv.Itoa(int(constants.NetworkSymbol(constants.PlatformID(account.Platform).Symbol()).ID())),
-				"owner_id":          strings.ToLower(instance.GetIdentity()),
-				"owner_platform_id": strconv.Itoa(constants.PlatformSymbol(instance.GetSuffix()).ID().Int()),
-			}
-			result := Response{}
-			response, err := request.
-				SetQueryParams(params).
-				SetResult(&result).
-				Get(fmt.Sprintf("%s/item", config.Config.Hub.IndexerEndpoint))
-			if err != nil {
-				logger.Error(err)
+		for _, networkID := range constants.GetNetworkList(constants.PlatformID(account.Platform)) {
+			networkID := networkID
+			client := resty.New()
 
-				return api.ErrorIndexer
-			}
+			eg.Go(func() error {
+				start := time.Now()
+				request := client.NewRequest()
+				params := map[string]string{
+					"proof":             strings.ToLower(account.Identity),
+					"platform_id":       strconv.Itoa(account.Platform),
+					"network_id":        strconv.Itoa(int(networkID)),
+					"owner_id":          strings.ToLower(account.ProfileID),
+					"owner_platform_id": strconv.Itoa(account.ProfilePlatform),
+				}
+				result := Response{}
+				response, err := request.
+					SetQueryParams(params).
+					SetResult(&result).
+					Get(fmt.Sprintf("%s/item", config.Config.Hub.IndexerEndpoint))
+				if err != nil {
+					logger.Error(err)
 
-			if response.StatusCode() != http.StatusOK || result.Error.Code != 0 {
-				return api.ErrorIndexer
-			}
+					return nil
+				}
 
-			return nil
-		})
+				logger.Info(params["proof"], "\x20", params["platform_id"], "\x20", params["network_id"], "\x20", start, "\x20", time.Now().Sub(start))
+
+				if response.StatusCode() != http.StatusOK || result.Error.Code != 0 {
+					logger.Error(response.StatusCode(), result.Error.Code, result.Error.Msg)
+
+					return nil
+				}
+
+				return nil
+			})
+		}
 	}
 
 	return eg.Wait()

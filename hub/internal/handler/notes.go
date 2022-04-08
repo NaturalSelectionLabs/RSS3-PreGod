@@ -108,11 +108,54 @@ func GetNoteListHandlerFunc(c *gin.Context) {
 	}
 
 	// Query notes form database
-	noteModels, err := database.QueryNotes(database.DB, uris, lastTime, request.Limit)
-	if err != nil {
-		_ = c.Error(err)
+	noteModels := make([]model.Note, 0)
 
-		return
+	if request.LinkType != "" {
+		var internalAccounts []model.Account
+		if err := database.DB.Raw(
+			`WITH follow AS (
+    SELECT * FROM link WHERE "from" = ? AND "type" = 0
+)
+SELECT account.*
+FROM account
+         INNER JOIN follow on account.profile_id = follow.to;`,
+			instance.Identity,
+		).Find(&internalAccounts).Error; err != nil {
+			return
+		}
+		if err != nil {
+			_ = c.Error(err)
+
+			return
+		}
+
+		if err = indexer.GetItems(instance, internalAccounts); err != nil {
+			_ = c.Error(err)
+
+			return
+		}
+
+		if err := database.DB.Raw(
+			`WITH follow AS (
+    SELECT * FROM link WHERE "from" = ? AND "type" = 0
+)
+SELECT note.*
+FROM note
+         INNER JOIN follow ON format('rss3://account:%s@ethereum', lower(follow."to")) = note.owner
+ORDER BY note.date_created DESC;`,
+			instance.GetIdentity(),
+		).Find(&noteModels).Error; err != nil {
+			_ = c.Error(err)
+
+			return
+		}
+	} else {
+		noteModels, err = database.QueryNotes(database.DB, uris, lastTime, request.Limit)
+		if err != nil {
+			_ = c.Error(err)
+
+			return
+		}
 	}
 
 	uri := rss3uri.New(instance)
