@@ -11,12 +11,11 @@ import (
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/config"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/constants"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/logger"
-	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/rss3uri"
 	"github.com/go-resty/resty/v2"
 	"golang.org/x/sync/errgroup"
 )
 
-func GetItems(instance rss3uri.Instance, accounts []model.Account) error {
+func GetItems(accounts []model.Account) error {
 	eg := errgroup.Group{}
 
 	for _, account := range accounts {

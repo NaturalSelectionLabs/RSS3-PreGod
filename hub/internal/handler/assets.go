@@ -46,6 +46,12 @@ func GetAssetListHandlerFunc(c *gin.Context) {
 		return
 	}
 
+	if request.LinkSource != "" || request.LinkType != "" {
+		// Feed
+	} else {
+		// GET Asset
+	}
+
 	var lastTime *time.Time
 	if request.LastTime != "" {
 		internalLastTime, err := timex.Parse(request.LastTime)
@@ -102,18 +108,61 @@ func GetAssetListHandlerFunc(c *gin.Context) {
 		}
 	}
 
-	if err = indexer.GetItems(instance, accounts); err != nil {
+	if err = indexer.GetItems(accounts); err != nil {
 		_ = c.Error(err)
 
 		return
 	}
 
 	// Query assets form database
-	assetModels, err := database.QueryAssets(database.DB, uris, lastTime, request.Limit)
-	if err != nil {
-		_ = c.Error(err)
+	assetModels := make([]model.Asset, 0)
 
-		return
+	if request.LinkType != "" {
+		var internalAccounts []model.Account
+		if err := database.DB.Raw(
+			`WITH follow AS (
+    SELECT * FROM link WHERE "from" = ? AND "type" = 0
+)
+SELECT account.*
+FROM account
+         INNER JOIN follow on account.profile_id = follow.to;`,
+			instance.Identity,
+		).Find(&internalAccounts).Error; err != nil {
+			return
+		}
+		if err != nil {
+			_ = c.Error(err)
+
+			return
+		}
+
+		if err = indexer.GetItems(internalAccounts); err != nil {
+			_ = c.Error(err)
+
+			return
+		}
+
+		if err := database.DB.Raw(
+			`WITH follow AS (
+    SELECT * FROM link WHERE "from" = ? AND "type" = 0
+)
+SELECT asset.*
+FROM asset
+         INNER JOIN follow ON format('rss3://account:%s@ethereum', lower(follow."to")) = note.owner
+ORDER BY note.date_created DESC;`,
+			instance.GetIdentity(),
+		).Find(&assetModels).Error; err != nil {
+			_ = c.Error(err)
+
+			return
+		}
+	} else {
+		assetModels, err = database.QueryAssets(database.DB, uris, lastTime, request.Limit)
+		if err != nil {
+			_ = c.Error(err)
+
+			return
+		}
 	}
 
 	uri := rss3uri.New(instance)

@@ -5,9 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
-	"time"
 
-	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/internal/api"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/internal/indexer"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/internal/middleware"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/internal/protocol"
@@ -20,14 +18,14 @@ import (
 )
 
 type GetNoteListRequest struct {
-	Limit         int      `form:"limit"`
-	LastTime      string   `form:"last_time"`
-	Tags          []string `form:"tags"`
-	MimeTypes     []string `form:"mime_types"`
-	ItemSources   []string `form:"item_sources"`
-	LinkSource    string   `form:"link_source"`
-	LinkType      string   `form:"link_type"`
-	ProfileSource string   `form:"profile_source"`
+	Limit          int      `form:"limit"`
+	LastTime       string   `form:"last_time"`
+	Tags           []string `form:"tags"`
+	MimeTypes      []string `form:"mime_types"`
+	ItemSources    []string `form:"item_sources"`
+	LinkSources    []string `form:"link_source"`
+	LinkType       string   `form:"link_type"`
+	ProfileSources []string `form:"profile_source"`
 }
 
 // nolint:funlen // TODO
@@ -46,116 +44,31 @@ func GetNoteListHandlerFunc(c *gin.Context) {
 		return
 	}
 
-	var lastTime *time.Time
-	if request.LastTime != "" {
-		internalLastTime, err := timex.Parse(request.LastTime)
-		if err != nil {
-			_ = c.Error(api.ErrorInvalidParams)
+	//var lastTime *time.Time
+	//if request.LastTime != "" {
+	//	internalLastTime, err := timex.Parse(request.LastTime)
+	//	if err != nil {
+	//		_ = c.Error(api.ErrorInvalidParams)
+	//
+	//		return
+	//	}
+	//
+	//	t := internalLastTime.Time()
+	//
+	//	lastTime = &t
+	//}
 
-			return
-		}
-
-		t := internalLastTime.Time()
-
-		lastTime = &t
+	var noteModels []model.Note
+	if len(request.LinkSources) != 0 || request.LinkType != "" {
+		noteModels, err = getNoteListsByLink(instance, request)
+	} else {
+		noteModels, err = getNoteListByInstance(instance, request)
 	}
 
-	profiles, err := database.QueryProfiles(database.DB, instance.Identity, 1, []int{})
 	if err != nil {
 		_ = c.Error(err)
 
 		return
-	}
-
-	uris := make([]string, 0)
-	uris = append(uris, strings.ToLower(rss3uri.New(instance).String()))
-
-	// TODO
-	accounts := make([]model.Account, 0)
-	accounts = append(accounts, model.Account{
-		Identity:        instance.Identity,
-		Platform:        int(constants.PlatformSymbol(instance.GetSuffix()).ID()),
-		ProfileID:       instance.Identity,
-		ProfilePlatform: int(constants.PlatformSymbol(instance.GetSuffix()).ID()),
-		Source:          0,
-	})
-
-	for _, profile := range profiles {
-		var internalAccounts []model.Account
-
-		internalAccounts, err = database.QueryAccounts(database.DB, profile.ID, profile.Platform, 0)
-		if err != nil {
-			_ = c.Error(err)
-
-			return
-		}
-
-		accounts = append(accounts, internalAccounts...)
-
-		for _, account := range internalAccounts {
-			uris = append(uris, strings.ToLower(
-				rss3uri.New(
-					rss3uri.NewAccountInstance(account.Identity, constants.PlatformID(account.Platform).Symbol()),
-				).String(),
-			))
-		}
-	}
-
-	if err = indexer.GetItems(instance, accounts); err != nil {
-		_ = c.Error(err)
-
-		return
-	}
-
-	// Query notes form database
-	noteModels := make([]model.Note, 0)
-
-	if request.LinkType != "" {
-		var internalAccounts []model.Account
-		if err := database.DB.Raw(
-			`WITH follow AS (
-    SELECT * FROM link WHERE "from" = ? AND "type" = 0
-)
-SELECT account.*
-FROM account
-         INNER JOIN follow on account.profile_id = follow.to;`,
-			instance.Identity,
-		).Find(&internalAccounts).Error; err != nil {
-			return
-		}
-		if err != nil {
-			_ = c.Error(err)
-
-			return
-		}
-
-		if err = indexer.GetItems(instance, internalAccounts); err != nil {
-			_ = c.Error(err)
-
-			return
-		}
-
-		if err := database.DB.Raw(
-			`WITH follow AS (
-    SELECT * FROM link WHERE "from" = ? AND "type" = 0
-)
-SELECT note.*
-FROM note
-         INNER JOIN follow ON format('rss3://account:%s@ethereum', lower(follow."to")) = note.owner
-ORDER BY note.date_created DESC;`,
-			instance.GetIdentity(),
-		).Find(&noteModels).Error; err != nil {
-			_ = c.Error(err)
-
-			return
-		}
-	} else {
-		noteModels, err = database.QueryNotes(database.DB, uris, lastTime, request.Limit)
-		if err != nil {
-			_ = c.Error(err)
-
-			return
-		}
 	}
 
 	uri := rss3uri.New(instance)
@@ -203,4 +116,101 @@ ORDER BY note.date_created DESC;`,
 		Total:          len(noteList),
 		List:           noteList,
 	})
+}
+
+func getNoteListByInstance(instance rss3uri.Instance, request GetNoteListRequest) ([]model.Note, error) {
+	// Get instance's all profiles
+	profiles, err := database.QueryProfiles(database.DB, instance.GetIdentity(), 1, []int{})
+	if err != nil {
+		return nil, err
+	}
+
+	profileIDs := make([]string, len(profiles))
+	for _, profile := range profiles {
+		profileIDs = append(profileIDs, profile.ID)
+	}
+
+	//db := database.DB
+
+	//if request.ProfileSource != "" {
+	//	db = db.Where("sour")
+	//}
+
+	// Get instance's all accounts
+	accounts := make([]model.Account, 0)
+	if err := database.DB.
+		Where("profile_id IN ?", profileIDs).
+		Find(&accounts).Error; err != nil {
+		return nil, err
+	}
+
+	// Send get request to indexer
+	if err := indexer.GetItems(accounts); err != nil {
+		return nil, err
+	}
+
+	// Get instance's all notes
+	notes := make([]model.Note, 0)
+	if err := database.DB.
+		Where("owner = ?", strings.ToLower(rss3uri.New(instance).String())).
+		Order("date_created DESC").
+		Find(&notes).Error; err != nil {
+		return nil, err
+	}
+
+	return notes, nil
+}
+
+func getNoteListsByLink(instance rss3uri.Instance, request GetNoteListRequest) ([]model.Note, error) {
+	links := make([]model.Link, 0)
+	if err := database.DB.
+		Where(&model.Link{
+			From: instance.GetIdentity(),
+		}).
+		Find(&links).Error; err != nil {
+		return nil, err
+	}
+
+	targets := make([]string, 0)
+
+	for _, link := range links {
+		targets = append(targets, link.To)
+	}
+
+	accounts := make([]model.Account, 0)
+	if err := database.DB.
+		Where("profile_id IN ?", targets).
+		// TODO profile_platform
+		Find(&accounts).Error; err != nil {
+		return nil, err
+	}
+
+	// Send a request to indexer
+	if err := indexer.GetItems(accounts); err != nil {
+		return nil, err
+	}
+
+	owners := make([]string, len(links))
+	for _, link := range links {
+		instance, err := rss3uri.NewInstance(
+			constants.InstanceTypeID(link.ToInstanceType).String(),
+			link.To,
+			constants.PlatformID(link.ToPlatformID).Symbol().String(),
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		owners = append(owners, strings.ToLower(rss3uri.New(instance).String()))
+	}
+
+	notes := make([]model.Note, 0)
+	if err := database.DB.
+		Where("owner IN ?", owners).
+		Order("date_created DESC").
+		Find(&notes).Error; err != nil {
+		return nil, err
+	}
+
+	return notes, nil
 }
