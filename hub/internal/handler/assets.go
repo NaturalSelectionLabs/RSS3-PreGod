@@ -171,7 +171,6 @@ ORDER BY note.date_created DESC;`,
 
 	assetList := make([]protocol.Item, len(assetModels))
 
-	// nolint:dupl // TODO
 	for i, assetModel := range assetModels {
 		attachmentList := make([]protocol.ItemAttachment, 0)
 		if err = json.Unmarshal(assetModel.Attachments, &attachmentList); err != nil {

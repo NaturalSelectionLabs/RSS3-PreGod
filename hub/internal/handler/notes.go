@@ -31,7 +31,6 @@ type GetNoteListRequest struct {
 	ProfileSources []string   `form:"profile_sources"`
 }
 
-// nolint:funlen // TODO
 func GetNoteListHandlerFunc(c *gin.Context) {
 	instance, err := middleware.GetPlatformInstance(c)
 	if err != nil {
@@ -68,7 +67,6 @@ func GetNoteListHandlerFunc(c *gin.Context) {
 
 	noteList := make([]protocol.Item, len(noteModels))
 
-	// nolint:dupl // TODO
 	for i, noteModel := range noteModels {
 		attachmentList := make([]protocol.ItemAttachment, 0)
 		if err = json.Unmarshal(noteModel.Attachments, &attachmentList); err != nil {

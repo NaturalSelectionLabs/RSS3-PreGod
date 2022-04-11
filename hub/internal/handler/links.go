@@ -2,6 +2,9 @@ package handler
 
 import (
 	"fmt"
+	"net/http"
+	"time"
+
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/internal/api"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/internal/middleware"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/internal/protocol"
@@ -10,9 +13,6 @@ import (
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/constants"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/rss3uri"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/timex"
-	"net/http"
-	"time"
-
 	"github.com/gin-gonic/gin"
 )
 
@@ -26,15 +26,15 @@ type GetLinkListRequest struct {
 }
 
 func GetLinkListHandlerFunc(c *gin.Context) {
-	instance, err := middleware.GetInstance(c)
-	if err != nil {
+	instance, instanceErr := middleware.GetInstance(c)
+	if instanceErr != nil {
 		_ = c.Error(api.ErrorInvalidParams)
 
 		return
 	}
 
 	request := GetLinkListRequest{}
-	if err := c.ShouldBindQuery(&request); err != nil {
+	if bindErr := c.ShouldBindQuery(&request); bindErr != nil {
 		_ = c.Error(api.ErrorInvalidParams)
 
 		return

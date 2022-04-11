@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/api/nft_utils"
-
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/crawler"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database/datatype"
@@ -42,12 +41,9 @@ func (pc *poapCrawler) Work(param crawler.WorkParam) error {
 	owner := rss3uri.NewAccountInstance(param.OwnerID, param.OwnerPlatformID.Symbol()).UriString()
 	author := rss3uri.NewAccountInstance(param.Identity, constants.PlatformSymbolEthereum).UriString()
 
-	//TODO: Since we are getting the full amount of interfaces,
-	// I hope to get incremental interfaces in the future and use other methods to improve efficiency
 	for _, item := range poapResps {
 		tsp, err := item.GetTsp()
 		if err != nil {
-			// TODO: log error
 			logger.Error(tsp, err)
 			tsp = time.Now()
 		}
@@ -66,7 +62,6 @@ func (pc *poapCrawler) Work(param crawler.WorkParam) error {
 					Type:     "preview",
 					Address:  item.PoapEventInfo.ImageUrl,
 					MimeType: "image/png",
-					// TODO: get the SizeInBytes
 				},
 				{
 					Type:     "external_url",

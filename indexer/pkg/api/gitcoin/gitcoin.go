@@ -192,7 +192,9 @@ func (gc *crawler) GetZkSyncDonations(fromBlock, toBlock int64) ([]DonationInfo,
 // GetEthDonations returns donations from ethereum and polygon
 func GetEthDonations(fromBlock int64, toBlock int64, chainType GitcoinPlatform) ([]DonationInfo, error) {
 	var checkoutAddress string
+
 	var donationApproach DonationApproach
+
 	if chainType == ETH {
 		checkoutAddress = bulkCheckoutAddressETH
 		donationApproach = DonationApproachEthereum
@@ -204,8 +206,8 @@ func GetEthDonations(fromBlock int64, toBlock int64, chainType GitcoinPlatform) 
 	}
 
 	// at most 1000 results in one response. But our default step is only 50, safe.
-	logs, err := moralis.GetLogs(fromBlock, toBlock, checkoutAddress, donationSentTopic, moralis.ChainType(chainType), config.Config.Indexer.Moralis.ApiKey)
-
+	logs, err := moralis.GetLogs(fromBlock, toBlock, checkoutAddress, donationSentTopic,
+		moralis.ChainType(chainType), config.Config.Indexer.Moralis.ApiKey)
 	if err != nil {
 		logger.Errorf("getLogs error: [%v]", err)
 
@@ -225,8 +227,10 @@ func GetEthDonations(fromBlock int64, toBlock int64, chainType GitcoinPlatform) 
 		t, ok := token[tokenAddress]
 		if !ok {
 			logger.Warnf("token address doesn't exist: %s", tokenAddress)
+
 			continue
 		}
+
 		symbol := t.symbol
 		decimal := t.decimal
 
