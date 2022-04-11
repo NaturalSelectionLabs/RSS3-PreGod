@@ -232,18 +232,18 @@ func GetTxHashURL(
 ) string {
 	switch network {
 	case constants.NetworkSymbolEthereum:
-		return "https://etherscan.io/tx/%s" + (transactionHash)
+		return "https://etherscan.io/tx/" + (transactionHash)
 
 	case constants.NetworkSymbolPolygon:
-		return "https://polygonscan.com/tx/%s" + (transactionHash)
+		return "https://polygonscan.com/tx/" + (transactionHash)
 
 	case constants.NetworkSymbolBNBChain:
-		return "https://bscscan.com/tx/%s" + (transactionHash)
+		return "https://bscscan.com/tx/" + (transactionHash)
 
 	case constants.NetworkSymbolAvalanche:
-		return "https://avascan.info/blockchain/c/tx/%s" + (transactionHash)
+		return "https://avascan.info/blockchain/c/tx/" + (transactionHash)
 	case constants.NetworkSymbolFantom:
-		return "https://ftmscan.com/tx/%s" + (transactionHash)
+		return "https://ftmscan.com/tx/" + (transactionHash)
 	default:
 		return ""
 	}
