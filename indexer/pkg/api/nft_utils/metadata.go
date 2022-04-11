@@ -4,10 +4,13 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database/datatype"
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database/model"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/httpx"
 	lop "github.com/samber/lo/parallel"
 	"github.com/valyala/fastjson"
+	"golang.org/x/sync/errgroup"
 )
 
 type Metadata struct {
@@ -21,7 +24,7 @@ type Metadata struct {
 
 func ParseNFTMetadata(metadata string) (Metadata, error) {
 	if metadata == "" {
-		return Metadata{}, fmt.Errorf("metadata is an empty string")
+		return Metadata{}, nil
 	}
 
 	var parser fastjson.Parser
@@ -170,4 +173,41 @@ func CompleteMimeTypes(as []datatype.Attachment) {
 			}
 		}
 	})
+}
+
+func CompleteMimeTypesForItems(notes []model.Note, assets []model.Asset) error {
+	// complete attachments in parallel
+	g := new(errgroup.Group)
+
+	g.Go(func() error {
+		lop.ForEach(notes, func(note model.Note, i int) {
+			if note.Attachments != nil {
+				as, err := database.UnwrapJSON[datatype.Attachments](note.Attachments)
+				if err != nil {
+					return
+				}
+				CompleteMimeTypes(as)
+				notes[i].Attachments = database.MustWrapJSON(as)
+			}
+		})
+
+		return nil
+	})
+
+	g.Go(func() error {
+		lop.ForEach(assets, func(asset model.Asset, i int) {
+			if asset.Attachments != nil {
+				as, err := database.UnwrapJSON[datatype.Attachments](asset.Attachments)
+				if err != nil {
+					return
+				}
+				CompleteMimeTypes(as)
+				assets[i].Attachments = database.MustWrapJSON(as)
+			}
+		})
+
+		return nil
+	})
+
+	return g.Wait()
 }

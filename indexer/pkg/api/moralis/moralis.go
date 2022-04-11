@@ -2,10 +2,12 @@ package moralis
 
 import (
 	"fmt"
+	"log"
 
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/httpx"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/logger"
 	jsoniter "github.com/json-iterator/go"
+	lop "github.com/samber/lo/parallel"
 	"github.com/valyala/fastjson"
 )
 
@@ -50,6 +52,16 @@ func GetNFTs(userAddress string, chainType ChainType, apiKey string) (NFTResult,
 		return NFTResult{}, err
 	}
 
+	lop.ForEach(res.Result, func(item NFTItem, i int) {
+		if item.MetaData == "" {
+			if metadataRes, err := httpx.Get(item.TokenURI, nil); err != nil {
+				logger.Warnf("http get nft metadata error: [%v]", err)
+			} else {
+				res.Result[i].MetaData = string(metadataRes)
+			}
+		}
+	})
+
 	return *res, nil
 }
 
@@ -58,6 +70,8 @@ func GetNFTTransfers(userAddress string, chainType ChainType, blockHeight int, a
 	url := fmt.Sprintf("%s/api/v2/%s/nft/transfers?chain=%s&from_block=%d&format=decimal&direction=both",
 		endpoint, userAddress, chainType, blockHeight)
 	response, err := requestMoralisApi(url, apiKey)
+
+	log.Println(string(response))
 
 	if err != nil {
 		return NFTTransferResult{}, err

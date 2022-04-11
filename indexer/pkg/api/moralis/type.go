@@ -98,7 +98,7 @@ func (i NFTItem) String() string {
 		i.TokenAddress, i.TokenId, i.OwnerOf, i.TokenURI)
 }
 
-func (i NFTTransferItem) GetAssetProof() string {
+func (i NFTItem) GetAssetProof() string {
 	return i.TokenAddress + "-" + i.TokenId
 }
 
@@ -188,6 +188,7 @@ func GetTxRelatedURLs(
 	if transactionHash != nil {
 		urls = append(urls, GetTxHashURL(network, *transactionHash))
 	}
+
 	switch network {
 	case constants.NetworkSymbolEthereum:
 		if transactionHash != nil {
@@ -231,20 +232,19 @@ func GetTxHashURL(
 ) string {
 	switch network {
 	case constants.NetworkSymbolEthereum:
-		return "https://etherscan.io/tx/%s" + (transactionHash)
+		return "https://etherscan.io/tx/" + (transactionHash)
 
 	case constants.NetworkSymbolPolygon:
-		return "https://polygonscan.com/tx/%s" + (transactionHash)
+		return "https://polygonscan.com/tx/" + (transactionHash)
 
 	case constants.NetworkSymbolBNBChain:
-		return "https://bscscan.com/tx/%s" + (transactionHash)
+		return "https://bscscan.com/tx/" + (transactionHash)
 
 	case constants.NetworkSymbolAvalanche:
-		return "https://avascan.info/blockchain/c/tx/%s" + (transactionHash)
+		return "https://avascan.info/blockchain/c/tx/" + (transactionHash)
 	case constants.NetworkSymbolFantom:
-		return "https://ftmscan.com/tx/%s" + (transactionHash)
+		return "https://ftmscan.com/tx/" + (transactionHash)
 	default:
 		return ""
 	}
-
 }

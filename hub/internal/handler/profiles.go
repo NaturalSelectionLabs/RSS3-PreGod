@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/internal/api"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/internal/middleware"
@@ -14,8 +15,6 @@ import (
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/rss3uri"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/timex"
 	"github.com/gin-gonic/gin"
-	"golang.org/x/text/cases"
-	"golang.org/x/text/language"
 )
 
 type GetProfileListRequest struct {
@@ -115,7 +114,7 @@ func getPlatformInstanceProfileList(instance *rss3uri.PlatformInstance, request 
 		for _, accountModel := range accountModels {
 			connectedAccounts = append(
 				connectedAccounts,
-				rss3uri.New(rss3uri.NewAccountInstance(accountModel.ID, constants.PlatformID(accountModel.Platform).Symbol())).String(),
+				rss3uri.New(rss3uri.NewAccountInstance(accountModel.Identity, constants.PlatformID(accountModel.Platform).Symbol())).String(),
 			)
 		}
 
@@ -129,10 +128,9 @@ func getPlatformInstanceProfileList(instance *rss3uri.PlatformInstance, request 
 			ConnectedAccounts: connectedAccounts,
 			Source:            constants.ProfileSourceID(profileModel.Source).Name().String(),
 			Metadata: protocol.ProfileMetadata{
-				// TODO Now only Crossbell is supported,
-				Network: cases.Title(language.English, cases.NoLower).String(constants.NetworkSymbolCrossbell.String()),
-				// Network: constants.NetworkID(profileModel.Platform).Symbol().String(),
-				Proof: instance.Identity,
+				// TODO Now only Crossbell is supported
+				Network: strings.ToLower(constants.NetworkSymbolCrossbell.String()),
+				Proof:   instance.Identity,
 			},
 		})
 	}

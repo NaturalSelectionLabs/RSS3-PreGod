@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/internal/api"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/rss3uri"
@@ -21,13 +22,17 @@ func Instance() gin.HandlerFunc {
 		request := InstanceUri{}
 		if err := c.ShouldBindUri(&request); err != nil {
 			_ = c.Error(api.ErrorInvalidParams)
+			c.Abort()
 
 			return
 		}
 
+		request.Instance = strings.ToLower(request.Instance)
+
 		instance, err := rss3uri.ParseInstance(request.Instance)
 		if err != nil {
 			_ = c.Error(api.ErrorInvalidParams)
+			c.Abort()
 
 			return
 		}
@@ -62,4 +67,18 @@ func GetPlatformInstance(c *gin.Context) (*rss3uri.PlatformInstance, error) {
 	}
 
 	return platformInstance, nil
+}
+
+func GetNetworkInstance(c *gin.Context) (*rss3uri.NetworkInstance, error) {
+	instance, err := GetInstance(c)
+	if err != nil {
+		return nil, err
+	}
+
+	networkInstance, ok := instance.(*rss3uri.NetworkInstance)
+	if !ok {
+		return nil, fmt.Errorf("instance not found")
+	}
+
+	return networkInstance, nil
 }

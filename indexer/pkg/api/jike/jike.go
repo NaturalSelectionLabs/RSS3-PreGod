@@ -3,7 +3,6 @@ package jike
 import (
 	"fmt"
 	"strconv"
-	"sync"
 	"time"
 
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database/datatype"
@@ -14,6 +13,7 @@ import (
 	"github.com/robfig/cron/v3"
 	lop "github.com/samber/lo/parallel"
 	"github.com/valyala/fastjson"
+	"golang.org/x/sync/errgroup"
 )
 
 var (
@@ -346,21 +346,19 @@ func getAttachment(node *fastjson.Value) []datatype.Attachment {
 	attachments := make([]datatype.Attachment, 0)
 
 	// process the original post attachments
-	var wg sync.WaitGroup
+	g := new(errgroup.Group)
 
-	wg.Add(2)
-
-	go func() {
+	g.Go(func() error {
 		attachments = append(attachments, getPicture(node)...)
 
-		wg.Done()
-	}()
+		return nil
+	})
 
-	go func() {
+	g.Go(func() error {
 		attachments = append(attachments, getVideo(node)...)
 
-		wg.Done()
-	}()
+		return nil
+	})
 
 	// a 'status' field often means the report target is unavailable, e.g, DELETED
 	if !node.Exists("target", "status") {
@@ -392,7 +390,7 @@ func getAttachment(node *fastjson.Value) []datatype.Attachment {
 		}
 	}
 
-	wg.Wait()
+	_ = g.Wait()
 
 	return attachments
 }

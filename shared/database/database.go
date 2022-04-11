@@ -95,7 +95,7 @@ func QueryAccounts(db *gorm.DB, profileID string, profilePlatform int, source in
 	return accounts, nil
 }
 
-func QueryLinks(db *gorm.DB, _type *int, form string, linkSources []int, limit int) ([]model.Link, error) {
+func QueryLinks(db *gorm.DB, _type *int, form string, linkSources []int, profileSources []int, lastTime *time.Time, limit int) ([]model.Link, error) {
 	var links []model.Link
 
 	internalDB := db.Where(&model.Link{
@@ -107,25 +107,31 @@ func QueryLinks(db *gorm.DB, _type *int, form string, linkSources []int, limit i
 	}
 
 	if len(linkSources) > 0 {
-		internalDB.Where("source IN ?", linkSources)
+		internalDB = internalDB.Where("source IN ?", linkSources)
+	}
+
+	if lastTime != nil {
+		internalDB = internalDB.Where("created_at < ?", *lastTime)
 	}
 
 	if limit > 0 {
 		if limit > MaxLimit {
 			limit = MaxLimit
 		}
-
-		internalDB = internalDB.Limit(limit)
+	} else {
+		limit = MaxLimit
 	}
 
-	if err := internalDB.Find(&links).Error; err != nil {
+	internalDB = internalDB.Limit(limit)
+
+	if err := internalDB.Order("created_at DESC").Find(&links).Error; err != nil {
 		return nil, err
 	}
 
 	return links, nil
 }
 
-func QueryLinksByTo(db *gorm.DB, _type *int, to string, linkSources []int, limit int) ([]model.Link, error) {
+func QueryLinksByTo(db *gorm.DB, _type *int, to string, linkSources []int, lastTime *time.Time, limit int) ([]model.Link, error) {
 	var links []model.Link
 
 	internalDB := db.Where(&model.Link{
@@ -137,18 +143,24 @@ func QueryLinksByTo(db *gorm.DB, _type *int, to string, linkSources []int, limit
 	}
 
 	if len(linkSources) > 0 {
-		internalDB.Where("source IN ?", linkSources)
+		internalDB = internalDB.Where("source IN ?", linkSources)
+	}
+
+	if lastTime != nil {
+		internalDB = internalDB.Where("created_at < ?", *lastTime)
 	}
 
 	if limit > 0 {
 		if limit > MaxLimit {
 			limit = MaxLimit
 		}
-
-		internalDB = internalDB.Limit(limit)
+	} else {
+		limit = MaxLimit
 	}
 
-	if err := internalDB.Find(&links).Error; err != nil {
+	internalDB = internalDB.Limit(limit)
+
+	if err := internalDB.Order("created_at DESC").Find(&links).Error; err != nil {
 		return nil, err
 	}
 
@@ -211,7 +223,7 @@ func DeleteAsset(db *gorm.DB, asset *model.Asset) (*model.Asset, error) {
 	return asset, nil
 }
 
-func QueryAssets(db *gorm.DB, uris []string, limit int) ([]model.Asset, error) {
+func QueryAssets(db *gorm.DB, uris []string, lastTime *time.Time, limit int) ([]model.Asset, error) {
 	var assets []model.Asset
 
 	internalDB := db.
@@ -222,8 +234,14 @@ func QueryAssets(db *gorm.DB, uris []string, limit int) ([]model.Asset, error) {
 		if limit > MaxLimit {
 			limit = MaxLimit
 		}
+	} else {
+		limit = MaxLimit
+	}
 
-		internalDB = internalDB.Limit(limit)
+	internalDB = internalDB.Limit(limit)
+
+	if lastTime != nil {
+		internalDB = internalDB.Where("created_at < ?", *lastTime)
 	}
 
 	if err := internalDB.Find(&assets).Error; err != nil {
@@ -233,7 +251,21 @@ func QueryAssets(db *gorm.DB, uris []string, limit int) ([]model.Asset, error) {
 	return assets, nil
 }
 
-func QueryNotes(db *gorm.DB, uris []string, limit int) ([]model.Note, error) {
+func QueryAllAssets(db *gorm.DB, uris []string) ([]model.Asset, error) {
+	var assets []model.Asset
+
+	internalDB := db.
+		Where("owner IN ?", uris).
+		Order("date_created DESC")
+
+	if err := internalDB.Find(&assets).Error; err != nil {
+		return nil, err
+	}
+
+	return assets, nil
+}
+
+func QueryNotes(db *gorm.DB, uris []string, lastTime *time.Time, limit int) ([]model.Note, error) {
 	var notes []model.Note
 
 	internalDB := db.
@@ -244,8 +276,14 @@ func QueryNotes(db *gorm.DB, uris []string, limit int) ([]model.Note, error) {
 		if limit > MaxLimit {
 			limit = MaxLimit
 		}
+	} else {
+		limit = MaxLimit
+	}
 
-		internalDB = internalDB.Limit(limit)
+	internalDB = internalDB.Limit(limit)
+
+	if lastTime != nil {
+		internalDB = internalDB.Where("created_at < ?", *lastTime)
 	}
 
 	if err := internalDB.Find(&notes).Error; err != nil {

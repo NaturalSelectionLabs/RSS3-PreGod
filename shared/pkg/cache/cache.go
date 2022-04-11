@@ -16,6 +16,8 @@ var (
 	rdb   *redis.Client
 )
 
+var Nil = redis.Nil
+
 func Setup() error {
 	ctx := context.Background()
 
@@ -40,7 +42,7 @@ func Setup() error {
 
 func Get(ctx context.Context, key string, data interface{}) error {
 	value, err := rdb.Get(ctx, key).Result()
-	if err == redis.Nil || err != nil {
+	if err != nil {
 		return err
 	}
 
