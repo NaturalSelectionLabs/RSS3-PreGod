@@ -102,7 +102,7 @@ func GetAssetListHandlerFunc(c *gin.Context) {
 		assetDateCreated := item.DateCreated.Time()
 		if lastTime == nil {
 			lastTime = &assetDateCreated
-		} else if lastTime.Before(assetDateCreated) {
+		} else if lastTime.After(assetDateCreated) {
 			lastTime = &assetDateCreated
 		}
 	}
@@ -130,26 +130,29 @@ func GetAssetListHandlerFunc(c *gin.Context) {
 
 func getAssetListByInstance(instance rss3uri.Instance, request GetAssetListRequest) ([]model.Asset, error) {
 	// Get instance's profiles
-	profiles, err := database.QueryProfiles(database.DB, instance.GetIdentity(), 1, []int{})
-	if err != nil {
-		return nil, err
-	}
-
-	profileIDs := make([]string, len(profiles))
-	for _, profile := range profiles {
-		profileIDs = append(profileIDs, profile.ID)
-	}
+	var profiles []model.Profile
 
 	internalDB := database.DB
 
-	if request.ProfileSources != nil && len(request.ProfileSources) != 0 {
-		// Convert profile name to id
+	if request.ProfileSources != nil && len(request.ProfileSources) > 0 {
 		var profileSources []int
 		for _, source := range request.ProfileSources {
 			profileSources = append(profileSources, constants.ProfileSourceName(source).ID().Int())
 		}
 
 		internalDB = internalDB.Where("source IN ?", profileSources)
+	}
+
+	if err := internalDB.Where(&model.Profile{
+		ID:       strings.ToLower(instance.GetIdentity()),
+		Platform: constants.PlatformSymbol(instance.GetSuffix()).ID().Int(),
+	}).Find(&profiles).Error; err != nil {
+		return nil, err
+	}
+
+	profileIDs := make([]string, len(profiles))
+	for _, profile := range profiles {
+		profileIDs = append(profileIDs, profile.ID)
 	}
 
 	// Get instance's all accounts
@@ -183,6 +186,19 @@ func getAssetListByInstance(instance rss3uri.Instance, request GetAssetListReque
 		internalDB = internalDB.Where("source IN ?", request.ItemSources)
 	}
 
+	if request.ProfileSources != nil && len(request.ProfileSources) != 0 {
+		authors := []string{
+			rss3uri.New(instance).String(),
+		}
+
+		for _, account := range accounts {
+			accountInstance := rss3uri.NewAccountInstance(account.Identity, constants.PlatformID(account.Platform).Symbol())
+			authors = append(authors, rss3uri.New(accountInstance).String())
+		}
+
+		internalDB = internalDB.Where("authors && ?", pq.StringArray(authors))
+	}
+
 	assets := make([]model.Asset, 0)
 	if err := internalDB.
 		Where("owner = ?", strings.ToLower(rss3uri.New(instance).String())).
@@ -195,11 +211,20 @@ func getAssetListByInstance(instance rss3uri.Instance, request GetAssetListReque
 	return assets, nil
 }
 
-// nolint:dupl,funlen // TODO
+// nolint:dupl,funlen,gocognit // TODO
 func getAssetListsByLink(instance rss3uri.Instance, request GetAssetListRequest) ([]model.Asset, error) {
 	links := make([]model.Link, 0)
 
 	internalDB := database.DB
+
+	if request.ProfileSources != nil && len(request.ProfileSources) > 0 {
+		var profileSources []int
+		for _, source := range request.ProfileSources {
+			profileSources = append(profileSources, constants.ProfileSourceName(source).ID().Int())
+		}
+
+		internalDB = internalDB.Where("source IN ?", profileSources)
+	}
 
 	if request.LinkType != "" {
 		internalDB = internalDB.Where("type = ?", constants.LinkTypeName(request.LinkType).ID().Int())
@@ -247,7 +272,7 @@ func getAssetListsByLink(instance rss3uri.Instance, request GetAssetListRequest)
 	owners := make([]string, len(links))
 
 	for _, link := range links {
-		instance, err := rss3uri.NewInstance(
+		ownerInstance, err := rss3uri.NewInstance(
 			constants.InstanceTypeID(link.ToInstanceType).String(),
 			link.To,
 			constants.PlatformID(link.ToPlatformID).Symbol().String(),
@@ -256,13 +281,13 @@ func getAssetListsByLink(instance rss3uri.Instance, request GetAssetListRequest)
 			return nil, err
 		}
 
-		owners = append(owners, strings.ToLower(rss3uri.New(instance).String()))
+		owners = append(owners, strings.ToLower(rss3uri.New(ownerInstance).String()))
 	}
 
 	internalDB = database.DB
 
 	if request.LastTime != nil {
-		internalDB = internalDB.Where("date_created >= ?", request.LastTime)
+		internalDB = internalDB.Where("date_created <= ?", request.LastTime)
 	}
 
 	if request.Tags != nil && len(request.Tags) != 0 {
@@ -271,6 +296,19 @@ func getAssetListsByLink(instance rss3uri.Instance, request GetAssetListRequest)
 
 	if request.ItemSources != nil && len(request.ItemSources) != 0 {
 		internalDB = internalDB.Where("source IN ?", request.ItemSources)
+	}
+
+	if request.ProfileSources != nil && len(request.ProfileSources) != 0 {
+		authors := []string{
+			rss3uri.New(instance).String(),
+		}
+
+		for _, account := range accounts {
+			accountInstance := rss3uri.NewAccountInstance(account.Identity, constants.PlatformID(account.Platform).Symbol())
+			authors = append(authors, rss3uri.New(accountInstance).String())
+		}
+
+		internalDB = internalDB.Where("authors && ?", pq.StringArray(authors))
 	}
 
 	assets := make([]model.Asset, 0)

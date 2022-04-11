@@ -22,7 +22,7 @@ type GetBackLinkListRequest struct {
 	Type           string     `form:"type"`
 	Limit          int        `form:"limit"`
 	LastTime       *time.Time `form:"last_time" time_format:"2006-01-02T15:04:05.000Z"`
-	To             string     `form:"to"`
+	From           string     `form:"from"`
 	LinkSources    []string   `form:"link_sources"`
 	ProfileSources []string   `form:"profile_sources"`
 }
@@ -36,7 +36,7 @@ func GetBackLinkListHandlerFunc(c *gin.Context) {
 		return
 	}
 
-	request := GetLinkListRequest{}
+	request := GetBackLinkListRequest{}
 	if bindErr := c.ShouldBindQuery(&request); bindErr != nil {
 		_ = c.Error(api.ErrorInvalidParams)
 
@@ -86,7 +86,7 @@ func GetBackLinkListHandlerFunc(c *gin.Context) {
 		assetDateCreated := item.DateCreated.Time()
 		if lastTime == nil {
 			lastTime = &assetDateCreated
-		} else if lastTime.Before(assetDateCreated) {
+		} else if lastTime.After(assetDateCreated) {
 			lastTime = &assetDateCreated
 		}
 	}
@@ -112,7 +112,7 @@ func GetBackLinkListHandlerFunc(c *gin.Context) {
 	})
 }
 
-func getBackLinkList(instance rss3uri.Instance, request GetLinkListRequest) ([]model.Link, error) {
+func getBackLinkList(instance rss3uri.Instance, request GetBackLinkListRequest) ([]model.Link, error) {
 	internalDB := database.DB
 
 	if request.Type != "" {
@@ -123,9 +123,9 @@ func getBackLinkList(instance rss3uri.Instance, request GetLinkListRequest) ([]m
 		internalDB = internalDB.Where("created_at <= ?", request.LastTime)
 	}
 
-	if request.To != "" {
+	if request.From != "" {
 		internalDB = internalDB.Where(&model.Link{
-			From: strings.ToLower(request.To),
+			From: strings.ToLower(request.From),
 		})
 	}
 

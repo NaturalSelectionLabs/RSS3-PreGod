@@ -84,7 +84,7 @@ func GetLinkListHandlerFunc(c *gin.Context) {
 		assetDateCreated := item.DateCreated.Time()
 		if lastTime == nil {
 			lastTime = &assetDateCreated
-		} else if lastTime.Before(assetDateCreated) {
+		} else if lastTime.After(assetDateCreated) {
 			lastTime = &assetDateCreated
 		}
 	}
