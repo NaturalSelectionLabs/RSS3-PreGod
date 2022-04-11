@@ -76,11 +76,32 @@ func GetLinkListHandlerFunc(c *gin.Context) {
 
 	uri := rss3uri.New(instance)
 
+	var lastTime *time.Time
+
+	for _, item := range linkList {
+		assetDateCreated := item.DateCreated.Time()
+		if lastTime == nil {
+			lastTime = &assetDateCreated
+		} else if lastTime.Before(assetDateCreated) {
+			lastTime = &assetDateCreated
+		}
+	}
+
+	identifierNext := ""
+	if len(linkList) != 0 {
+		if lastTime != nil {
+			query := c.Request.URL.Query()
+			query.Set("last_time", lastTime.Format(timex.ISO8601))
+			c.Request.URL.RawQuery = query.Encode()
+		}
+
+		identifierNext = fmt.Sprintf("%s/links?%s", uri.String(), c.Request.URL.RawQuery)
+	}
+
 	c.JSON(http.StatusOK, protocol.File{
-		DateUpdated: dateUpdated,
-		// TODO
+		DateUpdated:    dateUpdated,
 		Identifier:     fmt.Sprintf("%s/links", uri.String()),
-		IdentifierNext: fmt.Sprintf("%s/links", uri.String()),
+		IdentifierNext: identifierNext,
 		Total:          len(linkList),
 		List:           linkList,
 	})

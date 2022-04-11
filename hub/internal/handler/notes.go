@@ -97,11 +97,32 @@ func GetNoteListHandlerFunc(c *gin.Context) {
 		}
 	}
 
+	var lastTime *time.Time
+
+	for _, item := range noteList {
+		assetDateCreated := item.DateCreated.Time()
+		if lastTime == nil {
+			lastTime = &assetDateCreated
+		} else if lastTime.Before(assetDateCreated) {
+			lastTime = &assetDateCreated
+		}
+	}
+
+	identifierNext := ""
+	if len(noteList) != 0 {
+		if lastTime != nil {
+			query := c.Request.URL.Query()
+			query.Set("last_time", lastTime.Format(timex.ISO8601))
+			c.Request.URL.RawQuery = query.Encode()
+		}
+
+		identifierNext = fmt.Sprintf("%s/notes?%s", uri.String(), c.Request.URL.RawQuery)
+	}
+
 	c.JSON(http.StatusOK, protocol.File{
-		DateUpdated: dateUpdated,
-		// TODO
+		DateUpdated:    dateUpdated,
 		Identifier:     fmt.Sprintf("%s/notes", uri.String()),
-		IdentifierNext: fmt.Sprintf("%s/notes", uri.String()),
+		IdentifierNext: identifierNext,
 		Total:          len(noteList),
 		List:           noteList,
 	})
