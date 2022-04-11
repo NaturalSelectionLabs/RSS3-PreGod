@@ -1,7 +1,6 @@
 package handler
 
 import (
-	"errors"
 	"fmt"
 	"net/http"
 	"time"
@@ -10,6 +9,7 @@ import (
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/internal/middleware"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/internal/protocol"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database"
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database/model"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/constants"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/rss3uri"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/timex"
@@ -17,88 +17,45 @@ import (
 )
 
 type GetBackLinkListRequest struct {
-	Type           string `form:"type"`
-	Limit          int    `form:"limit"`
-	LastTime       string `form:"last_time"`
-	Instance       string `form:"instance"`
-	LinkSources    []int  `form:"link_sources"`
-	ProfileSources []int  `form:"profile_sources"`
+	Type           string     `form:"type"`
+	Limit          int        `form:"limit"`
+	LastTime       *time.Time `form:"last_time" time_format:"2006-01-02T15:04:05.000Z"`
+	To             string     `form:"to"`
+	LinkSources    []string   `form:"link_sources"`
+	ProfileSources []string   `form:"profile_sources"`
 }
 
 func GetBackLinkListHandlerFunc(c *gin.Context) {
-	instance, err := middleware.GetPlatformInstance(c)
+	instance, err := middleware.GetInstance(c)
 	if err != nil {
-		return
-	}
-
-	request := GetBackLinkListRequest{}
-	if err = c.ShouldBindQuery(&request); err != nil {
-		_ = c.Error(errors.New("invalid params"))
+		_ = c.Error(api.ErrorInvalidParams)
 
 		return
 	}
 
-	var lastTime *time.Time
-	if request.LastTime != "" {
-		internalLastTime, err := timex.Parse(request.LastTime)
-		if err != nil {
-			_ = c.Error(api.ErrorInvalidParams)
+	request := GetLinkListRequest{}
+	if err := c.ShouldBindQuery(&request); err != nil {
+		_ = c.Error(api.ErrorInvalidParams)
 
-			return
-		}
-
-		t := internalLastTime.Time()
-
-		lastTime = &t
+		return
 	}
 
-	var linkType *int
-
-	linkModels, err := database.QueryLinksByTo(
-		database.DB,
-		linkType,
-		instance.Identity,
-		request.LinkSources,
-		lastTime,
-		request.Limit,
-	)
+	backLinkModels, err := getBackLinkList(instance, request)
 	if err != nil {
-		_ = c.Error(errors.New("invalid params"))
+		_ = c.Error(err)
 
 		return
 	}
 
-	links := make([]protocol.Link, 0)
+	backLinkList := make([]protocol.Link, 0)
 
-	for _, linkModel := range linkModels {
-		fromInstance, err := rss3uri.NewInstance(
-			constants.InstanceTypeID(linkModel.FromInstanceType).String(),
-			linkModel.From,
-			constants.PlatformID(linkModel.FromPlatformID).Symbol().String(),
-		)
-		if err != nil {
-			_ = c.Error(err)
-
-			return
-		}
-
-		toInstance, err := rss3uri.NewInstance(
-			constants.InstanceTypeID(linkModel.ToInstanceType).String(),
-			linkModel.From,
-			constants.PlatformID(linkModel.ToPlatformID).Symbol().String(),
-		)
-		if err != nil {
-			_ = c.Error(err)
-
-			return
-		}
-
-		links = append(links, protocol.Link{
-			DateCreated: timex.Time(linkModel.CreatedAt),
-			From:        rss3uri.New(fromInstance).String(),
-			To:          rss3uri.New(toInstance).String(),
-			Type:        constants.LinkTypeID(linkModel.Type).String(),
-			Source:      constants.ProfileSourceID(linkModel.Source).Name().String(),
+	for _, backLinkModel := range backLinkModels {
+		backLinkList = append(backLinkList, protocol.Link{
+			DateCreated: timex.Time(backLinkModel.CreatedAt),
+			From:        rss3uri.New(rss3uri.NewAccountInstance(backLinkModel.From, constants.PlatformID(backLinkModel.FromPlatformID).Symbol())).String(),
+			To:          rss3uri.New(rss3uri.NewAccountInstance(backLinkModel.To, constants.PlatformID(backLinkModel.ToPlatformID).Symbol())).String(),
+			Type:        constants.LinkTypeID(backLinkModel.Type).Name().String(),
+			Source:      constants.ProfileSourceID(backLinkModel.Source).Name().String(),
 			Metadata: protocol.LinkMetadata{
 				Network: constants.NetworkSymbolCrossbell.String(),
 				Proof:   "TODO",
@@ -106,21 +63,65 @@ func GetBackLinkListHandlerFunc(c *gin.Context) {
 		})
 	}
 
+	// Get date updated
 	var dateUpdated *timex.Time
-
-	for _, link := range links {
-		internalTime := link.DateCreated
+	for _, backLink := range backLinkList {
+		internalTime := backLink.DateCreated
 		if dateUpdated == nil {
 			dateUpdated = &internalTime
-		} else if dateUpdated.Time().Before(link.DateCreated.Time()) {
+		} else if dateUpdated.Time().Before(backLink.DateCreated.Time()) {
 			dateUpdated = &internalTime
 		}
 	}
 
+	uri := rss3uri.New(instance)
+
 	c.JSON(http.StatusOK, protocol.File{
-		Identifier:  fmt.Sprintf("%s/backlinks", rss3uri.New(instance)),
 		DateUpdated: dateUpdated,
-		Total:       len(links),
-		List:        links,
+		// TODO
+		Identifier:     fmt.Sprintf("%s/backlinks", uri.String()),
+		IdentifierNext: fmt.Sprintf("%s/backlinks", uri.String()),
+		Total:          len(backLinkList),
+		List:           backLinkList,
 	})
+}
+
+func getBackLinkList(instance rss3uri.Instance, request GetLinkListRequest) ([]model.Link, error) {
+	internalDB := database.DB
+
+	if request.Type != "" {
+		internalDB = internalDB.Where("type = ?", constants.LinkTypeName(request.Type).ID().Int())
+	}
+
+	if request.LastTime != nil {
+		internalDB = internalDB.Where("created_at <= ?", request.LastTime)
+	}
+
+	if request.To != "" {
+		internalDB = internalDB.Where(&model.Link{
+			From: request.To,
+		})
+	}
+
+	var linkSources []int
+	if request.LinkSources != nil && len(request.LinkSources) > 0 {
+		for _, source := range request.LinkSources {
+			linkSources = append(linkSources, constants.LinkSourceName(source).ID().Int())
+		}
+
+		internalDB = internalDB.Where("source IN ?", linkSources)
+	}
+
+	linkList := make([]model.Link, 0)
+	if err := internalDB.
+		Where(&model.Link{
+			To: instance.GetIdentity(),
+		}).
+		Limit(request.Limit).
+		Order("created_at DESC").
+		Find(&linkList).Error; err != nil {
+		return nil, err
+	}
+
+	return linkList, nil
 }
