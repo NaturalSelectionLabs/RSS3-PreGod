@@ -163,7 +163,7 @@ func getNoteListByInstance(instance rss3uri.Instance, request GetNoteListRequest
 	// TODO Refine it
 	// Send get request to indexer
 	go func() {
-		if err := indexer.GetItems(accounts); err != nil {
+		if err := indexer.GetItems(instance, accounts); err != nil {
 			logger.Error(err)
 		}
 	}()
@@ -238,7 +238,7 @@ func getNoteListsByLink(instance rss3uri.Instance, request GetNoteListRequest) (
 	// TODO Refine it
 	// Send a request to indexer
 	go func() {
-		if err := indexer.GetItems(accounts); err != nil {
+		if err := indexer.GetItems(instance, accounts); err != nil {
 			logger.Error(err)
 		}
 	}()

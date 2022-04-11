@@ -161,7 +161,7 @@ func getAssetListByInstance(instance rss3uri.Instance, request GetAssetListReque
 	// TODO Refine it
 	// Send get request to indexer
 	go func() {
-		if err := indexer.GetItems(accounts); err != nil {
+		if err := indexer.GetItems(instance, accounts); err != nil {
 			logger.Error(err)
 		}
 	}()
@@ -236,7 +236,7 @@ func getAssetListsByLink(instance rss3uri.Instance, request GetAssetListRequest)
 	// TODO Refine it
 	// Send a request to indexer
 	go func() {
-		if err := indexer.GetItems(accounts); err != nil {
+		if err := indexer.GetItems(instance, accounts); err != nil {
 			logger.Error(err)
 		}
 	}()
