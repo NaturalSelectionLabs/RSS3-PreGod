@@ -26,7 +26,7 @@ type GetNoteListRequest struct {
 	Tags           []string   `form:"tags"`
 	MimeTypes      []string   `form:"mime_types"`
 	ItemSources    []string   `form:"item_sources"`
-	LinkSources    []string   `form:"link_source"`
+	LinkSources    []string   `form:"link_sources"`
 	LinkType       string     `form:"link_type"`
 	ProfileSources []string   `form:"profile_sources"`
 }
@@ -141,6 +141,14 @@ func getNoteListByInstance(instance rss3uri.Instance, request GetNoteListRequest
 		return nil, err
 	}
 
+	// TODO Refine it
+	// Send get request to indexer
+	go func() {
+		if err := indexer.GetItems(accounts); err != nil {
+			logger.Error(err)
+		}
+	}()
+
 	// Get instance's notes
 	internalDB = database.DB
 
@@ -176,20 +184,28 @@ func getNoteListByInstance(instance rss3uri.Instance, request GetNoteListRequest
 		return nil, err
 	}
 
-	// TODO Refine it
-	// Send get request to indexer
-	go func() {
-		if err := indexer.GetItems(accounts); err != nil {
-			logger.Error(err)
-		}
-	}()
-
 	return notes, nil
 }
 
 func getNoteListsByLink(instance rss3uri.Instance, request GetNoteListRequest) ([]model.Note, error) {
 	links := make([]model.Link, 0)
-	if err := database.DB.
+
+	internalDB := database.DB
+
+	if request.LinkType != "" {
+		internalDB = internalDB.Where("type = ?", constants.LinkTypeName(request.LinkType).ID().Int())
+	}
+
+	if request.LinkSources != nil && len(request.LinkSources) != 0 {
+		var sources []int
+		for _, linkSource := range request.LinkSources {
+			sources = append(sources, constants.LinkSourceName(linkSource).ID().Int())
+		}
+
+		internalDB = internalDB.Where("source IN ?", sources)
+	}
+
+	if err := internalDB.
 		Where(&model.Link{
 			From: instance.GetIdentity(),
 		}).
@@ -211,10 +227,13 @@ func getNoteListsByLink(instance rss3uri.Instance, request GetNoteListRequest) (
 		return nil, err
 	}
 
+	// TODO Refine it
 	// Send a request to indexer
-	if err := indexer.GetItems(accounts); err != nil {
-		return nil, err
-	}
+	go func() {
+		if err := indexer.GetItems(accounts); err != nil {
+			logger.Error(err)
+		}
+	}()
 
 	owners := make([]string, len(links))
 	for _, link := range links {
@@ -230,8 +249,22 @@ func getNoteListsByLink(instance rss3uri.Instance, request GetNoteListRequest) (
 		owners = append(owners, strings.ToLower(rss3uri.New(instance).String()))
 	}
 
+	internalDB = database.DB
+
+	if request.LastTime != nil {
+		internalDB = internalDB.Where("date_created >= ?", request.LastTime)
+	}
+
+	if request.Tags != nil && len(request.Tags) != 0 {
+		internalDB = internalDB.Where("tags && ?", pq.StringArray(request.Tags))
+	}
+
+	if request.ItemSources != nil && len(request.ItemSources) != 0 {
+		internalDB = internalDB.Where("source IN ?", request.ItemSources)
+	}
+
 	notes := make([]model.Note, 0)
-	if err := database.DB.
+	if err := internalDB.
 		Where("owner IN ?", owners).
 		Limit(request.Limit).
 		Order("date_created DESC").
