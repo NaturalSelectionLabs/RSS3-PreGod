@@ -13,8 +13,6 @@ import (
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/constants"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/logger"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/rss3uri"
-	"github.com/samber/lo"
-	lop "github.com/samber/lo/parallel"
 )
 
 type moralisCrawler struct {
@@ -193,23 +191,23 @@ func (c *moralisCrawler) Work(param crawler.WorkParam) error {
 	}
 
 	// find old data in the database
-	newAssetProofs := lo.Map(c.Assets, func(asset model.Asset, _ int) string {
-		return asset.MetadataProof
-	})
-
-	oldAssets, err := database.QueryAllAssets(database.DB, []string{owner})
-	if err != nil {
-		logger.Warnf("fail to query old assets: %v", err)
-	} else {
-		lop.ForEach(oldAssets, func(oldAsset model.Asset, _ int) {
-			if !lo.Contains(newAssetProofs, oldAsset.MetadataProof) {
-				// remove this old asset from database
-				if _, err := database.DeleteAsset(database.DB, &oldAsset); err != nil {
-					logger.Warnf("fail to delete old asset: %v", err)
-				}
-			}
-		})
-	}
+	// TODO: need to find a better way to do this
+	//newAssetProofs := lo.Map(c.Assets, func(asset model.Asset, _ int) string {
+	//	return asset.MetadataProof
+	//})
+	//oldAssets, err := database.QueryAllAssets(database.DB, []string{owner}, networkSymbol)
+	//if err != nil {
+	//	logger.Warnf("fail to query old assets: %v", err)
+	//} else {
+	//	lop.ForEach(oldAssets, func(oldAsset model.Asset, _ int) {
+	//		if !lo.Contains(newAssetProofs, oldAsset.MetadataProof) {
+	//			// remove this old asset from database
+	//			if _, err := database.DeleteAsset(database.DB, &oldAsset); err != nil {
+	//				logger.Warnf("fail to delete old asset: %v", err)
+	//			}
+	//		}
+	//	})
+	//}
 
 	if err := utils.CompleteMimeTypesForItems(c.Notes, c.Assets); err != nil {
 		logger.Error("moralis complete mime types error:", err)

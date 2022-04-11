@@ -251,11 +251,12 @@ func QueryAssets(db *gorm.DB, uris []string, lastTime *time.Time, limit int) ([]
 	return assets, nil
 }
 
-func QueryAllAssets(db *gorm.DB, uris []string) ([]model.Asset, error) {
+func QueryAllAssets(db *gorm.DB, uris []string, network constants.NetworkSymbol) ([]model.Asset, error) {
 	var assets []model.Asset
 
 	internalDB := db.
 		Where("owner IN ?", uris).
+		Where("metadata_network = ?", network).
 		Order("date_created DESC")
 
 	if err := internalDB.Find(&assets).Error; err != nil {
