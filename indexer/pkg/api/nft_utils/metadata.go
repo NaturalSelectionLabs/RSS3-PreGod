@@ -5,13 +5,12 @@ import (
 	"strings"
 
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database"
-	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database/model"
-	"golang.org/x/sync/errgroup"
-
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database/datatype"
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database/model"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/httpx"
 	lop "github.com/samber/lo/parallel"
 	"github.com/valyala/fastjson"
+	"golang.org/x/sync/errgroup"
 )
 
 type Metadata struct {
@@ -25,7 +24,7 @@ type Metadata struct {
 
 func ParseNFTMetadata(metadata string) (Metadata, error) {
 	if metadata == "" {
-		return Metadata{}, fmt.Errorf("metadata is an empty string")
+		return Metadata{}, nil
 	}
 
 	var parser fastjson.Parser

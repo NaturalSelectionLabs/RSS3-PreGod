@@ -83,7 +83,7 @@ func (c *moralisCrawler) Work(param crawler.WorkParam) error {
 	for _, item := range nftTransfers.Result {
 		tsp, tspErr := item.GetTsp()
 		if tspErr != nil {
-			logger.Warnf("asset: %s fails at GetTsp(): %v", item.String(), err)
+			logger.Warnf("asset: %s fails at GetTsp(): %v", item.String(), tspErr)
 
 			tsp = time.Now()
 		}
@@ -101,7 +101,7 @@ func (c *moralisCrawler) Work(param crawler.WorkParam) error {
 
 		m, parseErr := utils.ParseNFTMetadata(theAsset.MetaData)
 		if parseErr != nil {
-			logger.Warnf("%v", err)
+			logger.Warnf("%v", parseErr)
 		}
 
 		if !hasObject {
@@ -141,24 +141,31 @@ func (c *moralisCrawler) Work(param crawler.WorkParam) error {
 
 	// complete the asset list
 	for _, asset := range assets.Result {
-		proof := asset.TokenAddress + "-" + asset.TokenId
-
 		m, parseErr := utils.ParseNFTMetadata(asset.MetaData)
 		if parseErr != nil {
-			logger.Warnf("%v", err)
+			logger.Warnf("%v", parseErr)
 		}
 
 		// find the note that has the same proof to get the tsp
 		var tsp time.Time
 
 		for _, note := range c.Notes {
-			if note.MetadataProof == proof {
+			noteMetadata, unwrapErr := database.UnwrapJSON[map[string]interface{}](note.Metadata)
+			if unwrapErr != nil {
+				logger.Warnf("%v", unwrapErr) // should never be a problem
+
+				continue
+			}
+
+			if noteMetadata["collection_address"] == asset.TokenAddress &&
+				noteMetadata["token_id"] == asset.TokenId {
 				tsp = note.DateCreated
 
 				break
 			}
 		}
 
+		proof := asset.TokenAddress + "-" + asset.TokenId
 		asset := model.Asset{
 			Identifier:      rss3uri.NewAssetInstance(proof, networkSymbol).UriString(),
 			Owner:           owner,
