@@ -6,8 +6,8 @@ import (
 )
 
 type CrawlerMetadata struct {
-	AccountInstance string              `gorm:"column:id"`
-	NetworkId       constants.NetworkID `gorm:"network_id"`
+	AccountInstance string              `gorm:"column:id,primaryKey"`
+	NetworkId       constants.NetworkID `gorm:"column:network_id.primaryKey"`
 	LastBlock       int                 `gorm:"column:last_block"`
 
 	common.Table
