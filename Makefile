@@ -48,7 +48,7 @@ build:
 build_go:
 	@echo "  >  \033[32mBuilding binary...\033[0m "
 	go build -tags=jsoniter -o dist/hub ./hub/
-	go build -o dist/indexer ./indexer/
+	go build -tags=jsoniter -o dist/indexer ./indexer/
 
 build_docker:
 	@echo "  >  \033[32mBuilding docker image...\033[0m "
