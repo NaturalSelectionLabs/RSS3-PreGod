@@ -14,7 +14,6 @@ func GetContentHeader(url string) (*ContentHeader, error) {
 	}
 
 	header, err := Head(url)
-
 	if err != nil {
 		logger.Errorf("cannot read content type of url: %s. error is : %v", url, err)
 	}

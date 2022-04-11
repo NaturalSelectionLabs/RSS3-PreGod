@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/api/nft_utils"
+
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/crawler"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database/datatype"
@@ -104,6 +106,10 @@ func (pc *poapCrawler) Work(param crawler.WorkParam) error {
 		asset.Identifier = rss3uri.NewAssetInstance(id, constants.NetworkSymbolGnosisMainnet).UriString()
 
 		pc.Assets = append(pc.Assets, model.Asset(note))
+
+		if err := nft_utils.CompleteMimeTypesForItems(pc.Notes, pc.Assets); err != nil {
+			logger.Error("poap complete mime types error:", err)
+		}
 	}
 
 	return nil

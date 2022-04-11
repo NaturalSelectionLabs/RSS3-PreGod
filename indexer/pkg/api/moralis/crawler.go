@@ -8,7 +8,6 @@ import (
 	utils "github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/api/nft_utils"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/crawler"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database"
-	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database/datatype"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database/model"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/config"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/constants"
@@ -16,7 +15,6 @@ import (
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/rss3uri"
 	"github.com/samber/lo"
 	lop "github.com/samber/lo/parallel"
-	"golang.org/x/sync/errgroup"
 )
 
 type moralisCrawler struct {
@@ -83,8 +81,8 @@ func (c *moralisCrawler) Work(param crawler.WorkParam) error {
 
 	// complete the note list
 	for _, item := range nftTransfers.Result {
-		tsp, err := item.GetTsp()
-		if err != nil {
+		tsp, tspErr := item.GetTsp()
+		if tspErr != nil {
 			logger.Warnf("asset: %s fails at GetTsp(): %v", item.String(), err)
 
 			tsp = time.Now()
@@ -101,8 +99,8 @@ func (c *moralisCrawler) Work(param crawler.WorkParam) error {
 			}
 		}
 
-		m, err := utils.ParseNFTMetadata(theAsset.MetaData)
-		if err != nil {
+		m, parseErr := utils.ParseNFTMetadata(theAsset.MetaData)
+		if parseErr != nil {
 			logger.Warnf("%v", err)
 		}
 
@@ -145,8 +143,8 @@ func (c *moralisCrawler) Work(param crawler.WorkParam) error {
 	for _, asset := range assets.Result {
 		proof := asset.TokenAddress + "-" + asset.TokenId
 
-		m, err := utils.ParseNFTMetadata(asset.MetaData)
-		if err != nil {
+		m, parseErr := utils.ParseNFTMetadata(asset.MetaData)
+		if parseErr != nil {
 			logger.Warnf("%v", err)
 		}
 
@@ -206,40 +204,9 @@ func (c *moralisCrawler) Work(param crawler.WorkParam) error {
 		})
 	}
 
-	// complete attachments in parallel
-	g := new(errgroup.Group)
-
-	g.Go(func() error {
-		lop.ForEach(c.Notes, func(note model.Note, i int) {
-			if note.Attachments != nil {
-				as, err := database.UnwrapJSON[datatype.Attachments](note.Attachments)
-				if err != nil {
-					return
-				}
-				utils.CompleteMimeTypes(as)
-				c.Notes[i].Attachments = database.MustWrapJSON(as)
-			}
-		})
-
-		return nil
-	})
-
-	g.Go(func() error {
-		lop.ForEach(c.Assets, func(asset model.Asset, i int) {
-			if asset.Attachments != nil {
-				as, err := database.UnwrapJSON[datatype.Attachments](asset.Attachments)
-				if err != nil {
-					return
-				}
-				utils.CompleteMimeTypes(as)
-				c.Assets[i].Attachments = database.MustWrapJSON(as)
-			}
-		})
-
-		return nil
-	})
-
-	_ = g.Wait()
+	if err := utils.CompleteMimeTypesForItems(c.Notes, c.Assets); err != nil {
+		logger.Error("moralis complete mime types error:", err)
+	}
 
 	return nil
 }
