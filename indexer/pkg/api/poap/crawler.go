@@ -100,7 +100,7 @@ func (pc *poapCrawler) Work(param crawler.WorkParam) error {
 		asset := note
 		asset.Identifier = rss3uri.NewAssetInstance(id, constants.NetworkSymbolGnosisMainnet).UriString()
 
-		pc.Assets = append(pc.Assets, model.Asset(note))
+		pc.Assets = append(pc.Assets, model.Asset(asset))
 
 		if err := nft_utils.CompleteMimeTypesForItems(pc.Notes, pc.Assets); err != nil {
 			logger.Error("poap complete mime types error:", err)
