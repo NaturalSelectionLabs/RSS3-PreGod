@@ -14,6 +14,7 @@ var _ schema.Tabler = &Note{}
 type Note struct {
 	Identifier      string         `gorm:"column:identifier;primaryKey"`
 	Owner           string         `gorm:"colum:owner"`
+	ProfileSourceID int            `gorm:"profile_source_id"`
 	RelatedURLs     pq.StringArray `gorm:"column:related_urls;type:text[]"`
 	Tags            pq.StringArray `gorm:"column:tags;type:text[]"`
 	Authors         pq.StringArray `gorm:"column:authors;type:text[]"`
