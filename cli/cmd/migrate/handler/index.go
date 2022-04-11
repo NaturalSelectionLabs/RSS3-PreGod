@@ -38,7 +38,7 @@ func MigrateIndex(db *gorm.DB, file mongomodel.File) error {
 		}
 
 		tx.Create(&model.Profile{
-			ID:          file.Path,
+			ID:          strings.ToLower(file.Path),
 			Platform:    int(constants.PlatformIDEthereum),
 			Name:        database.WrapNullString(file.Content.Profile.Name),
 			Bio:         database.WrapNullString(bio),
