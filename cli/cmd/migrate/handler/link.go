@@ -3,6 +3,7 @@ package handler
 import (
 	"strings"
 	"sync/atomic"
+	"time"
 
 	mongomodel "github.com/NaturalSelectionLabs/RSS3-PreGod/cli/cmd/migrate/model"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/cli/cmd/migrate/stats"
@@ -17,7 +18,8 @@ func MigrateLinkList(db *gorm.DB, file mongomodel.File) error {
 		splits := strings.Split(file.Path, "-")
 
 		links := make([]model.Link, 0, len(file.Content.Links))
-		for _, targetIdentity := range file.Content.List {
+		length := len(file.Content.List)
+		for i, targetIdentity := range file.Content.List {
 			links = append(links, model.Link{
 				Type:             constants.LinkTypeFollow.Int(),
 				From:             splits[0],
@@ -28,8 +30,8 @@ func MigrateLinkList(db *gorm.DB, file mongomodel.File) error {
 				ToPlatformID:     constants.PlatformIDEthereum.Int(),
 				Source:           constants.ProfileSourceIDCrossbell.Int(),
 				Table: common.Table{
-					CreatedAt: file.Content.DateCreated,
-					UpdatedAt: file.Content.DateUpdated,
+					CreatedAt: file.Content.DateCreated.Add(time.Duration(length-i) * time.Millisecond),
+					UpdatedAt: file.Content.DateUpdated.Add(time.Duration(length-i) * time.Millisecond),
 				},
 			})
 		}
