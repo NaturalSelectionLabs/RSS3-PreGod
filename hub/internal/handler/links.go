@@ -1,8 +1,10 @@
+// nolint:dupl // TODO
 package handler
 
 import (
 	"fmt"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/internal/api"
@@ -34,7 +36,7 @@ func GetLinkListHandlerFunc(c *gin.Context) {
 	}
 
 	request := GetLinkListRequest{}
-	if bindErr := c.ShouldBindQuery(&request); bindErr != nil {
+	if err := c.ShouldBindQuery(&request); err != nil {
 		_ = c.Error(api.ErrorInvalidParams)
 
 		return
@@ -63,8 +65,8 @@ func GetLinkListHandlerFunc(c *gin.Context) {
 		})
 	}
 
-	// Get date updated
 	var dateUpdated *timex.Time
+
 	for _, link := range linkList {
 		internalTime := link.DateCreated
 		if dateUpdated == nil {
@@ -88,6 +90,7 @@ func GetLinkListHandlerFunc(c *gin.Context) {
 	}
 
 	identifierNext := ""
+
 	if len(linkList) != 0 {
 		if lastTime != nil {
 			query := c.Request.URL.Query()
@@ -120,11 +123,12 @@ func getLinkList(instance rss3uri.Instance, request GetLinkListRequest) ([]model
 
 	if request.To != "" {
 		internalDB = internalDB.Where(&model.Link{
-			To: request.To,
+			To: strings.ToLower(request.To),
 		})
 	}
 
 	var linkSources []int
+
 	if request.LinkSources != nil && len(request.LinkSources) > 0 {
 		for _, source := range request.LinkSources {
 			linkSources = append(linkSources, constants.LinkSourceName(source).ID().Int())
@@ -136,7 +140,7 @@ func getLinkList(instance rss3uri.Instance, request GetLinkListRequest) ([]model
 	linkList := make([]model.Link, 0)
 	if err := internalDB.
 		Where(&model.Link{
-			From: instance.GetIdentity(),
+			From: strings.ToLower(instance.GetIdentity()),
 		}).
 		Limit(request.Limit).
 		Order("created_at DESC").

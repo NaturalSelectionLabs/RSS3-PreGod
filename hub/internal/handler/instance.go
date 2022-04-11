@@ -13,14 +13,21 @@ import (
 )
 
 func GetInstanceHandlerFunc(c *gin.Context) {
-	instance, err := middleware.GetPlatformInstance(c)
-	if err != nil {
+	var instance rss3uri.Instance
+
+	if platformInstance, err := middleware.GetPlatformInstance(c); err == nil {
+		instance = platformInstance
+	} else if networkInstance, err := middleware.GetNetworkInstance(c); err == nil {
+		instance = networkInstance
+	} else {
+		_ = c.Error(err)
+
 		return
 	}
 
 	if err := database.QueryInstance(
 		database.DB,
-		instance.Identity,
+		instance.GetIdentity(),
 		constants.ProfileSourceIDCrossbell.Int(),
 	); err != nil {
 		_ = c.Error(api.ErrorDatabase)

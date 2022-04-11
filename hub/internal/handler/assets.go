@@ -31,6 +31,7 @@ type GetAssetListRequest struct {
 	ProfileSources []string   `form:"profile_sources"`
 }
 
+// nolint:dupl,funlen // TODO
 func GetAssetListHandlerFunc(c *gin.Context) {
 	instance, err := middleware.GetPlatformInstance(c)
 	if err != nil {
@@ -85,8 +86,8 @@ func GetAssetListHandlerFunc(c *gin.Context) {
 			DateCreated: timex.Time(assetModel.DateCreated),
 			DateUpdated: timex.Time(assetModel.DateUpdated),
 			RelatedURLs: assetModel.RelatedURLs,
-			Links:       fmt.Sprintf("%s/links", assetModel.Owner),
-			BackLinks:   fmt.Sprintf("%s/backlinks", assetModel.Owner),
+			Links:       fmt.Sprintf("%s/links", assetModel.Identifier),
+			BackLinks:   fmt.Sprintf("%s/backlinks", assetModel.Identifier),
 			Tags:        assetModel.Tags,
 			Authors:     assetModel.Authors,
 			Title:       assetModel.Title,
@@ -107,6 +108,7 @@ func GetAssetListHandlerFunc(c *gin.Context) {
 	}
 
 	identifierNext := ""
+
 	if len(assetList) != 0 {
 		if lastTime != nil {
 			query := c.Request.URL.Query()
@@ -193,6 +195,7 @@ func getAssetListByInstance(instance rss3uri.Instance, request GetAssetListReque
 	return assets, nil
 }
 
+// nolint:dupl,funlen // TODO
 func getAssetListsByLink(instance rss3uri.Instance, request GetAssetListRequest) ([]model.Asset, error) {
 	links := make([]model.Link, 0)
 
@@ -242,6 +245,7 @@ func getAssetListsByLink(instance rss3uri.Instance, request GetAssetListRequest)
 	}()
 
 	owners := make([]string, len(links))
+
 	for _, link := range links {
 		instance, err := rss3uri.NewInstance(
 			constants.InstanceTypeID(link.ToInstanceType).String(),

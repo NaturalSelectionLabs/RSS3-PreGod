@@ -1,8 +1,10 @@
+// nolint:dupl // TODO
 package handler
 
 import (
 	"fmt"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/internal/api"
@@ -25,6 +27,7 @@ type GetBackLinkListRequest struct {
 	ProfileSources []string   `form:"profile_sources"`
 }
 
+// nolint:funlen // TODO
 func GetBackLinkListHandlerFunc(c *gin.Context) {
 	instance, instanceErr := middleware.GetInstance(c)
 	if instanceErr != nil {
@@ -65,6 +68,7 @@ func GetBackLinkListHandlerFunc(c *gin.Context) {
 
 	// Get date updated
 	var dateUpdated *timex.Time
+
 	for _, backLink := range backLinkList {
 		internalTime := backLink.DateCreated
 		if dateUpdated == nil {
@@ -88,6 +92,7 @@ func GetBackLinkListHandlerFunc(c *gin.Context) {
 	}
 
 	identifierNext := ""
+
 	if len(backLinkList) != 0 {
 		if lastTime != nil {
 			query := c.Request.URL.Query()
@@ -120,11 +125,12 @@ func getBackLinkList(instance rss3uri.Instance, request GetLinkListRequest) ([]m
 
 	if request.To != "" {
 		internalDB = internalDB.Where(&model.Link{
-			From: request.To,
+			From: strings.ToLower(request.To),
 		})
 	}
 
 	var linkSources []int
+
 	if request.LinkSources != nil && len(request.LinkSources) > 0 {
 		for _, source := range request.LinkSources {
 			linkSources = append(linkSources, constants.LinkSourceName(source).ID().Int())
@@ -136,7 +142,7 @@ func getBackLinkList(instance rss3uri.Instance, request GetLinkListRequest) ([]m
 	linkList := make([]model.Link, 0)
 	if err := internalDB.
 		Where(&model.Link{
-			To: instance.GetIdentity(),
+			To: strings.ToLower(instance.GetIdentity()),
 		}).
 		Limit(request.Limit).
 		Order("created_at DESC").

@@ -31,6 +31,7 @@ type GetNoteListRequest struct {
 	ProfileSources []string   `form:"profile_sources"`
 }
 
+// nolint:dupl,funlen // TODO
 func GetNoteListHandlerFunc(c *gin.Context) {
 	instance, err := middleware.GetPlatformInstance(c)
 	if err != nil {
@@ -87,8 +88,8 @@ func GetNoteListHandlerFunc(c *gin.Context) {
 			DateCreated: timex.Time(noteModel.DateCreated),
 			DateUpdated: timex.Time(noteModel.DateUpdated),
 			RelatedURLs: noteModel.RelatedURLs,
-			Links:       fmt.Sprintf("%s/links", noteModel.Owner),
-			BackLinks:   fmt.Sprintf("%s/backlinks", noteModel.Owner),
+			Links:       fmt.Sprintf("%s/links", noteModel.Identifier),
+			BackLinks:   fmt.Sprintf("%s/backlinks", noteModel.Identifier),
 			Tags:        noteModel.Tags,
 			Authors:     noteModel.Authors,
 			Title:       noteModel.Title,
@@ -109,6 +110,7 @@ func GetNoteListHandlerFunc(c *gin.Context) {
 	}
 
 	identifierNext := ""
+
 	if len(noteList) != 0 {
 		if lastTime != nil {
 			query := c.Request.URL.Query()
@@ -128,10 +130,26 @@ func GetNoteListHandlerFunc(c *gin.Context) {
 	})
 }
 
+// nolint:funlen // TODO
 func getNoteListByInstance(instance rss3uri.Instance, request GetNoteListRequest) ([]model.Note, error) {
 	// Get instance's profiles
-	profiles, err := database.QueryProfiles(database.DB, instance.GetIdentity(), 1, []int{})
-	if err != nil {
+	var profiles []model.Profile
+
+	internalDB := database.DB
+
+	if request.ProfileSources != nil && len(request.ProfileSources) > 0 {
+		var profileSources []int
+		for _, source := range request.ProfileSources {
+			profileSources = append(profileSources, constants.ProfileSourceName(source).ID().Int())
+		}
+
+		internalDB.Where("source IN ?", profileSources)
+	}
+
+	if err := internalDB.Where(&model.Profile{
+		ID:       strings.ToLower(instance.GetIdentity()),
+		Platform: constants.PlatformSymbol(instance.GetSuffix()).ID().Int(),
+	}).Find(&profiles).Error; err != nil {
 		return nil, err
 	}
 
@@ -140,17 +158,8 @@ func getNoteListByInstance(instance rss3uri.Instance, request GetNoteListRequest
 		profileIDs = append(profileIDs, profile.ID)
 	}
 
-	internalDB := database.DB
-
-	if request.ProfileSources != nil && len(request.ProfileSources) != 0 {
-		// Convert profile name to id
-		var profileSources []int
-		for _, source := range request.ProfileSources {
-			profileSources = append(profileSources, constants.ProfileSourceName(source).ID().Int())
-		}
-
-		internalDB = internalDB.Where("source IN ?", profileSources)
-	}
+	// Get accounts
+	internalDB = database.DB
 
 	// Get instance's all accounts
 	accounts := make([]model.Account, 0)
@@ -179,6 +188,17 @@ func getNoteListByInstance(instance rss3uri.Instance, request GetNoteListRequest
 		internalDB = internalDB.Where("tags && ?", pq.StringArray(request.Tags))
 	}
 
+	if request.ProfileSources != nil && len(request.ProfileSources) != 0 {
+		var authors []string
+
+		for _, account := range accounts {
+			accountInstance := rss3uri.NewAccountInstance(account.Identity, constants.PlatformID(account.Platform).Symbol())
+			authors = append(authors, rss3uri.New(accountInstance).String())
+		}
+
+		internalDB = internalDB.Where("authors && ?", pq.StringArray(authors))
+	}
+
 	if request.ItemSources != nil && len(request.ItemSources) != 0 {
 		internalDB = internalDB.Where("source IN ?", request.ItemSources)
 	}
@@ -195,6 +215,7 @@ func getNoteListByInstance(instance rss3uri.Instance, request GetNoteListRequest
 	return notes, nil
 }
 
+// nolint:dupl,funlen // TODO
 func getNoteListsByLink(instance rss3uri.Instance, request GetNoteListRequest) ([]model.Note, error) {
 	links := make([]model.Link, 0)
 
@@ -244,6 +265,7 @@ func getNoteListsByLink(instance rss3uri.Instance, request GetNoteListRequest) (
 	}()
 
 	owners := make([]string, len(links))
+
 	for _, link := range links {
 		instance, err := rss3uri.NewInstance(
 			constants.InstanceTypeID(link.ToInstanceType).String(),
