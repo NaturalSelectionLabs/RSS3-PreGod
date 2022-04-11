@@ -120,7 +120,7 @@ func (ar *crawler) parseMirrorArticles(from, to int64, owner ArAccount) error {
 
 		author := rss3uri.NewAccountInstance(article.Author, constants.PlatformSymbolEthereum).UriString()
 		note := model.Note{
-			Identifier: rss3uri.NewNoteInstance(article.Author, constants.NetworkSymbolArweaveMainnet).UriString(),
+			Identifier: rss3uri.NewNoteInstance(article.TxHash, constants.NetworkSymbolArweaveMainnet).UriString(),
 			Owner:      author,
 			RelatedURLs: []string{
 				"https://arweave.net/" + article.TxHash,
