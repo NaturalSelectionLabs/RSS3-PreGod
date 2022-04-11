@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/internal/indexer"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/internal/middleware"
@@ -12,20 +13,22 @@ import (
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database/model"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/constants"
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/logger"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/rss3uri"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/timex"
 	"github.com/gin-gonic/gin"
+	"github.com/lib/pq"
 )
 
 type GetNoteListRequest struct {
-	Limit          int      `form:"limit"`
-	LastTime       string   `form:"last_time"`
-	Tags           []string `form:"tags"`
-	MimeTypes      []string `form:"mime_types"`
-	ItemSources    []string `form:"item_sources"`
-	LinkSources    []string `form:"link_source"`
-	LinkType       string   `form:"link_type"`
-	ProfileSources []string `form:"profile_source"`
+	Limit          int        `form:"limit"`
+	LastTime       *time.Time `form:"last_time" time_format:"2006-01-02T15:04:05.000Z"`
+	Tags           []string   `form:"tags"`
+	MimeTypes      []string   `form:"mime_types"`
+	ItemSources    []string   `form:"item_sources"`
+	LinkSources    []string   `form:"link_source"`
+	LinkType       string     `form:"link_type"`
+	ProfileSources []string   `form:"profile_sources"`
 }
 
 // nolint:funlen // TODO
@@ -107,7 +110,7 @@ func GetNoteListHandlerFunc(c *gin.Context) {
 }
 
 func getNoteListByInstance(instance rss3uri.Instance, request GetNoteListRequest) ([]model.Note, error) {
-	// Get instance's all profiles
+	// Get instance's profiles
 	profiles, err := database.QueryProfiles(database.DB, instance.GetIdentity(), 1, []int{})
 	if err != nil {
 		return nil, err
@@ -118,34 +121,68 @@ func getNoteListByInstance(instance rss3uri.Instance, request GetNoteListRequest
 		profileIDs = append(profileIDs, profile.ID)
 	}
 
-	//db := database.DB
+	internalDB := database.DB
 
-	//if request.ProfileSource != "" {
-	//	db = db.Where("sour")
-	//}
+	if request.ProfileSources != nil && len(request.ProfileSources) != 0 {
+		// Convert profile name to id
+		var profileSources []int
+		for _, source := range request.ProfileSources {
+			profileSources = append(profileSources, constants.ProfileSourceName(source).ID().Int())
+		}
+
+		internalDB = internalDB.Where("source IN ?", profileSources)
+	}
 
 	// Get instance's all accounts
 	accounts := make([]model.Account, 0)
-	if err := database.DB.
+	if err := internalDB.
 		Where("profile_id IN ?", profileIDs).
 		Find(&accounts).Error; err != nil {
 		return nil, err
 	}
 
-	// Send get request to indexer
-	if err := indexer.GetItems(accounts); err != nil {
-		return nil, err
+	// Get instance's notes
+	internalDB = database.DB
+
+	var authors []string
+	for _, account := range accounts {
+		accountInstance := rss3uri.NewAccountInstance(account.Identity, constants.PlatformID(account.Platform).Symbol())
+		uri := rss3uri.New(accountInstance)
+		authors = append(authors, strings.ToLower(uri.String()))
 	}
 
-	// Get instance's all notes
+	if request.LastTime != nil {
+		internalDB = internalDB.Where("date_created >= ?", request.LastTime)
+	}
+
+	if request.ProfileSources != nil && len(request.ProfileSources) != 0 {
+		internalDB = internalDB.Where("authors @@ ?", pq.StringArray(authors))
+	}
+
+	if request.Tags != nil && len(request.Tags) != 0 {
+		internalDB = internalDB.Where("tags && ?", pq.StringArray(request.Tags))
+	}
+
+	if request.ItemSources != nil && len(request.ItemSources) != 0 {
+		internalDB = internalDB.Where("source IN ?", request.ItemSources)
+	}
+
 	notes := make([]model.Note, 0)
-	if err := database.DB.
+	if err := internalDB.
 		Where("owner = ?", strings.ToLower(rss3uri.New(instance).String())).
 		Limit(request.Limit).
 		Order("date_created DESC").
 		Find(&notes).Error; err != nil {
 		return nil, err
 	}
+
+	// TODO Refine it
+	// Send get request to indexer
+	go func() {
+		if err := indexer.GetItems(accounts); err != nil {
+			logger.Error(err)
+		}
+	}()
 
 	return notes, nil
 }

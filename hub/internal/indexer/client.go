@@ -32,6 +32,7 @@ func GetItems(accounts []model.Account) error {
 					"proof":             strings.ToLower(account.Identity),
 					"platform_id":       strconv.Itoa(account.Platform),
 					"network_id":        strconv.Itoa(int(networkID)),
+					"profile_source":    strconv.Itoa(account.Source),
 					"owner_id":          strings.ToLower(account.ProfileID),
 					"owner_platform_id": strconv.Itoa(account.ProfilePlatform),
 				}
@@ -46,6 +47,7 @@ func GetItems(accounts []model.Account) error {
 					return nil
 				}
 
+				// TODO Remove it
 				logger.Info(params["proof"], "\x20", params["platform_id"], "\x20", params["network_id"], "\x20", start, "\x20", time.Now().Sub(start))
 
 				if response.StatusCode() != http.StatusOK || result.Error.Code != 0 {
