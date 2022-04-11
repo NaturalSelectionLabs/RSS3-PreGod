@@ -16,16 +16,16 @@ import (
 )
 
 type GetItemRequest struct {
-	Identity   string               `form:"proof" binding:"required"`
-	PlatformID constants.PlatformID `form:"platform_id" binding:"required"`
-	NetworkID  constants.NetworkID  `form:"network_id"`
-	Limit      int                  `form:"limit"`
-	Timestamp  int64                `form:"timestamp"`
+	Identity   string                `form:"proof" binding:"required"`
+	PlatformID *constants.PlatformID `form:"platform_id" binding:"required"`
+	NetworkID  *constants.NetworkID  `form:"network_id"`
+	Limit      int                   `form:"limit"`
+	Timestamp  int64                 `form:"timestamp"`
 
 	// to know the real owner of this account
-	OwnerID         string                    `form:"owner_id" binding:"required"`
-	OwnerPlatformID constants.PlatformID      `form:"owner_platform_id" binding:"required"`
-	ProfileSourceID constants.ProfileSourceID `form:"profile_source_id" binding:"required"`
+	OwnerID         string                     `form:"owner_id" binding:"required"`
+	OwnerPlatformID *constants.PlatformID      `form:"owner_platform_id" binding:"required"`
+	ProfileSourceID *constants.ProfileSourceID `form:"profile_source_id" binding:"required"`
 }
 
 type itemsResult struct {
@@ -106,13 +106,13 @@ func GetItemHandlerFunc(c *gin.Context) {
 func addToRecentVisit(ctx context.Context, req *GetItemRequest) error {
 	param := &crawler.WorkParam{
 		Identity:        req.Identity,
-		NetworkID:       req.NetworkID,
-		PlatformID:      req.PlatformID,
+		NetworkID:       *req.NetworkID,
+		PlatformID:      *req.PlatformID,
 		Limit:           req.Limit,
 		Timestamp:       time.Unix(req.Timestamp, 0),
 		OwnerID:         req.OwnerID,
-		OwnerPlatformID: req.OwnerPlatformID,
-		ProfileSourceID: req.ProfileSourceID,
+		OwnerPlatformID: *req.OwnerPlatformID,
+		ProfileSourceID: *req.ProfileSourceID,
 	}
 
 	return autoupdater.AddToRecentVisitQueue(ctx, param)
@@ -168,13 +168,13 @@ func getItemsResult(ctx context.Context, request GetItemRequest) (*itemsResult, 
 	result.NoteItems = make([]model.Note, 0)
 	errorBase := util.GetErrorBase(util.ErrorCodeSuccess)
 
-	if request.NetworkID == constants.NetworkIDUnknown {
+	if *request.NetworkID == constants.NetworkIDUnknown {
 		networkIDs := constants.GetEthereumPlatformNetworks()
 		for _, networkID := range networkIDs {
 			currResult, currErrorBase := getItemsResultFromOneNetwork(
-				request.Identity, request.PlatformID, networkID,
+				request.Identity, *request.PlatformID, networkID,
 				request.Limit, time.Unix(request.Timestamp, 0),
-				request.OwnerID, request.OwnerPlatformID, request.ProfileSourceID,
+				request.OwnerID, *request.OwnerPlatformID, *request.ProfileSourceID,
 			)
 
 			if currErrorBase.ErrorCode != util.ErrorCodeSuccess {
@@ -187,9 +187,9 @@ func getItemsResult(ctx context.Context, request GetItemRequest) (*itemsResult, 
 		}
 	} else {
 		result, errorBase = getItemsResultFromOneNetwork(
-			request.Identity, request.PlatformID, request.NetworkID,
+			request.Identity, *request.PlatformID, *request.NetworkID,
 			request.Limit, time.Unix(request.Timestamp, 0),
-			request.OwnerID, request.OwnerPlatformID, request.ProfileSourceID,
+			request.OwnerID, *request.OwnerPlatformID, *request.ProfileSourceID,
 		)
 	}
 
