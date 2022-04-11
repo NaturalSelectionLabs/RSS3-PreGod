@@ -89,8 +89,8 @@ func GetNoteListHandlerFunc(c *gin.Context) {
 			DateCreated: timex.Time(noteModel.DateCreated),
 			DateUpdated: timex.Time(noteModel.DateUpdated),
 			RelatedURLs: noteModel.RelatedURLs,
-			Links:       fmt.Sprintf("%s/links", uri.String()),
-			BackLinks:   fmt.Sprintf("%s/backlinks", uri.String()),
+			Links:       fmt.Sprintf("%s/links", noteModel.Owner),
+			BackLinks:   fmt.Sprintf("%s/backlinks", noteModel.Owner),
 			Tags:        noteModel.Tags,
 			Authors:     noteModel.Authors,
 			Title:       noteModel.Title,
@@ -152,19 +152,8 @@ func getNoteListByInstance(instance rss3uri.Instance, request GetNoteListRequest
 	// Get instance's notes
 	internalDB = database.DB
 
-	var authors []string
-	for _, account := range accounts {
-		accountInstance := rss3uri.NewAccountInstance(account.Identity, constants.PlatformID(account.Platform).Symbol())
-		uri := rss3uri.New(accountInstance)
-		authors = append(authors, strings.ToLower(uri.String()))
-	}
-
 	if request.LastTime != nil {
-		internalDB = internalDB.Where("date_created >= ?", request.LastTime)
-	}
-
-	if request.ProfileSources != nil && len(request.ProfileSources) != 0 {
-		internalDB = internalDB.Where("authors @@ ?", pq.StringArray(authors))
+		internalDB = internalDB.Where("date_created <= ?", request.LastTime)
 	}
 
 	if request.Tags != nil && len(request.Tags) != 0 {
