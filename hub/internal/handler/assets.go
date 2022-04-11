@@ -109,7 +109,7 @@ func GetAssetListHandlerFunc(c *gin.Context) {
 
 	identifierNext := ""
 
-	if len(assetList) != 0 {
+	if len(assetList) == database.MaxLimit {
 		if lastTime != nil {
 			query := c.Request.URL.Query()
 			query.Set("last_time", lastTime.Format(timex.ISO8601))
@@ -121,7 +121,7 @@ func GetAssetListHandlerFunc(c *gin.Context) {
 
 	c.JSON(http.StatusOK, protocol.File{
 		DateUpdated:    dateUpdated,
-		Identifier:     fmt.Sprintf("%s/notes", uri.String()),
+		Identifier:     fmt.Sprintf("%s/assets", uri.String()),
 		IdentifierNext: identifierNext,
 		Total:          len(assetList),
 		List:           assetList,

@@ -91,7 +91,7 @@ func GetLinkListHandlerFunc(c *gin.Context) {
 
 	identifierNext := ""
 
-	if len(linkList) != 0 {
+	if len(linkList) == middleware.MaxListLimit {
 		if lastTime != nil {
 			query := c.Request.URL.Query()
 			query.Set("last_time", lastTime.Format(timex.ISO8601))

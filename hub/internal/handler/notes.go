@@ -111,7 +111,7 @@ func GetNoteListHandlerFunc(c *gin.Context) {
 
 	identifierNext := ""
 
-	if len(noteList) != 0 {
+	if len(noteList) == middleware.MaxListLimit {
 		if lastTime != nil {
 			query := c.Request.URL.Query()
 			query.Set("last_time", lastTime.Format(timex.ISO8601))
