@@ -32,7 +32,7 @@ func GetItems(accounts []model.Account) error {
 					"proof":             strings.ToLower(account.Identity),
 					"platform_id":       strconv.Itoa(account.Platform),
 					"network_id":        strconv.Itoa(int(networkID)),
-					"profile_source":    strconv.Itoa(account.Source),
+					"profile_source_id": strconv.Itoa(account.Source),
 					"owner_id":          strings.ToLower(account.ProfileID),
 					"owner_platform_id": strconv.Itoa(account.ProfilePlatform),
 				}
