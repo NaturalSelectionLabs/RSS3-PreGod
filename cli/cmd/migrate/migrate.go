@@ -68,6 +68,9 @@ func (m *Migrate) Initialize() error {
 		&model.Profile{},
 		&model.Account{},
 		&model.Link{},
+		&model.Note{},
+		&model.Asset{},
+		&model.CrawlerMetadata{},
 	); err != nil {
 		return err
 	}

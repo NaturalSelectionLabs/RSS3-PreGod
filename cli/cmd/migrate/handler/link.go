@@ -22,10 +22,10 @@ func MigrateLinkList(db *gorm.DB, file mongomodel.File) error {
 		for i, targetIdentity := range file.Content.List {
 			links = append(links, model.Link{
 				Type:             constants.LinkTypeFollow.Int(),
-				From:             splits[0],
+				From:             strings.ToLower(splits[0]),
 				FromInstanceType: int(constants.InstanceTypeAccount),
 				FromPlatformID:   constants.PlatformIDEthereum.Int(),
-				To:               targetIdentity,
+				To:               strings.ToLower(targetIdentity),
 				ToInstanceType:   int(constants.InstanceTypeAccount),
 				ToPlatformID:     constants.PlatformIDEthereum.Int(),
 				Source:           constants.ProfileSourceIDCrossbell.Int(),
