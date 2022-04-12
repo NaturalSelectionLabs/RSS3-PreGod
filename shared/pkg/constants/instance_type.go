@@ -25,6 +25,11 @@ func (id InstanceTypeID) String() string {
 	return InstanceTypeMap[id]
 }
 
+// Converts InstanceTypeID to int.
+func (id InstanceTypeID) Int() int {
+	return int(id)
+}
+
 // Converts string to InstanceTypeID.
 func StringToInstanceTypeID(instanceType string) InstanceTypeID {
 	for k, v := range InstanceTypeMap {

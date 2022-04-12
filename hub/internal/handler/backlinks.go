@@ -122,8 +122,15 @@ func getBackLinkList(instance rss3uri.Instance, request GetBackLinkListRequest) 
 	}
 
 	if request.From != "" {
+		uri, err := rss3uri.Parse(strings.ToLower(request.From))
+		if err != nil {
+			return nil, 0, api.ErrorInvalidParams
+		}
+
 		internalDB = internalDB.Where(&model.Link{
-			From: strings.ToLower(request.From),
+			FromInstanceType: constants.StringToInstanceTypeID(uri.Instance.GetPrefix()).Int(),
+			From:             strings.ToLower(uri.Instance.GetIdentity()),
+			FromPlatformID:   constants.PlatformSymbol(uri.Instance.GetSuffix()).ID().Int(),
 		})
 	}
 
@@ -140,7 +147,9 @@ func getBackLinkList(instance rss3uri.Instance, request GetBackLinkListRequest) 
 	linkList := make([]model.Link, 0)
 	if err := internalDB.
 		Where(&model.Link{
-			To: strings.ToLower(instance.GetIdentity()),
+			ToInstanceType: constants.StringToInstanceTypeID(instance.GetPrefix()).Int(),
+			To:             strings.ToLower(instance.GetIdentity()),
+			ToPlatformID:   constants.PlatformSymbol(instance.GetSuffix()).ID().Int(),
 		}).
 		Limit(request.Limit).
 		Order("created_at DESC").
@@ -153,7 +162,9 @@ func getBackLinkList(instance rss3uri.Instance, request GetBackLinkListRequest) 
 	if err := internalDB.
 		Model(&model.Link{}).
 		Where(&model.Link{
-			To: strings.ToLower(instance.GetIdentity()),
+			ToInstanceType: constants.StringToInstanceTypeID(instance.GetPrefix()).Int(),
+			To:             strings.ToLower(instance.GetIdentity()),
+			ToPlatformID:   constants.PlatformSymbol(instance.GetSuffix()).ID().Int(),
 		}).
 		Order("created_at DESC").
 		Count(&count).Error; err != nil {
