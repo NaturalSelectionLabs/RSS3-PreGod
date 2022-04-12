@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/internal/api"
@@ -38,8 +39,8 @@ func GetInstanceHandlerFunc(c *gin.Context) {
 	instanceList := protocol.NewInstanceList(instance)
 
 	c.JSON(http.StatusOK, protocol.File{
-		Identifier: rss3uri.New(instance).String(),
-		Total:      len(instanceList),
+		Identifier: fmt.Sprintf("%s?%s", rss3uri.New(instance).String(), c.Request.URL.Query().Encode()),
+		Total:      int64(len(instanceList)),
 		List:       instanceList,
 	})
 }

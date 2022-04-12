@@ -27,7 +27,6 @@ type GetBackLinkListRequest struct {
 	ProfileSources []string   `form:"profile_sources"`
 }
 
-// nolint:funlen // TODO
 func GetBackLinkListHandlerFunc(c *gin.Context) {
 	instance, instanceErr := middleware.GetInstance(c)
 	if instanceErr != nil {
@@ -43,7 +42,7 @@ func GetBackLinkListHandlerFunc(c *gin.Context) {
 		return
 	}
 
-	backLinkModels, err := getBackLinkList(instance, request)
+	backLinkModels, total, err := getBackLinkList(instance, request)
 	if err != nil {
 		_ = c.Error(err)
 
@@ -93,26 +92,25 @@ func GetBackLinkListHandlerFunc(c *gin.Context) {
 
 	identifierNext := ""
 
-	if len(backLinkList) == middleware.MaxListLimit {
+	if len(backLinkList) == database.MaxLimit {
+		nextQuery := c.Request.URL.Query()
 		if lastTime != nil {
-			query := c.Request.URL.Query()
-			query.Set("last_time", lastTime.Format(timex.ISO8601))
-			c.Request.URL.RawQuery = query.Encode()
+			nextQuery.Set("last_time", lastTime.Format(timex.ISO8601))
 		}
 
-		identifierNext = fmt.Sprintf("%s/backlinks?%s", uri.String(), c.Request.URL.RawQuery)
+		identifierNext = fmt.Sprintf("%s/backlinks?%s", uri.String(), nextQuery.Encode())
 	}
 
 	c.JSON(http.StatusOK, protocol.File{
 		DateUpdated:    dateUpdated,
-		Identifier:     fmt.Sprintf("%s/backlinks", uri.String()),
+		Identifier:     fmt.Sprintf("%s/backlinks?%s", uri.String(), c.Request.URL.Query().Encode()),
 		IdentifierNext: identifierNext,
-		Total:          len(backLinkList),
+		Total:          total,
 		List:           backLinkList,
 	})
 }
 
-func getBackLinkList(instance rss3uri.Instance, request GetBackLinkListRequest) ([]model.Link, error) {
+func getBackLinkList(instance rss3uri.Instance, request GetBackLinkListRequest) ([]model.Link, int64, error) {
 	internalDB := database.DB
 
 	if request.Type != "" {
@@ -147,8 +145,20 @@ func getBackLinkList(instance rss3uri.Instance, request GetBackLinkListRequest) 
 		Limit(request.Limit).
 		Order("created_at DESC").
 		Find(&linkList).Error; err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 
-	return linkList, nil
+	var count int64
+
+	if err := internalDB.
+		Model(&model.Link{}).
+		Where(&model.Link{
+			To: strings.ToLower(instance.GetIdentity()),
+		}).
+		Order("created_at DESC").
+		Count(&count).Error; err != nil {
+		return nil, 0, err
+	}
+
+	return linkList, count, nil
 }
