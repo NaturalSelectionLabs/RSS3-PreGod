@@ -1,7 +1,7 @@
 package handler
 
 import (
-	"errors"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"strings"
@@ -12,7 +12,6 @@ import (
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database/model"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/constants"
-	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/logger"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/rss3uri"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/timex"
 	"github.com/gin-gonic/gin"
@@ -37,9 +36,7 @@ func GetProfileListHandlerFunc(c *gin.Context) {
 		return
 	}
 
-	logger.Info(request.ProfileSources)
-
-	profileList := make([]protocol.Profile, 0)
+	var profileList []protocol.Profile
 
 	var total int64
 
@@ -47,16 +44,24 @@ func GetProfileListHandlerFunc(c *gin.Context) {
 	case *rss3uri.PlatformInstance:
 		profileList, total, err = getPlatformInstanceProfileList(value, request)
 		if err != nil {
-			if !errors.Is(err, api.ErrorNotFound) {
-				err = api.ErrorDatabase
-			}
-
 			_ = c.Error(err)
 
 			return
 		}
 	case *rss3uri.NetworkInstance:
-		// TODO
+		switch value.Prefix {
+		case constants.PrefixNameAsset:
+			profileList, total, err = getAssetProfile(value, request)
+			if err != nil {
+				_ = c.Error(err)
+
+				return
+			}
+		default:
+			_ = c.Error(api.ErrorInvalidParams)
+
+			return
+		}
 	default:
 		_ = c.Error(api.ErrorInvalidParams)
 
@@ -162,4 +167,47 @@ func getPlatformInstanceProfileList(instance *rss3uri.PlatformInstance, request 
 	}
 
 	return profiles, count, nil
+}
+
+func getAssetProfile(instance *rss3uri.NetworkInstance, request GetProfileListRequest) ([]protocol.Profile, int64, error) {
+	internalDB := database.DB
+
+	if request.ProfileSources != nil && len(request.ProfileSources) != 0 {
+		profileSources := make([]int, 0)
+
+		for _, source := range request.ProfileSources {
+			profileSources = append(profileSources, constants.ProfileSourceName(source).ID().Int())
+		}
+
+		internalDB = internalDB.Where("source IN ?", profileSources)
+	}
+
+	asset := model.Asset{}
+	if err := internalDB.Where(&model.Asset{
+		Identifier: strings.ToLower(instance.UriString()),
+	}).First(&asset).Error; err != nil {
+		return nil, 0, err
+	}
+
+	attachments := make([]protocol.ProfileAttachment, 0)
+	if err := json.Unmarshal(asset.Attachments, &attachments); err != nil {
+		return nil, 0, err
+	}
+
+	profiles := []protocol.Profile{
+		{
+			DateCreated: timex.Time(asset.DateCreated),
+			DateUpdated: timex.Time(asset.DateUpdated),
+			Name:        asset.Title,
+			Bio:         asset.Summary,
+			Attachments: attachments,
+			Source:      asset.Source,
+			Metadata: protocol.ProfileMetadata{
+				Network: strings.ToLower(asset.MetadataNetwork),
+				Proof:   asset.MetadataProof,
+			},
+		},
+	}
+
+	return profiles, int64(len(profiles)), nil
 }
