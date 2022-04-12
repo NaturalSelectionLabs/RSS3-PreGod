@@ -45,9 +45,14 @@ func ParseNFTMetadata(metadata string) (Metadata, error) {
 
 	object := v.GetStringBytes("animation_url")
 
-	attributes := v.GetStringBytes("attributes")
-	if len(attributes) == 0 {
-		attributes = v.GetStringBytes("traits")
+	attributesV := v.Get("attributes")
+	if attributesV == nil {
+		attributesV = v.Get("traits")
+	}
+
+	attributes := ""
+	if attributesV != nil {
+		attributes = attributesV.String()
 	}
 
 	return Metadata{
@@ -56,7 +61,7 @@ func ParseNFTMetadata(metadata string) (Metadata, error) {
 		ExternalLink: string(externalLink),
 		Preview:      string(preview),
 		Object:       string(object),
-		Attributes:   string(attributes),
+		Attributes:   attributes,
 	}, nil
 }
 
