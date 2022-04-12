@@ -31,7 +31,7 @@ func Instance() gin.HandlerFunc {
 
 		instance, err := rss3uri.ParseInstance(request.Instance)
 		if err != nil {
-			_ = c.Error(api.ErrorInvalidParams)
+			api.SetError(c, api.ErrorInvalidParams, err)
 			c.Abort()
 
 			return

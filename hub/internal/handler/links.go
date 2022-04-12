@@ -28,23 +28,23 @@ type GetLinkListRequest struct {
 }
 
 func GetLinkListHandlerFunc(c *gin.Context) {
-	instance, instanceErr := middleware.GetInstance(c)
-	if instanceErr != nil {
-		_ = c.Error(api.ErrorInvalidParams)
+	instance, err := middleware.GetInstance(c)
+	if err != nil {
+		api.SetError(c, api.ErrorInvalidParams, err)
 
 		return
 	}
 
 	request := GetLinkListRequest{}
-	if err := c.ShouldBindQuery(&request); err != nil {
-		_ = c.Error(api.ErrorInvalidParams)
+	if err = c.ShouldBindQuery(&request); err != nil {
+		api.SetError(c, api.ErrorInvalidParams, err)
 
 		return
 	}
 
-	linkModels, err := getLinkList(instance, request)
+	linkModels, total, err := getLinkList(instance, request)
 	if err != nil {
-		_ = c.Error(err)
+		api.SetError(c, api.ErrorIndexer, err)
 
 		return
 	}
@@ -91,26 +91,25 @@ func GetLinkListHandlerFunc(c *gin.Context) {
 
 	identifierNext := ""
 
-	if len(linkList) == middleware.MaxListLimit {
+	if len(linkList) == database.MaxLimit {
+		nextQuery := c.Request.URL.Query()
 		if lastTime != nil {
-			query := c.Request.URL.Query()
-			query.Set("last_time", lastTime.Format(timex.ISO8601))
-			c.Request.URL.RawQuery = query.Encode()
+			nextQuery.Set("last_time", lastTime.Format(timex.ISO8601))
 		}
 
-		identifierNext = fmt.Sprintf("%s/links?%s", uri.String(), c.Request.URL.RawQuery)
+		identifierNext = fmt.Sprintf("%s/links?%s", uri.String(), nextQuery.Encode())
 	}
 
 	c.JSON(http.StatusOK, protocol.File{
 		DateUpdated:    dateUpdated,
-		Identifier:     fmt.Sprintf("%s/links", uri.String()),
+		Identifier:     fmt.Sprintf("%s/links?%s", uri.String(), c.Request.URL.Query().Encode()),
 		IdentifierNext: identifierNext,
-		Total:          len(linkList),
+		Total:          total,
 		List:           linkList,
 	})
 }
 
-func getLinkList(instance rss3uri.Instance, request GetLinkListRequest) ([]model.Link, error) {
+func getLinkList(instance rss3uri.Instance, request GetLinkListRequest) ([]model.Link, int64, error) {
 	internalDB := database.DB
 
 	if request.Type != "" {
@@ -122,8 +121,15 @@ func getLinkList(instance rss3uri.Instance, request GetLinkListRequest) ([]model
 	}
 
 	if request.To != "" {
+		uri, err := rss3uri.Parse(strings.ToLower(request.To))
+		if err != nil {
+			return nil, 0, api.ErrorInvalidParams
+		}
+
 		internalDB = internalDB.Where(&model.Link{
-			To: strings.ToLower(request.To),
+			ToInstanceType: constants.StringToInstanceTypeID(uri.Instance.GetPrefix()).Int(),
+			To:             strings.ToLower(uri.Instance.GetIdentity()),
+			ToPlatformID:   constants.PlatformSymbol(uri.Instance.GetSuffix()).ID().Int(),
 		})
 	}
 
@@ -140,13 +146,29 @@ func getLinkList(instance rss3uri.Instance, request GetLinkListRequest) ([]model
 	linkList := make([]model.Link, 0)
 	if err := internalDB.
 		Where(&model.Link{
-			From: strings.ToLower(instance.GetIdentity()),
+			FromPlatformID:   constants.StringToInstanceTypeID(instance.GetPrefix()).Int(),
+			From:             strings.ToLower(instance.GetIdentity()),
+			FromInstanceType: constants.PlatformSymbol(instance.GetSuffix()).ID().Int(),
 		}).
 		Limit(request.Limit).
 		Order("created_at DESC").
 		Find(&linkList).Error; err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 
-	return linkList, nil
+	var count int64
+
+	if err := internalDB.
+		Model(&model.Link{}).
+		Where(&model.Link{
+			FromPlatformID:   constants.StringToInstanceTypeID(instance.GetPrefix()).Int(),
+			From:             strings.ToLower(instance.GetIdentity()),
+			FromInstanceType: constants.PlatformSymbol(instance.GetSuffix()).ID().Int(),
+		}).
+		Order("date_created DESC").
+		Count(&count).Error; err != nil {
+		return nil, 0, err
+	}
+
+	return linkList, count, nil
 }

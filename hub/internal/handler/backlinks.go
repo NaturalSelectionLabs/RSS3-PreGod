@@ -27,25 +27,24 @@ type GetBackLinkListRequest struct {
 	ProfileSources []string   `form:"profile_sources"`
 }
 
-// nolint:funlen // TODO
 func GetBackLinkListHandlerFunc(c *gin.Context) {
-	instance, instanceErr := middleware.GetInstance(c)
-	if instanceErr != nil {
-		_ = c.Error(api.ErrorInvalidParams)
+	instance, err := middleware.GetInstance(c)
+	if err != nil {
+		api.SetError(c, api.ErrorInvalidParams, err)
 
 		return
 	}
 
 	request := GetBackLinkListRequest{}
-	if bindErr := c.ShouldBindQuery(&request); bindErr != nil {
-		_ = c.Error(api.ErrorInvalidParams)
+	if err = c.ShouldBindQuery(&request); err != nil {
+		api.SetError(c, api.ErrorInvalidParams, err)
 
 		return
 	}
 
-	backLinkModels, err := getBackLinkList(instance, request)
+	backLinkModels, total, err := getBackLinkList(instance, request)
 	if err != nil {
-		_ = c.Error(err)
+		api.SetError(c, api.ErrorIndexer, err)
 
 		return
 	}
@@ -93,26 +92,25 @@ func GetBackLinkListHandlerFunc(c *gin.Context) {
 
 	identifierNext := ""
 
-	if len(backLinkList) == middleware.MaxListLimit {
+	if len(backLinkList) == database.MaxLimit {
+		nextQuery := c.Request.URL.Query()
 		if lastTime != nil {
-			query := c.Request.URL.Query()
-			query.Set("last_time", lastTime.Format(timex.ISO8601))
-			c.Request.URL.RawQuery = query.Encode()
+			nextQuery.Set("last_time", lastTime.Format(timex.ISO8601))
 		}
 
-		identifierNext = fmt.Sprintf("%s/backlinks?%s", uri.String(), c.Request.URL.RawQuery)
+		identifierNext = fmt.Sprintf("%s/backlinks?%s", uri.String(), nextQuery.Encode())
 	}
 
 	c.JSON(http.StatusOK, protocol.File{
 		DateUpdated:    dateUpdated,
-		Identifier:     fmt.Sprintf("%s/backlinks", uri.String()),
+		Identifier:     fmt.Sprintf("%s/backlinks?%s", uri.String(), c.Request.URL.Query().Encode()),
 		IdentifierNext: identifierNext,
-		Total:          len(backLinkList),
+		Total:          total,
 		List:           backLinkList,
 	})
 }
 
-func getBackLinkList(instance rss3uri.Instance, request GetBackLinkListRequest) ([]model.Link, error) {
+func getBackLinkList(instance rss3uri.Instance, request GetBackLinkListRequest) ([]model.Link, int64, error) {
 	internalDB := database.DB
 
 	if request.Type != "" {
@@ -124,8 +122,15 @@ func getBackLinkList(instance rss3uri.Instance, request GetBackLinkListRequest) 
 	}
 
 	if request.From != "" {
+		uri, err := rss3uri.Parse(strings.ToLower(request.From))
+		if err != nil {
+			return nil, 0, api.ErrorInvalidParams
+		}
+
 		internalDB = internalDB.Where(&model.Link{
-			From: strings.ToLower(request.From),
+			FromInstanceType: constants.StringToInstanceTypeID(uri.Instance.GetPrefix()).Int(),
+			From:             strings.ToLower(uri.Instance.GetIdentity()),
+			FromPlatformID:   constants.PlatformSymbol(uri.Instance.GetSuffix()).ID().Int(),
 		})
 	}
 
@@ -142,13 +147,29 @@ func getBackLinkList(instance rss3uri.Instance, request GetBackLinkListRequest) 
 	linkList := make([]model.Link, 0)
 	if err := internalDB.
 		Where(&model.Link{
-			To: strings.ToLower(instance.GetIdentity()),
+			ToInstanceType: constants.StringToInstanceTypeID(instance.GetPrefix()).Int(),
+			To:             strings.ToLower(instance.GetIdentity()),
+			ToPlatformID:   constants.PlatformSymbol(instance.GetSuffix()).ID().Int(),
 		}).
 		Limit(request.Limit).
 		Order("created_at DESC").
 		Find(&linkList).Error; err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 
-	return linkList, nil
+	var count int64
+
+	if err := internalDB.
+		Model(&model.Link{}).
+		Where(&model.Link{
+			ToInstanceType: constants.StringToInstanceTypeID(instance.GetPrefix()).Int(),
+			To:             strings.ToLower(instance.GetIdentity()),
+			ToPlatformID:   constants.PlatformSymbol(instance.GetSuffix()).ID().Int(),
+		}).
+		Order("created_at DESC").
+		Count(&count).Error; err != nil {
+		return nil, 0, err
+	}
+
+	return linkList, count, nil
 }

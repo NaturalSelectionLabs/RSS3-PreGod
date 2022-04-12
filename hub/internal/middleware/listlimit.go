@@ -18,7 +18,7 @@ func ListLimit() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		request := ListLimitRequest{}
 		if err := c.ShouldBindQuery(&request); err != nil {
-			_ = c.Error(api.ErrorInvalidParams)
+			api.SetError(c, api.ErrorInvalidParams, err)
 			c.Abort()
 
 			return

@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
@@ -10,52 +11,60 @@ import (
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/internal/middleware"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/internal/protocol"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database"
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database/model"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/constants"
-	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/logger"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/rss3uri"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/timex"
 	"github.com/gin-gonic/gin"
 )
 
 type GetProfileListRequest struct {
-	ProfileSources []int `form:"profile_sources"`
+	ProfileSources []string `form:"profile_sources"`
 }
 
 func GetProfileListHandlerFunc(c *gin.Context) {
 	instance, err := middleware.GetInstance(c)
 	if err != nil {
-		_ = c.Error(api.ErrorInvalidParams)
+		api.SetError(c, api.ErrorInvalidParams, err)
 
 		return
 	}
 
 	request := GetProfileListRequest{}
 	if err = c.ShouldBindQuery(&request); err != nil {
-		_ = c.Error(api.ErrorInvalidParams)
+		api.SetError(c, api.ErrorInvalidParams, err)
 
 		return
 	}
 
-	logger.Info(request.ProfileSources)
+	var profileList []protocol.Profile
 
-	profileList := make([]protocol.Profile, 0)
+	var total int64
 
 	switch value := instance.(type) {
 	case *rss3uri.PlatformInstance:
-		profileList, err = getPlatformInstanceProfileList(value, request)
+		profileList, total, err = getPlatformInstanceProfileList(value, request)
 		if err != nil {
-			if !errors.Is(err, api.ErrorNotFound) {
-				err = api.ErrorDatabase
-			}
-
-			_ = c.Error(err)
+			api.SetError(c, api.ErrorIndexer, err)
 
 			return
 		}
 	case *rss3uri.NetworkInstance:
-		// TODO
+		switch value.Prefix {
+		case constants.PrefixNameAsset:
+			profileList, total, err = getAssetProfile(value, request)
+			if err != nil {
+				api.SetError(c, api.ErrorIndexer, err)
+
+				return
+			}
+		default:
+			api.SetError(c, api.ErrorInvalidParams, errors.New("unsupported prefix name"))
+
+			return
+		}
 	default:
-		_ = c.Error(api.ErrorInvalidParams)
+		api.SetError(c, api.ErrorInvalidParams, errors.New("unsupported instance type"))
 
 		return
 	}
@@ -73,16 +82,39 @@ func GetProfileListHandlerFunc(c *gin.Context) {
 
 	c.JSON(http.StatusOK, protocol.File{
 		DateUpdated: dateUpdated,
-		Identifier:  fmt.Sprintf("%s/profiles", rss3uri.New(instance)),
-		Total:       len(profileList),
+		Identifier:  fmt.Sprintf("%s/profiles?%s", rss3uri.New(instance), c.Request.URL.Query().Encode()),
+		Total:       total,
 		List:        profileList,
 	})
 }
 
-func getPlatformInstanceProfileList(instance *rss3uri.PlatformInstance, request GetProfileListRequest) ([]protocol.Profile, error) {
-	profileModels, err := database.QueryProfiles(database.DB, instance.GetIdentity(), instance.Platform.ID().Int(), request.ProfileSources)
-	if err != nil {
-		return nil, err
+func getPlatformInstanceProfileList(instance *rss3uri.PlatformInstance, request GetProfileListRequest) ([]protocol.Profile, int64, error) {
+	var profileModels []model.Profile
+
+	internalDB := database.DB
+
+	internalDB = internalDB.Where(&model.Profile{
+		ID:       instance.GetIdentity(),
+		Platform: instance.Platform.ID().Int(),
+	})
+
+	if request.ProfileSources != nil && len(request.ProfileSources) > 0 {
+		profileSources := make([]int, len(request.ProfileSources))
+
+		for i, source := range request.ProfileSources {
+			profileSources[i] = constants.ProfileSourceName(source).ID().Int()
+		}
+
+		internalDB = internalDB.Where("source IN ?", profileSources)
+	}
+
+	if err := internalDB.Find(&profileModels).Error; err != nil {
+		return nil, 0, err
+	}
+
+	var count int64
+	if err := internalDB.Model(&model.Profile{}).Count(&count).Error; err != nil {
+		return nil, 0, err
 	}
 
 	profiles := make([]protocol.Profile, 0)
@@ -108,7 +140,7 @@ func getPlatformInstanceProfileList(instance *rss3uri.PlatformInstance, request 
 			constants.ProfileSourceIDCrossbell.Int(),
 		)
 		if err != nil {
-			return nil, err
+			return nil, 0, err
 		}
 
 		for _, accountModel := range accountModels {
@@ -135,5 +167,48 @@ func getPlatformInstanceProfileList(instance *rss3uri.PlatformInstance, request 
 		})
 	}
 
-	return profiles, nil
+	return profiles, count, nil
+}
+
+func getAssetProfile(instance *rss3uri.NetworkInstance, request GetProfileListRequest) ([]protocol.Profile, int64, error) {
+	internalDB := database.DB
+
+	if request.ProfileSources != nil && len(request.ProfileSources) != 0 {
+		profileSources := make([]int, 0)
+
+		for _, source := range request.ProfileSources {
+			profileSources = append(profileSources, constants.ProfileSourceName(source).ID().Int())
+		}
+
+		internalDB = internalDB.Where("source IN ?", profileSources)
+	}
+
+	asset := model.Asset{}
+	if err := internalDB.Where(&model.Asset{
+		Identifier: strings.ToLower(instance.UriString()),
+	}).First(&asset).Error; err != nil {
+		return nil, 0, err
+	}
+
+	attachments := make([]protocol.ProfileAttachment, 0)
+	if err := json.Unmarshal(asset.Attachments, &attachments); err != nil {
+		return nil, 0, err
+	}
+
+	profiles := []protocol.Profile{
+		{
+			DateCreated: timex.Time(asset.DateCreated),
+			DateUpdated: timex.Time(asset.DateUpdated),
+			Name:        asset.Title,
+			Bio:         asset.Summary,
+			Attachments: attachments,
+			Source:      asset.Source,
+			Metadata: protocol.ProfileMetadata{
+				Network: strings.ToLower(asset.MetadataNetwork),
+				Proof:   asset.MetadataProof,
+			},
+		},
+	}
+
+	return profiles, int64(len(profiles)), nil
 }
