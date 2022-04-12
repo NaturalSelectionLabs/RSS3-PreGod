@@ -12,6 +12,8 @@ spec:
     services:
     - name: pregod-hub-api
       port: 8080
+    middlewares:
+      - name: pregod-hub-cors
   - kind: Rule
     match: Host(`test-pregod.rss3.dev`) && PathPrefix(`/`)
     services:
@@ -19,6 +21,7 @@ spec:
       port: 8080
     middlewares:
       - name: pregod-hub-ratelimit
+      - name: pregod-hub-cors
 ---
 apiVersion: traefik.containo.us/v1alpha1
 kind: Middleware
@@ -32,3 +35,21 @@ spec:
     sourceCriterion:
       ipStrategy:
         depth: 2
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: Middleware
+metadata:
+  name: pregod-hub-cors
+  namespace: pregod
+spec:
+  headers:
+    accessControlAllowMethods:
+      - "GET"
+      - "POST"
+      - "PUT"
+      - "DELETE"
+      - "OPTIONS"
+    accessControlAllowOriginList:
+      - "*"
+    accessControlMaxAge: 100
+    addVaryHeader: true
