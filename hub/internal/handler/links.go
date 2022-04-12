@@ -121,8 +121,15 @@ func getLinkList(instance rss3uri.Instance, request GetLinkListRequest) ([]model
 	}
 
 	if request.To != "" {
+		uri, err := rss3uri.Parse(strings.ToLower(request.To))
+		if err != nil {
+			return nil, 0, api.ErrorInvalidParams
+		}
+
 		internalDB = internalDB.Where(&model.Link{
-			To: strings.ToLower(request.To),
+			ToInstanceType: constants.StringToInstanceTypeID(uri.Instance.GetPrefix()).Int(),
+			To:             strings.ToLower(uri.Instance.GetIdentity()),
+			ToPlatformID:   constants.PlatformSymbol(uri.Instance.GetSuffix()).ID().Int(),
 		})
 	}
 
@@ -139,7 +146,9 @@ func getLinkList(instance rss3uri.Instance, request GetLinkListRequest) ([]model
 	linkList := make([]model.Link, 0)
 	if err := internalDB.
 		Where(&model.Link{
-			From: strings.ToLower(instance.GetIdentity()),
+			FromPlatformID:   constants.StringToInstanceTypeID(instance.GetPrefix()).Int(),
+			From:             strings.ToLower(instance.GetIdentity()),
+			FromInstanceType: constants.PlatformSymbol(instance.GetSuffix()).ID().Int(),
 		}).
 		Limit(request.Limit).
 		Order("created_at DESC").
@@ -152,7 +161,9 @@ func getLinkList(instance rss3uri.Instance, request GetLinkListRequest) ([]model
 	if err := internalDB.
 		Model(&model.Link{}).
 		Where(&model.Link{
-			From: strings.ToLower(instance.GetIdentity()),
+			FromPlatformID:   constants.StringToInstanceTypeID(instance.GetPrefix()).Int(),
+			From:             strings.ToLower(instance.GetIdentity()),
+			FromInstanceType: constants.PlatformSymbol(instance.GetSuffix()).ID().Int(),
 		}).
 		Order("date_created DESC").
 		Count(&count).Error; err != nil {
