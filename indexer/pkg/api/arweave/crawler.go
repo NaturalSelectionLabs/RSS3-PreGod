@@ -122,7 +122,7 @@ func (ar *crawler) parseMirrorArticles(from, to int64, owner ArAccount) error {
 
 		summary := article.Content
 		if maxSummaryLength := 400; len(summary) > maxSummaryLength { // TODO: define the max length specifically in protocol?
-			summary = summary[:maxSummaryLength] + "..."
+			summary = string([]rune(summary)[:maxSummaryLength]) + "..."
 		}
 
 		author := rss3uri.NewAccountInstance(article.Author, constants.PlatformSymbolEthereum).UriString()
