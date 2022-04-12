@@ -256,7 +256,6 @@ func (gc *crawler) zksyncRun() error {
 }
 
 func (gc *crawler) getConfig(networkId constants.NetworkID) *crawlerConfig {
-
 	if networkId == constants.NetworkIDEthereum {
 		return &gc.eth
 	}
@@ -272,9 +271,11 @@ func getDonationPlatform(networkId constants.NetworkID) GitcoinPlatform {
 	if networkId == constants.NetworkIDEthereum {
 		return ETH
 	}
+
 	if networkId == constants.NetworkIDPolygon {
 		return Polygon
 	}
+
 	logger.Errorf("unsupported network")
 	return ""
 }

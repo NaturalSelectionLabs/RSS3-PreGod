@@ -141,6 +141,10 @@ type HubStruct struct {
 	IndexerEndpoint string       `koanf:"indexer_endpoint"`
 }
 
+type ReptileStruct struct {
+	Postgres PostgresStruct `koanf:"postgres"`
+}
+
 type ConfigStruct struct {
 	Protocol ProtocolStruct `koanf:"protocol"`
 	Hub      HubStruct      `koanf:"hub"`
@@ -151,6 +155,7 @@ type ConfigStruct struct {
 	Logger   LoggerStruct   `koanf:"logger"`
 	Network  NetWorkStruct  `koanf:"network"`
 	Indexer  IndexerStruct  `koanf:"indexer"`
+	Reptile  ReptileStruct  `koanf:"reptile"`
 }
 
 var (

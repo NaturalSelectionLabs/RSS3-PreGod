@@ -81,18 +81,21 @@ type GrantInfo struct {
 }
 
 type ProjectInfo struct {
-	Active          bool
-	Id              int64
-	Title           string
-	Slug            string
-	Description     string
-	ReferUrl        string
-	Logo            string
-	AdminAddress    string
-	TokenAddress    string
-	TokenSymbol     string
-	ContractAddress string
-	Network         string
+	Active          bool   `gorm:"column:active"`
+	Id              int64  `gorm:"column:id"`
+	Title           string `gorm:"column:title"`
+	Slug            string `gorm:"column:slug"`
+	Description     string `gorm:"column:description"`
+	ReferUrl        string `gorm:"column:reference_url"`
+	Logo            string `gorm:"column:logo"`
+	AdminAddress    string `gorm:"column:admin_address"`
+	TokenAddress    string `gorm:"column:token_address"`
+	TokenSymbol     string `gorm:"column:token_symbol"`
+	ContractAddress string `gorm:"column:contract_address"`
+}
+
+func (ProjectInfo) TableName() string {
+	return "reptile-gitcoin.data"
 }
 
 type DonationInfo struct {
