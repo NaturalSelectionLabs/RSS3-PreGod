@@ -2,6 +2,7 @@ package handler
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"strings"
@@ -24,14 +25,14 @@ type GetProfileListRequest struct {
 func GetProfileListHandlerFunc(c *gin.Context) {
 	instance, err := middleware.GetInstance(c)
 	if err != nil {
-		_ = c.Error(api.ErrorInvalidParams)
+		api.SetError(c, api.ErrorInvalidParams, err)
 
 		return
 	}
 
 	request := GetProfileListRequest{}
 	if err = c.ShouldBindQuery(&request); err != nil {
-		_ = c.Error(api.ErrorInvalidParams)
+		api.SetError(c, api.ErrorInvalidParams, err)
 
 		return
 	}
@@ -44,7 +45,7 @@ func GetProfileListHandlerFunc(c *gin.Context) {
 	case *rss3uri.PlatformInstance:
 		profileList, total, err = getPlatformInstanceProfileList(value, request)
 		if err != nil {
-			_ = c.Error(err)
+			api.SetError(c, api.ErrorIndexer, err)
 
 			return
 		}
@@ -53,17 +54,17 @@ func GetProfileListHandlerFunc(c *gin.Context) {
 		case constants.PrefixNameAsset:
 			profileList, total, err = getAssetProfile(value, request)
 			if err != nil {
-				_ = c.Error(err)
+				api.SetError(c, api.ErrorIndexer, err)
 
 				return
 			}
 		default:
-			_ = c.Error(api.ErrorInvalidParams)
+			api.SetError(c, api.ErrorInvalidParams, errors.New("unsupported prefix name"))
 
 			return
 		}
 	default:
-		_ = c.Error(api.ErrorInvalidParams)
+		api.SetError(c, api.ErrorInvalidParams, errors.New("unsupported instance type"))
 
 		return
 	}

@@ -28,23 +28,23 @@ type GetBackLinkListRequest struct {
 }
 
 func GetBackLinkListHandlerFunc(c *gin.Context) {
-	instance, instanceErr := middleware.GetInstance(c)
-	if instanceErr != nil {
-		_ = c.Error(api.ErrorInvalidParams)
+	instance, err := middleware.GetInstance(c)
+	if err != nil {
+		api.SetError(c, api.ErrorInvalidParams, err)
 
 		return
 	}
 
 	request := GetBackLinkListRequest{}
-	if bindErr := c.ShouldBindQuery(&request); bindErr != nil {
-		_ = c.Error(api.ErrorInvalidParams)
+	if err = c.ShouldBindQuery(&request); err != nil {
+		api.SetError(c, api.ErrorInvalidParams, err)
 
 		return
 	}
 
 	backLinkModels, total, err := getBackLinkList(instance, request)
 	if err != nil {
-		_ = c.Error(err)
+		api.SetError(c, api.ErrorIndexer, err)
 
 		return
 	}

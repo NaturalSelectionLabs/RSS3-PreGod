@@ -3,7 +3,6 @@ package middleware
 import (
 	"net/http"
 
-	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/internal/api"
 	"github.com/gin-gonic/gin"
 )
 
@@ -17,16 +16,9 @@ func Wrapper() gin.HandlerFunc {
 		c.Next()
 
 		if err := c.Errors.Last(); err != nil {
-			code := api.ErrorToCode(err)
-			httpStatus := http.StatusInternalServerError
-
-			if code == api.CodeNotFound {
-				httpStatus = http.StatusNotFound
-			}
-
-			c.AbortWithStatusJSON(httpStatus, &WrapperResponse{
-				Code:  code,
-				Error: api.CodeToError(code).Error(),
+			c.AbortWithStatusJSON(http.StatusOK, &WrapperResponse{
+				Code:  c.GetInt("code"),
+				Error: err.Error(),
 			})
 		}
 	}

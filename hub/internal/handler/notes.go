@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/internal/api"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/internal/indexer"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/internal/middleware"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/internal/protocol"
@@ -35,14 +36,14 @@ type GetNoteListRequest struct {
 func GetNoteListHandlerFunc(c *gin.Context) {
 	instance, err := middleware.GetPlatformInstance(c)
 	if err != nil {
-		_ = c.Error(err)
+		api.SetError(c, api.ErrorInvalidParams, err)
 
 		return
 	}
 
 	request := GetNoteListRequest{}
 	if err = c.ShouldBindQuery(&request); err != nil {
-		_ = c.Error(err)
+		api.SetError(c, api.ErrorInvalidParams, err)
 
 		return
 	}
@@ -58,7 +59,7 @@ func GetNoteListHandlerFunc(c *gin.Context) {
 	}
 
 	if err != nil {
-		_ = c.Error(err)
+		api.SetError(c, api.ErrorIndexer, err)
 
 		return
 	}
@@ -72,7 +73,7 @@ func GetNoteListHandlerFunc(c *gin.Context) {
 	for i, noteModel := range noteModels {
 		attachmentList := make([]protocol.ItemAttachment, 0)
 		if err = json.Unmarshal(noteModel.Attachments, &attachmentList); err != nil {
-			_ = c.Error(err)
+			api.SetError(c, api.ErrorInvalidParams, err)
 
 			return
 		}

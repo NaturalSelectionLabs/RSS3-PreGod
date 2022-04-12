@@ -21,7 +21,7 @@ func GetInstanceHandlerFunc(c *gin.Context) {
 	} else if networkInstance, err := middleware.GetNetworkInstance(c); err == nil {
 		instance = networkInstance
 	} else {
-		_ = c.Error(err)
+		api.SetError(c, api.ErrorIndexer, err)
 
 		return
 	}
@@ -31,7 +31,7 @@ func GetInstanceHandlerFunc(c *gin.Context) {
 		instance.GetIdentity(),
 		constants.ProfileSourceIDCrossbell.Int(),
 	); err != nil {
-		_ = c.Error(api.ErrorDatabase)
+		api.SetError(c, api.ErrorDatabase, err)
 
 		return
 	}

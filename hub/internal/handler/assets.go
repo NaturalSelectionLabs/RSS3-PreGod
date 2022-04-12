@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/internal/api"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/internal/indexer"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/internal/middleware"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/internal/protocol"
@@ -35,14 +36,14 @@ type GetAssetListRequest struct {
 func GetAssetListHandlerFunc(c *gin.Context) {
 	instance, err := middleware.GetPlatformInstance(c)
 	if err != nil {
-		_ = c.Error(err)
+		api.SetError(c, api.ErrorInvalidParams, err)
 
 		return
 	}
 
 	request := GetAssetListRequest{}
 	if err = c.ShouldBindQuery(&request); err != nil {
-		_ = c.Error(err)
+		api.SetError(c, api.ErrorInvalidParams, err)
 
 		return
 	}
@@ -58,7 +59,7 @@ func GetAssetListHandlerFunc(c *gin.Context) {
 	}
 
 	if err != nil {
-		_ = c.Error(err)
+		api.SetError(c, api.ErrorDatabase, err)
 
 		return
 	}
@@ -72,7 +73,7 @@ func GetAssetListHandlerFunc(c *gin.Context) {
 	for i, assetModel := range assetModels {
 		attachmentList := make([]protocol.ItemAttachment, 0)
 		if err = json.Unmarshal(assetModel.Attachments, &attachmentList); err != nil {
-			_ = c.Error(err)
+			api.SetError(c, api.ErrorIndexer, err)
 
 			return
 		}
