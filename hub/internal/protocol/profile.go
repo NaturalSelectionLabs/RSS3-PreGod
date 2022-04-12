@@ -8,10 +8,10 @@ type Profile struct {
 	DateCreated       timex.Time          `json:"date_created"`
 	DateUpdated       timex.Time          `json:"date_updated"`
 	Name              string              `json:"name"`
-	Avatars           []string            `json:"avatars"`
+	Avatars           []string            `json:"avatars,omitempty"`
 	Bio               string              `json:"bio"`
 	Attachments       []ProfileAttachment `json:"attachments"`
-	ConnectedAccounts []string            `json:"connected_accounts"`
+	ConnectedAccounts []string            `json:"connected_accounts,omitempty"`
 	Source            string              `json:"source"`
 	Metadata          ProfileMetadata     `json:"metadata"`
 }
