@@ -22,6 +22,7 @@ import (
 )
 
 type GetAssetListRequest struct {
+	Offset         int        `form:"offset"`
 	Limit          int        `form:"limit"`
 	LastTime       *time.Time `form:"last_time" time_format:"2006-01-02T15:04:05.000Z"`
 	Tags           []string   `form:"tags"`
@@ -206,6 +207,7 @@ func getAssetListByInstance(instance rss3uri.Instance, request GetAssetListReque
 	assets := make([]model.Asset, 0)
 	if err := internalDB.
 		Where("owner = ?", strings.ToLower(rss3uri.New(instance).String())).
+		Offset(request.Offset).
 		Limit(request.Limit).
 		Order("date_created DESC").
 		Find(&assets).Error; err != nil {
@@ -222,7 +224,13 @@ func getAssetListByInstance(instance rss3uri.Instance, request GetAssetListReque
 		return nil, 0, err
 	}
 
-	return assets, count, nil
+	total := count - int64(request.Offset)
+
+	if total < 0 {
+		total = 0
+	}
+
+	return assets, total, nil
 }
 
 // nolint:funlen,gocognit // TODO
@@ -328,6 +336,7 @@ func getAssetListsByLink(instance rss3uri.Instance, request GetAssetListRequest)
 	assets := make([]model.Asset, 0)
 	if err := internalDB.
 		Where("owner = ?", strings.ToLower(rss3uri.New(instance).String())).
+		Offset(request.Offset).
 		Limit(request.Limit).
 		Order("date_created DESC").
 		Find(&assets).Error; err != nil {
@@ -344,5 +353,11 @@ func getAssetListsByLink(instance rss3uri.Instance, request GetAssetListRequest)
 		return nil, 0, err
 	}
 
-	return assets, count, nil
+	total := count - int64(request.Offset)
+
+	if total < 0 {
+		total = 0
+	}
+
+	return assets, total, nil
 }

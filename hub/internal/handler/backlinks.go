@@ -20,6 +20,7 @@ import (
 
 type GetBackLinkListRequest struct {
 	Type           string     `form:"type"`
+	Offset         int        `form:"offset"`
 	Limit          int        `form:"limit"`
 	LastTime       *time.Time `form:"last_time" time_format:"2006-01-02T15:04:05.000Z"`
 	From           string     `form:"from"`
@@ -151,6 +152,7 @@ func getBackLinkList(instance rss3uri.Instance, request GetBackLinkListRequest) 
 			To:             strings.ToLower(instance.GetIdentity()),
 			ToPlatformID:   constants.PlatformSymbol(instance.GetSuffix()).ID().Int(),
 		}).
+		Offset(request.Offset).
 		Limit(request.Limit).
 		Order("created_at DESC").
 		Find(&linkList).Error; err != nil {
@@ -171,5 +173,11 @@ func getBackLinkList(instance rss3uri.Instance, request GetBackLinkListRequest) 
 		return nil, 0, err
 	}
 
-	return linkList, count, nil
+	total := count - int64(request.Offset)
+
+	if total < 0 {
+		total = 0
+	}
+
+	return linkList, total, nil
 }

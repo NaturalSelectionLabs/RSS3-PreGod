@@ -22,6 +22,7 @@ import (
 )
 
 type GetNoteListRequest struct {
+	Offset         int        `form:"offset"`
 	Limit          int        `form:"limit"`
 	LastTime       *time.Time `form:"last_time" time_format:"2006-01-02T15:04:05.000Z"`
 	Tags           []string   `form:"tags"`
@@ -209,6 +210,7 @@ func getNoteListByInstance(instance rss3uri.Instance, request GetNoteListRequest
 	notes := make([]model.Note, 0)
 	if err := internalDB.
 		Where("owner = ?", strings.ToLower(rss3uri.New(instance).String())).
+		Offset(request.Offset).
 		Limit(request.Limit).
 		Order("date_created DESC").
 		Find(&notes).Error; err != nil {
@@ -225,7 +227,13 @@ func getNoteListByInstance(instance rss3uri.Instance, request GetNoteListRequest
 		return nil, 0, err
 	}
 
-	return notes, count, nil
+	total := count - int64(request.Offset)
+
+	if total < 0 {
+		total = 0
+	}
+
+	return notes, total, nil
 }
 
 // nolint:funlen,gocognit // TODO
@@ -331,6 +339,7 @@ func getNoteListsByLink(instance rss3uri.Instance, request GetNoteListRequest) (
 	notes := make([]model.Note, 0)
 	if err := internalDB.
 		Where("owner IN ?", owners).
+		Offset(request.Offset).
 		Limit(request.Limit).
 		Order("date_created DESC").
 		Find(&notes).Error; err != nil {
@@ -347,5 +356,11 @@ func getNoteListsByLink(instance rss3uri.Instance, request GetNoteListRequest) (
 		return nil, 0, err
 	}
 
-	return notes, count, nil
+	total := count - int64(request.Offset)
+
+	if total < 0 {
+		total = 0
+	}
+
+	return notes, total, nil
 }
