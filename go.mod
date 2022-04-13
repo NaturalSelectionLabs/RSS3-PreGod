@@ -13,7 +13,7 @@ require (
 	github.com/knadh/koanf v1.4.0
 	github.com/lib/pq v1.10.5
 	github.com/robfig/cron/v3 v3.0.1
-	github.com/samber/lo v1.11.0
+	github.com/samber/lo v1.12.0
 	github.com/spf13/cobra v1.4.0
 	github.com/stretchr/testify v1.7.1
 	github.com/valyala/fastjson v1.6.3
