@@ -98,8 +98,9 @@ func getCommAtt(meta Metadata) []datatype.Attachment {
 
 	if len(meta.ExternalLink) != 0 {
 		as = append(as, datatype.Attachment{
-			Type:    "external_url",
-			Content: meta.ExternalLink,
+			Type:     "external_url",
+			Content:  meta.ExternalLink,
+			MimeType: "text/uri-list",
 		})
 	}
 
