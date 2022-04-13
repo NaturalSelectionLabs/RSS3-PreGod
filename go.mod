@@ -10,7 +10,7 @@ require (
 	github.com/go-resty/resty/v2 v2.7.0
 	github.com/json-iterator/go v1.1.12
 	github.com/kamva/mgm/v3 v3.4.1
-	github.com/knadh/koanf v1.4.0
+	github.com/knadh/koanf v1.4.1
 	github.com/lib/pq v1.10.5
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/samber/lo v1.11.0
