@@ -33,7 +33,7 @@ type GetAssetListRequest struct {
 	ProfileSources []string   `form:"profile_sources"`
 }
 
-// nolint:dupl,funlen // TODO
+// nolint:funlen // TODO
 func GetAssetListHandlerFunc(c *gin.Context) {
 	instance, err := middleware.GetPlatformInstance(c)
 	if err != nil {
@@ -86,6 +86,18 @@ func GetAssetListHandlerFunc(c *gin.Context) {
 			dateUpdated = &internalTime
 		}
 
+		// Build metadata
+		metadata := make(map[string]interface{})
+
+		if err := json.Unmarshal(assetModel.Metadata, &metadata); err != nil {
+			api.SetError(c, api.ErrorIndexer, err)
+
+			return
+		}
+
+		metadata["network"] = assetModel.MetadataNetwork
+		metadata["proof"] = assetModel.MetadataProof
+
 		assetList[i] = protocol.Item{
 			Identifier:  assetModel.Identifier,
 			DateCreated: timex.Time(assetModel.DateCreated),
@@ -98,6 +110,8 @@ func GetAssetListHandlerFunc(c *gin.Context) {
 			Title:       assetModel.Title,
 			Summary:     assetModel.Summary,
 			Attachments: attachmentList,
+			Source:      assetModel.Source,
+			Metadata:    metadata,
 		}
 	}
 

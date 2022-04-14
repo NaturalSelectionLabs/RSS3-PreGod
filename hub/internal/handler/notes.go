@@ -33,7 +33,7 @@ type GetNoteListRequest struct {
 	ProfileSources []string   `form:"profile_sources"`
 }
 
-// nolint:dupl,funlen // TODO
+// nolint:funlen // TODO
 func GetNoteListHandlerFunc(c *gin.Context) {
 	instance, err := middleware.GetPlatformInstance(c)
 	if err != nil {
@@ -86,6 +86,20 @@ func GetNoteListHandlerFunc(c *gin.Context) {
 			dateUpdated = &internalTime
 		}
 
+		// Build metadata
+		metadata := make(map[string]interface{})
+
+		if noteModel.Metadata != nil {
+			if err := json.Unmarshal(noteModel.Metadata, &metadata); err != nil {
+				api.SetError(c, api.ErrorIndexer, err)
+
+				return
+			}
+		}
+
+		metadata["network"] = noteModel.MetadataNetwork
+		metadata["proof"] = noteModel.MetadataProof
+
 		noteList[i] = protocol.Item{
 			Identifier:  noteModel.Identifier,
 			DateCreated: timex.Time(noteModel.DateCreated),
@@ -98,6 +112,8 @@ func GetNoteListHandlerFunc(c *gin.Context) {
 			Title:       noteModel.Title,
 			Summary:     noteModel.Summary,
 			Attachments: attachmentList,
+			Source:      noteModel.Source,
+			Metadata:    metadata,
 		}
 	}
 
