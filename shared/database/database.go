@@ -193,6 +193,10 @@ func CreateNotes(db *gorm.DB, notes []model.Note, updateAll bool) ([]model.Note,
 	for i := range notes {
 		notes[i].Identifier = strings.ToLower(notes[i].Identifier)
 		notes[i].Owner = strings.ToLower(notes[i].Owner)
+
+		if notes[i].Metadata == nil {
+			notes[i].Metadata = []byte("{}")
+		}
 	}
 
 	if err := db.Clauses(NewCreateClauses(updateAll)...).Create(&notes).Error; err != nil {
@@ -206,6 +210,10 @@ func CreateAssets(db *gorm.DB, assets []model.Asset, updateAll bool) ([]model.As
 	for i := range assets {
 		assets[i].Identifier = strings.ToLower(assets[i].Identifier)
 		assets[i].Owner = strings.ToLower(assets[i].Owner)
+
+		if assets[i].Metadata == nil {
+			assets[i].Metadata = []byte("{}")
+		}
 	}
 
 	if err := db.Clauses(NewCreateClauses(updateAll)...).Create(&assets).Error; err != nil {
