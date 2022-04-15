@@ -1,0 +1,49 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: pregod-indexer-autoupdater
+  namespace: pregod
+spec:
+  concurrencyPolicy: Forbid
+  failedJobsHistoryLimit: 1
+  jobTemplate:
+    spec:
+      template:
+        activeDeadlineSeconds: 3600
+        spec:
+          containers:
+          - image: IMAGE
+            command:
+              - ./indexer
+              - autoupdater
+            imagePullPolicy: Always
+            name: autoupdater
+            resources: {}
+            terminationMessagePath: /dev/termination-log
+            terminationMessagePolicy: File
+            volumeMounts:
+              - name: config
+                mountPath: "/rss3-pregod/config"
+                readOnly: true
+              - name: mongo-ca
+                mountPath: "/rds-combined-ca-bundle.pem"
+                subPath: rds-combined-ca-bundle.pem
+                readOnly: true
+          dnsPolicy: ClusterFirst
+          restartPolicy: Never
+          schedulerName: default-scheduler
+          securityContext: {}
+          terminationGracePeriodSeconds: 30
+          volumes:
+            - name: config
+              secret:
+                secretName: pregod
+            - name: mongo-ca
+              configMap:
+                name: rds-combined-ca-bundle.pem
+                items:
+                  - key: rds-combined-ca-bundle.pem
+                    path: rds-combined-ca-bundle.pem
+  schedule: "0 */6 * * *"
+  successfulJobsHistoryLimit: 3
+  suspend: false
