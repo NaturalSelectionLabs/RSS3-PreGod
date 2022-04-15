@@ -21,7 +21,7 @@ type Profile struct {
 	Attachments     datatypes.JSON `gorm:"column:attachments;type:jsonb;default:{}"`
 	MetadataNetwork string         `gorm:"column:metadata_network"`
 	MetadataProof   string         `gorm:"column:metadata_proof"`
-	Metadata        string         `gorm:"metadata;default:{}"`
+	Metadata        string         `gorm:"column:metadata;default:{}"`
 
 	common.Table
 }
