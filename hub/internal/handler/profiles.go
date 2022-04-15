@@ -124,12 +124,10 @@ func getPlatformInstanceProfileList(instance *rss3uri.PlatformInstance, request 
 	for _, profileModel := range profileModels {
 		attachments := make([]protocol.ProfileAttachment, 0)
 
-		for _, attachmentModel := range profileModel.Attachments {
-			attachments = append(attachments, protocol.ProfileAttachment{
-				Type:     attachmentModel.Type,
-				Content:  attachmentModel.Content,
-				MimeType: attachmentModel.MimeType,
-			})
+		if profileModel.Attachments != nil && len(profileModel.Attachments) > 0 {
+			if err := json.Unmarshal(profileModel.Attachments, &attachments); err != nil {
+				return nil, 0, err
+			}
 		}
 
 		connectedAccounts := make([]string, 0)
