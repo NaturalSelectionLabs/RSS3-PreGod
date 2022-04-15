@@ -326,11 +326,11 @@ func CreateCrawlerMetadata(db *gorm.DB, crawler *model.CrawlerMetadata, updateAl
 	return crawler, nil
 }
 
-func QueryCrawlerMetadata(db *gorm.DB, identity string, networkId constants.NetworkID) (*model.CrawlerMetadata, error) {
+func QueryCrawlerMetadata(db *gorm.DB, identity string, platformId constants.PlatformID) (*model.CrawlerMetadata, error) {
 	var crawler model.CrawlerMetadata
 	if err := db.Where(&model.CrawlerMetadata{
 		AccountInstance: identity,
-		NetworkId:       networkId,
+		PlatformID:      platformId,
 	}).Find(&crawler).Error; err != nil {
 		return nil, err
 	}

@@ -6,6 +6,7 @@ import (
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/crawler"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/util"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database"
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database/model"
 )
 
 type GetItemsHandler struct {
@@ -48,7 +49,7 @@ func (pt *GetItemsHandler) Excute() (*GetItemsResult, error) {
 		return result, fmt.Errorf("unsupported network id[%d]", pt.WorkParam.NetworkID)
 	}
 
-	metadata, dbQcmErr := database.QueryCrawlerMetadata(database.DB, pt.WorkParam.Identity, pt.WorkParam.NetworkID)
+	metadata, dbQcmErr := database.QueryCrawlerMetadata(database.DB, pt.WorkParam.Identity, pt.WorkParam.PlatformID)
 
 	// the error here does not affect the execution of the crawler
 	if dbQcmErr != nil {
@@ -92,12 +93,12 @@ func (pt *GetItemsHandler) Excute() (*GetItemsResult, error) {
 	}
 
 	// TODO: stores the crawler last worked metadata
-	//if _, err := database.CreateCrawlerMetadata(tx, &model.CrawlerMetadata{
-	//	AccountInstance: pt.WorkParam.Identity,
-	//	NetworkId:       pt.WorkParam.NetworkID,
-	//}, true); err != nil {
-	//	return result, err
-	//}
+	if _, err := database.CreateCrawlerMetadata(tx, &model.CrawlerMetadata{
+		AccountInstance: pt.WorkParam.OwnerID,
+		PlatformID:      pt.WorkParam.PlatformID,
+	}, true); err != nil {
+		return result, err
+	}
 
 	if err := tx.Commit().Error; err != nil {
 		return result, err
