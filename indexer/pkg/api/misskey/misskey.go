@@ -182,7 +182,7 @@ func formatEmoji(emojiList []*fastjson.Value, ns *Note) {
 		name := string(emoji.GetStringBytes("name"))
 		url := string(emoji.GetStringBytes("url"))
 
-		ns.Summary = strings.Replace(ns.Summary, name, fmt.Sprintf("<img class=\"emoji\" src=\"%s\" alt=\":%s:\">", url, name), -1)
+		// ns.Summary = strings.Replace(ns.Summary, name, fmt.Sprintf("<img class=\"emoji\" src=\"%s\" alt=\":%s:\">", url, name), -1)
 
 		attachment := datatype.Attachment{
 			Type:     "emojis",
@@ -201,7 +201,7 @@ func formatImage(imageList []*fastjson.Value, ns *Note) {
 		if strings.HasPrefix(_type, "image/") {
 			url := string(image.GetStringBytes("url"))
 
-			ns.Summary += fmt.Sprintf("<img class=\"media\" src=\"%s\">", url)
+			ns.Summary += "<img class=\"media\" src=\"" + url + "\">"
 
 			attachment := datatype.Attachment{
 				Type:    "quote_file",
