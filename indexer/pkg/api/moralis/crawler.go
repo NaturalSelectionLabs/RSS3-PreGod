@@ -238,6 +238,7 @@ func (c *moralisCrawler) Work(param crawler.WorkParam) error {
 
 		profile := model.Profile{
 			ID:          param.Identity,
+			Platform:    constants.PlatformIDEthereum.Int(),
 			Source:      constants.ProfileSourceIDENS.Int(),
 			Name:        database.WrapNullString(ens.Domain),
 			Bio:         database.WrapNullString(ens.Description),
