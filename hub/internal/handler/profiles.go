@@ -133,14 +133,14 @@ func getPlatformInstanceProfileList(instance *rss3uri.PlatformInstance, request 
 
 		connectedAccounts := make([]string, 0)
 
-		accountModels, err := database.QueryAccounts(
-			database.DB,
-			instance.GetIdentity(),
-			instance.Platform.ID().Int(),
-			// TODO
-			constants.ProfileSourceIDCrossbell.Int(),
-		)
-		if err != nil {
+		internalDB := database.DB
+
+		var accountModels []model.Account
+		if err := internalDB.Where(&model.Account{
+			ProfileID:       instance.GetIdentity(),
+			ProfilePlatform: instance.Platform.ID().Int(),
+			Source:          profileModel.Source,
+		}).Find(&accountModels).Error; err != nil {
 			return nil, 0, err
 		}
 
