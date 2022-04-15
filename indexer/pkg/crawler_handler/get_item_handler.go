@@ -83,6 +83,14 @@ func (pt *GetItemsHandler) Excute() (*GetItemsResult, error) {
 		}
 	}
 
+	if r.Profiles != nil && len(r.Profiles) > 0 {
+		if dbProfiles, err := database.CreateProfiles(tx, r.Profiles, true); err != nil {
+			return result, err
+		} else {
+			r.Profiles = dbProfiles
+		}
+	}
+
 	// TODO: stores the crawler last worked metadata
 	//if _, err := database.CreateCrawlerMetadata(tx, &model.CrawlerMetadata{
 	//	AccountInstance: pt.WorkParam.Identity,

@@ -4,6 +4,7 @@ import (
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/crawler"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database/model"
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/constants"
 )
 
 type ensCrawler struct {
@@ -32,10 +33,12 @@ func (c *ensCrawler) Work(param crawler.WorkParam) error {
 		}
 
 		profile := model.Profile{
-			Name:    database.WrapNullString(ens.Domain),
-			Bio:     database.WrapNullString(ens.Description),
-			Avatars: []string{ens.Text["avatar"]},
-			// TODO: more fields
+			ID:          param.Identity,
+			Source:      constants.ProfileSourceIDENS.Int(),
+			Name:        database.WrapNullString(ens.Domain),
+			Bio:         database.WrapNullString(ens.Description),
+			Avatars:     []string{ens.Text["avatar"]},
+			Attachments: ens.Attachments,
 		}
 
 		c.Profiles = append(c.Profiles, profile)
