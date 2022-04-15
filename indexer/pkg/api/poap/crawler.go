@@ -102,7 +102,7 @@ func (pc *poapCrawler) Work(param crawler.WorkParam) error {
 
 		pc.Assets = append(pc.Assets, model.Asset(asset))
 
-		if err := nft_utils.CompleteMimeTypesForItems(pc.Notes, pc.Assets); err != nil {
+		if err := nft_utils.CompleteMimeTypesForItems(pc.Notes, pc.Assets, pc.Profiles); err != nil {
 			logger.Error("poap complete mime types error:", err)
 		}
 	}
