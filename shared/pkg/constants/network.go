@@ -87,9 +87,30 @@ var (
 		NetworkSymbolJike:           NetworkIDJike,
 		NetworkSymbolPlayStation:    NetworkIDPlayStation,
 		NetworkSymbolGitHub:         NetworkIDGitHub,
+		NetworkSymbolZksync:         NetworkIDZksync,
 	}
 
-	networkSymbolMap = map[NetworkID]NetworkSymbol{}
+	networkSymbolMap = map[NetworkID]NetworkSymbol{
+		NetworkIDUnknown:        NetworkSymbolUnknown,
+		NetworkIDCrossbell:      NetworkSymbolCrossbell,
+		NetworkIDEthereum:       NetworkSymbolEthereum,
+		NetworkIDPolygon:        NetworkSymbolPolygon,
+		NetworkIDBNBChain:       NetworkSymbolBNBChain,
+		NetworkIDArbitrum:       NetworkSymbolArbitrum,
+		NetworkIDAvalanche:      NetworkSymbolAvalanche,
+		NetworkIDFantom:         NetworkSymbolFantom,
+		NetworkIDGnosisMainnet:  NetworkSymbolGnosisMainnet,
+		NetworkIDSolanaMainet:   NetworkSymbolSolanaMainet,
+		NetworkIDFlowMainnet:    NetworkSymbolFlowMainnet,
+		NetworkIDArweaveMainnet: NetworkSymbolArweaveMainnet,
+		NetworkIDRSS:            NetworkSymbolRSS,
+		NetworkIDTwitter:        NetworkSymbolTwitter,
+		NetworkIDMisskey:        NetworkSymbolMisskey,
+		NetworkIDJike:           NetworkSymbolJike,
+		NetworkIDPlayStation:    NetworkSymbolPlayStation,
+		NetworkIDGitHub:         NetworkSymbolGitHub,
+		NetworkIDZksync:         NetworkSymbolZksync,
+	}
 )
 
 func IsValidNetworkName(value string) bool {

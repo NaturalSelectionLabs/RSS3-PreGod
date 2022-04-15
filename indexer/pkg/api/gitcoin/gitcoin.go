@@ -7,10 +7,10 @@ import (
 
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/api/moralis"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/api/zksync"
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/config"
-	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/httpx"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/logger"
-	"github.com/valyala/fastjson"
+	"gorm.io/gorm"
 )
 
 const grantUrl = "https://gitcoin.co/grants/grants.json"
@@ -89,106 +89,6 @@ var token = map[string]tokenMeta{
 	"0x9f8f72aa9304c8b593d555f12ef6589cc3a579a2": {18, "MKR"},
 }
 
-// GetGrantsInfo returns grant info from gitcoin
-func GetGrantsInfo() ([]GrantInfo, error) {
-	content, err := httpx.Get(grantUrl, nil)
-	if err != nil {
-		return nil, err
-	}
-
-	var parser fastjson.Parser
-	parsedJson, parseErr := parser.Parse(string(content))
-
-	if parseErr != nil {
-		return nil, nil
-	}
-
-	grantArray := parsedJson.GetArray()
-	grants := make([]GrantInfo, 0)
-
-	for _, grant := range grantArray {
-		projects := grant.GetArray()
-		title := strings.Trim(projects[0].String(), "\"")
-		adminAddress := strings.Trim(projects[1].String(), "\"")
-
-		item := GrantInfo{Title: title, AdminAddress: adminAddress}
-		grants = append(grants, item)
-	}
-
-	return grants, nil
-}
-
-// GetZkSyncDonations returns donations from zksync
-func (gc *crawler) GetZkSyncDonations(fromBlock, toBlock int64) ([]DonationInfo, error) {
-	donations := make([]DonationInfo, 0)
-
-	for i := fromBlock; i <= toBlock; i++ {
-		trxs, err := zksync.GetTxsByBlock(i)
-		if err != nil {
-			logger.Errorf("get txs by block error: [%v]", err)
-
-			return nil, err
-		}
-
-		for _, tx := range trxs {
-			if tx.Op.Type != "Transfer" || !tx.Success {
-				continue
-			}
-
-			// admin address empty
-			adminAddress := strings.ToLower(tx.Op.To)
-			if adminAddress == "" {
-				continue
-			}
-
-			// inactive project
-			if gc.inactiveAdminAddress(adminAddress) {
-				// TODO: after adding logic of read grant info from db,
-				// inactive check will be removed
-				continue
-			}
-
-			// update project info
-			inactive := false
-			if gc.needUpdateProject(adminAddress) {
-				inactive, err = gc.updateHostingProject(GrantInfo{
-					Title:        "",
-					AdminAddress: "adminAddress",
-				})
-				if err != nil {
-					logger.Errorf("updateHostingProject error: [%v]", err)
-
-					continue
-				}
-			}
-
-			if !inactive {
-				tokenId := tx.Op.TokenId
-				token := gc.GetZksToken(tokenId)
-
-				formatedAmount := big.NewInt(1)
-				formatedAmount.SetString(tx.Op.Amount, 10)
-
-				d := DonationInfo{
-					Donor:          tx.Op.From,
-					AdminAddress:   tx.Op.To,
-					TokenAddress:   token.Address,
-					Amount:         tx.Op.Amount,
-					Symbol:         token.Symbol,
-					FormatedAmount: formatedAmount,
-					Decimals:       token.Decimals,
-					Timestamp:      tx.CreatedAt.String(),
-					TxHash:         tx.TxHash,
-					Approach:       DonationApproachZksync,
-				}
-				donations = append(donations, d)
-			}
-		}
-	}
-
-	return donations, nil
-}
-
 // GetEthDonations returns donations from ethereum and polygon
 func GetEthDonations(fromBlock int64, toBlock int64, chainType GitcoinPlatform) ([]DonationInfo, error) {
 	var checkoutAddress string
@@ -251,4 +151,97 @@ func GetEthDonations(fromBlock int64, toBlock int64, chainType GitcoinPlatform) 
 	}
 
 	return donations, nil
+}
+
+// Asynchronous Zk query start
+var ZksTokensCache map[int64]zksync.Token
+
+func UpdateZksToken() error {
+	tokens, err := zksync.GetTokens()
+	if err != nil {
+		logger.Errorf("zksync get tokens error: %v", err)
+
+		return err
+	}
+
+	for _, token := range tokens {
+		ZksTokensCache[token.Id] = token
+	}
+
+	return nil
+}
+
+func GetZksToken(id int64) zksync.Token {
+	return ZksTokensCache[id]
+}
+
+// GetZkSyncDonations returns donations from zksync
+
+func GetZkSyncDonations(fromBlock, toBlock int64) ([]DonationInfo, error) {
+	donations := make([]DonationInfo, 0)
+
+	for i := fromBlock; i <= toBlock; i++ {
+		trxs, err := zksync.GetTxsByBlock(i)
+		if err != nil {
+			logger.Errorf("get txs by block error: [%v]", err)
+
+			return nil, err
+		}
+
+		for _, tx := range trxs {
+			if tx.Op.Type != "Transfer" || !tx.Success {
+				continue
+			}
+
+			// admin address empty
+			adminAddress := strings.ToLower(tx.Op.To)
+			if adminAddress == "" {
+				continue
+			}
+
+			tokenId := tx.Op.TokenId
+			token := GetZksToken(tokenId)
+
+			formatedAmount := big.NewInt(1)
+			formatedAmount.SetString(tx.Op.Amount, 10)
+
+			d := DonationInfo{
+				Donor:          tx.Op.From,
+				AdminAddress:   tx.Op.To,
+				TokenAddress:   token.Address,
+				Amount:         tx.Op.Amount,
+				Symbol:         token.Symbol,
+				FormatedAmount: formatedAmount,
+				Decimals:       token.Decimals,
+				Timestamp:      tx.CreatedAt.String(),
+				TxHash:         tx.TxHash,
+				Approach:       DonationApproachZksync,
+			}
+			donations = append(donations, d)
+		}
+	}
+
+	return donations, nil
+}
+
+// GetProjectsInfo returns project info from gitcoin
+
+func queryProjectInfo(db *gorm.DB, adminAddress string) (*ProjectInfo, error) {
+	var project ProjectInfo
+	if err := db.Where(&ProjectInfo{
+		AdminAddress: adminAddress,
+	}).Find(&project).Error; err != nil {
+		return nil, err
+	}
+
+	return &project, nil
+}
+
+func GetProjectInfo(adminAddress string) (*ProjectInfo, error) {
+	project, err := queryProjectInfo(database.DB, adminAddress)
+	if err != nil {
+		return nil, fmt.Errorf("[%s] get project info from db false:[%s]", adminAddress, err)
+	}
+
+	return project, nil
 }
