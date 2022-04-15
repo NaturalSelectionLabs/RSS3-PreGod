@@ -3,7 +3,6 @@ package moralis
 import (
 	"fmt"
 	"log"
-	"strings"
 	"time"
 
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database/datatype"
@@ -249,17 +248,11 @@ func getENSTextValue(domain string, record *ENSTextRecord) error {
 			}
 			attachments = append(attachments, a)
 		case "avatar":
-			// only get content headers if it's http for now
-			if strings.HasPrefix(text, "http") {
-				contentHeader, _ := httpx.GetContentHeader(text)
-
-				a := datatype.Attachment{
-					Type:     "banner",
-					MimeType: contentHeader.MIMEType,
-					Content:  text,
-				}
-				attachments = append(attachments, a)
+			a := datatype.Attachment{
+				Type:    "banner",
+				Address: text,
 			}
+			attachments = append(attachments, a)
 		}
 	}
 

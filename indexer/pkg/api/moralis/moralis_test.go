@@ -89,18 +89,18 @@ func TestGetNFTByContract(t *testing.T) {
 func TestGetENSList(t *testing.T) {
 	t.Parallel()
 
-	result, getErr := moralis.GetENSList("0x827431510a5D249cE4fdB7F00C83a3353F471848")
+	result, getErr := moralis.GetENSList("0xC8b960D09C0078c18Dcbe7eB9AB9d816BcCa8944")
 
 	ens := result[0]
 
 	assert.Nil(t, getErr)
 	assert.Equal(t, len(result), 1)
 
-	assert.Equal(t, ens.Domain, "henryqw.eth")
-	assert.Equal(t, ens.Description, "henryqw.eth, an ENS name.")
-	assert.Equal(t, ens.TxHash, "0x44ea5a47fa51ada626874ac5c243e78ee485e354d5b337ea673d7f117eb8b6c3")
+	assert.Equal(t, ens.Domain, "diygod.eth")
+	assert.Equal(t, ens.Description, "diygod.eth, an ENS name.")
+	assert.Equal(t, ens.TxHash, "0xc600982712df36668321bfc782deacb17a1c32f09165eb1e66d1d76294db6156")
 
-	time, timeErr := time.Parse(time.RFC3339, "2022-01-02T11:16:35.000Z")
+	time, timeErr := time.Parse(time.RFC3339, "2021-11-16T05:54:43.000Z")
 	assert.Nil(t, timeErr)
 
 	assert.Equal(t, ens.CreatedAt, time)

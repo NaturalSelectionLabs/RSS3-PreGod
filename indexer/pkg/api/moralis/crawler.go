@@ -220,10 +220,7 @@ func (c *moralisCrawler) Work(param crawler.WorkParam) error {
 	//	})
 	//}
 
-	if err := utils.CompleteMimeTypesForItems(c.Notes, c.Assets); err != nil {
-		logger.Error("moralis complete mime types error:", err)
-	}
-
+	// index ENS
 	ensList, err := GetENSList(param.Identity)
 
 	if err != nil {
@@ -243,10 +240,14 @@ func (c *moralisCrawler) Work(param crawler.WorkParam) error {
 			Name:        database.WrapNullString(ens.Domain),
 			Bio:         database.WrapNullString(ens.Description),
 			Avatars:     []string{ens.Text["avatar"]},
-			Attachments: ens.Attachments,
+			Attachments: database.MustWrapJSON(ens.Attachments),
 		}
 
 		c.Profiles = append(c.Profiles, profile)
+	}
+
+	if err := utils.CompleteMimeTypesForItems(c.Notes, c.Assets, c.Profiles); err != nil {
+		logger.Error("moralis complete mime types error:", err)
 	}
 
 	return nil

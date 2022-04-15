@@ -181,7 +181,7 @@ func CompleteMimeTypes(as []datatype.Attachment) {
 	})
 }
 
-func CompleteMimeTypesForItems(notes []model.Note, assets []model.Asset) error {
+func CompleteMimeTypesForItems(notes []model.Note, assets []model.Asset, profiles []model.Profile) error {
 	// complete attachments in parallel
 	g := new(errgroup.Group)
 
@@ -209,6 +209,21 @@ func CompleteMimeTypesForItems(notes []model.Note, assets []model.Asset) error {
 				}
 				CompleteMimeTypes(as)
 				assets[i].Attachments = database.MustWrapJSON(as)
+			}
+		})
+
+		return nil
+	})
+
+	g.Go(func() error {
+		lop.ForEach(profiles, func(profile model.Profile, i int) {
+			if profile.Attachments != nil {
+				as, err := database.UnwrapJSON[datatype.Attachments](profile.Attachments)
+				if err != nil {
+					return
+				}
+				CompleteMimeTypes(as)
+				profiles[i].Attachments = database.MustWrapJSON(as)
 			}
 		})
 
