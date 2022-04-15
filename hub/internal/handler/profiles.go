@@ -90,6 +90,7 @@ func GetProfileListHandlerFunc(c *gin.Context) {
 	})
 }
 
+// nolint:funlen // TODO
 func getPlatformInstanceProfileList(instance *rss3uri.PlatformInstance, request GetProfileListRequest) ([]protocol.Profile, int64, error) {
 	var profileModels []model.Profile
 

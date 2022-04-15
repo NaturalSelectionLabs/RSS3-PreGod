@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"encoding/json"
 	"fmt"
 	"regexp"
 	"strings"
@@ -37,13 +38,18 @@ func MigrateIndex(db *gorm.DB, file mongomodel.File) error {
 			})
 		}
 
+		attachmentBytes, err := json.Marshal(attachments)
+		if err != nil {
+			return err
+		}
+
 		tx.Create(&model.Profile{
 			ID:          strings.ToLower(file.Path),
 			Platform:    int(constants.PlatformIDEthereum),
 			Name:        database.WrapNullString(file.Content.Profile.Name),
 			Bio:         database.WrapNullString(bio),
 			Avatars:     file.Content.Profile.Avatar,
-			Attachments: attachments,
+			Attachments: attachmentBytes,
 			Table: common.Table{
 				CreatedAt: file.Content.DateCreated,
 				UpdatedAt: file.Content.DateUpdated,
