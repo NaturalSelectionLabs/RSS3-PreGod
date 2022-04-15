@@ -16,7 +16,7 @@ type Link struct {
 	ToInstanceType   int    `gorm:"column:to_instance_type"`
 	ToPlatformID     int    `gorm:"column:to_platform_id"`
 	Source           int    `gorm:"column:source"`
-	Metadata         string `gorm:"column:metadata"`
+	Metadata         string `gorm:"column:metadata;default:{}"`
 
 	common.Table
 }
