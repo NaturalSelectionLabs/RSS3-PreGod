@@ -8,8 +8,8 @@ spec:
   failedJobsHistoryLimit: 1
   jobTemplate:
     spec:
+      activeDeadlineSeconds: 21600
       template:
-        activeDeadlineSeconds: 3600
         spec:
           containers:
           - image: IMAGE
