@@ -224,8 +224,6 @@ func getENSTextValue(domain string, record *ENSTextRecord) error {
 
 	record.Text = make(map[string]string)
 
-	var attachments datatype.Attachments
-
 	for _, key := range getTextRecordKeyList() {
 		text, err := r.Text(key)
 
@@ -240,24 +238,24 @@ func getENSTextValue(domain string, record *ENSTextRecord) error {
 		// append attachments
 		switch key {
 		case "url":
-			a := datatype.Attachment{
-				Type:     "websites",
-				MimeType: "text/uri-list",
-				Content:  text,
-			}
-			attachments = append(attachments, a)
-		case "avatar":
 			if text != "" {
 				a := datatype.Attachment{
-					Type:    "banner",
-					Address: text,
+					Type:     "websites",
+					MimeType: "text/uri-list",
+					Content:  text,
 				}
-				attachments = append(attachments, a)
+				record.Attachments = append(record.Attachments, a)
 			}
+			// case "avatar":
+			// 	if text != "" {
+			// 		a := datatype.Attachment{
+			// 			Type:    "banner",
+			// 			Address: text,
+			// 		}
+			// 		attachments = append(attachments, a)
+			// 	}
 		}
 	}
-
-	record.Attachments = attachments
 
 	return nil
 }
@@ -289,6 +287,15 @@ func getENSDetail(address string, record *ENSTextRecord) error {
 			// if the one is the current ENS domain
 			if meta.Name == record.Domain {
 				record.Description = meta.Description
+
+				avatar := "https://metadata.ens.domains/mainnet/" + ensContract + "/" + ens.TokenId + "/image"
+
+				record.Attachments = append(record.Attachments, datatype.Attachment{
+					Type:    "banner",
+					Address: avatar,
+				})
+
+				record.Text["avatar"] = avatar
 
 				return getENSTransaction(ens, record)
 			}
