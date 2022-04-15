@@ -295,7 +295,7 @@ func getENSDetail(address string, record *ENSTextRecord) error {
 					Address: avatar,
 				})
 
-				record.Text["avatar"] = avatar
+				record.Avatar = avatar
 
 				return getENSTransaction(ens, record)
 			}

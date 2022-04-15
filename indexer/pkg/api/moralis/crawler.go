@@ -239,7 +239,7 @@ func (c *moralisCrawler) Work(param crawler.WorkParam) error {
 			Source:      constants.ProfileSourceIDENS.Int(),
 			Name:        database.WrapNullString(ens.Domain),
 			Bio:         database.WrapNullString(ens.Description),
-			Avatars:     []string{ens.Text["avatar"]},
+			Avatars:     []string{ens.Avatar},
 			Attachments: database.MustWrapJSON(ens.Attachments),
 		}
 

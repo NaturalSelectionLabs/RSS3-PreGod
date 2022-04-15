@@ -255,6 +255,7 @@ type ENSTextRecord struct {
 	Domain      string
 	Description string
 	Text        map[string]string
+	Avatar      string
 	Attachments datatype.Attachments
 	CreatedAt   time.Time
 	TxHash      string
