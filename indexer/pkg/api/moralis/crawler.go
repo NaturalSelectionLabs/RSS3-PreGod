@@ -38,8 +38,8 @@ func getApiKey() string {
 	return strings.Trim(apiKey, "\"")
 }
 
-func getInfuraClient() {
-	c, err := ethclient.Dial(infuraGateway + "/" + config.Config.Indexer.Infura.ApiKey)
+func getGatewayClient() {
+	c, err := ethclient.Dial(config.Config.Indexer.Gateway.Endpoint)
 
 	if err != nil {
 		logger.Errorf("connect to Infura: %v", err)

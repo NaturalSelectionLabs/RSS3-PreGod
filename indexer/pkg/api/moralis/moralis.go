@@ -17,12 +17,11 @@ import (
 )
 
 var (
-	parser        fastjson.Parser
-	jsoni         = jsoniter.ConfigCompatibleWithStandardLibrary
-	client        *ethclient.Client
-	ensContract   = "0x57f1887a8bf19b14fc0df6fd9b2acc9af147ea85"
-	infuraGateway = "https://mainnet.infura.io/v3"
-	endpoint      = "https://deep-index.moralis.io"
+	parser      fastjson.Parser
+	jsoni       = jsoniter.ConfigCompatibleWithStandardLibrary
+	client      *ethclient.Client
+	ensContract = "0x57f1887a8bf19b14fc0df6fd9b2acc9af147ea85"
+	endpoint    = "https://deep-index.moralis.io"
 )
 
 func requestMoralisApi(url string, apiKey string) ([]byte, error) {
@@ -181,7 +180,7 @@ func GetMetadataByToken(tokenAddress string, tokenId string, chainType ChainType
 
 // returns a list of ENS domains with non-empty text records
 func GetENSList(address string) ([]ENSTextRecord, error) {
-	getInfuraClient()
+	getGatewayClient()
 
 	result := []ENSTextRecord{}
 
@@ -213,7 +212,7 @@ func GetENSList(address string) ([]ENSTextRecord, error) {
 	return result, err
 }
 
-// reads the text record value for a given domain with the list of predefined keys from infura
+// reads the text record value for a given domain with the list of predefined keys
 func getENSTextValue(domain string, record *ENSTextRecord) error {
 	r, err := goens.NewResolver(client, domain)
 
@@ -248,11 +247,13 @@ func getENSTextValue(domain string, record *ENSTextRecord) error {
 			}
 			attachments = append(attachments, a)
 		case "avatar":
-			a := datatype.Attachment{
-				Type:    "banner",
-				Address: text,
+			if text != "" {
+				a := datatype.Attachment{
+					Type:    "banner",
+					Address: text,
+				}
+				attachments = append(attachments, a)
 			}
-			attachments = append(attachments, a)
 		}
 	}
 
