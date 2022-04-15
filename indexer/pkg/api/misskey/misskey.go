@@ -201,7 +201,7 @@ func formatImage(imageList []*fastjson.Value, ns *Note) {
 		if strings.HasPrefix(_type, "image/") {
 			url := string(image.GetStringBytes("url"))
 
-			ns.Summary += "<img class=\"media\" src=\"" + url + "\">"
+			// ns.Summary += "<img class=\"media\" src=\"" + url + "\">"
 
 			attachment := datatype.Attachment{
 				Type:    "quote_file",
