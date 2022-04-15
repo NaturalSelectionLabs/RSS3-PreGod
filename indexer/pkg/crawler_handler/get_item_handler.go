@@ -51,7 +51,7 @@ func (pt *GetItemsHandler) Excute() (*GetItemsResult, error) {
 	metadata, dbQcmErr := database.QueryCrawlerMetadata(database.DB, pt.WorkParam.Identity, pt.WorkParam.NetworkID)
 
 	// the error here does not affect the execution of the crawler
-	if dbQcmErr == nil {
+	if dbQcmErr != nil {
 		pt.WorkParam.BlockHeight = metadata.LastBlock
 		pt.WorkParam.Timestamp = metadata.UpdatedAt
 	}
