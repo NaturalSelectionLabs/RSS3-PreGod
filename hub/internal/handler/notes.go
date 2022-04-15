@@ -199,7 +199,7 @@ func getNoteListByInstance(instance rss3uri.Instance, request GetNoteListRequest
 	internalDB = database.DB
 
 	if request.LastTime != nil {
-		internalDB = internalDB.Where("date_created <= ?", request.LastTime)
+		internalDB = internalDB.Where("date_created < ?", request.LastTime)
 	}
 
 	if request.Tags != nil && len(request.Tags) != 0 {
@@ -328,7 +328,7 @@ func getNoteListsByLink(instance rss3uri.Instance, request GetNoteListRequest) (
 	internalDB = database.DB
 
 	if request.LastTime != nil {
-		internalDB = internalDB.Where("date_created <= ?", request.LastTime)
+		internalDB = internalDB.Where("date_created < ?", request.LastTime)
 	}
 
 	if request.Tags != nil && len(request.Tags) != 0 {

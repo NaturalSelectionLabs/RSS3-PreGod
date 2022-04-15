@@ -118,7 +118,7 @@ func getLinkList(instance rss3uri.Instance, request GetLinkListRequest) ([]model
 	}
 
 	if request.LastTime != nil {
-		internalDB = internalDB.Where("created_at <= ?", request.LastTime)
+		internalDB = internalDB.Where("created_at < ?", request.LastTime)
 	}
 
 	if request.To != "" {

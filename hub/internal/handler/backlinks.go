@@ -119,7 +119,7 @@ func getBackLinkList(instance rss3uri.Instance, request GetBackLinkListRequest) 
 	}
 
 	if request.LastTime != nil {
-		internalDB = internalDB.Where("created_at <= ?", request.LastTime)
+		internalDB = internalDB.Where("created_at < ?", request.LastTime)
 	}
 
 	if request.From != "" {

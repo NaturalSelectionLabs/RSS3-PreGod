@@ -194,7 +194,7 @@ func getAssetListByInstance(instance rss3uri.Instance, request GetAssetListReque
 	internalDB = database.DB
 
 	if request.LastTime != nil {
-		internalDB = internalDB.Where("date_created <= ?", request.LastTime)
+		internalDB = internalDB.Where("date_created < ?", request.LastTime)
 	}
 
 	if request.Tags != nil && len(request.Tags) != 0 {
@@ -323,7 +323,7 @@ func getAssetListsByLink(instance rss3uri.Instance, request GetAssetListRequest)
 	internalDB = database.DB
 
 	if request.LastTime != nil {
-		internalDB = internalDB.Where("date_created <= ?", request.LastTime)
+		internalDB = internalDB.Where("date_created < ?", request.LastTime)
 	}
 
 	if request.Tags != nil && len(request.Tags) != 0 {
