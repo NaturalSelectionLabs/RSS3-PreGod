@@ -6,7 +6,6 @@ import (
 
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/httpx"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/logger"
-	jsoniter "github.com/json-iterator/go"
 	lop "github.com/samber/lo/parallel"
 	"github.com/valyala/fastjson"
 )
@@ -14,7 +13,6 @@ import (
 const endpoint = "https://deep-index.moralis.io"
 
 var (
-	jsoni  = jsoniter.ConfigCompatibleWithStandardLibrary
 	parser fastjson.Parser
 )
 
