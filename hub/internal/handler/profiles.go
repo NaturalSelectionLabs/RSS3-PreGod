@@ -8,11 +8,13 @@ import (
 	"strings"
 
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/internal/api"
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/internal/indexer"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/internal/middleware"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/internal/protocol"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database/model"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/constants"
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/logger"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/rss3uri"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/timex"
 	"github.com/gin-gonic/gin"
@@ -165,6 +167,12 @@ func getPlatformInstanceProfileList(instance *rss3uri.PlatformInstance, request 
 				Proof:   instance.Identity,
 			},
 		})
+
+		go func() {
+			if err := indexer.GetItems(instance, accountModels); err != nil {
+				logger.Error(err)
+			}
+		}()
 	}
 
 	return profiles, count, nil
