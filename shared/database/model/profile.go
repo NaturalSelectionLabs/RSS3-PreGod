@@ -18,10 +18,10 @@ type Profile struct {
 	Name            sql.NullString `gorm:"column:name"`
 	Bio             sql.NullString `gorm:"column:bio"`
 	Avatars         pq.StringArray `gorm:"column:avatars;type:text[]"`
-	Attachments     datatypes.JSON `gorm:"column:attachments;type:jsonb;default:{}"`
+	Attachments     datatypes.JSON `gorm:"column:attachments;type:jsonb;default:'{}'"`
 	MetadataNetwork string         `gorm:"column:metadata_network"`
 	MetadataProof   string         `gorm:"column:metadata_proof"`
-	Metadata        string         `gorm:"column:metadata;default:{}"`
+	Metadata        datatypes.JSON `gorm:"column:metadata;type:jsonb;default:'{}'"`
 
 	common.Table
 }

@@ -20,11 +20,11 @@ type Asset struct {
 	Authors         pq.StringArray `gorm:"column:authors;type:text[]"`
 	Title           string         `gorm:"column:title"`
 	Summary         string         `gorm:"column:summary"`
-	Attachments     datatypes.JSON `gorm:"column:attachments;default:{}"`
+	Attachments     datatypes.JSON `gorm:"column:attachments;default:'{}'"`
 	Source          string         `gorm:"column:source"`
 	MetadataNetwork string         `gorm:"column:metadata_network"`
 	MetadataProof   string         `gorm:"column:metadata_proof"`
-	Metadata        datatypes.JSON `gorm:"column:metadata;default:{}"`
+	Metadata        datatypes.JSON `gorm:"column:metadata;default:'{}'"`
 	DateCreated     time.Time      `gorm:"column:date_created"`
 	DateUpdated     time.Time      `gorm:"column:date_updated"`
 
