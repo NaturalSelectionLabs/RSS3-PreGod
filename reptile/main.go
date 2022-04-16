@@ -2,43 +2,36 @@ package main
 
 import (
 	"log"
-	"time"
 
-	"github.com/NaturalSelectionLabs/RSS3-PreGod/reptile/pkg/handler"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database"
-	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/logger"
 )
 
 func init() {
 	if err := database.Setup(); err != nil {
 		log.Fatalf("database.Setup err: %v", err)
 	}
-
-	if err := handler.Setup(); err != nil {
-		log.Fatalf("handler.Setup err: %v", err)
-	}
 }
 
-var firstTime = true
-
+// pull information from url
+/*
 func main() {
-	lastPos := 0
-	currentPos := 0
+	lastPos := handler.GetLastPostion()
+	currentPos := lastPos + 1
+	logger.Infof("lastPos:%d", lastPos)
 
 	for {
-		if firstTime == true {
-			lastPos = handler.GetLastPostion()
-			firstTime = false
-		}
-
-		currentPos = lastPos + 1
 		getProject := false
+		getProjectStr := "false"
+		netTag := true
 
 		projectInfo, err := handler.GetResult(currentPos)
 		if err != nil {
-			if err == "get result false:StatusCode [403]" {
-				continue
+			if err.Error() == "get result false:StatusCode [403]" {
+				netTag = false
+
+				goto END
 			}
+
 			logger.Fatal(err)
 		}
 
@@ -56,11 +49,11 @@ func main() {
 			logger.Fatal(err)
 		}
 
-		getProjectStr := "false"
 		if getProject == true {
 			getProjectStr = "true"
 		}
 
+	END:
 		log.Printf("get [%d] project info stage: %s", currentPos, getProjectStr)
 		log.Printf("current position: %d", currentPos)
 		log.Printf("------------------------------------------\n")
@@ -69,8 +62,16 @@ func main() {
 			break
 		}
 
-		lastPos = currentPos
+		if netTag == true {
+			lastPos = currentPos
+			currentPos = lastPos + 1
+		}
 
 		time.Sleep(50 * time.Millisecond)
 	}
+}*/
+
+// Change all adminaddress to lowercase
+func main() {
+
 }

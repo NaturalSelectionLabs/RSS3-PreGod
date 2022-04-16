@@ -124,8 +124,7 @@ func (gc *crawler) needUpdateProject(adminAddress string) bool {
 }
 
 func (gc *crawler) updateHostingProject(adminAddress string) (inactive bool, err error) {
-
-	project, err := GetProjectsInfo(adminAddress, "")
+	project, err := getProjectsInfo(adminAddress, "")
 	if err != nil {
 		logger.Errorf("zksync get projects info error: %v", err)
 
@@ -143,7 +142,7 @@ func (gc *crawler) updateHostingProject(adminAddress string) (inactive bool, err
 }
 
 // GetProjectsInfo returns project info from gitcoin
-func GetProjectsInfo(adminAddress string, title string) (ProjectInfo, error) {
+func getProjectsInfo(adminAddress string, title string) (ProjectInfo, error) {
 	var project ProjectInfo
 
 	headers := make(map[string]string)
@@ -174,6 +173,7 @@ func GetProjectsInfo(adminAddress string, title string) (ProjectInfo, error) {
 	// check reCAPTCHA
 	if strings.Contains(string(content), "Hold up, the bots want to know if you're one of them") {
 		err = fmt.Errorf("gitcoin get project info error, reCAPTCHA")
+
 		return project, err
 	}
 
@@ -342,7 +342,7 @@ func setDB(donations []DonationInfo, networkId constants.NetworkID) error {
 		// if not in db, ok is false
 		ok := true
 		if !ok {
-			GetProjectsInfo(v.AdminAddress, "")
+			getProjectsInfo(v.AdminAddress, "")
 		}
 		attachment := datatype.Attachments{
 			{
