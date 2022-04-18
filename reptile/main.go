@@ -2,8 +2,12 @@ package main
 
 import (
 	"log"
+	"strings"
 
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/api/gitcoin"
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/reptile/pkg/handler"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database"
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/logger"
 )
 
 func init() {
@@ -73,5 +77,48 @@ func main() {
 
 // Change all adminaddress to lowercase
 func main() {
+	rangeMax := 20
+	resultcount := int(handler.GetResultTotal())
 
+	lastpos := handler.GetLastPostion(
+		handler.GitcoinProjectIdentity2,
+		handler.GitcoinProjectNetworkID2)
+
+	if lastpos >= resultcount {
+		logger.Infof("lastPos[%d] is the latest pos", lastpos)
+
+		return
+	}
+
+	nextPos := lastpos + rangeMax
+	if nextPos >= resultcount {
+		nextPos = resultcount
+	}
+
+	projects, err := handler.GetResultFromDB(lastpos, nextPos)
+	if err != nil {
+		logger.Fatal(err)
+	}
+
+	processingProject := []gitcoin.ProjectInfo{}
+
+	for _, project := range projects {
+		project.AdminAddress = strings.ToLower(project.AdminAddress)
+		processingProject = append(processingProject, project)
+	}
+
+	if len(processingProject) > 0 {
+		err = handler.SetResultsInDB(processingProject)
+		if err != nil {
+			logger.Fatal(err)
+		}
+	}
+
+	err = handler.SetLastPostion(
+		nextPos,
+		handler.GitcoinProjectIdentity2,
+		handler.GitcoinProjectNetworkID2)
+	if err != nil {
+		logger.Fatal(err)
+	}
 }
