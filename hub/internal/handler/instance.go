@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/internal/api"
@@ -13,17 +14,24 @@ import (
 )
 
 func GetInstanceHandlerFunc(c *gin.Context) {
-	instance, err := middleware.GetPlatformInstance(c)
-	if err != nil {
+	var instance rss3uri.Instance
+
+	if platformInstance, err := middleware.GetPlatformInstance(c); err == nil {
+		instance = platformInstance
+	} else if networkInstance, err := middleware.GetNetworkInstance(c); err == nil {
+		instance = networkInstance
+	} else {
+		api.SetError(c, api.ErrorIndexer, err)
+
 		return
 	}
 
 	if err := database.QueryInstance(
 		database.DB,
-		instance.Identity,
+		instance.GetIdentity(),
 		constants.ProfileSourceIDCrossbell.Int(),
 	); err != nil {
-		_ = c.Error(api.ErrorDatabase)
+		api.SetError(c, api.ErrorDatabase, err)
 
 		return
 	}
@@ -31,8 +39,8 @@ func GetInstanceHandlerFunc(c *gin.Context) {
 	instanceList := protocol.NewInstanceList(instance)
 
 	c.JSON(http.StatusOK, protocol.File{
-		Identifier: rss3uri.New(instance).String(),
-		Total:      len(instanceList),
+		Identifier: fmt.Sprintf("%s?%s", rss3uri.New(instance).String(), c.Request.URL.Query().Encode()),
+		Total:      int64(len(instanceList)),
 		List:       instanceList,
 	})
 }

@@ -31,3 +31,12 @@ func (t *Time) MarshalJSON() ([]byte, error) {
 func (t *Time) Time() time.Time {
 	return time.Time(*t)
 }
+
+func Parse(value string) (Time, error) {
+	t, err := time.Parse(ISO8601, value)
+	if err != nil {
+		return Time{}, err
+	}
+
+	return Time(t), nil
+}

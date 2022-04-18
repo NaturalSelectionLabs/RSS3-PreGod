@@ -49,10 +49,10 @@ func (pt *GetItemsHandler) Excute() (*GetItemsResult, error) {
 		return result, fmt.Errorf("unsupported network id[%d]", pt.WorkParam.NetworkID)
 	}
 
-	metadata, dbQcmErr := database.QueryCrawlerMetadata(database.DB, pt.WorkParam.Identity, pt.WorkParam.NetworkID)
+	metadata, dbQcmErr := database.QueryCrawlerMetadata(database.DB, pt.WorkParam.Identity, pt.WorkParam.PlatformID)
 
 	// the error here does not affect the execution of the crawler
-	if dbQcmErr == nil {
+	if dbQcmErr != nil {
 		pt.WorkParam.BlockHeight = metadata.LastBlock
 		pt.WorkParam.Timestamp = metadata.UpdatedAt
 	}
@@ -84,12 +84,12 @@ func (pt *GetItemsHandler) Excute() (*GetItemsResult, error) {
 		}
 	}
 
-	// stores the crawler last worked metadata
-	if _, err := database.CreateCrawlerMetadata(tx, &model.CrawlerMetadata{
-		AccountInstance: pt.WorkParam.Identity,
-		NetworkId:       pt.WorkParam.NetworkID,
-	}, true); err != nil {
-		return result, err
+	if r.Profiles != nil && len(r.Profiles) > 0 {
+		if dbProfiles, err := database.CreateProfiles(tx, r.Profiles, true); err != nil {
+			return result, err
+		} else {
+			r.Profiles = dbProfiles
+		}
 	}
 
 	if err := tx.Commit().Error; err != nil {
@@ -97,6 +97,14 @@ func (pt *GetItemsHandler) Excute() (*GetItemsResult, error) {
 	}
 
 	result.Result = r
+
+	// stores the crawler last worked metadata
+	if _, err := database.CreateCrawlerMetadata(database.DB, &model.CrawlerMetadata{
+		AccountInstance: pt.WorkParam.OwnerID,
+		PlatformID:      pt.WorkParam.PlatformID,
+	}, true); err != nil {
+		return result, err
+	}
 
 	return result, nil
 }

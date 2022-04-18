@@ -118,19 +118,25 @@ func (ar *crawler) parseMirrorArticles(from, to int64, owner ArAccount) error {
 			continue
 		}
 
+		// ellipsis the content as summary
+
+		summary := article.Content
+		if maxSummaryLength := 400; len(summary) > maxSummaryLength { // TODO: define the max length specifically in protocol?
+			summary = string([]rune(summary)[:maxSummaryLength]) + "..."
+		}
+
 		author := rss3uri.NewAccountInstance(article.Author, constants.PlatformSymbolEthereum).UriString()
 		note := model.Note{
-			Identifier: rss3uri.NewNoteInstance(article.Author, constants.NetworkSymbolArweaveMainnet).UriString(),
+			Identifier: rss3uri.NewNoteInstance(article.TxHash, constants.NetworkSymbolArweaveMainnet).UriString(),
 			Owner:      author,
 			RelatedURLs: []string{
 				"https://arweave.net/" + article.TxHash,
 				"https://mirror.xyz/" + article.Author + "/" + article.OriginalDigest,
 			},
-			Tags:    constants.ItemTagsMirrorEntry.ToPqStringArray(),
-			Authors: []string{author},
-			Title:   article.Title,
-			// TODO: Summary - According to RIP4, if the body is too long, then only record part of the body, followed by ... at the end
-			Summary:         article.Content,
+			Tags:            constants.ItemTagsMirrorEntry.ToPqStringArray(),
+			Authors:         []string{author},
+			Title:           article.Title,
+			Summary:         summary,
 			Attachments:     database.MustWrapJSON(attachment),
 			Source:          constants.NoteSourceNameMirrorEntry.String(),
 			MetadataNetwork: constants.NetworkSymbolArweaveMainnet.String(),

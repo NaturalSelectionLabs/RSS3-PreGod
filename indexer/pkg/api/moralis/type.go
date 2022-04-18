@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database/datatype"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/constants"
 )
 
@@ -98,7 +99,7 @@ func (i NFTItem) String() string {
 		i.TokenAddress, i.TokenId, i.OwnerOf, i.TokenURI)
 }
 
-func (i NFTTransferItem) GetAssetProof() string {
+func (i NFTItem) GetAssetProof() string {
 	return i.TokenAddress + "-" + i.TokenId
 }
 
@@ -188,6 +189,7 @@ func GetTxRelatedURLs(
 	if transactionHash != nil {
 		urls = append(urls, GetTxHashURL(network, *transactionHash))
 	}
+
 	switch network {
 	case constants.NetworkSymbolEthereum:
 		if transactionHash != nil {
@@ -231,20 +233,37 @@ func GetTxHashURL(
 ) string {
 	switch network {
 	case constants.NetworkSymbolEthereum:
-		return "https://etherscan.io/tx/%s" + (transactionHash)
+		return "https://etherscan.io/tx/" + (transactionHash)
 
 	case constants.NetworkSymbolPolygon:
-		return "https://polygonscan.com/tx/%s" + (transactionHash)
+		return "https://polygonscan.com/tx/" + (transactionHash)
 
 	case constants.NetworkSymbolBNBChain:
-		return "https://bscscan.com/tx/%s" + (transactionHash)
+		return "https://bscscan.com/tx/" + (transactionHash)
 
 	case constants.NetworkSymbolAvalanche:
-		return "https://avascan.info/blockchain/c/tx/%s" + (transactionHash)
+		return "https://avascan.info/blockchain/c/tx/" + (transactionHash)
 	case constants.NetworkSymbolFantom:
-		return "https://ftmscan.com/tx/%s" + (transactionHash)
+		return "https://ftmscan.com/tx/" + (transactionHash)
 	default:
 		return ""
 	}
+}
 
+// for ENS only
+type ENSTextRecord struct {
+	Domain      string
+	Description string
+	Text        map[string]string
+	Avatar      string
+	Attachments datatype.Attachments
+	CreatedAt   time.Time
+	TxHash      string
+}
+
+// returns a list of recommended keys for a given ENS domain, as per https://app.ens.domains/
+// this is a combination of Global Keys and Service Keys, see: https://eips.ethereum.org/EIPS/eip-634
+func getTextRecordKeyList() []string {
+	// nolint:lll // this is a list of keys
+	return []string{"email", "url", "avatar", "description", "notice", "keywords", "com.discord", "com.github", "com.reddit", "com.twitter", "org.telegram", "eth.ens.delegate"}
 }

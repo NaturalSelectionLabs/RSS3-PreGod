@@ -8,13 +8,12 @@ import (
 	utils "github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/api/nft_utils"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/crawler"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database"
-	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database/datatype"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database/model"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/config"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/constants"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/logger"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/rss3uri"
-	lop "github.com/samber/lo/parallel"
+	"github.com/ethereum/go-ethereum/ethclient"
 )
 
 type moralisCrawler struct {
@@ -39,6 +38,16 @@ func getApiKey() string {
 	return strings.Trim(apiKey, "\"")
 }
 
+func getGatewayClient() {
+	c, err := ethclient.Dial(config.Config.Indexer.Gateway.Endpoint)
+
+	if err != nil {
+		logger.Errorf("connect to Infura: %v", err)
+	}
+
+	client = c
+}
+
 //nolint:funlen,gocognit // disable line length check
 func (c *moralisCrawler) Work(param crawler.WorkParam) error {
 	chainType := GetChainType(param.NetworkID)
@@ -48,17 +57,13 @@ func (c *moralisCrawler) Work(param crawler.WorkParam) error {
 
 	networkSymbol := chainType.GetNetworkSymbol()
 
+	// nftTransfers for notes
 	nftTransfers, err := GetNFTTransfers(param.Identity, chainType, param.BlockHeight, getApiKey())
 	if err != nil {
 		return err
 	}
 
-	// reverse the order of transfers to calculate the asset balances
-	for i, j := 0, len(nftTransfers.Result)-1; i < j; i, j = i+1, j-1 {
-		nftTransfers.Result[i], nftTransfers.Result[j] = nftTransfers.Result[j], nftTransfers.Result[i]
-	}
-
-	//TODO: tsp
+	// get nft for assets
 	assets, err := GetNFTs(param.Identity, chainType, getApiKey())
 	if err != nil {
 		return err
@@ -83,11 +88,11 @@ func (c *moralisCrawler) Work(param crawler.WorkParam) error {
 	owner := rss3uri.NewAccountInstance(param.OwnerID, param.OwnerPlatformID.Symbol()).UriString()
 	author := rss3uri.NewAccountInstance(param.Identity, constants.PlatformSymbolEthereum).UriString()
 
-	// make the item list complete
+	// complete the note list
 	for _, item := range nftTransfers.Result {
-		tsp, err := item.GetTsp()
-		if err != nil {
-			logger.Warnf("asset: %s fails at GetTsp(): %v", item.String(), err)
+		tsp, tspErr := item.GetTsp()
+		if tspErr != nil {
+			logger.Warnf("asset: %s fails at GetTsp(): %v", item.String(), tspErr)
 
 			tsp = time.Now()
 		}
@@ -103,9 +108,9 @@ func (c *moralisCrawler) Work(param crawler.WorkParam) error {
 			}
 		}
 
-		m, err := utils.ParseNFTMetadata(theAsset.MetaData)
-		if err != nil {
-			logger.Warnf("%v", err)
+		m, parseErr := utils.ParseNFTMetadata(theAsset.MetaData)
+		if parseErr != nil {
+			logger.Warnf("%v", parseErr)
 		}
 
 		if !hasObject {
@@ -141,13 +146,39 @@ func (c *moralisCrawler) Work(param crawler.WorkParam) error {
 		}
 
 		c.Notes = append(c.Notes, note)
+	}
 
-		// asset
-		assetProof := item.GetAssetProof()
+	// complete the asset list
+	for _, asset := range assets.Result {
+		m, parseErr := utils.ParseNFTMetadata(asset.MetaData)
+		if parseErr != nil {
+			logger.Warnf("%v", parseErr)
+		}
+
+		// find the note that has the same proof to get the tsp
+		var tsp time.Time
+
+		for _, note := range c.Notes {
+			noteMetadata, unwrapErr := database.UnwrapJSON[map[string]interface{}](note.Metadata)
+			if unwrapErr != nil {
+				logger.Warnf("%v", unwrapErr) // should never be a problem
+
+				continue
+			}
+
+			if noteMetadata["collection_address"] == asset.TokenAddress &&
+				noteMetadata["token_id"] == asset.TokenId {
+				tsp = note.DateCreated
+
+				break
+			}
+		}
+
+		proof := asset.TokenAddress + "-" + asset.TokenId
 		asset := model.Asset{
-			Identifier:      rss3uri.NewAssetInstance(assetProof, networkSymbol).UriString(),
+			Identifier:      rss3uri.NewAssetInstance(proof, networkSymbol).UriString(),
 			Owner:           owner,
-			RelatedURLs:     GetTxRelatedURLs(networkSymbol, item.TokenAddress, item.TokenId, nil),
+			RelatedURLs:     GetTxRelatedURLs(networkSymbol, asset.TokenAddress, asset.TokenId, nil),
 			Tags:            constants.ItemTagsNFT.ToPqStringArray(),
 			Authors:         []string{author},
 			Title:           m.Name,
@@ -155,70 +186,68 @@ func (c *moralisCrawler) Work(param crawler.WorkParam) error {
 			Attachments:     database.MustWrapJSON(utils.Meta2AssetAtt(m)),
 			Source:          constants.AssetSourceNameEthereumNFT.String(),
 			MetadataNetwork: string(networkSymbol),
-			MetadataProof:   assetProof,
+			MetadataProof:   proof,
 			Metadata: database.MustWrapJSON(map[string]interface{}{
-				"token_standard":     item.ContractType,
-				"token_id":           item.TokenId,
-				"token_symbol":       theAsset.Symbol,
-				"collection_address": item.TokenAddress,
-				"collection_name":    theAsset.Name,
+				"token_standard":     asset.ContractType,
+				"token_id":           asset.TokenId,
+				"token_symbol":       asset.Symbol,
+				"collection_address": asset.TokenAddress,
+				"collection_name":    m.Name,
 			}),
 			DateCreated: tsp,
 			DateUpdated: tsp,
 		}
 
-		if strings.ToLower(item.FromAddress) == strings.ToLower(param.Identity) {
-			// transfer from account
-			// 1. delete the asset if it exists
-			for i, asset := range c.Assets {
-				if asset.MetadataProof == assetProof {
-					c.Assets = append(c.Assets[:i], c.Assets[i+1:]...)
-
-					break
-				}
-			}
-			// 2. delete the asset from database
-			if _, err := database.DeleteAsset(database.DB, &asset); err != nil {
-				logger.Warnf("fail to delete asset: %+v", asset)
-			}
-		}
-
-		if strings.ToLower(item.ToAddress) == strings.ToLower(param.Identity) {
-			// transfer into account
-			c.Assets = append(c.Assets, asset)
-		}
+		c.Assets = append(c.Assets, asset)
 	}
 
-	// complete attachments in parallel
-	lop.ForEach(c.Notes, func(note model.Note, i int) {
-		if note.Attachments != nil {
-			as, err := database.UnwrapJSON[datatype.Attachments](note.Attachments)
-			if err != nil {
-				return
-			}
-			utils.CompleteMimeTypes(as)
-			c.Notes[i].Attachments = database.MustWrapJSON(as)
-		}
-	})
+	// find old data in the database
+	// TODO: need to find a better way to do this
+	//newAssetProofs := lo.Map(c.Assets, func(asset model.Asset, _ int) string {
+	//	return asset.MetadataProof
+	//})
+	//oldAssets, err := database.QueryAllAssets(database.DB, []string{owner}, networkSymbol)
+	//if err != nil {
+	//	logger.Warnf("fail to query old assets: %v", err)
+	//} else {
+	//	lop.ForEach(oldAssets, func(oldAsset model.Asset, _ int) {
+	//		if !lo.Contains(newAssetProofs, oldAsset.MetadataProof) {
+	//			// remove this old asset from database
+	//			if _, err := database.DeleteAsset(database.DB, &oldAsset); err != nil {
+	//				logger.Warnf("fail to delete old asset: %v", err)
+	//			}
+	//		}
+	//	})
+	//}
 
-	lop.ForEach(c.Assets, func(asset model.Asset, i int) {
-		if asset.Attachments != nil {
-			as, err := database.UnwrapJSON[datatype.Attachments](asset.Attachments)
-			if err != nil {
-				return
-			}
-			utils.CompleteMimeTypes(as)
-			c.Assets[i].Attachments = database.MustWrapJSON(as)
-		}
-	})
+	// index ENS
+	ensList, err := GetENSList(param.Identity)
 
-	// reverse assets and notes to make sure the latest one is on top
-	for i, j := 0, len(c.Assets)-1; i < j; i, j = i+1, j-1 {
-		c.Assets[i], c.Assets[j] = c.Assets[j], c.Assets[i]
+	if err != nil {
+		return err
 	}
 
-	for i, j := 0, len(c.Notes)-1; i < j; i, j = i+1, j-1 {
-		c.Notes[i], c.Notes[j] = c.Notes[j], c.Notes[i]
+	for _, ens := range ensList {
+		metadata := make(map[string]interface{}, len(ens.Text))
+		for k, v := range ens.Text {
+			metadata[k] = v
+		}
+
+		profile := model.Profile{
+			ID:          strings.ToLower(param.Identity),
+			Platform:    constants.PlatformIDEthereum.Int(),
+			Source:      constants.ProfileSourceIDENS.Int(),
+			Name:        database.WrapNullString(ens.Domain),
+			Bio:         database.WrapNullString(ens.Description),
+			Avatars:     []string{ens.Avatar},
+			Attachments: database.MustWrapJSON(ens.Attachments),
+		}
+
+		c.Profiles = append(c.Profiles, profile)
+	}
+
+	if err := utils.CompleteMimeTypesForItems(c.Notes, c.Assets, c.Profiles); err != nil {
+		logger.Error("moralis complete mime types error:", err)
 	}
 
 	return nil

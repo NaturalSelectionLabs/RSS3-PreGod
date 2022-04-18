@@ -21,9 +21,11 @@ func (p GitcoinPlatform) getContractAddress() string {
 	if p == ETH {
 		return bulkCheckoutAddressETH
 	}
+
 	if p == Polygon {
 		return bulkCheckoutAddressPolygon
 	}
+
 	return ""
 }
 
@@ -120,11 +122,14 @@ func (d DonationInfo) GetTxTo() string {
 	if d.Approach == DonationApproachEthereum {
 		return bulkCheckoutAddressETH
 	}
+
 	if d.Approach == DonationApproachPolygon {
 		return bulkCheckoutAddressPolygon
 	}
+
 	if d.Approach == DonationApproachZksync {
 		return d.AdminAddress
 	}
+
 	return ""
 }

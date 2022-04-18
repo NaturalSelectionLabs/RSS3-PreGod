@@ -24,6 +24,6 @@ type File struct {
 	DateUpdated    *timex.Time `json:"date_updated,omitempty"`
 	Identifier     string      `json:"identifier"`
 	IdentifierNext string      `json:"identifier_next,omitempty"`
-	Total          int         `json:"total"`
+	Total          int64       `json:"total"`
 	List           any         `json:"list"`
 }

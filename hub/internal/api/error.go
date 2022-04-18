@@ -1,6 +1,11 @@
 package api
 
-import "errors"
+import (
+	"errors"
+	"fmt"
+
+	"github.com/gin-gonic/gin"
+)
 
 var (
 	// Base error
@@ -9,9 +14,8 @@ var (
 	// System error
 	CodeNoRouter = 10001
 	CodeNoMethod = 10002
-	CodeNotFound = 10003
-	CodeDatabase = 10004
-	CodeIndexer  = 10005
+	CodeDatabase = 10003
+	CodeIndexer  = 10004
 
 	// Service error
 	CodeInvalidParams = 20001
@@ -22,7 +26,6 @@ var (
 	// System error
 	ErrorNoRouter = errors.New("no router")
 	ErrorNoMethod = errors.New("no method")
-	ErrorNotFound = errors.New("not found")
 	ErrorDatabase = errors.New("database error")
 	ErrorIndexer  = errors.New("indexer error")
 
@@ -36,7 +39,6 @@ var (
 
 		CodeNoRouter: ErrorNoRouter,
 		CodeNoMethod: ErrorNoMethod,
-		CodeNotFound: ErrorNotFound,
 		CodeDatabase: ErrorDatabase,
 		CodeIndexer:  ErrorIndexer,
 
@@ -59,6 +61,12 @@ func CodeToError(code int) error {
 	}
 
 	return ErrorUnknown
+}
+
+func SetError(c *gin.Context, err error, value error) {
+	code := ErrorToCode(err)
+	c.Set("code", code)
+	_ = c.Error(fmt.Errorf("%w: %s", err, value.Error()))
 }
 
 func init() {

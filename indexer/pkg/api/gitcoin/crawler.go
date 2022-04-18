@@ -64,7 +64,7 @@ func (gc *crawler) InitGrants() error {
 
 	for _, item := range grants {
 		if item.AdminAddress != "0x0" {
-			gc.updateHostingProject(item.AdminAddress) // get grant project detailed info
+			gc.updateHostingProject(item) // get grant project detailed info
 
 			time.Sleep(10 * time.Second)
 		}
@@ -123,8 +123,8 @@ func (gc *crawler) needUpdateProject(adminAddress string) bool {
 	return ok && !p.Active
 }
 
-func (gc *crawler) updateHostingProject(adminAddress string) (inactive bool, err error) {
-	project, err := getProjectsInfo(adminAddress, "")
+func (gc *crawler) updateHostingProject(info GrantInfo) (inactive bool, err error) {
+	project, err := GetProjectsInfo(info.AdminAddress, info.Title)
 	if err != nil {
 		logger.Errorf("zksync get projects info error: %v", err)
 
@@ -132,10 +132,10 @@ func (gc *crawler) updateHostingProject(adminAddress string) (inactive bool, err
 	}
 
 	if !project.Active {
-		gc.addInactiveAdminAddress(adminAddress)
+		gc.addInactiveAdminAddress(info.AdminAddress)
 	}
 
-	gc.hostingProjectsCache[adminAddress] = project // TODO: add to db
+	gc.hostingProjectsCache[info.AdminAddress] = project // TODO: add to db
 	inactive = !project.Active
 
 	return
@@ -259,9 +259,11 @@ func (gc *crawler) getConfig(networkId constants.NetworkID) *crawlerConfig {
 	if networkId == constants.NetworkIDEthereum {
 		return &gc.eth
 	}
+
 	if networkId == constants.NetworkIDPolygon {
 		return &gc.polygon
 	}
+
 	logger.Errorf("unsupported network")
 
 	return nil
@@ -277,6 +279,7 @@ func getDonationPlatform(networkId constants.NetworkID) GitcoinPlatform {
 	}
 
 	logger.Errorf("unsupported network")
+
 	return ""
 }
 
@@ -326,7 +329,6 @@ func (gc *crawler) xscanRun(networkId constants.NetworkID) error {
 }
 
 func setDB(donations []DonationInfo, networkId constants.NetworkID) error {
-	//logger.Infof("set db, network: [%s]", networkId.Symbol())
 	items := make([]model.Note, 0)
 
 	for _, v := range donations {
@@ -338,30 +340,12 @@ func setDB(donations []DonationInfo, networkId constants.NetworkID) error {
 
 			tsp = time.Now()
 		}
-		// TODO: read from db to get project info
-		// if not in db, ok is false
-		ok := true
+
+		ok := true // TODO: read from db to get project info; if not in db, ok is false
 		if !ok {
 			getProjectsInfo(v.AdminAddress, "")
 		}
-		attachment := datatype.Attachments{
-			{
-				Type:     "title",
-				Content:  "", //TODO: Read from db
-				MimeType: "text/plain",
-			},
-			{
-				Type:     "description",
-				Content:  "", //TODO: Read from db
-				MimeType: "text/plain",
-			},
-			{
-				Type:        "logo",
-				Content:     "", //TODO: Read from db
-				MimeType:    "", // TODO
-				SizeInBytes: 0,  //TODO
-			},
-		}
+
 		note := model.Note{
 			Identifier: rss3uri.NewNoteInstance(author, networkId.Symbol()).UriString(),
 			Owner:      author,
@@ -369,11 +353,28 @@ func setDB(donations []DonationInfo, networkId constants.NetworkID) error {
 				moralis.GetTxHashURL(networkId.Symbol(), v.TxHash),
 				"https://gitcoin.co/grants/2679/rss3-rss-with-human-curation", //TODO: read from db
 			},
-			Tags:            constants.ItemTagsDonationGitcoin.ToPqStringArray(),
-			Authors:         []string{author},
-			Title:           "",
-			Summary:         "",
-			Attachments:     database.MustWrapJSON(attachment),
+			Tags:    constants.ItemTagsDonationGitcoin.ToPqStringArray(),
+			Authors: []string{author},
+			Title:   "",
+			Summary: "",
+			Attachments: database.MustWrapJSON(datatype.Attachments{
+				{
+					Type:     "title",
+					Content:  "", //TODO: Read from db
+					MimeType: "text/plain",
+				},
+				{
+					Type:     "description",
+					Content:  "", //TODO: Read from db
+					MimeType: "text/plain",
+				},
+				{
+					Type:        "logo",
+					Content:     "", //TODO: Read from db
+					MimeType:    "", // TODO
+					SizeInBytes: 0,  //TODO
+				},
+			}),
 			Source:          constants.NoteSourceNameGitcoinContribution.String(),
 			MetadataNetwork: constants.NetworkSymbolEthereum.String(),
 			MetadataProof:   v.TxHash,

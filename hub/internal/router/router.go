@@ -29,6 +29,7 @@ func Initialize() (router *gin.Engine) {
 	apiRouter := router.Group(fmt.Sprintf("/%s", protocol.Version))
 	{
 		apiRouter.Use(middleware.Instance())
+		apiRouter.Use(middleware.ListLimit())
 
 		apiRouter.GET("/:instance", handler.GetInstanceHandlerFunc)
 		apiRouter.GET("/:instance/profiles", handler.GetProfileListHandlerFunc)

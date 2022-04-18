@@ -4,10 +4,12 @@ metadata:
   name: pregod-indexer-autoupdater
   namespace: pregod
 spec:
-  concurrencyPolicy: Allow
+  concurrencyPolicy: Forbid
   failedJobsHistoryLimit: 1
   jobTemplate:
     spec:
+      backoffLimit: 0
+      activeDeadlineSeconds: 21600
       template:
         spec:
           containers:
@@ -29,7 +31,7 @@ spec:
                 subPath: rds-combined-ca-bundle.pem
                 readOnly: true
           dnsPolicy: ClusterFirst
-          restartPolicy: OnFailure
+          restartPolicy: Never
           schedulerName: default-scheduler
           securityContext: {}
           terminationGracePeriodSeconds: 30
@@ -43,6 +45,6 @@ spec:
                 items:
                   - key: rds-combined-ca-bundle.pem
                     path: rds-combined-ca-bundle.pem
-  schedule: "*/10 * * * *"
+  schedule: "0 */6 * * *"
   successfulJobsHistoryLimit: 3
   suspend: false
