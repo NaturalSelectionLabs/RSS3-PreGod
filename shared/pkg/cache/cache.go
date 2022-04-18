@@ -21,6 +21,12 @@ var CacheMissedError = redis.Nil
 
 const CacheKeySeparator = ":"
 
+func init() {
+	if err := Setup(); err != nil {
+		panic(err)
+	}
+}
+
 func Setup() error {
 	ctx := context.Background()
 
@@ -45,6 +51,14 @@ func Setup() error {
 
 func ConstructKey(keyParts ...string) string {
 	return strings.Join(keyParts, CacheKeySeparator)
+}
+
+func GetRaw(ctx context.Context, key string) (string, error) {
+	return rdb.Get(ctx, key).Result()
+}
+
+func SetRaw(ctx context.Context, key, value string, expiration time.Duration) error {
+	return rdb.Set(ctx, key, value, expiration).Err()
 }
 
 func Get(ctx context.Context, key string, data interface{}) error {

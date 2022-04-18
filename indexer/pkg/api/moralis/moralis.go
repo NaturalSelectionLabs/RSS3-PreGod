@@ -150,11 +150,14 @@ func GetTxByToken(tokenAddress string, tokenId string, chainType ChainType, apiK
 	res := new(NFTTransferItem)
 
 	parsedJson, err := parser.Parse(string(response))
-
-	jsoni.UnmarshalFromString(string(parsedJson.GetObject("result", "0").MarshalTo(nil)), &res)
-
 	if err != nil {
 		logger.Errorf("GetTxByToken: %v", err)
+
+		return NFTTransferItem{}, err
+	}
+
+	if err := jsoni.UnmarshalFromString(string(parsedJson.GetObject("result", "0").MarshalTo(nil)), &res); err != nil {
+		return NFTTransferItem{}, err
 	}
 
 	return *res, nil
