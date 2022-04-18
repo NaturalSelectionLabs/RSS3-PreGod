@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
-	"time"
 
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/internal/api"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/internal/indexer"
@@ -22,15 +21,14 @@ import (
 )
 
 type GetNoteListRequest struct {
-	Offset         int        `form:"offset"`
-	Limit          int        `form:"limit"`
-	LastTime       *time.Time `form:"last_time" time_format:"2006-01-02T15:04:05.000Z"`
-	Tags           []string   `form:"tags"`
-	MimeTypes      []string   `form:"mime_types"`
-	ItemSources    []string   `form:"item_sources"`
-	LinkSources    []string   `form:"link_sources"`
-	LinkType       string     `form:"link_type"`
-	ProfileSources []string   `form:"profile_sources"`
+	Limit          int      `form:"limit"`
+	LastIdentifier string   `form:"last_identifier"`
+	Tags           []string `form:"tags"`
+	MimeTypes      []string `form:"mime_types"`
+	ItemSources    []string `form:"item_sources"`
+	LinkSources    []string `form:"link_sources"`
+	LinkType       string   `form:"link_type"`
+	ProfileSources []string `form:"profile_sources"`
 }
 
 // nolint:funlen // TODO
@@ -117,14 +115,13 @@ func GetNoteListHandlerFunc(c *gin.Context) {
 		}
 	}
 
-	var lastTime *time.Time
+	var lastItem *protocol.Item
 
 	for _, item := range noteList {
-		assetDateCreated := item.DateCreated.Time()
-		if lastTime == nil {
-			lastTime = &assetDateCreated
-		} else if lastTime.After(assetDateCreated) {
-			lastTime = &assetDateCreated
+		internalItem := item
+
+		if lastItem == nil || lastItem.DateCreated.Time().After(internalItem.DateCreated.Time()) {
+			lastItem = &internalItem
 		}
 	}
 
@@ -132,8 +129,9 @@ func GetNoteListHandlerFunc(c *gin.Context) {
 
 	if len(noteList) == database.MaxLimit {
 		nextQuery := c.Request.URL.Query()
-		if lastTime != nil {
-			nextQuery.Set("last_time", lastTime.Format(timex.ISO8601))
+
+		if lastItem != nil {
+			nextQuery.Set("last_identifier", lastItem.Identifier)
 		}
 
 		identifierNext = fmt.Sprintf("%s/notes?%s", uri.String(), nextQuery.Encode())
@@ -198,8 +196,17 @@ func getNoteListByInstance(instance rss3uri.Instance, request GetNoteListRequest
 	// Get instance's notes
 	internalDB = database.DB
 
-	if request.LastTime != nil {
-		internalDB = internalDB.Where("date_created < ?", request.LastTime)
+	if request.LastIdentifier != "" {
+		var lastItem model.Note
+		if err := database.DB.Where(&model.Note{
+			Identifier: strings.ToLower(request.LastIdentifier),
+		}).First(&lastItem).Error; err != nil {
+			return nil, 0, err
+		}
+
+		internalDB = internalDB.
+			Where("date_created <= ?", lastItem.DateCreated).
+			Where("identifier != ?", lastItem.Identifier)
 	}
 
 	if request.Tags != nil && len(request.Tags) != 0 {
@@ -226,7 +233,6 @@ func getNoteListByInstance(instance rss3uri.Instance, request GetNoteListRequest
 	notes := make([]model.Note, 0)
 	if err := internalDB.
 		Where("owner = ?", strings.ToLower(rss3uri.New(instance).String())).
-		Offset(request.Offset).
 		Limit(request.Limit).
 		Order("date_created DESC").
 		Find(&notes).Error; err != nil {
@@ -243,13 +249,7 @@ func getNoteListByInstance(instance rss3uri.Instance, request GetNoteListRequest
 		return nil, 0, err
 	}
 
-	total := count - int64(request.Offset)
-
-	if total < 0 {
-		total = 0
-	}
-
-	return notes, total, nil
+	return notes, count, nil
 }
 
 // nolint:funlen,gocognit // TODO
@@ -327,8 +327,17 @@ func getNoteListsByLink(instance rss3uri.Instance, request GetNoteListRequest) (
 
 	internalDB = database.DB
 
-	if request.LastTime != nil {
-		internalDB = internalDB.Where("date_created < ?", request.LastTime)
+	if request.LastIdentifier != "" {
+		var lastItem model.Note
+		if err := database.DB.Where(&model.Note{
+			Identifier: strings.ToLower(request.LastIdentifier),
+		}).First(&lastItem).Error; err != nil {
+			return nil, 0, err
+		}
+
+		internalDB = internalDB.
+			Where("date_created <= ?", lastItem.DateCreated).
+			Where("identifier != ?", lastItem.Identifier)
 	}
 
 	if request.Tags != nil && len(request.Tags) != 0 {
@@ -355,7 +364,6 @@ func getNoteListsByLink(instance rss3uri.Instance, request GetNoteListRequest) (
 	notes := make([]model.Note, 0)
 	if err := internalDB.
 		Where("owner IN ?", owners).
-		Offset(request.Offset).
 		Limit(request.Limit).
 		Order("date_created DESC").
 		Find(&notes).Error; err != nil {
@@ -372,11 +380,5 @@ func getNoteListsByLink(instance rss3uri.Instance, request GetNoteListRequest) (
 		return nil, 0, err
 	}
 
-	total := count - int64(request.Offset)
-
-	if total < 0 {
-		total = 0
-	}
-
-	return notes, total, nil
+	return notes, count, nil
 }

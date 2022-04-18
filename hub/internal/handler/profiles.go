@@ -184,6 +184,7 @@ func getPlatformInstanceProfileList(instance *rss3uri.PlatformInstance, request 
 	return profiles, count, nil
 }
 
+// nolint:dupl // TODO
 func getAssetProfile(instance *rss3uri.NetworkInstance, request GetProfileListRequest) ([]protocol.Profile, int64, error) {
 	internalDB := database.DB
 
@@ -229,6 +230,7 @@ func getAssetProfile(instance *rss3uri.NetworkInstance, request GetProfileListRe
 	return profiles, int64(len(profiles)), nil
 }
 
+// nolint:dupl // TODO
 func getNoteProfile(instance *rss3uri.NetworkInstance, request GetProfileListRequest) ([]protocol.Profile, int64, error) {
 	internalDB := database.DB
 

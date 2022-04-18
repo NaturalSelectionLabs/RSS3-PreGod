@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
-	"time"
 
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/internal/api"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/internal/middleware"
@@ -19,13 +18,13 @@ import (
 )
 
 type GetBackLinkListRequest struct {
-	Type           string     `form:"type"`
-	Offset         int        `form:"offset"`
-	Limit          int        `form:"limit"`
-	LastTime       *time.Time `form:"last_time" time_format:"2006-01-02T15:04:05.000Z"`
-	From           string     `form:"from"`
-	LinkSources    []string   `form:"link_sources"`
-	ProfileSources []string   `form:"profile_sources"`
+	Type           string   `form:"type"`
+	Offset         int      `form:"offset"`
+	Limit          int      `form:"limit"`
+	LastIdentifier string   `form:"last_identifier"`
+	From           string   `form:"from"`
+	LinkSources    []string `form:"link_sources"`
+	ProfileSources []string `form:"profile_sources"`
 }
 
 func GetBackLinkListHandlerFunc(c *gin.Context) {
@@ -80,14 +79,13 @@ func GetBackLinkListHandlerFunc(c *gin.Context) {
 
 	uri := rss3uri.New(instance)
 
-	var lastTime *time.Time
+	var lastItem *protocol.Link
 
 	for _, item := range backLinkList {
-		assetDateCreated := item.DateCreated.Time()
-		if lastTime == nil {
-			lastTime = &assetDateCreated
-		} else if lastTime.After(assetDateCreated) {
-			lastTime = &assetDateCreated
+		internalItem := item
+
+		if lastItem == nil || lastItem.DateCreated.Time().After(internalItem.DateCreated.Time()) {
+			lastItem = &internalItem
 		}
 	}
 
@@ -95,8 +93,8 @@ func GetBackLinkListHandlerFunc(c *gin.Context) {
 
 	if len(backLinkList) == database.MaxLimit {
 		nextQuery := c.Request.URL.Query()
-		if lastTime != nil {
-			nextQuery.Set("last_time", lastTime.Format(timex.ISO8601))
+		if lastItem != nil {
+			nextQuery.Set("last_identifier", lastItem.From)
 		}
 
 		identifierNext = fmt.Sprintf("%s/backlinks?%s", uri.String(), nextQuery.Encode())
@@ -118,8 +116,22 @@ func getBackLinkList(instance rss3uri.Instance, request GetBackLinkListRequest) 
 		internalDB = internalDB.Where("type = ?", constants.LinkTypeName(request.Type).ID().Int())
 	}
 
-	if request.LastTime != nil {
-		internalDB = internalDB.Where("created_at < ?", request.LastTime)
+	if request.LastIdentifier != "" {
+		lastIdentifier, err := rss3uri.Parse(request.LastIdentifier)
+		if err != nil {
+			return nil, 0, err
+		}
+
+		var lastItem model.Link
+		if err := database.DB.Where(&model.Link{
+			From: lastIdentifier.Instance.GetIdentity(),
+		}).First(&lastItem).Error; err != nil {
+			return nil, 0, err
+		}
+
+		internalDB = internalDB.
+			Where("created_at <= ?", lastItem.CreatedAt).
+			Where(`"from" != ?`, lastItem.From)
 	}
 
 	if request.From != "" {
@@ -173,11 +185,5 @@ func getBackLinkList(instance rss3uri.Instance, request GetBackLinkListRequest) 
 		return nil, 0, err
 	}
 
-	total := count - int64(request.Offset)
-
-	if total < 0 {
-		total = 0
-	}
-
-	return linkList, total, nil
+	return linkList, count, nil
 }

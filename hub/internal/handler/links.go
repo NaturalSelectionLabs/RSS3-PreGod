@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
-	"time"
 
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/internal/api"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/internal/middleware"
@@ -19,13 +18,12 @@ import (
 )
 
 type GetLinkListRequest struct {
-	Type           string     `form:"type"`
-	Offset         int        `form:"offset"`
-	Limit          int        `form:"limit"`
-	LastTime       *time.Time `form:"last_time" time_format:"2006-01-02T15:04:05.000Z"`
-	To             string     `form:"to"`
-	LinkSources    []string   `form:"link_sources"`
-	ProfileSources []string   `form:"profile_sources"`
+	Type           string   `form:"type"`
+	LastIdentifier string   `form:"last_identifier"`
+	Limit          int      `form:"limit"`
+	To             string   `form:"to"`
+	LinkSources    []string `form:"link_sources"`
+	ProfileSources []string `form:"profile_sources"`
 }
 
 func GetLinkListHandlerFunc(c *gin.Context) {
@@ -79,14 +77,13 @@ func GetLinkListHandlerFunc(c *gin.Context) {
 
 	uri := rss3uri.New(instance)
 
-	var lastTime *time.Time
+	var lastItem *protocol.Link
 
 	for _, item := range linkList {
-		assetDateCreated := item.DateCreated.Time()
-		if lastTime == nil {
-			lastTime = &assetDateCreated
-		} else if lastTime.After(assetDateCreated) {
-			lastTime = &assetDateCreated
+		internalItem := item
+
+		if lastItem == nil || lastItem.DateCreated.Time().After(internalItem.DateCreated.Time()) {
+			lastItem = &internalItem
 		}
 	}
 
@@ -94,8 +91,8 @@ func GetLinkListHandlerFunc(c *gin.Context) {
 
 	if len(linkList) == database.MaxLimit {
 		nextQuery := c.Request.URL.Query()
-		if lastTime != nil {
-			nextQuery.Set("last_time", lastTime.Format(timex.ISO8601))
+		if lastItem != nil {
+			nextQuery.Set("last_identifier", lastItem.To)
 		}
 
 		identifierNext = fmt.Sprintf("%s/links?%s", uri.String(), nextQuery.Encode())
@@ -117,8 +114,22 @@ func getLinkList(instance rss3uri.Instance, request GetLinkListRequest) ([]model
 		internalDB = internalDB.Where("type = ?", constants.LinkTypeName(request.Type).ID().Int())
 	}
 
-	if request.LastTime != nil {
-		internalDB = internalDB.Where("created_at < ?", request.LastTime)
+	if request.LastIdentifier != "" {
+		lastIdentifier, err := rss3uri.Parse(request.LastIdentifier)
+		if err != nil {
+			return nil, 0, err
+		}
+
+		var lastItem model.Link
+		if err := database.DB.Where(&model.Link{
+			To: lastIdentifier.Instance.GetIdentity(),
+		}).First(&lastItem).Error; err != nil {
+			return nil, 0, err
+		}
+
+		internalDB = internalDB.
+			Where("created_at <= ?", lastItem.CreatedAt).
+			Where(`"to" != ?`, lastItem.To)
 	}
 
 	if request.To != "" {
@@ -151,7 +162,6 @@ func getLinkList(instance rss3uri.Instance, request GetLinkListRequest) ([]model
 			From:             strings.ToLower(instance.GetIdentity()),
 			FromInstanceType: constants.PlatformSymbol(instance.GetSuffix()).ID().Int(),
 		}).
-		Offset(request.Offset).
 		Limit(request.Limit).
 		Order("created_at DESC").
 		Find(&linkList).Error; err != nil {
@@ -172,11 +182,5 @@ func getLinkList(instance rss3uri.Instance, request GetLinkListRequest) ([]model
 		return nil, 0, err
 	}
 
-	total := count - int64(request.Offset)
-
-	if total < 0 {
-		total = 0
-	}
-
-	return linkList, total, nil
+	return linkList, count, nil
 }
