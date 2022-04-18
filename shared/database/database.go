@@ -35,7 +35,7 @@ func Setup() error {
 	if err != nil {
 		return err
 	}
-	
+
 	DB = db
 
 	internalDB, err := DB.DB()
@@ -55,12 +55,12 @@ func Setup() error {
 	}
 
 	if err := DB.AutoMigrate(
-		//&model.Profile{},
-		//&model.Account{},
-		//&model.Link{},
-		//&model.Asset{},
-		//&model.Note{},
-		//&model.CrawlerMetadata{},
+		&model.Profile{},
+		&model.Account{},
+		&model.Link{},
+		&model.Asset{},
+		&model.Note{},
+		&model.CrawlerMetadata{},
 	); err != nil {
 		return err
 	}
