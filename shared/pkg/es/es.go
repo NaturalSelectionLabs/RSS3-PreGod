@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/config"
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/logger"
 	"github.com/elastic/go-elasticsearch/v7"
 )
 
@@ -15,6 +16,8 @@ func init() {
 	if err := Setup(); err != nil {
 		panic(err)
 	}
+
+	logger.Info("Elasticsearch init done")
 }
 
 func Setup() (err error) {
