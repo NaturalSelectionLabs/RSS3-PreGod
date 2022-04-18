@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/tls"
 	"errors"
+	"strings"
 	"time"
 
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/config"
@@ -16,7 +17,9 @@ var (
 	rdb   *redis.Client
 )
 
-var Nil = redis.Nil
+var CacheMissedError = redis.Nil
+
+const CacheKeySeparator = ":"
 
 func Setup() error {
 	ctx := context.Background()
@@ -38,6 +41,10 @@ func Setup() error {
 	}
 
 	return nil
+}
+
+func ConstructKey(keyParts ...string) string {
+	return strings.Join(keyParts, CacheKeySeparator)
 }
 
 func Get(ctx context.Context, key string, data interface{}) error {

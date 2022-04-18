@@ -262,7 +262,7 @@ func GetUserTimeline(name string) ([]Timeline, error) {
 
 	json, _ := jsoni.MarshalToString(data)
 
-	response, err := httpx.PostRaw(url, headers, json)
+	response, err := httpx.Post(url, headers, json)
 
 	if err != nil {
 		logger.Errorf("Jike GetUserTimeline err: %v", err)
@@ -270,7 +270,7 @@ func GetUserTimeline(name string) ([]Timeline, error) {
 		return nil, err
 	}
 
-	parsedJson, err := parser.Parse(string(response.Body()))
+	parsedJson, err := parser.Parse(string(response))
 
 	author := string(parsedJson.GetStringBytes("data", "userProfile", "username"))
 

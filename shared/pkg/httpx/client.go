@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/config"
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/logger"
 	"github.com/go-resty/resty/v2"
 )
 
@@ -15,7 +16,12 @@ type ContentHeader struct {
 }
 
 func Get(url string, headers map[string]string) ([]byte, error) {
-	// Create a Resty Client
+	// get from cache fist
+	response, ok := getCache(url, "")
+	if ok {
+		return []byte(response), nil
+	}
+
 	client := getClient()
 
 	if headers != nil {
@@ -34,10 +40,20 @@ func Get(url string, headers map[string]string) ([]byte, error) {
 		return nil, fmt.Errorf("StatusCode [%d]", resp.StatusCode())
 	}
 
+	if cacheErr := setCache(url, "", string(resp.Body())); cacheErr != nil {
+		logger.Errorf("Failed to set cache for url [%s]. err: %+v", url, cacheErr)
+	}
+
 	return resp.Body(), err
 }
 
 func Post(url string, headers map[string]string, data string) ([]byte, error) {
+	// get from cache fist
+	response, ok := getCache(url, "")
+	if ok {
+		return []byte(response), nil
+	}
+
 	client := getClient()
 
 	if headers != nil {
@@ -48,6 +64,10 @@ func Post(url string, headers map[string]string, data string) ([]byte, error) {
 
 	// Post url
 	resp, err := request.Post(url)
+
+	if cacheErr := setCache(url, data, string(resp.Body())); cacheErr != nil {
+		logger.Errorf("Failed to set cache for url [%s]. err: %+v", url, cacheErr)
+	}
 
 	return resp.Body(), err
 }
@@ -68,6 +88,7 @@ func PostRaw(url string, headers map[string]string, data string) (*resty.Respons
 	return resp, err
 }
 
+// TODO: add cache
 func Head(url string) (http.Header, error) {
 	client := getClient()
 
