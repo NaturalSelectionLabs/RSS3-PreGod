@@ -60,6 +60,13 @@ func GetProfileListHandlerFunc(c *gin.Context) {
 
 				return
 			}
+		case constants.PrefixNameNote:
+			profileList, total, err = getNoteProfile(value, request)
+			if err != nil {
+				api.SetError(c, api.ErrorIndexer, err)
+
+				return
+			}
 		default:
 			api.SetError(c, api.ErrorInvalidParams, errors.New("unsupported prefix name"))
 
@@ -209,10 +216,57 @@ func getAssetProfile(instance *rss3uri.NetworkInstance, request GetProfileListRe
 			Name:        asset.Title,
 			Bio:         asset.Summary,
 			Attachments: attachments,
+			Tags:        asset.Tags,
+			RelatedURLs: asset.RelatedURLs,
 			Source:      asset.Source,
 			Metadata: protocol.ProfileMetadata{
 				Network: strings.ToLower(asset.MetadataNetwork),
 				Proof:   asset.MetadataProof,
+			},
+		},
+	}
+
+	return profiles, int64(len(profiles)), nil
+}
+
+func getNoteProfile(instance *rss3uri.NetworkInstance, request GetProfileListRequest) ([]protocol.Profile, int64, error) {
+	internalDB := database.DB
+
+	if request.ProfileSources != nil && len(request.ProfileSources) != 0 {
+		profileSources := make([]int, 0)
+
+		for _, source := range request.ProfileSources {
+			profileSources = append(profileSources, constants.ProfileSourceName(source).ID().Int())
+		}
+
+		internalDB = internalDB.Where("source IN ?", profileSources)
+	}
+
+	note := model.Note{}
+	if err := internalDB.Where(&model.Note{
+		Identifier: strings.ToLower(instance.UriString()),
+	}).First(&note).Error; err != nil {
+		return nil, 0, err
+	}
+
+	attachments := make([]protocol.ProfileAttachment, 0)
+	if err := json.Unmarshal(note.Attachments, &attachments); err != nil {
+		return nil, 0, err
+	}
+
+	profiles := []protocol.Profile{
+		{
+			DateCreated: timex.Time(note.DateCreated),
+			DateUpdated: timex.Time(note.DateUpdated),
+			Name:        note.Title,
+			Bio:         note.Summary,
+			Attachments: attachments,
+			Tags:        note.Tags,
+			RelatedURLs: note.RelatedURLs,
+			Source:      note.Source,
+			Metadata: protocol.ProfileMetadata{
+				Network: strings.ToLower(note.MetadataNetwork),
+				Proof:   note.MetadataProof,
 			},
 		},
 	}
