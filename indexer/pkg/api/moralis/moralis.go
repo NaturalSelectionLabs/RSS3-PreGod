@@ -32,7 +32,7 @@ func requestMoralisApi(url string, apiKey string) ([]byte, error) {
 
 	response, err := httpx.Get(url, headers)
 	if err != nil {
-		logger.Errorf("http get error: [%v]", err)
+		logger.Errorf("http get error with url '%s': [%v]", url, err)
 
 		return nil, err
 	}
@@ -246,14 +246,6 @@ func getENSTextValue(domain string, record *ENSTextRecord) error {
 				}
 				record.Attachments = append(record.Attachments, a)
 			}
-			// case "avatar":
-			// 	if text != "" {
-			// 		a := datatype.Attachment{
-			// 			Type:    "banner",
-			// 			Address: text,
-			// 		}
-			// 		attachments = append(attachments, a)
-			// 	}
 		}
 	}
 

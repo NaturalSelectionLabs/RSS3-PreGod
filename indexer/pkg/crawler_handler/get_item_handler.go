@@ -92,19 +92,19 @@ func (pt *GetItemsHandler) Excute() (*GetItemsResult, error) {
 		}
 	}
 
-	// TODO: stores the crawler last worked metadata
-	if _, err := database.CreateCrawlerMetadata(tx, &model.CrawlerMetadata{
-		AccountInstance: pt.WorkParam.OwnerID,
-		PlatformID:      pt.WorkParam.PlatformID,
-	}, true); err != nil {
-		return result, err
-	}
-
 	if err := tx.Commit().Error; err != nil {
 		return result, err
 	}
 
 	result.Result = r
+
+	// stores the crawler last worked metadata
+	if _, err := database.CreateCrawlerMetadata(database.DB, &model.CrawlerMetadata{
+		AccountInstance: pt.WorkParam.OwnerID,
+		PlatformID:      pt.WorkParam.PlatformID,
+	}, true); err != nil {
+		return result, err
+	}
 
 	return result, nil
 }
