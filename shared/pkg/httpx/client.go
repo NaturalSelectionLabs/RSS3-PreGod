@@ -1,6 +1,7 @@
 package httpx
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"time"
@@ -17,7 +18,7 @@ type ContentHeader struct {
 
 func Get(url string, headers map[string]string) ([]byte, error) {
 	// get from cache fist
-	response, ok := getCache(url, "")
+	response, ok := getCache(url, methodGet, "")
 	if ok {
 		return []byte(response), nil
 	}
@@ -40,7 +41,7 @@ func Get(url string, headers map[string]string) ([]byte, error) {
 		return nil, fmt.Errorf("StatusCode [%d]", resp.StatusCode())
 	}
 
-	if cacheErr := setCache(url, "", string(resp.Body())); cacheErr != nil {
+	if cacheErr := setCache(url, methodGet, "", string(resp.Body())); cacheErr != nil {
 		logger.Errorf("Failed to set cache for url [%s]. err: %+v", url, cacheErr)
 	}
 
@@ -49,7 +50,7 @@ func Get(url string, headers map[string]string) ([]byte, error) {
 
 func Post(url string, headers map[string]string, data string) ([]byte, error) {
 	// get from cache fist
-	response, ok := getCache(url, "")
+	response, ok := getCache(url, methodPost, "")
 	if ok {
 		return []byte(response), nil
 	}
@@ -65,7 +66,7 @@ func Post(url string, headers map[string]string, data string) ([]byte, error) {
 	// Post url
 	resp, err := request.Post(url)
 
-	if cacheErr := setCache(url, data, string(resp.Body())); cacheErr != nil {
+	if cacheErr := setCache(url, methodPost, data, string(resp.Body())); cacheErr != nil {
 		logger.Errorf("Failed to set cache for url [%s]. err: %+v", url, cacheErr)
 	}
 
@@ -90,6 +91,19 @@ func PostRaw(url string, headers map[string]string, data string) (*resty.Respons
 
 // TODO: add cache
 func Head(url string) (http.Header, error) {
+	// get from cache fist
+	response, ok := getCache(url, methodPost, "")
+	if ok {
+		jsonBytes := []byte(response)
+
+		var header http.Header
+		if err := json.Unmarshal(jsonBytes, &header); err != nil {
+			return nil, err
+		}
+
+		return header, nil
+	}
+
 	client := getClient()
 
 	headers := make(map[string]string)
@@ -99,6 +113,18 @@ func Head(url string) (http.Header, error) {
 	request := client.R().EnableTrace()
 
 	resp, err := request.Head(url)
+
+	// set cache
+	headerMap := map[string][]string(resp.Header())
+
+	jsonBytes, jsonErr := json.Marshal(headerMap)
+	if jsonErr != nil {
+		logger.Errorf("Failed to marshal header map. err: %+v", jsonErr)
+	}
+
+	if cacheErr := setCache(url, methodHead, "", string(jsonBytes)); cacheErr != nil {
+		logger.Errorf("Failed to set cache for url [%s]. err: %+v", url, cacheErr)
+	}
 
 	return resp.Header(), err
 }

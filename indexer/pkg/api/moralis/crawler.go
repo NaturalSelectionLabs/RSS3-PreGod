@@ -60,12 +60,16 @@ func (c *moralisCrawler) Work(param crawler.WorkParam) error {
 	// nftTransfers for notes
 	nftTransfers, err := GetNFTTransfers(param.Identity, chainType, param.BlockHeight, getApiKey())
 	if err != nil {
+		logger.Errorf("get nft transfers: %v", err)
+
 		return err
 	}
 
 	// get nft for assets
 	assets, err := GetNFTs(param.Identity, chainType, getApiKey())
 	if err != nil {
+		logger.Errorf("get nft: %v", err)
+
 		return err
 	}
 

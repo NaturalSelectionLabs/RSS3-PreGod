@@ -10,12 +10,16 @@ import (
 
 var expiredTime = 5 * time.Minute
 
-func getCacheKey(url string, data string) string {
-	return cache.ConstructKey(url, data)
+var methodGet = "get"
+var methodPost = "post"
+var methodHead = "head"
+
+func getCacheKey(method, url, data string) string {
+	return cache.ConstructKey(method, url, data)
 }
 
-func getCache(url string, data string) (string, bool) {
-	key := getCacheKey(url, data)
+func getCache(url, method, data string) (string, bool) {
+	key := getCacheKey(method, url, data)
 
 	var response string
 
@@ -30,8 +34,8 @@ func getCache(url string, data string) (string, bool) {
 	return response, true
 }
 
-func setCache(url string, data string, response string) error {
-	key := getCacheKey(url, data)
+func setCache(url, method, data, response string) error {
+	key := getCacheKey(method, url, data)
 
 	if err := cache.Set(context.Background(), key, response, expiredTime); err != nil {
 		return err
