@@ -4,6 +4,7 @@ go 1.18
 
 require (
 	github.com/arl/statsviz v0.4.1
+	github.com/elastic/go-elasticsearch/v7 v7.10.0
 	github.com/ethereum/go-ethereum v1.10.15
 	github.com/gin-gonic/gin v1.7.7
 	github.com/go-redis/redis/v8 v8.11.4

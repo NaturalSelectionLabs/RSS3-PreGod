@@ -141,16 +141,23 @@ type HubStruct struct {
 	IndexerEndpoint string       `koanf:"indexer_endpoint"`
 }
 
+type ElasticsearchStruct struct {
+	Address  string `koanf:"address"`
+	Username string `koanf:"username"`
+	Password string `koanf:"password"`
+}
+
 type ConfigStruct struct {
-	Protocol ProtocolStruct `koanf:"protocol"`
-	Hub      HubStruct      `koanf:"hub"`
-	Redis    RedisStruct    `koanf:"redis"`
-	Postgres PostgresStruct `koanf:"postgres"`
-	Mongo    MongoStruct    `koanf:"mongo"`
-	Broker   BrokerStruct   `koanf:"broker"`
-	Logger   LoggerStruct   `koanf:"logger"`
-	Network  NetWorkStruct  `koanf:"network"`
-	Indexer  IndexerStruct  `koanf:"indexer"`
+	Protocol      ProtocolStruct      `koanf:"protocol"`
+	Hub           HubStruct           `koanf:"hub"`
+	Redis         RedisStruct         `koanf:"redis"`
+	Postgres      PostgresStruct      `koanf:"postgres"`
+	Mongo         MongoStruct         `koanf:"mongo"`
+	Elasticsearch ElasticsearchStruct `koanf:"elasticsearch"`
+	Broker        BrokerStruct        `koanf:"broker"`
+	Logger        LoggerStruct        `koanf:"logger"`
+	Network       NetWorkStruct       `koanf:"network"`
+	Indexer       IndexerStruct       `koanf:"indexer"`
 }
 
 var (
