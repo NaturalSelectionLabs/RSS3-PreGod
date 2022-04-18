@@ -36,7 +36,16 @@ func Setup() error {
 		return err
 	}
 
-	DB = db
+	internalDB, err := db.DB()
+	if err != nil {
+		return err
+	}
+
+	internalDB.SetMaxOpenConns(config.Config.Postgres.MaxOpenConns)
+	internalDB.SetMaxIdleConns(config.Config.Postgres.MaxIdleConns)
+
+	internalDB.SetConnMaxIdleTime(config.Config.Postgres.ConnMaxIdleTime)
+	internalDB.SetConnMaxLifetime(config.Config.Postgres.ConnMaxLifetime)
 
 	// Install uuid extension for postgres
 	if err := DB.Exec("CREATE EXTENSION IF NOT EXISTS \"uuid-ossp\";").Error; err != nil {
