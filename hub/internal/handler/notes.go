@@ -13,7 +13,6 @@ import (
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database/model"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/constants"
-	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/logger"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/rss3uri"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/timex"
 	"github.com/gin-gonic/gin"
@@ -52,9 +51,9 @@ func GetNoteListHandlerFunc(c *gin.Context) {
 	var total int64
 
 	if len(request.LinkSources) != 0 || request.LinkType != "" {
-		noteModels, total, err = getNoteListsByLink(instance, request)
+		noteModels, total, err = getNoteListsByLink(c, instance, request)
 	} else {
-		noteModels, total, err = getNoteListByInstance(instance, request)
+		noteModels, total, err = getNoteListByInstance(c, instance, request)
 	}
 
 	if err != nil {
@@ -147,7 +146,7 @@ func GetNoteListHandlerFunc(c *gin.Context) {
 }
 
 // nolint:funlen // TODO
-func getNoteListByInstance(instance rss3uri.Instance, request GetNoteListRequest) ([]model.Note, int64, error) {
+func getNoteListByInstance(c *gin.Context, instance rss3uri.Instance, request GetNoteListRequest) ([]model.Note, int64, error) {
 	// Get instance's profiles
 	var profiles []model.Profile
 
@@ -185,13 +184,9 @@ func getNoteListByInstance(instance rss3uri.Instance, request GetNoteListRequest
 		return nil, 0, err
 	}
 
-	// TODO Refine it
-	// Send get request to indexer
-	go func() {
-		if err := indexer.GetItems(instance, accounts); err != nil {
-			logger.Error(err)
-		}
-	}()
+	if err := indexer.GetItems(c.Request.URL, instance, accounts); err != nil {
+		return nil, 0, err
+	}
 
 	// Get instance's notes
 	internalDB = database.DB
@@ -253,7 +248,7 @@ func getNoteListByInstance(instance rss3uri.Instance, request GetNoteListRequest
 }
 
 // nolint:funlen,gocognit // TODO
-func getNoteListsByLink(instance rss3uri.Instance, request GetNoteListRequest) ([]model.Note, int64, error) {
+func getNoteListsByLink(c *gin.Context, instance rss3uri.Instance, request GetNoteListRequest) ([]model.Note, int64, error) {
 	links := make([]model.Link, 0)
 
 	internalDB := database.DB
@@ -302,13 +297,9 @@ func getNoteListsByLink(instance rss3uri.Instance, request GetNoteListRequest) (
 		return nil, 0, err
 	}
 
-	// TODO Refine it
-	// Send a request to indexer
-	go func() {
-		if err := indexer.GetItems(instance, accounts); err != nil {
-			logger.Error(err)
-		}
-	}()
+	if err := indexer.GetItems(c.Request.URL, instance, accounts); err != nil {
+		return nil, 0, err
+	}
 
 	owners := make([]string, len(links))
 

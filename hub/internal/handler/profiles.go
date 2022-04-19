@@ -14,7 +14,6 @@ import (
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database/model"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/constants"
-	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/logger"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/rss3uri"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/timex"
 	"github.com/gin-gonic/gin"
@@ -45,7 +44,7 @@ func GetProfileListHandlerFunc(c *gin.Context) {
 
 	switch value := instance.(type) {
 	case *rss3uri.PlatformInstance:
-		profileList, total, err = getPlatformInstanceProfileList(value, request)
+		profileList, total, err = getPlatformInstanceProfileList(c, value, request)
 		if err != nil {
 			api.SetError(c, api.ErrorIndexer, err)
 
@@ -98,7 +97,9 @@ func GetProfileListHandlerFunc(c *gin.Context) {
 }
 
 // nolint:funlen // TODO
-func getPlatformInstanceProfileList(instance *rss3uri.PlatformInstance, request GetProfileListRequest) ([]protocol.Profile, int64, error) {
+func getPlatformInstanceProfileList(
+	c *gin.Context, instance *rss3uri.PlatformInstance, request GetProfileListRequest,
+) ([]protocol.Profile, int64, error) {
 	var profileModels []model.Profile
 
 	internalDB := database.DB
@@ -174,11 +175,9 @@ func getPlatformInstanceProfileList(instance *rss3uri.PlatformInstance, request 
 			},
 		})
 
-		go func() {
-			if err := indexer.GetItems(instance, accountModels); err != nil {
-				logger.Error(err)
-			}
-		}()
+		if err := indexer.GetItems(c.Request.URL, instance, accountModels); err != nil {
+			return nil, 0, err
+		}
 	}
 
 	return profiles, count, nil

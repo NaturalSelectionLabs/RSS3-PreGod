@@ -61,6 +61,10 @@ func SetRaw(ctx context.Context, key, value string, expiration time.Duration) er
 	return rdb.Set(ctx, key, value, expiration).Err()
 }
 
+func DelRaw(ctx context.Context, key string) error {
+	return rdb.Del(ctx, key).Err()
+}
+
 func Get(ctx context.Context, key string, data interface{}) error {
 	value, err := rdb.Get(ctx, key).Result()
 	if err != nil {
