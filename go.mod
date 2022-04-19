@@ -2,9 +2,12 @@ module github.com/NaturalSelectionLabs/RSS3-PreGod
 
 go 1.18
 
+// nolint:gomoddirectives // https://github.com/elastic/go-elasticsearch/issues/344
+replace github.com/elastic/go-elasticsearch/v7 v7.17.1 => github.com/elastic/go-elasticsearch/v7 v7.10.0
+
 require (
 	github.com/arl/statsviz v0.4.1
-	github.com/elastic/go-elasticsearch/v7 v7.10.0
+	github.com/elastic/go-elasticsearch/v7 v7.17.1
 	github.com/ethereum/go-ethereum v1.10.15
 	github.com/gin-gonic/gin v1.7.7
 	github.com/go-redis/redis/v8 v8.11.4

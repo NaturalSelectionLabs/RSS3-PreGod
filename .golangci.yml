@@ -25,6 +25,9 @@ linters-settings:
   funlen:
     lines: 80
     statements: 50
+  gomoddirectives:
+    replace-allow-list:
+      - github.com/elastic/go-elasticsearch/v7
 
 linters: # https://golangci-lint.run/usage/linters
   disable:
