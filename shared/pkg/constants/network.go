@@ -44,7 +44,6 @@ const (
 	NetworkIDJike           NetworkID = 14
 	NetworkIDPlayStation    NetworkID = 15
 	NetworkIDGitHub         NetworkID = 16
-	NetworkIDZksync         NetworkID = 17
 
 	NetworkSymbolUnknown        NetworkSymbol = "unknown"
 	NetworkSymbolCrossbell      NetworkSymbol = "crossbell"
@@ -64,7 +63,6 @@ const (
 	NetworkSymbolJike           NetworkSymbol = "jike"
 	NetworkSymbolPlayStation    NetworkSymbol = "playstation"
 	NetworkSymbolGitHub         NetworkSymbol = "github"
-	NetworkSymbolZksync         NetworkSymbol = "zksync"
 )
 
 var (
@@ -87,7 +85,6 @@ var (
 		NetworkSymbolJike:           NetworkIDJike,
 		NetworkSymbolPlayStation:    NetworkIDPlayStation,
 		NetworkSymbolGitHub:         NetworkIDGitHub,
-		NetworkSymbolZksync:         NetworkIDZksync,
 	}
 
 	networkSymbolMap = map[NetworkID]NetworkSymbol{
@@ -109,7 +106,6 @@ var (
 		NetworkIDJike:           NetworkSymbolJike,
 		NetworkIDPlayStation:    NetworkSymbolPlayStation,
 		NetworkIDGitHub:         NetworkSymbolGitHub,
-		NetworkIDZksync:         NetworkSymbolZksync,
 	}
 )
 

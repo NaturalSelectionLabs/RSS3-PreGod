@@ -3,10 +3,9 @@ package main
 import (
 	"context"
 	"log"
-	"net/http"
 	_ "net/http/pprof"
 
-	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/api/arweave"
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/api/gitcoin"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/autoupdater"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/router"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database"
@@ -51,29 +50,34 @@ func RunAutoUpdater(cmd *cobra.Command, args []string) error {
 }
 
 func RunAutoCrawler(cmd *cobra.Command, args []string) error {
+	srv := &web.Server{
+		RunMode:      config.Config.Indexer.Server.RunMode,
+		HttpPort:     config.Config.Indexer.Server.HttpPort,
+		ReadTimeout:  config.Config.Indexer.Server.ReadTimeout,
+		WriteTimeout: config.Config.Indexer.Server.WriteTimeout,
+		Handler:      router.InitRouter(),
+	}
+
 	// TODO: remove gitcoin crawler for now
-	//logger.Info("Start crawling gitcoin")
+	logger.Info("Start crawling gitcoin")
 	// gitcoin crawler
-	//gc := gitcoin.NewCrawler(*gitcoin.DefaultEthConfig, *gitcoin.DefaultPolygonConfig, *gitcoin.DefaultZksyncConfig)
-	// token cache
-	//gc.InitZksTokenCache()
-	// init grants
-	//gc.InitGrants()
-	//go gc.PolygonStart()
-	//go gc.EthStart()
-	//go gc.ZkStart()
+	// gitcoin.GitCoinStart(constants.NetworkIDPolygon)
+	// gitcoin.GitCoinStart(constants.NetworkIDEthereum)
+	go gitcoin.GitCoinStart(gitcoin.ZKSYNC)
 	logger.Info("Start crawling arweave")
 
 	//arweave crawler
-	ar := arweave.NewCrawler(arweave.MirrorUploader, arweave.DefaultCrawlConfig)
+	// ar := arweave.NewCrawler(arweave.MirrorUploader, arweave.DefaultCrawlConfig)
 
-	go func() {
-		if err := ar.Start(); err != nil {
-			logger.Errorf("arweave crawler start error: %v", err)
-		}
-	}()
+	// go func() {
+	// 	if err := ar.Start(); err != nil {
+	// 		logger.Errorf("arweave crawler start error: %v", err)
+	// 	}
+	// }()
 
-	return http.ListenAndServe("0.0.0.0:8080", nil)
+	srv.Start()
+
+	return nil
 }
 
 var rootCmd = &cobra.Command{Use: "indexer"}

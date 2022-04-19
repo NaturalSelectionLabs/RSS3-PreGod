@@ -90,7 +90,7 @@ var token = map[string]tokenMeta{
 }
 
 // GetEthDonations returns donations from ethereum and polygon
-func GetEthDonations(fromBlock int64, toBlock int64, chainType GitcoinPlatform) ([]DonationInfo, error) {
+func GetEthDonations(fromBlock int64, toBlock int64, chainType GitcoinPlatform) ([]DonationInfo, []string, error) {
 	var checkoutAddress string
 
 	var donationApproach DonationApproach
@@ -102,7 +102,7 @@ func GetEthDonations(fromBlock int64, toBlock int64, chainType GitcoinPlatform) 
 		checkoutAddress = bulkCheckoutAddressPolygon
 		donationApproach = DonationApproachPolygon
 	} else {
-		return nil, fmt.Errorf("invalid chainType %s", string(chainType))
+		return nil, nil, fmt.Errorf("invalid chainType %s", string(chainType))
 	}
 
 	// at most 1000 results in one response. But our default step is only 50, safe.
@@ -111,10 +111,11 @@ func GetEthDonations(fromBlock int64, toBlock int64, chainType GitcoinPlatform) 
 	if err != nil {
 		logger.Errorf("getLogs error: [%v]", err)
 
-		return nil, err
+		return nil, nil, err
 	}
 
 	donations := make([]DonationInfo, 0)
+	adminAddresses := make([]string, 0)
 
 	for _, item := range logs.Result {
 		donor := "0x" + item.Topic3[26:]
@@ -148,9 +149,10 @@ func GetEthDonations(fromBlock int64, toBlock int64, chainType GitcoinPlatform) 
 		}
 
 		donations = append(donations, donation)
+		adminAddresses = append(adminAddresses, tokenAddress)
 	}
 
-	return donations, nil
+	return donations, adminAddresses, nil
 }
 
 // Asynchronous Zk query start
@@ -177,15 +179,16 @@ func GetZksToken(id int64) zksync.Token {
 
 // GetZkSyncDonations returns donations from zksync
 
-func GetZkSyncDonations(fromBlock, toBlock int64) ([]DonationInfo, error) {
+func GetZkSyncDonations(fromBlock, toBlock int64) ([]DonationInfo, []string, error) {
 	donations := make([]DonationInfo, 0)
+	adminAddresses := make([]string, 0)
 
 	for i := fromBlock; i <= toBlock; i++ {
 		trxs, err := zksync.GetTxsByBlock(i)
 		if err != nil {
 			logger.Errorf("get txs by block error: [%v]", err)
 
-			return nil, err
+			return nil, nil, err
 		}
 
 		for _, tx := range trxs {
@@ -195,7 +198,9 @@ func GetZkSyncDonations(fromBlock, toBlock int64) ([]DonationInfo, error) {
 
 			// admin address empty
 			adminAddress := strings.ToLower(tx.Op.To)
-			if adminAddress == "" {
+			if adminAddress == "" ||
+				adminAddress == "0x0" ||
+				adminAddress == "0x0000000000000000000000000000000000000000" {
 				continue
 			}
 
@@ -213,35 +218,43 @@ func GetZkSyncDonations(fromBlock, toBlock int64) ([]DonationInfo, error) {
 				Symbol:         token.Symbol,
 				FormatedAmount: formatedAmount,
 				Decimals:       token.Decimals,
-				Timestamp:      tx.CreatedAt.String(),
+				Timestamp:      tx.CreatedAt,
 				TxHash:         tx.TxHash,
 				Approach:       DonationApproachZksync,
 			}
 			donations = append(donations, d)
+			adminAddresses = append(adminAddresses, tx.Op.To)
 		}
 	}
 
-	return donations, nil
+	return donations, adminAddresses, nil
 }
 
 // GetProjectsInfo returns project info from gitcoin
 
-func queryProjectInfo(db *gorm.DB, adminAddress string) (*ProjectInfo, error) {
-	var project ProjectInfo
-	if err := db.Where(&ProjectInfo{
-		AdminAddress: adminAddress,
-	}).Find(&project).Error; err != nil {
+func queryProjectsInfo(db *gorm.DB, adminAddresses []string) (map[string]ProjectInfo, error) {
+	projects := make([]ProjectInfo, 0)
+	projectsMap := make(map[string]ProjectInfo)
+
+	if err := db.Where(
+		"admin_address in (?)", adminAddresses).Find(&projects).Error; err != nil {
 		return nil, err
 	}
 
-	return &project, nil
-}
+	logger.Infof("len(projects): %v", len(projects))
 
-func GetProjectInfo(adminAddress string) (*ProjectInfo, error) {
-	project, err := queryProjectInfo(database.DB, adminAddress)
-	if err != nil {
-		return nil, fmt.Errorf("[%s] get project info from db false:[%s]", adminAddress, err)
+	for _, project := range projects {
+		projectsMap[project.AdminAddress] = project
 	}
 
-	return project, nil
+	return projectsMap, nil
+}
+
+func GetProjectsInfo(adminAddresses []string) (map[string]ProjectInfo, error) {
+	projects, err := queryProjectsInfo(database.DB, adminAddresses)
+	if err != nil {
+		return nil, fmt.Errorf("get project info from db false:[%s]", err)
+	}
+
+	return projects, nil
 }

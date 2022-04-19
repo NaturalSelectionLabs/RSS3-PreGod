@@ -2,7 +2,6 @@ package zksync
 
 import (
 	"fmt"
-	"time"
 )
 
 type Token struct {
@@ -47,7 +46,7 @@ type ZKTransaction struct {
 	Op          Op          `json:"op"`
 	Success     bool        `json:"success"`
 	FailReason  interface{} `json:"fail_reason"`
-	CreatedAt   time.Time   `json:"created_at"`
+	CreatedAt   string      `json:"created_at"`
 	BatchId     interface{} `json:"batch_id"`
 }
 

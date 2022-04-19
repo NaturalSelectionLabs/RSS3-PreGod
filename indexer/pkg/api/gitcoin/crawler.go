@@ -18,12 +18,12 @@ import (
 )
 
 type crawlerPropertyInf interface {
-	Run() error
+	run() error
 	getConfig() crawlerConfig
 }
 
 type crawlerProperty struct {
-	config    crawlerConfig
+	config    *crawlerConfig
 	platform  GitcoinPlatform
 	networkID constants.NetworkID
 }
@@ -39,15 +39,15 @@ type xscanRunCrawlerProperty struct {
 var (
 	zkCP = zksyncCrawlerProperty{
 		crawlerProperty{
-			config:    *DefaultZksyncConfig,
+			config:    DefaultZksyncConfig,
 			platform:  ZKSYNC,
-			networkID: constants.NetworkIDZksync,
+			networkID: constants.NetworkIDEthereum,
 		},
 	}
 
 	ethCP = xscanRunCrawlerProperty{
 		crawlerProperty{
-			config:    *DefaultEthConfig,
+			config:    DefaultEthConfig,
 			platform:  ETH,
 			networkID: constants.NetworkIDEthereum,
 		},
@@ -55,24 +55,24 @@ var (
 
 	PolygonCP = xscanRunCrawlerProperty{
 		crawlerProperty{
-			config:    *DefaultPolygonConfig,
+			config:    DefaultPolygonConfig,
 			platform:  Polygon,
 			networkID: constants.NetworkIDPolygon,
 		},
 	}
 
-	crawlerPropertyMap = map[constants.NetworkID]crawlerPropertyInf{
-		constants.NetworkIDZksync:   zkCP,
-		constants.NetworkIDEthereum: ethCP,
-		constants.NetworkIDPolygon:  PolygonCP,
+	crawlerPropertyMap = map[GitcoinPlatform]crawlerPropertyInf{
+		ZKSYNC:  zkCP,
+		ETH:     ethCP,
+		Polygon: PolygonCP,
 	}
 )
 
 func (property crawlerProperty) getConfig() crawlerConfig {
-	return property.config
+	return *property.config
 }
 
-func (property zksyncCrawlerProperty) Run() error {
+func (property zksyncCrawlerProperty) run() error {
 	config := property.config
 
 	if config.NextRoundTime.After(time.Now()) {
@@ -102,30 +102,33 @@ func (property zksyncCrawlerProperty) Run() error {
 	logger.Infof("get zksync donations, from [%d] to [%d]", config.FromHeight, endBlockHeight)
 
 	// get zksync donations
-	donations, err := GetZkSyncDonations(config.FromHeight, endBlockHeight)
+	donations, adminAddresses, err := GetZkSyncDonations(config.FromHeight, endBlockHeight)
+	// GetZkSyncDonations(config.FromHeight, endBlockHeight)
 	if err != nil {
 		logger.Errorf("zksync get donations error: %v", err)
 
 		return err
 	}
-	logger.Infof("true true true")
 
 	if len(donations) > 0 {
-		setDB(donations, constants.NetworkIDZksync)
+		err := setDB(donations, constants.NetworkIDEthereum, adminAddresses)
+		if err != nil {
+			logger.Errorf("set db error: %v", err)
+
+			return err
+		}
 	}
 
 	// set new fromHeight
 	config.FromHeight = endBlockHeight
+	logger.Infof("config.FromHeight: %d", config.FromHeight)
 
 	return nil
 }
 
-func (property xscanRunCrawlerProperty) Run() error {
+func (property xscanRunCrawlerProperty) run() error {
 	// donationPlatform := getDonationPlatform(networkId)
 	p := property.config
-	logger.Infof("%v", property)
-	logger.Infof("%d", property.networkID)
-	logger.Infof("%s", property.networkID.Symbol())
 
 	if p.NextRoundTime.After(time.Now()) {
 		return nil
@@ -151,7 +154,7 @@ func (property xscanRunCrawlerProperty) Run() error {
 
 	logger.Infof("get [%s] donations, from [%d] to [%d]", property.networkID.Symbol(), p.FromHeight, endBlockHeight)
 
-	donations, err := GetEthDonations(p.FromHeight, endBlockHeight, property.platform)
+	donations, adminAddresses, err := GetEthDonations(p.FromHeight, endBlockHeight, property.platform)
 	if err != nil {
 		logger.Errorf("[%s] get donations error: %v", property.networkID.Symbol(), err)
 
@@ -159,7 +162,7 @@ func (property xscanRunCrawlerProperty) Run() error {
 	}
 
 	if len(donations) > 0 {
-		setDB(donations, property.networkID)
+		setDB(donations, property.networkID, adminAddresses)
 	}
 
 	// set new fromHeight
@@ -226,11 +229,32 @@ func setNote(
 	return &note, nil
 }
 
-func setDB(donations []DonationInfo, networkId constants.NetworkID) error {
+func setDB(donations []DonationInfo,
+	networkId constants.NetworkID,
+	adminAddresses []string) error {
 	items := make([]model.Note, 0)
 
+	if len(donations) <= 0 {
+		return nil
+	}
+
+	logger.Infof("len(adminAddresses): %d", len(adminAddresses))
+
+	// get all project infos from db
+	projects, err := GetProjectsInfo(adminAddresses)
+	if err != nil {
+		return fmt.Errorf("get projects error: %v", err)
+	}
+
+	logger.Infof("len(projects): %d", len(projects))
+
+	if len(projects) <= 0 {
+		return nil
+	}
+
+	logger.Infof("%d", len(donations))
+
 	for _, v := range donations {
-		logger.Infof("%v", v)
 		author := rss3uri.NewAccountInstance(v.Donor, constants.PlatformSymbolEthereum).UriString()
 
 		tsp, err := time.Parse(time.RFC3339, v.Timestamp)
@@ -240,14 +264,13 @@ func setDB(donations []DonationInfo, networkId constants.NetworkID) error {
 			tsp = time.Now()
 		}
 
-		projectInfo, err := GetProjectInfo(v.AdminAddress)
-		if err != nil {
-			logger.Errorf("gitcoin get project info error: %v", err)
-
+		// TODO: here will be add cache to reduce db interview time
+		projectInfo, ok := projects[v.AdminAddress]
+		if !ok {
 			continue
 		}
 
-		note, err := setNote(author, networkId, projectInfo, &v, tsp)
+		note, err := setNote(author, networkId, &projectInfo, &v, tsp)
 		if err != nil {
 			logger.Errorf("gitcoin set note error: %v", err)
 
@@ -274,12 +297,11 @@ func setDB(donations []DonationInfo, networkId constants.NetworkID) error {
 	return nil
 }
 
-func GitCoinStart(networkID constants.NetworkID) error {
-	property, ok := crawlerPropertyMap[networkID]
+func GitCoinStart(platform GitcoinPlatform) error {
+	property, ok := crawlerPropertyMap[platform]
 	if !ok {
-		return fmt.Errorf("invalid network id: %s", networkID.Symbol())
+		return fmt.Errorf("invalid network id: %s", platform)
 	}
-	logger.Infof("property: %+v", property)
 
 	config := property.getConfig()
 	signal.Notify(config.Interrupt, os.Interrupt)
@@ -287,11 +309,11 @@ func GitCoinStart(networkID constants.NetworkID) error {
 	for {
 		select {
 		case <-config.Interrupt:
-			logger.Infof("%s start gets interrupt signal", networkID.Symbol())
+			logger.Infof("%s start gets interrupt signal", platform)
 
 			return nil
 		default:
-			property.Run()
+			property.run()
 			time.Sleep(500 * time.Millisecond)
 		}
 	}
