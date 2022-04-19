@@ -37,7 +37,6 @@ func (pc *poapCrawler) Work(param crawler.WorkParam) error {
 		return fmt.Errorf("poap [%s] get actions error:", err)
 	}
 
-	// those two should be expected to be equal actually
 	owner := rss3uri.NewAccountInstance(param.OwnerID, param.OwnerPlatformID.Symbol()).UriString()
 	author := rss3uri.NewAccountInstance(param.Identity, constants.PlatformSymbolEthereum).UriString()
 
@@ -99,10 +98,11 @@ func (pc *poapCrawler) Work(param crawler.WorkParam) error {
 
 		asset := note
 		asset.Identifier = rss3uri.NewAssetInstance(id, constants.NetworkSymbolGnosisMainnet).UriString()
+		asset.Source = constants.AssetSourceNameEthereumNFT.String()
 
 		pc.Assets = append(pc.Assets, model.Asset(asset))
 
-		if err := nft_utils.CompleteMimeTypesForItems(pc.Notes, pc.Assets); err != nil {
+		if err := nft_utils.CompleteMimeTypesForItems(pc.Notes, pc.Assets, pc.Profiles); err != nil {
 			logger.Error("poap complete mime types error:", err)
 		}
 	}

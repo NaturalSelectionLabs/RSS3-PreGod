@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
-	"time"
 
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/internal/api"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/internal/indexer"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/internal/middleware"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/internal/protocol"
@@ -21,41 +21,44 @@ import (
 )
 
 type GetAssetListRequest struct {
-	Limit          int        `form:"limit"`
-	LastTime       *time.Time `form:"last_time" time_format:"2006-01-02T15:04:05.000Z"`
-	Tags           []string   `form:"tags"`
-	MimeTypes      []string   `form:"mime_types"`
-	ItemSources    []string   `form:"item_sources"`
-	LinkSources    []string   `form:"link_sources"`
-	LinkType       string     `form:"link_type"`
-	ProfileSources []string   `form:"profile_sources"`
+	Limit          int      `form:"limit"`
+	LastIdentifier string   `form:"last_identifier"`
+	Tags           []string `form:"tags"`
+	MimeTypes      []string `form:"mime_types"`
+	ItemSources    []string `form:"item_sources"`
+	LinkSources    []string `form:"link_sources"`
+	LinkType       string   `form:"link_type"`
+	ProfileSources []string `form:"profile_sources"`
 }
 
-// nolint:dupl,funlen // TODO
+// nolint:funlen // TODO
 func GetAssetListHandlerFunc(c *gin.Context) {
 	instance, err := middleware.GetPlatformInstance(c)
 	if err != nil {
-		_ = c.Error(err)
+		api.SetError(c, api.ErrorInvalidParams, err)
 
 		return
 	}
 
 	request := GetAssetListRequest{}
 	if err = c.ShouldBindQuery(&request); err != nil {
-		_ = c.Error(err)
+		api.SetError(c, api.ErrorInvalidParams, err)
 
 		return
 	}
 
 	var assetModels []model.Asset
+
+	var total int64
+
 	if len(request.LinkSources) != 0 || request.LinkType != "" {
-		assetModels, err = getAssetListsByLink(instance, request)
+		assetModels, total, err = getAssetListsByLink(instance, request)
 	} else {
-		assetModels, err = getAssetListByInstance(instance, request)
+		assetModels, total, err = getAssetListByInstance(instance, request)
 	}
 
 	if err != nil {
-		_ = c.Error(err)
+		api.SetError(c, api.ErrorDatabase, err)
 
 		return
 	}
@@ -69,7 +72,7 @@ func GetAssetListHandlerFunc(c *gin.Context) {
 	for i, assetModel := range assetModels {
 		attachmentList := make([]protocol.ItemAttachment, 0)
 		if err = json.Unmarshal(assetModel.Attachments, &attachmentList); err != nil {
-			_ = c.Error(err)
+			api.SetError(c, api.ErrorIndexer, err)
 
 			return
 		}
@@ -80,6 +83,18 @@ func GetAssetListHandlerFunc(c *gin.Context) {
 		} else if dateUpdated.Time().Before(assetModel.DateUpdated) {
 			dateUpdated = &internalTime
 		}
+
+		// Build metadata
+		metadata := make(map[string]interface{})
+
+		if err := json.Unmarshal(assetModel.Metadata, &metadata); err != nil {
+			api.SetError(c, api.ErrorIndexer, err)
+
+			return
+		}
+
+		metadata["network"] = assetModel.MetadataNetwork
+		metadata["proof"] = assetModel.MetadataProof
 
 		assetList[i] = protocol.Item{
 			Identifier:  assetModel.Identifier,
@@ -93,42 +108,43 @@ func GetAssetListHandlerFunc(c *gin.Context) {
 			Title:       assetModel.Title,
 			Summary:     assetModel.Summary,
 			Attachments: attachmentList,
+			Source:      assetModel.Source,
+			Metadata:    metadata,
 		}
 	}
 
-	var lastTime *time.Time
+	var lastItem *protocol.Item
 
 	for _, item := range assetList {
-		assetDateCreated := item.DateCreated.Time()
-		if lastTime == nil {
-			lastTime = &assetDateCreated
-		} else if lastTime.After(assetDateCreated) {
-			lastTime = &assetDateCreated
+		internalItem := item
+
+		if lastItem == nil || lastItem.DateCreated.Time().After(internalItem.DateCreated.Time()) {
+			lastItem = &internalItem
 		}
 	}
 
 	identifierNext := ""
 
 	if len(assetList) == database.MaxLimit {
-		if lastTime != nil {
-			query := c.Request.URL.Query()
-			query.Set("last_time", lastTime.Format(timex.ISO8601))
-			c.Request.URL.RawQuery = query.Encode()
+		nextQuery := c.Request.URL.Query()
+		if lastItem != nil {
+			nextQuery.Set("last_identifier", lastItem.Identifier)
 		}
 
-		identifierNext = fmt.Sprintf("%s/assets?%s", uri.String(), c.Request.URL.RawQuery)
+		identifierNext = fmt.Sprintf("%s/assets?%s", uri.String(), nextQuery.Encode())
 	}
 
 	c.JSON(http.StatusOK, protocol.File{
 		DateUpdated:    dateUpdated,
-		Identifier:     fmt.Sprintf("%s/assets", uri.String()),
+		Identifier:     fmt.Sprintf("%s/assets?%s", uri.String(), c.Request.URL.Query().Encode()),
 		IdentifierNext: identifierNext,
-		Total:          len(assetList),
+		Total:          total,
 		List:           assetList,
 	})
 }
 
-func getAssetListByInstance(instance rss3uri.Instance, request GetAssetListRequest) ([]model.Asset, error) {
+// nolint:funlen // TODO
+func getAssetListByInstance(instance rss3uri.Instance, request GetAssetListRequest) ([]model.Asset, int64, error) {
 	// Get instance's profiles
 	var profiles []model.Profile
 
@@ -147,7 +163,7 @@ func getAssetListByInstance(instance rss3uri.Instance, request GetAssetListReque
 		ID:       strings.ToLower(instance.GetIdentity()),
 		Platform: constants.PlatformSymbol(instance.GetSuffix()).ID().Int(),
 	}).Find(&profiles).Error; err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 
 	profileIDs := make([]string, len(profiles))
@@ -160,7 +176,7 @@ func getAssetListByInstance(instance rss3uri.Instance, request GetAssetListReque
 	if err := internalDB.
 		Where("profile_id IN ?", profileIDs).
 		Find(&accounts).Error; err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 
 	// TODO Refine it
@@ -174,8 +190,17 @@ func getAssetListByInstance(instance rss3uri.Instance, request GetAssetListReque
 	// Get instance's notes
 	internalDB = database.DB
 
-	if request.LastTime != nil {
-		internalDB = internalDB.Where("date_created <= ?", request.LastTime)
+	if request.LastIdentifier != "" {
+		var lastItem model.Asset
+		if err := database.DB.Where(&model.Asset{
+			Identifier: strings.ToLower(request.LastIdentifier),
+		}).First(&lastItem).Error; err != nil {
+			return nil, 0, err
+		}
+
+		internalDB = internalDB.
+			Where("date_created <= ?", lastItem.DateCreated).
+			Where("identifier != ?", lastItem.Identifier)
 	}
 
 	if request.Tags != nil && len(request.Tags) != 0 {
@@ -205,14 +230,24 @@ func getAssetListByInstance(instance rss3uri.Instance, request GetAssetListReque
 		Limit(request.Limit).
 		Order("date_created DESC").
 		Find(&assets).Error; err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 
-	return assets, nil
+	var count int64
+
+	if err := internalDB.
+		Model(&model.Asset{}).
+		Where("owner = ?", strings.ToLower(rss3uri.New(instance).String())).
+		Order("date_created DESC").
+		Count(&count).Error; err != nil {
+		return nil, 0, err
+	}
+
+	return assets, count, nil
 }
 
-// nolint:dupl,funlen,gocognit // TODO
-func getAssetListsByLink(instance rss3uri.Instance, request GetAssetListRequest) ([]model.Asset, error) {
+// nolint:funlen,gocognit // TODO
+func getAssetListsByLink(instance rss3uri.Instance, request GetAssetListRequest) ([]model.Asset, int64, error) {
 	links := make([]model.Link, 0)
 
 	internalDB := database.DB
@@ -244,7 +279,7 @@ func getAssetListsByLink(instance rss3uri.Instance, request GetAssetListRequest)
 			From: instance.GetIdentity(),
 		}).
 		Find(&links).Error; err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 
 	targets := make([]string, 0)
@@ -258,7 +293,7 @@ func getAssetListsByLink(instance rss3uri.Instance, request GetAssetListRequest)
 		Where("profile_id IN ?", targets).
 		// TODO profile_platform
 		Find(&accounts).Error; err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 
 	// TODO Refine it
@@ -278,7 +313,7 @@ func getAssetListsByLink(instance rss3uri.Instance, request GetAssetListRequest)
 			constants.PlatformID(link.ToPlatformID).Symbol().String(),
 		)
 		if err != nil {
-			return nil, err
+			return nil, 0, err
 		}
 
 		owners = append(owners, strings.ToLower(rss3uri.New(ownerInstance).String()))
@@ -286,8 +321,17 @@ func getAssetListsByLink(instance rss3uri.Instance, request GetAssetListRequest)
 
 	internalDB = database.DB
 
-	if request.LastTime != nil {
-		internalDB = internalDB.Where("date_created <= ?", request.LastTime)
+	if request.LastIdentifier != "" {
+		var lastItem model.Asset
+		if err := database.DB.Where(&model.Asset{
+			Identifier: strings.ToLower(request.LastIdentifier),
+		}).First(&lastItem).Error; err != nil {
+			return nil, 0, err
+		}
+
+		internalDB = internalDB.
+			Where("date_created <= ?", lastItem.DateCreated).
+			Where("identifier != ?", lastItem.Identifier)
 	}
 
 	if request.Tags != nil && len(request.Tags) != 0 {
@@ -313,12 +357,22 @@ func getAssetListsByLink(instance rss3uri.Instance, request GetAssetListRequest)
 
 	assets := make([]model.Asset, 0)
 	if err := internalDB.
-		Where("owner IN ?", owners).
+		Where("owner = ?", strings.ToLower(rss3uri.New(instance).String())).
 		Limit(request.Limit).
 		Order("date_created DESC").
 		Find(&assets).Error; err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 
-	return assets, nil
+	var count int64
+
+	if err := internalDB.
+		Model(&model.Asset{}).
+		Where("owner = ?", strings.ToLower(rss3uri.New(instance).String())).
+		Order("date_created DESC").
+		Count(&count).Error; err != nil {
+		return nil, 0, err
+	}
+
+	return assets, count, nil
 }

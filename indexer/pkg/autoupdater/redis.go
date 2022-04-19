@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/cache"
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/logger"
 	"github.com/go-redis/redis/v8"
 	"go.uber.org/multierr"
 )
@@ -48,6 +49,8 @@ func (q *RedisRecentQueue) Iter(ctx context.Context, runner func(string) error) 
 		result = multierr.Append(result, err)
 	}
 
+	runCount := 0
+
 	for {
 		items, cursor, err = cache.ZScan(ctx, q.Key, cursor, "*", IterCount)
 		if err != nil {
@@ -62,6 +65,8 @@ func (q *RedisRecentQueue) Iter(ctx context.Context, runner func(string) error) 
 			if err := runner(item); err != nil {
 				result = multierr.Append(result, err)
 			}
+
+			runCount += 1
 		}
 
 		if cursor == 0 {
@@ -69,12 +74,24 @@ func (q *RedisRecentQueue) Iter(ctx context.Context, runner func(string) error) 
 		}
 	}
 
+	logger.Infof("RedisRecentQueue: %d jobs finished", runCount)
+
 	return result
 }
 
 // Those who have not come for a long time( > Duration) will be deleted
 func (q *RedisRecentQueue) ClearOld(ctx context.Context) error {
+	{
+		logger.Infof("before clear: %d members in %s", cache.GetRedisClient().ZCard(ctx, q.Key).Val(), q.Key)
+	}
+
 	oldestTime := int(time.Now().Add(-q.Duration).Unix())
 
-	return cache.ZRemRangeByScore(ctx, q.Key, strconv.Itoa(0), strconv.Itoa(oldestTime))
+	num, err := cache.ZRemRangeByScore(ctx, q.Key, strconv.Itoa(0), strconv.Itoa(oldestTime))
+	{
+		logger.Infof("%d members removed in %s", num, q.Key)
+		logger.Infof("after clear: %d members in %s", cache.GetRedisClient().ZCard(ctx, q.Key).Val(), q.Key)
+	}
+
+	return err
 }

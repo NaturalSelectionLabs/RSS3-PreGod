@@ -4,22 +4,24 @@ import (
 	"database/sql"
 
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database/common"
-	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database/datatype"
 	"github.com/lib/pq"
+	"gorm.io/datatypes"
 	"gorm.io/gorm/schema"
 )
 
 var _ schema.Tabler = &Profile{}
 
 type Profile struct {
-	ID          string               `gorm:"column:id;index:index_profile_id"`
-	Platform    int                  `gorm:"column:platform;index_profile_platform"`
-	Source      int                  `gorm:"column:source;index_profile_source"`
-	Name        sql.NullString       `gorm:"column:name"`
-	Bio         sql.NullString       `gorm:"column:bio"`
-	Avatars     pq.StringArray       `gorm:"column:avatars;type:text[]"`
-	Attachments datatype.Attachments `gorm:"column:attachments;type:jsonb"`
-	Metadata    string               `gorm:"metadata"`
+	ID              string         `gorm:"column:id;index;primaryKey"`
+	Platform        int            `gorm:"column:platform;primaryKey"`
+	Source          int            `gorm:"column:source;primaryKey"`
+	Name            sql.NullString `gorm:"column:name"`
+	Bio             sql.NullString `gorm:"column:bio"`
+	Avatars         pq.StringArray `gorm:"column:avatars;type:text[]"`
+	Attachments     datatypes.JSON `gorm:"column:attachments;type:jsonb;default:'{}'"`
+	MetadataNetwork string         `gorm:"column:metadata_network"`
+	MetadataProof   string         `gorm:"column:metadata_proof"`
+	Metadata        datatypes.JSON `gorm:"column:metadata;type:jsonb;default:'{}'"`
 
 	common.Table
 }

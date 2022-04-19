@@ -1,11 +1,13 @@
 package httpx
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"time"
 
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/config"
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/logger"
 	"github.com/go-resty/resty/v2"
 )
 
@@ -15,7 +17,12 @@ type ContentHeader struct {
 }
 
 func Get(url string, headers map[string]string) ([]byte, error) {
-	// Create a Resty Client
+	// get from cache fist
+	response, ok := getCache(url, methodGet, "")
+	if ok {
+		return []byte(response), nil
+	}
+
 	client := getClient()
 
 	if headers != nil {
@@ -34,10 +41,20 @@ func Get(url string, headers map[string]string) ([]byte, error) {
 		return nil, fmt.Errorf("StatusCode [%d]", resp.StatusCode())
 	}
 
+	if cacheErr := setCache(url, methodGet, "", string(resp.Body())); cacheErr != nil {
+		logger.Errorf("Failed to set cache for url [%s]. err: %+v", url, cacheErr)
+	}
+
 	return resp.Body(), err
 }
 
 func Post(url string, headers map[string]string, data string) ([]byte, error) {
+	// get from cache fist
+	response, ok := getCache(url, methodPost, "")
+	if ok {
+		return []byte(response), nil
+	}
+
 	client := getClient()
 
 	if headers != nil {
@@ -48,6 +65,10 @@ func Post(url string, headers map[string]string, data string) ([]byte, error) {
 
 	// Post url
 	resp, err := request.Post(url)
+
+	if cacheErr := setCache(url, methodPost, data, string(resp.Body())); cacheErr != nil {
+		logger.Errorf("Failed to set cache for url [%s]. err: %+v", url, cacheErr)
+	}
 
 	return resp.Body(), err
 }
@@ -68,7 +89,21 @@ func PostRaw(url string, headers map[string]string, data string) (*resty.Respons
 	return resp, err
 }
 
+// TODO: add cache
 func Head(url string) (http.Header, error) {
+	// get from cache fist
+	response, ok := getCache(url, methodPost, "")
+	if ok {
+		jsonBytes := []byte(response)
+
+		var header http.Header
+		if err := json.Unmarshal(jsonBytes, &header); err != nil {
+			return nil, err
+		}
+
+		return header, nil
+	}
+
 	client := getClient()
 
 	headers := make(map[string]string)
@@ -78,6 +113,18 @@ func Head(url string) (http.Header, error) {
 	request := client.R().EnableTrace()
 
 	resp, err := request.Head(url)
+
+	// set cache
+	headerMap := map[string][]string(resp.Header())
+
+	jsonBytes, jsonErr := json.Marshal(headerMap)
+	if jsonErr != nil {
+		logger.Errorf("Failed to marshal header map. err: %+v", jsonErr)
+	}
+
+	if cacheErr := setCache(url, methodHead, "", string(jsonBytes)); cacheErr != nil {
+		logger.Errorf("Failed to set cache for url [%s]. err: %+v", url, cacheErr)
+	}
 
 	return resp.Header(), err
 }

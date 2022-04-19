@@ -38,6 +38,17 @@ func Setup() error {
 
 	DB = db
 
+	internalDB, err := DB.DB()
+	if err != nil {
+		return err
+	}
+
+	internalDB.SetMaxOpenConns(config.Config.Postgres.MaxOpenConns)
+	internalDB.SetMaxIdleConns(config.Config.Postgres.MaxIdleConns)
+
+	internalDB.SetConnMaxIdleTime(config.Config.Postgres.ConnMaxIdleTime)
+	internalDB.SetConnMaxLifetime(config.Config.Postgres.ConnMaxLifetime)
+
 	// Install uuid extension for postgres
 	if err := DB.Exec("CREATE EXTENSION IF NOT EXISTS \"uuid-ossp\";").Error; err != nil {
 		return err
@@ -193,6 +204,10 @@ func CreateNotes(db *gorm.DB, notes []model.Note, updateAll bool) ([]model.Note,
 	for i := range notes {
 		notes[i].Identifier = strings.ToLower(notes[i].Identifier)
 		notes[i].Owner = strings.ToLower(notes[i].Owner)
+
+		if notes[i].Metadata == nil {
+			notes[i].Metadata = []byte("{}")
+		}
 	}
 
 	if err := db.Clauses(NewCreateClauses(updateAll)...).Create(&notes).Error; err != nil {
@@ -206,6 +221,10 @@ func CreateAssets(db *gorm.DB, assets []model.Asset, updateAll bool) ([]model.As
 	for i := range assets {
 		assets[i].Identifier = strings.ToLower(assets[i].Identifier)
 		assets[i].Owner = strings.ToLower(assets[i].Owner)
+
+		if assets[i].Metadata == nil {
+			assets[i].Metadata = []byte("{}")
+		}
 	}
 
 	if err := db.Clauses(NewCreateClauses(updateAll)...).Create(&assets).Error; err != nil {
@@ -318,11 +337,11 @@ func CreateCrawlerMetadata(db *gorm.DB, crawler *model.CrawlerMetadata, updateAl
 	return crawler, nil
 }
 
-func QueryCrawlerMetadata(db *gorm.DB, identity string, networkId constants.NetworkID) (*model.CrawlerMetadata, error) {
+func QueryCrawlerMetadata(db *gorm.DB, identity string, platformId constants.PlatformID) (*model.CrawlerMetadata, error) {
 	var crawler model.CrawlerMetadata
 	if err := db.Where(&model.CrawlerMetadata{
 		AccountInstance: identity,
-		NetworkId:       networkId,
+		PlatformID:      platformId,
 	}).Find(&crawler).Error; err != nil {
 		return nil, err
 	}

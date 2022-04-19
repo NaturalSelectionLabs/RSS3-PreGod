@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
-	"time"
 
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/internal/api"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/internal/indexer"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/internal/middleware"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/internal/protocol"
@@ -21,43 +21,44 @@ import (
 )
 
 type GetNoteListRequest struct {
-	Limit          int        `form:"limit"`
-	LastTime       *time.Time `form:"last_time" time_format:"2006-01-02T15:04:05.000Z"`
-	Tags           []string   `form:"tags"`
-	MimeTypes      []string   `form:"mime_types"`
-	ItemSources    []string   `form:"item_sources"`
-	LinkSources    []string   `form:"link_sources"`
-	LinkType       string     `form:"link_type"`
-	ProfileSources []string   `form:"profile_sources"`
+	Limit          int      `form:"limit"`
+	LastIdentifier string   `form:"last_identifier"`
+	Tags           []string `form:"tags"`
+	MimeTypes      []string `form:"mime_types"`
+	ItemSources    []string `form:"item_sources"`
+	LinkSources    []string `form:"link_sources"`
+	LinkType       string   `form:"link_type"`
+	ProfileSources []string `form:"profile_sources"`
 }
 
-// nolint:dupl,funlen // TODO
+// nolint:funlen // TODO
 func GetNoteListHandlerFunc(c *gin.Context) {
 	instance, err := middleware.GetPlatformInstance(c)
 	if err != nil {
-		_ = c.Error(err)
+		api.SetError(c, api.ErrorInvalidParams, err)
 
 		return
 	}
 
 	request := GetNoteListRequest{}
 	if err = c.ShouldBindQuery(&request); err != nil {
-		_ = c.Error(err)
+		api.SetError(c, api.ErrorInvalidParams, err)
 
 		return
 	}
 
-	// TODO Parse last time
-
 	var noteModels []model.Note
+
+	var total int64
+
 	if len(request.LinkSources) != 0 || request.LinkType != "" {
-		noteModels, err = getNoteListsByLink(instance, request)
+		noteModels, total, err = getNoteListsByLink(instance, request)
 	} else {
-		noteModels, err = getNoteListByInstance(instance, request)
+		noteModels, total, err = getNoteListByInstance(instance, request)
 	}
 
 	if err != nil {
-		_ = c.Error(err)
+		api.SetError(c, api.ErrorIndexer, err)
 
 		return
 	}
@@ -71,7 +72,7 @@ func GetNoteListHandlerFunc(c *gin.Context) {
 	for i, noteModel := range noteModels {
 		attachmentList := make([]protocol.ItemAttachment, 0)
 		if err = json.Unmarshal(noteModel.Attachments, &attachmentList); err != nil {
-			_ = c.Error(err)
+			api.SetError(c, api.ErrorInvalidParams, err)
 
 			return
 		}
@@ -82,6 +83,20 @@ func GetNoteListHandlerFunc(c *gin.Context) {
 		} else if dateUpdated.Time().Before(noteModel.DateUpdated) {
 			dateUpdated = &internalTime
 		}
+
+		// Build metadata
+		metadata := make(map[string]interface{})
+
+		if noteModel.Metadata != nil {
+			if err := json.Unmarshal(noteModel.Metadata, &metadata); err != nil {
+				api.SetError(c, api.ErrorIndexer, err)
+
+				return
+			}
+		}
+
+		metadata["network"] = noteModel.MetadataNetwork
+		metadata["proof"] = noteModel.MetadataProof
 
 		noteList[i] = protocol.Item{
 			Identifier:  noteModel.Identifier,
@@ -95,43 +110,44 @@ func GetNoteListHandlerFunc(c *gin.Context) {
 			Title:       noteModel.Title,
 			Summary:     noteModel.Summary,
 			Attachments: attachmentList,
+			Source:      noteModel.Source,
+			Metadata:    metadata,
 		}
 	}
 
-	var lastTime *time.Time
+	var lastItem *protocol.Item
 
 	for _, item := range noteList {
-		assetDateCreated := item.DateCreated.Time()
-		if lastTime == nil {
-			lastTime = &assetDateCreated
-		} else if lastTime.After(assetDateCreated) {
-			lastTime = &assetDateCreated
+		internalItem := item
+
+		if lastItem == nil || lastItem.DateCreated.Time().After(internalItem.DateCreated.Time()) {
+			lastItem = &internalItem
 		}
 	}
 
 	identifierNext := ""
 
-	if len(noteList) == middleware.MaxListLimit {
-		if lastTime != nil {
-			query := c.Request.URL.Query()
-			query.Set("last_time", lastTime.Format(timex.ISO8601))
-			c.Request.URL.RawQuery = query.Encode()
+	if len(noteList) == database.MaxLimit {
+		nextQuery := c.Request.URL.Query()
+
+		if lastItem != nil {
+			nextQuery.Set("last_identifier", lastItem.Identifier)
 		}
 
-		identifierNext = fmt.Sprintf("%s/notes?%s", uri.String(), c.Request.URL.RawQuery)
+		identifierNext = fmt.Sprintf("%s/notes?%s", uri.String(), nextQuery.Encode())
 	}
 
 	c.JSON(http.StatusOK, protocol.File{
 		DateUpdated:    dateUpdated,
-		Identifier:     fmt.Sprintf("%s/notes", uri.String()),
+		Identifier:     fmt.Sprintf("%s/notes?%s", uri.String(), c.Request.URL.Query().Encode()),
 		IdentifierNext: identifierNext,
-		Total:          len(noteList),
+		Total:          total,
 		List:           noteList,
 	})
 }
 
 // nolint:funlen // TODO
-func getNoteListByInstance(instance rss3uri.Instance, request GetNoteListRequest) ([]model.Note, error) {
+func getNoteListByInstance(instance rss3uri.Instance, request GetNoteListRequest) ([]model.Note, int64, error) {
 	// Get instance's profiles
 	var profiles []model.Profile
 
@@ -150,7 +166,7 @@ func getNoteListByInstance(instance rss3uri.Instance, request GetNoteListRequest
 		ID:       strings.ToLower(instance.GetIdentity()),
 		Platform: constants.PlatformSymbol(instance.GetSuffix()).ID().Int(),
 	}).Find(&profiles).Error; err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 
 	profileIDs := make([]string, len(profiles))
@@ -166,7 +182,7 @@ func getNoteListByInstance(instance rss3uri.Instance, request GetNoteListRequest
 	if err := internalDB.
 		Where("profile_id IN ?", profileIDs).
 		Find(&accounts).Error; err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 
 	// TODO Refine it
@@ -180,8 +196,17 @@ func getNoteListByInstance(instance rss3uri.Instance, request GetNoteListRequest
 	// Get instance's notes
 	internalDB = database.DB
 
-	if request.LastTime != nil {
-		internalDB = internalDB.Where("date_created <= ?", request.LastTime)
+	if request.LastIdentifier != "" {
+		var lastItem model.Note
+		if err := database.DB.Where(&model.Note{
+			Identifier: strings.ToLower(request.LastIdentifier),
+		}).First(&lastItem).Error; err != nil {
+			return nil, 0, err
+		}
+
+		internalDB = internalDB.
+			Where("date_created <= ?", lastItem.DateCreated).
+			Where("identifier != ?", lastItem.Identifier)
 	}
 
 	if request.Tags != nil && len(request.Tags) != 0 {
@@ -211,14 +236,24 @@ func getNoteListByInstance(instance rss3uri.Instance, request GetNoteListRequest
 		Limit(request.Limit).
 		Order("date_created DESC").
 		Find(&notes).Error; err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 
-	return notes, nil
+	var count int64
+
+	if err := internalDB.
+		Model(&model.Note{}).
+		Where("owner = ?", strings.ToLower(rss3uri.New(instance).String())).
+		Order("date_created DESC").
+		Count(&count).Error; err != nil {
+		return nil, 0, err
+	}
+
+	return notes, count, nil
 }
 
-// nolint:dupl,funlen,gocognit // TODO
-func getNoteListsByLink(instance rss3uri.Instance, request GetNoteListRequest) ([]model.Note, error) {
+// nolint:funlen,gocognit // TODO
+func getNoteListsByLink(instance rss3uri.Instance, request GetNoteListRequest) ([]model.Note, int64, error) {
 	links := make([]model.Link, 0)
 
 	internalDB := database.DB
@@ -250,7 +285,7 @@ func getNoteListsByLink(instance rss3uri.Instance, request GetNoteListRequest) (
 			From: instance.GetIdentity(),
 		}).
 		Find(&links).Error; err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 
 	targets := make([]string, 0)
@@ -264,7 +299,7 @@ func getNoteListsByLink(instance rss3uri.Instance, request GetNoteListRequest) (
 		Where("profile_id IN ?", targets).
 		// TODO profile_platform
 		Find(&accounts).Error; err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 
 	// TODO Refine it
@@ -284,7 +319,7 @@ func getNoteListsByLink(instance rss3uri.Instance, request GetNoteListRequest) (
 			constants.PlatformID(link.ToPlatformID).Symbol().String(),
 		)
 		if err != nil {
-			return nil, err
+			return nil, 0, err
 		}
 
 		owners = append(owners, strings.ToLower(rss3uri.New(ownerInstance).String()))
@@ -292,8 +327,17 @@ func getNoteListsByLink(instance rss3uri.Instance, request GetNoteListRequest) (
 
 	internalDB = database.DB
 
-	if request.LastTime != nil {
-		internalDB = internalDB.Where("date_created <= ?", request.LastTime)
+	if request.LastIdentifier != "" {
+		var lastItem model.Note
+		if err := database.DB.Where(&model.Note{
+			Identifier: strings.ToLower(request.LastIdentifier),
+		}).First(&lastItem).Error; err != nil {
+			return nil, 0, err
+		}
+
+		internalDB = internalDB.
+			Where("date_created <= ?", lastItem.DateCreated).
+			Where("identifier != ?", lastItem.Identifier)
 	}
 
 	if request.Tags != nil && len(request.Tags) != 0 {
@@ -323,8 +367,18 @@ func getNoteListsByLink(instance rss3uri.Instance, request GetNoteListRequest) (
 		Limit(request.Limit).
 		Order("date_created DESC").
 		Find(&notes).Error; err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 
-	return notes, nil
+	var count int64
+
+	if err := internalDB.
+		Model(&model.Note{}).
+		Where("owner IN ?", owners).
+		Order("date_created DESC").
+		Count(&count).Error; err != nil {
+		return nil, 0, err
+	}
+
+	return notes, count, nil
 }

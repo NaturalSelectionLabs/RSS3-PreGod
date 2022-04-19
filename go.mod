@@ -2,20 +2,24 @@ module github.com/NaturalSelectionLabs/RSS3-PreGod
 
 go 1.18
 
+// nolint:gomoddirectives // https://github.com/elastic/go-elasticsearch/issues/344
+replace github.com/elastic/go-elasticsearch/v7 v7.17.1 => github.com/elastic/go-elasticsearch/v7 v7.10.0
+
 require (
 	github.com/arl/statsviz v0.4.1
+	github.com/elastic/go-elasticsearch/v7 v7.17.1
 	github.com/ethereum/go-ethereum v1.10.15
 	github.com/gin-gonic/gin v1.7.7
 	github.com/go-redis/redis/v8 v8.11.4
 	github.com/go-resty/resty/v2 v2.7.0
 	github.com/json-iterator/go v1.1.12
 	github.com/kamva/mgm/v3 v3.4.1
-	github.com/knadh/koanf v1.4.0
-	github.com/lib/pq v1.10.4
+	github.com/knadh/koanf v1.4.1
+	github.com/lib/pq v1.10.5
 	github.com/robfig/cron/v3 v3.0.1
-	github.com/samber/lo v1.11.0
+	github.com/samber/lo v1.12.0
 	github.com/spf13/cobra v1.4.0
-	github.com/stretchr/testify v1.7.0
+	github.com/stretchr/testify v1.7.1
 	github.com/valyala/fastjson v1.6.3
 	github.com/vmihailenco/msgpack v4.0.4+incompatible
 	github.com/wealdtech/go-ens/v3 v3.5.2
@@ -24,9 +28,8 @@ require (
 	go.uber.org/zap v1.21.0
 	golang.org/x/net v0.0.0-20220127200216-cd36cc0744dd
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c
-	golang.org/x/text v0.3.7
 	gorm.io/datatypes v1.0.6
-	gorm.io/driver/postgres v1.3.1
+	gorm.io/driver/postgres v1.3.4
 	gorm.io/driver/sqlite v1.3.1
 	gorm.io/gorm v1.23.2
 )
@@ -96,8 +99,8 @@ require (
 	github.com/yusufpapurcu/wmi v1.2.2 // indirect
 	go.uber.org/atomic v1.7.0 // indirect
 	golang.org/x/crypto v0.0.0-20220214200702-86341886e292 // indirect
-	golang.org/x/exp v0.0.0-20220303212507-bbda1eaf7a17 // indirect
 	golang.org/x/sys v0.0.0-20220209214540-3681064d5158 // indirect
+	golang.org/x/text v0.3.7 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
 	google.golang.org/protobuf v1.26.0 // indirect
 	gopkg.in/natefinch/npipe.v2 v2.0.0-20160621034901-c1b8fa8bdcce // indirect

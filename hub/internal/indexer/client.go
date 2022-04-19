@@ -5,7 +5,6 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database/model"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/config"
@@ -36,7 +35,6 @@ func GetItems(instance rss3uri.Instance, accounts []model.Account) error {
 			client := resty.New()
 
 			eg.Go(func() error {
-				start := time.Now()
 				request := client.NewRequest()
 				params := map[string]string{
 					"proof":             strings.ToLower(account.Identity),
@@ -56,9 +54,6 @@ func GetItems(instance rss3uri.Instance, accounts []model.Account) error {
 
 					return nil
 				}
-
-				// TODO Remove it
-				logger.Info(params["proof"], "\x20", params["platform_id"], "\x20", params["network_id"], "\x20", start, "\x20", time.Now().Sub(start))
 
 				if response.StatusCode() != http.StatusOK || result.Error.Code != 0 {
 					logger.Error(response.StatusCode(), result.Error.Code, result.Error.Msg)

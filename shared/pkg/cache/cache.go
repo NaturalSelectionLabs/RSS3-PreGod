@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/tls"
 	"errors"
+	"strings"
 	"time"
 
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/config"
@@ -16,7 +17,15 @@ var (
 	rdb   *redis.Client
 )
 
-var Nil = redis.Nil
+var CacheMissedError = redis.Nil
+
+const CacheKeySeparator = ":"
+
+func init() {
+	if err := Setup(); err != nil {
+		panic(err)
+	}
+}
 
 func Setup() error {
 	ctx := context.Background()
@@ -38,6 +47,18 @@ func Setup() error {
 	}
 
 	return nil
+}
+
+func ConstructKey(keyParts ...string) string {
+	return strings.Join(keyParts, CacheKeySeparator)
+}
+
+func GetRaw(ctx context.Context, key string) (string, error) {
+	return rdb.Get(ctx, key).Result()
+}
+
+func SetRaw(ctx context.Context, key, value string, expiration time.Duration) error {
+	return rdb.Set(ctx, key, value, expiration).Err()
 }
 
 func Get(ctx context.Context, key string, data interface{}) error {
@@ -157,8 +178,8 @@ func ZRem(ctx context.Context, key string, data interface{}, score float64) erro
 	return nil
 }
 
-func ZRemRangeByScore(ctx context.Context, key, min, max string) error {
-	return rdb.ZRemRangeByScore(ctx, key, min, max).Err()
+func ZRemRangeByScore(ctx context.Context, key, min, max string) (int64, error) {
+	return rdb.ZRemRangeByScore(ctx, key, min, max).Result()
 }
 
 func ZScan(ctx context.Context, key string, cursor uint64, match string, count int64) ([]string, uint64, error) {

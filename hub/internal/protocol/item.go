@@ -5,17 +5,19 @@ import (
 )
 
 type Item struct {
-	Identifier  string           `json:"identifier"`
-	DateCreated timex.Time       `json:"date_created"`
-	DateUpdated timex.Time       `json:"date_updated"`
-	RelatedURLs []string         `json:"related_urls,omitempty"`
-	Links       string           `json:"links"`
-	BackLinks   string           `json:"backlinks"`
-	Tags        []string         `json:"tags,omitempty"`
-	Authors     []string         `json:"authors"`
-	Title       string           `json:"title,omitempty"`
-	Summary     string           `json:"summary,omitempty"`
-	Attachments []ItemAttachment `json:"attachments,omitempty"`
+	Identifier  string                 `json:"identifier"`
+	DateCreated timex.Time             `json:"date_created"`
+	DateUpdated timex.Time             `json:"date_updated"`
+	RelatedURLs []string               `json:"related_urls,omitempty"`
+	Links       string                 `json:"links"`
+	BackLinks   string                 `json:"backlinks"`
+	Tags        []string               `json:"tags,omitempty"`
+	Authors     []string               `json:"authors"`
+	Title       string                 `json:"title,omitempty"`
+	Summary     string                 `json:"summary,omitempty"`
+	Attachments []ItemAttachment       `json:"attachments,omitempty"`
+	Source      string                 `json:"source"`
+	Metadata    map[string]interface{} `json:"metadata,omitempty"`
 }
 
 type ItemAttachment struct {

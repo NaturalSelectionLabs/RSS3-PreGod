@@ -13,6 +13,7 @@ import (
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/constants"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/logger"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/rss3uri"
+	"github.com/ethereum/go-ethereum/ethclient"
 )
 
 type moralisCrawler struct {
@@ -37,7 +38,17 @@ func getApiKey() string {
 	return strings.Trim(apiKey, "\"")
 }
 
-//nolint:funlen,gocognit // disable line length check
+func getGatewayClient() {
+	c, err := ethclient.Dial(config.Config.Indexer.Gateway.Endpoint)
+
+	if err != nil {
+		logger.Errorf("connect to Infura: %v", err)
+	}
+
+	client = c
+}
+
+//nolint:funlen,gocognit,maintidx // disable line length check
 func (c *moralisCrawler) Work(param crawler.WorkParam) error {
 	chainType := GetChainType(param.NetworkID)
 	if chainType == Unknown {
@@ -49,12 +60,16 @@ func (c *moralisCrawler) Work(param crawler.WorkParam) error {
 	// nftTransfers for notes
 	nftTransfers, err := GetNFTTransfers(param.Identity, chainType, param.BlockHeight, getApiKey())
 	if err != nil {
+		logger.Errorf("get nft transfers: %v", err)
+
 		return err
 	}
 
 	// get nft for assets
 	assets, err := GetNFTs(param.Identity, chainType, getApiKey())
 	if err != nil {
+		logger.Errorf("get nft: %v", err)
+
 		return err
 	}
 
@@ -209,7 +224,33 @@ func (c *moralisCrawler) Work(param crawler.WorkParam) error {
 	//	})
 	//}
 
-	if err := utils.CompleteMimeTypesForItems(c.Notes, c.Assets); err != nil {
+	// index ENS
+	ensList, err := GetENSList(param.Identity)
+
+	if err != nil {
+		return err
+	}
+
+	for _, ens := range ensList {
+		metadata := make(map[string]interface{}, len(ens.Text))
+		for k, v := range ens.Text {
+			metadata[k] = v
+		}
+
+		profile := model.Profile{
+			ID:          strings.ToLower(param.Identity),
+			Platform:    constants.PlatformIDEthereum.Int(),
+			Source:      constants.ProfileSourceIDENS.Int(),
+			Name:        database.WrapNullString(ens.Domain),
+			Bio:         database.WrapNullString(ens.Description),
+			Avatars:     []string{ens.Avatar},
+			Attachments: database.MustWrapJSON(ens.Attachments),
+		}
+
+		c.Profiles = append(c.Profiles, profile)
+	}
+
+	if err := utils.CompleteMimeTypesForItems(c.Notes, c.Assets, c.Profiles); err != nil {
 		logger.Error("moralis complete mime types error:", err)
 	}
 

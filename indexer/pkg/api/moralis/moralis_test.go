@@ -2,6 +2,7 @@ package moralis_test
 
 import (
 	"testing"
+	"time"
 
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/api/moralis"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/config"
@@ -46,10 +47,11 @@ func TestGetLogs(t *testing.T) {
 		config.Config.Indexer.Moralis.ApiKey)
 	// assert for nil
 	assert.Nil(t, err)
-	assert.NotEmpty(t, result.Result)
 
-	for _, item := range result.Result {
-		assert.NotEmpty(t, item)
+	if assert.NotEmpty(t, result) && assert.NotEmpty(t, result.Result) {
+		for _, item := range result.Result {
+			assert.NotEmpty(t, item)
+		}
 	}
 }
 
@@ -61,8 +63,8 @@ func TestGetTxByToken(t *testing.T) {
 		"eth",
 		config.Config.Indexer.Moralis.ApiKey)
 
-	assert.Equal(t, result.TransactionHash, "0x44ea5a47fa51ada626874ac5c243e78ee485e354d5b337ea673d7f117eb8b6c3")
-	assert.Equal(t, result.BlockTimestamp, "2022-01-02T11:16:35.000Z")
+	assert.Equal(t, "0x44ea5a47fa51ada626874ac5c243e78ee485e354d5b337ea673d7f117eb8b6c3", result.TransactionHash)
+	assert.Equal(t, "2022-01-02T11:16:35.000Z", result.BlockTimestamp)
 
 	assert.Nil(t, err)
 }
@@ -75,12 +77,36 @@ func TestGetNFTByContract(t *testing.T) {
 		"eth",
 		config.Config.Indexer.Moralis.ApiKey)
 
-	assert.Equal(t, len(result.Result), 1)
+	assert.Equal(t, 1, len(result.Result))
 
-	ens := result.Result[0]
+	if len(result.Result) > 0 {
+		ens := result.Result[0]
 
-	assert.Equal(t, ens.TokenAddress, tokenAddress)
-	assert.Equal(t, ens.TokenId, tokenId)
+		assert.Equal(t, tokenAddress, ens.TokenAddress)
+		assert.Equal(t, tokenId, ens.TokenId)
 
-	assert.Nil(t, err)
+		assert.Nil(t, err)
+	}
+}
+
+func TestGetENSList(t *testing.T) {
+	t.Parallel()
+
+	result, getErr := moralis.GetENSList("0xC8b960D09C0078c18Dcbe7eB9AB9d816BcCa8944")
+
+	if assert.NotEmpty(t, result) {
+		ens := result[0]
+
+		assert.Nil(t, getErr)
+		assert.Equal(t, 1, len(result))
+
+		assert.Equal(t, "diygod.eth", ens.Domain)
+		assert.Equal(t, "diygod.eth, an ENS name.", ens.Description)
+		assert.Equal(t, "0xc600982712df36668321bfc782deacb17a1c32f09165eb1e66d1d76294db6156", ens.TxHash)
+
+		time, timeErr := time.Parse(time.RFC3339, "2021-11-16T05:54:43.000Z")
+		assert.Nil(t, timeErr)
+
+		assert.Equal(t, time, ens.CreatedAt)
+	}
 }
