@@ -7,6 +7,7 @@ import (
 	"os/signal"
 	"time"
 
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/util"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database/datatype"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database/model"
@@ -119,11 +120,7 @@ func (ar *crawler) parseMirrorArticles(from, to int64, owner ArAccount) error {
 		}
 
 		// ellipsis the content as summary
-
-		summary := article.Content
-		if maxSummaryLength := 400; len(summary) > maxSummaryLength { // TODO: define the max length specifically in protocol?
-			summary = string([]rune(summary)[:maxSummaryLength]) + "..."
-		}
+		summary := util.EllipsisContent(article.Content, 400)
 
 		author := rss3uri.NewAccountInstance(article.Author, constants.PlatformSymbolEthereum).UriString()
 		note := model.Note{

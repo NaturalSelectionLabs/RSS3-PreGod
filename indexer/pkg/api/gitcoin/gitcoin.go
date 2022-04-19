@@ -156,7 +156,7 @@ func GetEthDonations(fromBlock int64, toBlock int64, chainType GitcoinPlatform) 
 }
 
 // Asynchronous Zk query start
-var ZksTokensCache map[int64]zksync.Token
+var ZksTokensCache = map[int64]zksync.Token{}
 
 func UpdateZksToken() error {
 	tokens, err := zksync.GetTokens()

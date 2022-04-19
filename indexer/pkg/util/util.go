@@ -31,3 +31,11 @@ func GotKey(strategy string, indexer_id string, keys []string) string {
 
 	return key
 }
+
+func EllipsisContent(summary string, maxLength int) string {
+	if maxSummaryLength := maxLength; len(summary) > maxSummaryLength { // TODO: define the max length specifically in protocol?
+		summary = string([]rune(summary)[:maxSummaryLength]) + "..."
+	}
+
+	return summary
+}

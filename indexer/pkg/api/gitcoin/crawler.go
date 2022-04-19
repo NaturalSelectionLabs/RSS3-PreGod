@@ -9,6 +9,7 @@ import (
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/api/moralis"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/api/xscan"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/api/zksync"
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/util"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database/datatype"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database/model"
@@ -19,7 +20,9 @@ import (
 
 type crawlerPropertyInf interface {
 	run() error
+	start() error
 	getConfig() crawlerConfig
+	getPlatform() GitcoinPlatform
 }
 
 type crawlerProperty struct {
@@ -68,11 +71,70 @@ var (
 	}
 )
 
+func loopRun(property crawlerPropertyInf) error {
+	config := property.getConfig()
+	signal.Notify(config.Interrupt, os.Interrupt)
+
+	for {
+		select {
+		case <-config.Interrupt:
+			logger.Infof("%s start gets interrupt signal", property.getPlatform())
+
+			return nil
+		default:
+			property.run()
+			time.Sleep(500 * time.Millisecond)
+		}
+	}
+}
+
 func (property crawlerProperty) getConfig() crawlerConfig {
 	return *property.config
 }
 
+func (property crawlerProperty) getPlatform() GitcoinPlatform {
+	return property.platform
+}
+
+func (property crawlerProperty) configCheck() error {
+	if property.config.FromHeight < 0 {
+		return fmt.Errorf("invalid from height: %d", property.config.FromHeight)
+	}
+
+	if property.config.Step <= 0 ||
+		property.config.MinStep <= 0 {
+		return fmt.Errorf("invalid step: %d, minStep: %d", property.config.Step, property.config.MinStep)
+	}
+
+	if property.config.Confirmations <= 0 {
+		return fmt.Errorf("invalid confirmations: %d", property.config.Confirmations)
+	}
+
+	if property.config.SleepInterval <= 0 {
+		return fmt.Errorf("invalid sleep interval: %d", property.config.SleepInterval)
+	}
+
+	return nil
+}
+
+func (property zksyncCrawlerProperty) start() error {
+	err := UpdateZksToken()
+	if err != nil {
+		return fmt.Errorf("update zks token error: %v", err)
+	}
+
+	if err := loopRun(property); err != nil {
+		return fmt.Errorf("zksync run error: %s", err)
+	}
+
+	return nil
+}
+
 func (property zksyncCrawlerProperty) run() error {
+	if err := property.configCheck(); err != nil {
+		return fmt.Errorf("zksync crawler run error: %s", err)
+	}
+
 	config := property.config
 
 	if config.NextRoundTime.After(time.Now()) {
@@ -87,18 +149,23 @@ func (property zksyncCrawlerProperty) run() error {
 	}
 
 	// scan the latest block content periodically
-	endBlockHeight := config.FromHeight + config.Step
+	endBlockHeight := config.FromHeight + config.Step - 1
+	if endBlockHeight <= 0 {
+		logger.Fatalf("config.FromHeight [%d] + config.Step [%d] - 1 <= 0", config.FromHeight, config.Step)
+	}
+
 	if latestConfirmedBlockHeight < endBlockHeight {
 		config.NextRoundTime = config.NextRoundTime.Add(config.SleepInterval)
 		// use minStep when catching up with the latest block height
 		config.Step = config.MinStep
 
-		logger.Infof("zksync catch up with the latest block height, latestConfirmedBlockHeight[%d], endBlockHeight[%d]",
+		logger.Debugf("zksync catch up with the latest block height, latestConfirmedBlockHeight[%d], endBlockHeight[%d]",
 			latestConfirmedBlockHeight, endBlockHeight)
 
 		return nil
 	}
 
+	//debug
 	logger.Infof("get zksync donations, from [%d] to [%d]", config.FromHeight, endBlockHeight)
 
 	// get zksync donations
@@ -120,8 +187,17 @@ func (property zksyncCrawlerProperty) run() error {
 	}
 
 	// set new fromHeight
-	config.FromHeight = endBlockHeight
+	config.FromHeight = endBlockHeight + 1
+	// debug
 	logger.Infof("config.FromHeight: %d", config.FromHeight)
+
+	return nil
+}
+
+func (property xscanRunCrawlerProperty) start() error {
+	if err := loopRun(property); err != nil {
+		return fmt.Errorf("xscan run error: %s", err)
+	}
 
 	return nil
 }
@@ -172,7 +248,7 @@ func (property xscanRunCrawlerProperty) run() error {
 }
 
 func setNote(
-	author string,
+	donationInfo *DonationInfo,
 	networkId constants.NetworkID,
 	projectInfo *ProjectInfo,
 	v *DonationInfo,
@@ -181,8 +257,11 @@ func setNote(
 		return nil, fmt.Errorf("invalid projectInfo or donationInfo")
 	}
 
+	author := rss3uri.NewAccountInstance(donationInfo.Donor, constants.PlatformSymbolEthereum).UriString()
+	summary := util.EllipsisContent(projectInfo.Description, 400)
+
 	note := model.Note{
-		Identifier: rss3uri.NewNoteInstance(author, networkId.Symbol()).UriString(),
+		Identifier: rss3uri.NewNoteInstance(donationInfo.TxHash, networkId.Symbol()).UriString(),
 		Owner:      author,
 		RelatedURLs: []string{
 			moralis.GetTxHashURL(networkId.Symbol(), v.TxHash),
@@ -190,8 +269,8 @@ func setNote(
 		},
 		Tags:    constants.ItemTagsDonationGitcoin.ToPqStringArray(),
 		Authors: []string{author},
-		Title:   "",
-		Summary: "",
+		Title:   projectInfo.Title,
+		Summary: summary,
 		Attachments: database.MustWrapJSON(datatype.Attachments{
 			{
 				Type:     "title",
@@ -255,8 +334,6 @@ func setDB(donations []DonationInfo,
 	logger.Infof("%d", len(donations))
 
 	for _, v := range donations {
-		author := rss3uri.NewAccountInstance(v.Donor, constants.PlatformSymbolEthereum).UriString()
-
 		tsp, err := time.Parse(time.RFC3339, v.Timestamp)
 		if err != nil {
 			logger.Errorf("gitcoin parse time error: %v", err)
@@ -270,7 +347,7 @@ func setDB(donations []DonationInfo,
 			continue
 		}
 
-		note, err := setNote(author, networkId, &projectInfo, &v, tsp)
+		note, err := setNote(&v, networkId, &projectInfo, &v, tsp)
 		if err != nil {
 			logger.Errorf("gitcoin set note error: %v", err)
 
@@ -303,18 +380,9 @@ func GitCoinStart(platform GitcoinPlatform) error {
 		return fmt.Errorf("invalid network id: %s", platform)
 	}
 
-	config := property.getConfig()
-	signal.Notify(config.Interrupt, os.Interrupt)
-
-	for {
-		select {
-		case <-config.Interrupt:
-			logger.Infof("%s start gets interrupt signal", platform)
-
-			return nil
-		default:
-			property.run()
-			time.Sleep(500 * time.Millisecond)
-		}
+	if err := property.start(); err != nil {
+		return fmt.Errorf("start crawler error: %v", err)
 	}
+
+	return nil
 }
