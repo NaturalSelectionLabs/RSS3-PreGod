@@ -15,7 +15,7 @@ var methodPost = "post"
 var methodHead = "head"
 
 func getCacheKey(method, url, data string) string {
-	return cache.ConstructKey(method, url, data)
+	return cache.ConstructKey("httpx", method, url, data)
 }
 
 func getCache(url, method, data string) (string, bool) {
