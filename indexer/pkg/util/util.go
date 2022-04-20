@@ -1,5 +1,13 @@
 package util
 
+import (
+	"fmt"
+
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database"
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database/model"
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/constants"
+)
+
 var keyOffset = make(map[string]int)
 
 func GotKey(strategy string, indexer_id string, keys []string) string {
@@ -38,4 +46,33 @@ func EllipsisContent(summary string, maxLength int) string {
 	}
 
 	return summary
+}
+
+func GetCrawlerMetadata(identity string, platformID constants.PlatformID) (int64, error) {
+	metadata, err := database.QueryCrawlerMetadata(database.DB, identity, platformID)
+	if err != nil {
+		return 0, fmt.Errorf("query crawler metadata error: %s", err)
+	}
+
+	if metadata == nil {
+		return 0, fmt.Errorf("crawler metadata not found")
+	}
+
+	return metadata.LastBlock, nil
+}
+
+func SetCrawlerMetadata(
+	instance string,
+	fromHeight int64,
+	platformID constants.PlatformID) error {
+
+	if _, err := database.CreateCrawlerMetadata(database.DB, &model.CrawlerMetadata{
+		AccountInstance: instance,
+		PlatformID:      platformID,
+		LastBlock:       fromHeight,
+	}, true); err != nil {
+		return fmt.Errorf("set last position error: %s", err)
+	}
+
+	return nil
 }

@@ -27,9 +27,11 @@ type crawlerPropertyInf interface {
 }
 
 type crawlerProperty struct {
-	config    *crawlerConfig
-	platform  GitcoinPlatform
-	networkID constants.NetworkID
+	config           *crawlerConfig
+	platform         GitcoinPlatform
+	networkID        constants.NetworkID
+	platformID       constants.PlatformID
+	metadataIdentity string
 }
 
 type zksyncCrawlerProperty struct {
@@ -43,35 +45,39 @@ type xscanRunCrawlerProperty struct {
 var (
 	zkCP = zksyncCrawlerProperty{
 		crawlerProperty{
-			config:    DefaultZksyncConfig,
-			platform:  ZKSYNC,
-			networkID: constants.NetworkIDEthereum,
+			config:           DefaultZksyncConfig,
+			platform:         ZKSYNC,
+			networkID:        constants.NetworkIDEthereum,
+			platformID:       constants.PlatformID(1002),
+			metadataIdentity: string("gitcoin-" + ZKSYNC),
 		},
 	}
 
 	ethCP = xscanRunCrawlerProperty{
 		crawlerProperty{
-			config:    DefaultEthConfig,
-			platform:  ETH,
-			networkID: constants.NetworkIDEthereum,
+			config:           DefaultEthConfig,
+			platform:         ETH,
+			networkID:        constants.NetworkIDEthereum,
+			platformID:       constants.PlatformID(1003),
+			metadataIdentity: string("gitcoin-" + ETH),
 		},
 	}
 
 	PolygonCP = xscanRunCrawlerProperty{
 		crawlerProperty{
-			config:    DefaultPolygonConfig,
-			platform:  Polygon,
-			networkID: constants.NetworkIDPolygon,
+			config:           DefaultPolygonConfig,
+			platform:         Polygon,
+			networkID:        constants.NetworkIDPolygon,
+			platformID:       constants.PlatformID(1004),
+			metadataIdentity: string("gitcoin-" + Polygon),
 		},
 	}
 
 	crawlerPropertyMap = map[GitcoinPlatform]crawlerPropertyInf{
-		ZKSYNC:  zkCP,
-		ETH:     ethCP,
-		Polygon: PolygonCP,
+		ZKSYNC:  &zkCP,
+		ETH:     &ethCP,
+		Polygon: &PolygonCP,
 	}
-
-	gitCoinPlatformID = constants.PlatformID(1002)
 )
 
 func loopRun(property crawlerPropertyInf) error {
@@ -84,15 +90,15 @@ func loopRun(property crawlerPropertyInf) error {
 	}
 }
 
-func (property crawlerProperty) getConfig() crawlerConfig {
+func (property *crawlerProperty) getConfig() crawlerConfig {
 	return *property.config
 }
 
-func (property crawlerProperty) getPlatform() GitcoinPlatform {
+func (property *crawlerProperty) getPlatform() GitcoinPlatform {
 	return property.platform
 }
 
-func (property crawlerProperty) configCheck() error {
+func (property *crawlerProperty) configCheck() error {
 	if property.config.FromHeight < 0 {
 		return fmt.Errorf("invalid from height: %d", property.config.FromHeight)
 	}
@@ -113,9 +119,17 @@ func (property crawlerProperty) configCheck() error {
 	return nil
 }
 
-func (property zksyncCrawlerProperty) start() error {
+func (property *zksyncCrawlerProperty) start() error {
 	if err := UpdateZksToken(); err != nil {
 		return fmt.Errorf("update zks token error: %v", err)
+	}
+
+	height, err := util.GetCrawlerMetadata(
+		property.metadataIdentity, property.platformID)
+	if err != nil {
+		logger.Warnf("get last height error: %v", err)
+	} else {
+		property.config.FromHeight = height
 	}
 
 	if err := loopRun(property); err != nil {
@@ -125,7 +139,7 @@ func (property zksyncCrawlerProperty) start() error {
 	return nil
 }
 
-func (property zksyncCrawlerProperty) run() error {
+func (property *zksyncCrawlerProperty) run() error {
 	if err := property.configCheck(); err != nil {
 		return fmt.Errorf("zksync crawler run error: %s", err)
 	}
@@ -160,12 +174,8 @@ func (property zksyncCrawlerProperty) run() error {
 		return nil
 	}
 
-	//debug
-	logger.Infof("get zksync donations, from [%d] to [%d]", config.FromHeight, endBlockHeight)
-
 	// get zksync donations
 	donations, adminAddresses, err := GetZkSyncDonations(config.FromHeight, endBlockHeight)
-	// GetZkSyncDonations(config.FromHeight, endBlockHeight)
 	if err != nil {
 		logger.Errorf("zksync get donations error: %v", err)
 
@@ -183,26 +193,28 @@ func (property zksyncCrawlerProperty) run() error {
 
 	// set new fromHeight
 	config.FromHeight = endBlockHeight + 1
-	// debug
-	// logger.Infof("config.FromHeight: %d", config.FromHeight)
 
-	// set current position into Metadata
-	// accountInstance := string("gitcoin_" + property.platform)
+	if err := util.SetCrawlerMetadata(
+		property.metadataIdentity, config.FromHeight, property.platformID); err != nil {
+		logger.Errorf("set crawler metadata error: %v", err)
 
-	// if _, err := database.CreateCrawlerMetadata(database.DB, &model.CrawlerMetadata{
-	// 	AccountInstance: accountInstance,
-	// 	PlatformID:      gitCoinPlatformID,
-	// 	LastBlock:       config.FromHeight,
-	// }, true); err != nil {
-	// 	return fmt.Errorf("set last position error: %s", err)
-	// }
+		return err
+	}
 
 	return nil
 }
 
-func (property xscanRunCrawlerProperty) start() error {
+func (property *xscanRunCrawlerProperty) start() error {
 	if err := UpdateEthAndPolygonTokens(); err != nil {
 		return fmt.Errorf("xscan run error: %v", err)
+	}
+
+	height, err := util.GetCrawlerMetadata(
+		property.metadataIdentity, property.platformID)
+	if err != nil {
+		logger.Warnf("get last height error: %v", err)
+	} else {
+		property.config.FromHeight = height
 	}
 
 	if err := loopRun(property); err != nil {
@@ -212,47 +224,56 @@ func (property xscanRunCrawlerProperty) start() error {
 	return nil
 }
 
-func (property xscanRunCrawlerProperty) run() error {
+func (property *xscanRunCrawlerProperty) run() error {
 	// donationPlatform := getDonationPlatform(networkId)
-	p := property.config
+	config := property.config
 
-	if p.NextRoundTime.After(time.Now()) {
+	if config.NextRoundTime.After(time.Now()) {
 		return nil
 	}
 
-	latestConfirmedBlockHeight, err := xscan.GetLatestBlockHeightWithConfirmations(property.networkID, p.Confirmations)
+	latestConfirmedBlockHeight, err := xscan.GetLatestBlockHeightWithConfirmations(property.networkID, config.Confirmations)
 	if err != nil {
 		logger.Errorf("[%s] get latest block error: %v", property.networkID.Symbol(), err)
 
 		return err
 	}
 
-	endBlockHeight := p.FromHeight + p.Step
+	endBlockHeight := config.FromHeight + config.Step - 1
 	if latestConfirmedBlockHeight < endBlockHeight {
-		p.NextRoundTime = p.NextRoundTime.Add(p.SleepInterval)
+		config.NextRoundTime = config.NextRoundTime.Add(config.SleepInterval)
 		// use minStep when catching up with the latest block height
-		p.Step = p.MinStep
+		config.Step = config.MinStep
 
 		logger.Infof("gitcoin [%s] catch up with the latest block height", property.networkID.Symbol())
 
 		return nil
 	}
 
-	logger.Infof("get [%s] donations, from [%d] to [%d]", property.networkID.Symbol(), p.FromHeight, endBlockHeight)
+	logger.Infof("get [%s] donations, from [%d] to [%d]", property.networkID.Symbol(), config.FromHeight, endBlockHeight)
 
-	donations, adminAddresses, err := GetEthDonations(p.FromHeight, endBlockHeight, property.platform)
+	donations, adminAddresses, err := GetEthDonations(config.FromHeight, endBlockHeight, property.platform)
 	if err != nil {
 		logger.Errorf("[%s] get donations error: %v", property.networkID.Symbol(), err)
 
 		return err
 	}
 
+	logger.Infof("len(donations): %d, len(adminAddresses): %d", len(donations), len(adminAddresses))
+
 	if len(donations) > 0 {
 		setDB(donations, property.networkID, adminAddresses)
 	}
 
 	// set new fromHeight
-	p.FromHeight = endBlockHeight
+	config.FromHeight = endBlockHeight + 1
+
+	if err := util.SetCrawlerMetadata(
+		property.metadataIdentity, config.FromHeight, property.platformID); err != nil {
+		logger.Errorf("set crawler metadata error: %v", err)
+
+		return err
+	}
 
 	return nil
 }
@@ -362,6 +383,8 @@ func setNote(
 		DateCreated: tsp,
 		DateUpdated: tsp,
 	}
+	// logger.Infof("note:%v", note)
+	// time.Sleep(2 * time.Second)
 
 	return &note, nil
 }

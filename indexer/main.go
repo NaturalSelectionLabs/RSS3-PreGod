@@ -5,6 +5,7 @@ import (
 	"log"
 	_ "net/http/pprof"
 
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/api/arweave"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/api/gitcoin"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/autoupdater"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/router"
@@ -61,19 +62,19 @@ func RunAutoCrawler(cmd *cobra.Command, args []string) error {
 	// TODO: remove gitcoin crawler for now
 	logger.Info("Start crawling gitcoin")
 	// gitcoin crawler
-	// gitcoin.GitCoinStart(constants.NetworkIDPolygon)
-	// gitcoin.GitCoinStart(constants.NetworkIDEthereum)
+	go gitcoin.GitCoinStart(gitcoin.Polygon)
+	go gitcoin.GitCoinStart(gitcoin.ETH)
 	go gitcoin.GitCoinStart(gitcoin.ZKSYNC)
 	logger.Info("Start crawling arweave")
 
 	//arweave crawler
-	// ar := arweave.NewCrawler(arweave.MirrorUploader, arweave.DefaultCrawlConfig)
+	ar := arweave.NewCrawler(arweave.MirrorUploader, arweave.DefaultCrawlConfig)
 
-	// go func() {
-	// 	if err := ar.Start(); err != nil {
-	// 		logger.Errorf("arweave crawler start error: %v", err)
-	// 	}
-	// }()
+	go func() {
+		if err := ar.Start(); err != nil {
+			logger.Errorf("arweave crawler start error: %v", err)
+		}
+	}()
 
 	srv.Start()
 

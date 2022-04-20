@@ -72,7 +72,7 @@ func GetNFTs(userAddress string, chainType ChainType, apiKey string) (NFTResult,
 	return *res, nil
 }
 
-func GetNFTTransfers(userAddress string, chainType ChainType, blockHeight int, apiKey string) (NFTTransferResult, error) {
+func GetNFTTransfers(userAddress string, chainType ChainType, blockHeight int64, apiKey string) (NFTTransferResult, error) {
 	// Gets all NFT transfers of user
 	url := fmt.Sprintf("%s/api/v2/%s/nft/transfers?chain=%s&from_block=%d&format=decimal&direction=both",
 		endpoint, userAddress, chainType, blockHeight)

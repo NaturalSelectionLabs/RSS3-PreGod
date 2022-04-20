@@ -163,8 +163,6 @@ func (ar *crawler) parseMirrorArticles(from, to int64, owner ArAccount) error {
 }
 
 func (ar *crawler) Start() error {
-	signal.Notify(ar.interrupt, os.Interrupt)
-
 	log.Println("Starting Arweave crawler...")
 
 	if err := ar.run(); err != nil {

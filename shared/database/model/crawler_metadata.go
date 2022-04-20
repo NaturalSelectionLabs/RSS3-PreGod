@@ -8,7 +8,7 @@ import (
 type CrawlerMetadata struct {
 	AccountInstance string               `gorm:"column:id;primaryKey"`
 	PlatformID      constants.PlatformID `gorm:"column:platform_id;primaryKey"`
-	LastBlock       int                  `gorm:"column:last_block"`
+	LastBlock       int64                `gorm:"column:last_block"`
 
 	common.Table
 }
