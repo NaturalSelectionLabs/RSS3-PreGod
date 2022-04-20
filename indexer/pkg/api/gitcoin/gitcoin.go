@@ -211,8 +211,6 @@ func queryProjectsInfo(db *gorm.DB, adminAddresses []string) (map[string]Project
 		return nil, err
 	}
 
-	logger.Infof("len(projects): %v", len(projects))
-
 	for _, project := range projects {
 		projectsMap[project.AdminAddress] = project
 	}
