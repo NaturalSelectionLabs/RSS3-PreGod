@@ -168,9 +168,6 @@ func (property *zksyncCrawlerProperty) run() error {
 		// use minStep when catching up with the latest block height
 		config.Step = config.MinStep
 
-		logger.Debugf("zksync catch up with the latest block height, latestConfirmedBlockHeight[%d], endBlockHeight[%d]",
-			latestConfirmedBlockHeight, endBlockHeight)
-
 		return nil
 	}
 
@@ -190,6 +187,9 @@ func (property *zksyncCrawlerProperty) run() error {
 			return err
 		}
 	}
+
+	logger.Infof("Getting [%s] donations, from [%d] to [%d], the latest confirmed block height [%d]",
+		property.platform, config.FromHeight, endBlockHeight, latestConfirmedBlockHeight)
 
 	// set new fromHeight
 	config.FromHeight = endBlockHeight + 1
@@ -245,12 +245,8 @@ func (property *xscanRunCrawlerProperty) run() error {
 		// use minStep when catching up with the latest block height
 		config.Step = config.MinStep
 
-		logger.Infof("gitcoin [%s] catch up with the latest block height", property.networkID.Symbol())
-
 		return nil
 	}
-
-	logger.Infof("get [%s] donations, from [%d] to [%d]", property.networkID.Symbol(), config.FromHeight, endBlockHeight)
 
 	donations, adminAddresses, err := GetEthDonations(config.FromHeight, endBlockHeight, property.platform)
 	if err != nil {
@@ -259,11 +255,12 @@ func (property *xscanRunCrawlerProperty) run() error {
 		return err
 	}
 
-	logger.Infof("len(donations): %d, len(adminAddresses): %d", len(donations), len(adminAddresses))
-
 	if len(donations) > 0 {
 		setDB(donations, property.networkID, adminAddresses)
 	}
+
+	logger.Infof("Getting [%s] donations, from [%d] to [%d], the latest confirmed block height [%d]",
+		property.platform, config.FromHeight, endBlockHeight, latestConfirmedBlockHeight)
 
 	// set new fromHeight
 	config.FromHeight = endBlockHeight + 1
@@ -383,8 +380,6 @@ func setNote(
 		DateCreated: tsp,
 		DateUpdated: tsp,
 	}
-	// logger.Infof("note:%v", note)
-	// time.Sleep(2 * time.Second)
 
 	return &note, nil
 }
@@ -398,21 +393,15 @@ func setDB(donations []DonationInfo,
 		return nil
 	}
 
-	logger.Infof("len(adminAddresses): %d", len(adminAddresses))
-
 	// get all project infos from db
 	projects, err := GetProjectsInfo(adminAddresses)
 	if err != nil {
 		return fmt.Errorf("get projects error: %v", err)
 	}
 
-	logger.Infof("len(projects): %d", len(projects))
-
 	if len(projects) <= 0 {
 		return nil
 	}
-
-	logger.Infof("%d", len(donations))
 
 	niBuilder := getNewNoteInstanceBuilder()
 
