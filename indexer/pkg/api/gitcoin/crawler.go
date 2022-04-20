@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
+	"strconv"
 	"time"
 
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/api/moralis"
@@ -69,6 +70,8 @@ var (
 		ETH:     ethCP,
 		Polygon: PolygonCP,
 	}
+
+	gitCoinPlatformID = constants.PlatformID(1002)
 )
 
 func loopRun(property crawlerPropertyInf) error {
@@ -76,15 +79,8 @@ func loopRun(property crawlerPropertyInf) error {
 	signal.Notify(config.Interrupt, os.Interrupt)
 
 	for {
-		select {
-		case <-config.Interrupt:
-			logger.Infof("%s start gets interrupt signal", property.getPlatform())
-
-			return nil
-		default:
-			property.run()
-			time.Sleep(500 * time.Millisecond)
-		}
+		property.run()
+		time.Sleep(500 * time.Millisecond)
 	}
 }
 
@@ -118,8 +114,7 @@ func (property crawlerProperty) configCheck() error {
 }
 
 func (property zksyncCrawlerProperty) start() error {
-	err := UpdateZksToken()
-	if err != nil {
+	if err := UpdateZksToken(); err != nil {
 		return fmt.Errorf("update zks token error: %v", err)
 	}
 
@@ -189,12 +184,27 @@ func (property zksyncCrawlerProperty) run() error {
 	// set new fromHeight
 	config.FromHeight = endBlockHeight + 1
 	// debug
-	logger.Infof("config.FromHeight: %d", config.FromHeight)
+	// logger.Infof("config.FromHeight: %d", config.FromHeight)
+
+	// set current position into Metadata
+	// accountInstance := string("gitcoin_" + property.platform)
+
+	// if _, err := database.CreateCrawlerMetadata(database.DB, &model.CrawlerMetadata{
+	// 	AccountInstance: accountInstance,
+	// 	PlatformID:      gitCoinPlatformID,
+	// 	LastBlock:       config.FromHeight,
+	// }, true); err != nil {
+	// 	return fmt.Errorf("set last position error: %s", err)
+	// }
 
 	return nil
 }
 
 func (property xscanRunCrawlerProperty) start() error {
+	if err := UpdateEthAndPolygonTokens(); err != nil {
+		return fmt.Errorf("xscan run error: %v", err)
+	}
+
 	if err := loopRun(property); err != nil {
 		return fmt.Errorf("xscan run error: %s", err)
 	}
@@ -247,21 +257,69 @@ func (property xscanRunCrawlerProperty) run() error {
 	return nil
 }
 
+// Since the txhash transaction that pulls eth and polygon may have batch transactions in the same txhash,
+// it is necessary to use an array suffix to mark different transactions of
+// the same txhash when storing in the database as the primary key
+type noteInstanceBuilder struct {
+	countMap map[string]int
+}
+
+func getNewNoteInstanceBuilder() *noteInstanceBuilder {
+	return &noteInstanceBuilder{
+		countMap: map[string]int{},
+	}
+}
+
+func setNoteInstance(
+	niBuilder *noteInstanceBuilder,
+	txHash string) (string, error) {
+	if niBuilder == nil {
+		return "", fmt.Errorf("note instance builder is nil")
+	}
+
+	if txHash == "" {
+		return "", fmt.Errorf("tx hash is empty")
+	}
+
+	hashCount, ok := niBuilder.countMap[txHash]
+	if !ok {
+		niBuilder.countMap[txHash] = 0
+
+		return txHash + "-0", nil
+	}
+
+	hashCount += 1
+
+	niBuilder.countMap[txHash] = hashCount
+
+	return txHash + "-" + strconv.Itoa(hashCount), nil
+}
+
 func setNote(
 	donationInfo *DonationInfo,
 	networkId constants.NetworkID,
 	projectInfo *ProjectInfo,
 	v *DonationInfo,
-	tsp time.Time) (*model.Note, error) {
+	tsp time.Time,
+	niBuilder *noteInstanceBuilder) (*model.Note, error) {
 	if projectInfo == nil || v == nil {
 		return nil, fmt.Errorf("invalid projectInfo or donationInfo")
 	}
 
+	if niBuilder == nil {
+		return nil, fmt.Errorf("note instance builder is nil")
+	}
+
 	author := rss3uri.NewAccountInstance(donationInfo.Donor, constants.PlatformSymbolEthereum).UriString()
 	summary := util.EllipsisContent(projectInfo.Description, 400)
+	instanceKey, err := setNoteInstance(niBuilder, donationInfo.TxHash)
+
+	if err != nil {
+		return nil, fmt.Errorf("set note instance error: %s", err)
+	}
 
 	note := model.Note{
-		Identifier: rss3uri.NewNoteInstance(donationInfo.TxHash, networkId.Symbol()).UriString(),
+		Identifier: rss3uri.NewNoteInstance(instanceKey, networkId.Symbol()).UriString(),
 		Owner:      author,
 		RelatedURLs: []string{
 			moralis.GetTxHashURL(networkId.Symbol(), v.TxHash),
@@ -333,6 +391,8 @@ func setDB(donations []DonationInfo,
 
 	logger.Infof("%d", len(donations))
 
+	niBuilder := getNewNoteInstanceBuilder()
+
 	for _, v := range donations {
 		tsp, err := time.Parse(time.RFC3339, v.Timestamp)
 		if err != nil {
@@ -347,7 +407,7 @@ func setDB(donations []DonationInfo,
 			continue
 		}
 
-		note, err := setNote(&v, networkId, &projectInfo, &v, tsp)
+		note, err := setNote(&v, networkId, &projectInfo, &v, tsp, niBuilder)
 		if err != nil {
 			logger.Errorf("gitcoin set note error: %v", err)
 

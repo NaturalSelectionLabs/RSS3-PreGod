@@ -5,10 +5,10 @@ import (
 )
 
 type Token struct {
-	Id       int64  `json:"id"`
+	Id       int    `json:"id"`
 	Address  string `json:"address"`
 	Symbol   string `json:"symbol"`
-	Decimals int64  `json:"decimals"`
+	Decimals int    `json:"decimals"`
 	Kind     string `json:"kind"`
 	IsNft    bool   `json:"is_nft"`
 }
@@ -25,7 +25,7 @@ type Op struct {
 	From      string `json:"from"`
 	Type      string `json:"type"`
 	Nonce     int64  `json:"nonce"`
-	TokenId   int64  `json:"token"`
+	TokenId   int    `json:"token"`
 	Amount    string `json:"amount"`
 	AccountId int64  `json:"accountId"`
 	Signature struct {

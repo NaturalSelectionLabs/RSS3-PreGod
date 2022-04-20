@@ -84,7 +84,7 @@ type GrantInfo struct {
 
 type ProjectInfo struct {
 	Active          bool   `gorm:"column:active"`
-	Id              int64  `gorm:"column:id"`
+	Id              int    `gorm:"column:id"`
 	Title           string `gorm:"column:title"`
 	Slug            string `gorm:"column:slug"`
 	Description     string `gorm:"column:description"`
@@ -107,7 +107,7 @@ type DonationInfo struct {
 	Amount         string
 	Symbol         string
 	FormatedAmount *big.Int
-	Decimals       int64
+	Decimals       int
 	Timestamp      string
 	TxHash         string
 	Approach       DonationApproach
@@ -132,4 +132,10 @@ func (d DonationInfo) GetTxTo() string {
 	}
 
 	return ""
+}
+
+type TokenMeta struct {
+	Address string `json:"address"`
+	Decimal int    `json:"decimal"`
+	Symbol  string `json:"symbol"`
 }
