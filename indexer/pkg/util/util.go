@@ -65,7 +65,6 @@ func SetCrawlerMetadata(
 	instance string,
 	fromHeight int64,
 	platformID constants.PlatformID) error {
-
 	if _, err := database.CreateCrawlerMetadata(database.DB, &model.CrawlerMetadata{
 		AccountInstance: instance,
 		PlatformID:      platformID,
