@@ -185,41 +185,22 @@ func GetTxRelatedURLs(
 	tokenId string,
 	transactionHash *string,
 ) []string {
-	urls := []string{}
+	var urls []string
 	if transactionHash != nil {
 		urls = append(urls, GetTxHashURL(network, *transactionHash))
 	}
 
 	switch network {
 	case constants.NetworkSymbolEthereum:
-		if transactionHash != nil {
-			urls = append(urls, "https://etherscan.io/tx/"+(*transactionHash))
-		}
-
 		urls = append(urls, "https://etherscan.io/nft/"+contractAddress+"/"+tokenId)
 		urls = append(urls, "https://opensea.io/assets/"+contractAddress+"/"+tokenId)
 	case constants.NetworkSymbolPolygon:
-		if transactionHash != nil {
-			urls = append(urls, "https://polygonscan.com/tx/"+(*transactionHash))
-		}
-
 		urls = append(urls, "https://polygonscan.com/nft/"+contractAddress+"/"+tokenId)
 		urls = append(urls, "https://opensea.io/assets/matic/"+contractAddress+"/"+tokenId)
 	case constants.NetworkSymbolBNBChain:
-		if transactionHash != nil {
-			urls = append(urls, "https://bscscan.com/tx/"+(*transactionHash))
-		}
-
 		urls = append(urls, "https://bscscan.com/nft/"+contractAddress+"/"+tokenId)
 	case constants.NetworkSymbolAvalanche:
-		if transactionHash != nil {
-			urls = append(urls, "https://avascan.info/blockchain/c/tx/"+(*transactionHash))
-		}
 	case constants.NetworkSymbolFantom:
-		if transactionHash != nil {
-			urls = append(urls, "https://ftmscan.com/tx/"+(*transactionHash))
-		}
-
 		urls = append(urls, "https://ftmscan.com/nft/"+contractAddress+"/"+tokenId)
 	}
 

@@ -12,7 +12,7 @@ import (
 var _ schema.Tabler = &Profile{}
 
 type Profile struct {
-	ID              string         `gorm:"column:id;index;primaryKey"`
+	ID              string         `gorm:"column:id;primaryKey"`
 	Platform        int            `gorm:"column:platform;primaryKey"`
 	Source          int            `gorm:"column:source;primaryKey"`
 	Name            sql.NullString `gorm:"column:name"`

@@ -13,7 +13,6 @@ import (
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database/model"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/constants"
-	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/logger"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/rss3uri"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/timex"
 	"github.com/gin-gonic/gin"
@@ -52,9 +51,9 @@ func GetAssetListHandlerFunc(c *gin.Context) {
 	var total int64
 
 	if len(request.LinkSources) != 0 || request.LinkType != "" {
-		assetModels, total, err = getAssetListsByLink(instance, request)
+		assetModels, total, err = getAssetListsByLink(c, instance, request)
 	} else {
-		assetModels, total, err = getAssetListByInstance(instance, request)
+		assetModels, total, err = getAssetListByInstance(c, instance, request)
 	}
 
 	if err != nil {
@@ -144,7 +143,7 @@ func GetAssetListHandlerFunc(c *gin.Context) {
 }
 
 // nolint:funlen // TODO
-func getAssetListByInstance(instance rss3uri.Instance, request GetAssetListRequest) ([]model.Asset, int64, error) {
+func getAssetListByInstance(c *gin.Context, instance rss3uri.Instance, request GetAssetListRequest) ([]model.Asset, int64, error) {
 	// Get instance's profiles
 	var profiles []model.Profile
 
@@ -179,13 +178,9 @@ func getAssetListByInstance(instance rss3uri.Instance, request GetAssetListReque
 		return nil, 0, err
 	}
 
-	// TODO Refine it
-	// Send get request to indexer
-	go func() {
-		if err := indexer.GetItems(instance, accounts); err != nil {
-			logger.Error(err)
-		}
-	}()
+	if err := indexer.GetItems(c.Request.URL, instance, accounts); err != nil {
+		return nil, 0, err
+	}
 
 	// Get instance's notes
 	internalDB = database.DB
@@ -247,7 +242,7 @@ func getAssetListByInstance(instance rss3uri.Instance, request GetAssetListReque
 }
 
 // nolint:funlen,gocognit // TODO
-func getAssetListsByLink(instance rss3uri.Instance, request GetAssetListRequest) ([]model.Asset, int64, error) {
+func getAssetListsByLink(c *gin.Context, instance rss3uri.Instance, request GetAssetListRequest) ([]model.Asset, int64, error) {
 	links := make([]model.Link, 0)
 
 	internalDB := database.DB
@@ -296,13 +291,9 @@ func getAssetListsByLink(instance rss3uri.Instance, request GetAssetListRequest)
 		return nil, 0, err
 	}
 
-	// TODO Refine it
-	// Send a request to indexer
-	go func() {
-		if err := indexer.GetItems(instance, accounts); err != nil {
-			logger.Error(err)
-		}
-	}()
+	if err := indexer.GetItems(c.Request.URL, instance, accounts); err != nil {
+		return nil, 0, err
+	}
 
 	owners := make([]string, len(links))
 
