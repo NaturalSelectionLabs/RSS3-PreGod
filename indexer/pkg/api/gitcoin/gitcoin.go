@@ -190,7 +190,7 @@ func GetZkSyncDonations(fromBlock int64, toBlock int64) ([]DonationInfo, []strin
 				Decimals:       token.Decimals,
 				Timestamp:      tx.CreatedAt,
 				TxHash:         tx.TxHash,
-				Approach:       DonationApproachZksync,
+				Approach:       DonationApproachZkSync,
 			}
 			donations = append(donations, d)
 			adminAddresses = append(adminAddresses, tx.Op.To)

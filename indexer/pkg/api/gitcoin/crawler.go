@@ -2,8 +2,6 @@ package gitcoin
 
 import (
 	"fmt"
-	"os"
-	"os/signal"
 	"strconv"
 	"time"
 
@@ -19,7 +17,7 @@ import (
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/rss3uri"
 )
 
-type crawlerPropertyInf interface {
+type crawler interface {
 	run() error
 	start() error
 	getConfig() crawlerConfig
@@ -46,10 +44,10 @@ var (
 	zkCP = zksyncCrawlerProperty{
 		crawlerProperty{
 			config:           DefaultZksyncConfig,
-			platform:         ZKSYNC,
+			platform:         ZkSync,
 			networkID:        constants.NetworkIDEthereum,
 			platformID:       constants.PlatformID(1002),
-			metadataIdentity: string("gitcoin-" + ZKSYNC),
+			metadataIdentity: string("gitcoin-" + ZkSync),
 		},
 	}
 
@@ -73,17 +71,14 @@ var (
 		},
 	}
 
-	crawlerPropertyMap = map[GitcoinPlatform]crawlerPropertyInf{
-		ZKSYNC:  &zkCP,
+	crawlerPropertyMap = map[GitcoinPlatform]crawler{
+		ZkSync:  &zkCP,
 		ETH:     &ethCP,
 		Polygon: &PolygonCP,
 	}
 )
 
-func loopRun(property crawlerPropertyInf) error {
-	config := property.getConfig()
-	signal.Notify(config.Interrupt, os.Interrupt)
-
+func loopRun(property crawler) {
 	for {
 		property.run()
 		time.Sleep(500 * time.Millisecond)
@@ -98,7 +93,7 @@ func (property *crawlerProperty) getPlatform() GitcoinPlatform {
 	return property.platform
 }
 
-func (property *crawlerProperty) configCheck() error {
+func (property *crawlerProperty) checkConfig() error {
 	if property.config.FromHeight < 0 {
 		return fmt.Errorf("invalid from height: %d", property.config.FromHeight)
 	}
@@ -132,15 +127,13 @@ func (property *zksyncCrawlerProperty) start() error {
 		property.config.FromHeight = height
 	}
 
-	if err := loopRun(property); err != nil {
-		return fmt.Errorf("zksync run error: %s", err)
-	}
+	loopRun(property)
 
 	return nil
 }
 
 func (property *zksyncCrawlerProperty) run() error {
-	if err := property.configCheck(); err != nil {
+	if err := property.checkConfig(); err != nil {
 		return fmt.Errorf("zksync crawler run error: %s", err)
 	}
 
@@ -195,7 +188,8 @@ func (property *zksyncCrawlerProperty) run() error {
 	config.FromHeight = endBlockHeight + 1
 
 	if err := util.SetCrawlerMetadata(
-		property.metadataIdentity, config.FromHeight, property.platformID); err != nil {
+		property.metadataIdentity, config.FromHeight, property.platformID,
+	); err != nil {
 		logger.Errorf("set crawler metadata error: %v", err)
 
 		return err
@@ -217,15 +211,12 @@ func (property *xscanRunCrawlerProperty) start() error {
 		property.config.FromHeight = height
 	}
 
-	if err := loopRun(property); err != nil {
-		return fmt.Errorf("xscan run error: %s", err)
-	}
+	loopRun(property)
 
 	return nil
 }
 
 func (property *xscanRunCrawlerProperty) run() error {
-	// donationPlatform := getDonationPlatform(networkId)
 	config := property.config
 
 	if config.NextRoundTime.After(time.Now()) {
@@ -266,7 +257,8 @@ func (property *xscanRunCrawlerProperty) run() error {
 	config.FromHeight = endBlockHeight + 1
 
 	if err := util.SetCrawlerMetadata(
-		property.metadataIdentity, config.FromHeight, property.platformID); err != nil {
+		property.metadataIdentity, config.FromHeight, property.platformID,
+	); err != nil {
 		logger.Errorf("set crawler metadata error: %v", err)
 
 		return err
@@ -290,7 +282,8 @@ func getNewNoteInstanceBuilder() *noteInstanceBuilder {
 
 func setNoteInstance(
 	niBuilder *noteInstanceBuilder,
-	txHash string) (string, error) {
+	txHash string,
+) (string, error) {
 	if niBuilder == nil {
 		return "", fmt.Errorf("note instance builder is nil")
 	}
@@ -315,11 +308,12 @@ func setNoteInstance(
 
 func setNote(
 	donationInfo *DonationInfo,
-	networkId constants.NetworkID,
+	networkID constants.NetworkID,
 	projectInfo *ProjectInfo,
 	v *DonationInfo,
 	tsp time.Time,
-	niBuilder *noteInstanceBuilder) (*model.Note, error) {
+	niBuilder *noteInstanceBuilder,
+) (*model.Note, error) {
 	if projectInfo == nil || v == nil {
 		return nil, fmt.Errorf("invalid projectInfo or donationInfo")
 	}
@@ -329,7 +323,7 @@ func setNote(
 	}
 
 	author := rss3uri.NewAccountInstance(donationInfo.Donor, constants.PlatformSymbolEthereum).UriString()
-	summary := util.EllipsisContent(projectInfo.Description, 400)
+	summary := util.SummarizeContent(projectInfo.Description, 400)
 	instanceKey, err := setNoteInstance(niBuilder, donationInfo.TxHash)
 
 	if err != nil {
@@ -337,11 +331,11 @@ func setNote(
 	}
 
 	note := model.Note{
-		Identifier: rss3uri.NewNoteInstance(instanceKey, networkId.Symbol()).UriString(),
+		Identifier: rss3uri.NewNoteInstance(instanceKey, networkID.Symbol()).UriString(),
 		Owner:      author,
 		RelatedURLs: []string{
-			moralis.GetTxHashURL(networkId.Symbol(), v.TxHash),
-			"https://gitcoin.co/grants/2679/rss3-rss-with-human-curation", //TODO: read from db
+			moralis.GetTxHashURL(networkID.Symbol(), v.TxHash),
+			"https://gitcoin.co/grants" + strconv.Itoa(projectInfo.Id) + "/" + projectInfo.Slug,
 		},
 		Tags:    constants.ItemTagsDonationGitcoin.ToPqStringArray(),
 		Authors: []string{author},
@@ -360,9 +354,9 @@ func setNote(
 			},
 			{
 				Type:        "logo",
-				Content:     projectInfo.Logo,
-				MimeType:    "image/png",
-				SizeInBytes: 0,
+				Address:     projectInfo.Logo,
+				MimeType:    "image/png", //TODO
+				SizeInBytes: 0,           //TODO
 			},
 		}),
 		Source:          constants.NoteSourceNameGitcoinContribution.String(),
@@ -384,9 +378,11 @@ func setNote(
 	return &note, nil
 }
 
-func setDB(donations []DonationInfo,
-	networkId constants.NetworkID,
-	adminAddresses []string) error {
+func setDB(
+	donations []DonationInfo,
+	networkID constants.NetworkID,
+	adminAddresses []string,
+) error {
 	items := make([]model.Note, 0)
 
 	if len(donations) <= 0 {
@@ -419,7 +415,7 @@ func setDB(donations []DonationInfo,
 			continue
 		}
 
-		note, err := setNote(&v, networkId, &projectInfo, &v, tsp, niBuilder)
+		note, err := setNote(&v, networkID, &projectInfo, &v, tsp, niBuilder)
 		if err != nil {
 			logger.Errorf("gitcoin set note error: %v", err)
 
@@ -446,7 +442,7 @@ func setDB(donations []DonationInfo,
 	return nil
 }
 
-func GitCoinStart(platform GitcoinPlatform) error {
+func Start(platform GitcoinPlatform) error {
 	property, ok := crawlerPropertyMap[platform]
 	if !ok {
 		return fmt.Errorf("invalid network id: %s", platform)

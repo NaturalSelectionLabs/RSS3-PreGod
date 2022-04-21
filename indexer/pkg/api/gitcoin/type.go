@@ -14,7 +14,7 @@ const (
 
 	ETH     GitcoinPlatform = "eth"
 	Polygon GitcoinPlatform = "polygon"
-	ZKSYNC  GitcoinPlatform = "zksync"
+	ZkSync  GitcoinPlatform = "zksync"
 )
 
 func (p GitcoinPlatform) getContractAddress() string {
@@ -74,7 +74,7 @@ type DonationApproach string
 const (
 	DonationApproachEthereum = "Standard"
 	DonationApproachPolygon  = "Polygon"
-	DonationApproachZksync   = "zkSync"
+	DonationApproachZkSync   = "zkSync"
 )
 
 type GrantInfo struct {
@@ -127,7 +127,7 @@ func (d DonationInfo) GetTxTo() string {
 		return bulkCheckoutAddressPolygon
 	}
 
-	if d.Approach == DonationApproachZksync {
+	if d.Approach == DonationApproachZkSync {
 		return d.AdminAddress
 	}
 

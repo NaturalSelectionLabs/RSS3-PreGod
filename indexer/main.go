@@ -56,15 +56,14 @@ func RunAutoCrawler(cmd *cobra.Command, args []string) error {
 		HttpPort:     config.Config.Indexer.Server.HttpPort,
 		ReadTimeout:  config.Config.Indexer.Server.ReadTimeout,
 		WriteTimeout: config.Config.Indexer.Server.WriteTimeout,
-		Handler:      router.InitRouter(),
 	}
 
 	// TODO: remove gitcoin crawler for now
 	logger.Info("Start crawling gitcoin")
 	// gitcoin crawler
-	go gitcoin.GitCoinStart(gitcoin.Polygon)
-	go gitcoin.GitCoinStart(gitcoin.ETH)
-	go gitcoin.GitCoinStart(gitcoin.ZKSYNC)
+	go gitcoin.Start(gitcoin.Polygon)
+	go gitcoin.Start(gitcoin.ETH)
+	go gitcoin.Start(gitcoin.ZkSync)
 	logger.Info("Start crawling arweave")
 
 	//arweave crawler

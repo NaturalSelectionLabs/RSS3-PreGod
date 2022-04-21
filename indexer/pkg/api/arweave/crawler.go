@@ -119,8 +119,8 @@ func (ar *crawler) parseMirrorArticles(from, to int64, owner ArAccount) error {
 			continue
 		}
 
-		// ellipsis the content as summary
-		summary := util.EllipsisContent(article.Content, 400)
+		// summarize the content for summary
+		summary := util.SummarizeContent(article.Content, 400)
 
 		author := rss3uri.NewAccountInstance(article.Author, constants.PlatformSymbolEthereum).UriString()
 		note := model.Note{
