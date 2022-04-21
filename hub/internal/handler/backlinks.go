@@ -117,7 +117,7 @@ func getBackLinkList(instance rss3uri.Instance, request GetBackLinkListRequest) 
 	}
 
 	if request.LastIdentifier != "" {
-		lastIdentifier, err := rss3uri.Parse(request.LastIdentifier)
+		lastIdentifier, err := rss3uri.Parse(strings.ToLower(request.LastIdentifier))
 		if err != nil {
 			return nil, 0, err
 		}
