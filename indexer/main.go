@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"log"
-	"net/http"
 	_ "net/http/pprof"
 
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/api/arweave"
@@ -70,6 +69,8 @@ func RunAutoCrawler(cmd *cobra.Command, args []string) error {
 	if err := ar.Start(); err != nil {
 		logger.Errorf("arweave crawler start error: %v", err)
 	}
+
+	return nil
 }
 
 var rootCmd = &cobra.Command{Use: "indexer"}
