@@ -67,13 +67,9 @@ func RunAutoCrawler(cmd *cobra.Command, args []string) error {
 	//arweave crawler
 	ar := arweave.NewCrawler(arweave.MirrorUploader, arweave.DefaultCrawlConfig)
 
-	go func() {
-		if err := ar.Start(); err != nil {
-			logger.Errorf("arweave crawler start error: %v", err)
-		}
-	}()
-
-	return http.ListenAndServe("0.0.0.0:8080", nil)
+	if err := ar.Start(); err != nil {
+		logger.Errorf("arweave crawler start error: %v", err)
+	}
 }
 
 var rootCmd = &cobra.Command{Use: "indexer"}
