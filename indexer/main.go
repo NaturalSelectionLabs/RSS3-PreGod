@@ -3,9 +3,9 @@ package main
 import (
 	"context"
 	"log"
-	_ "net/http/pprof"
 
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/api/arweave"
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/api/crossbell"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/api/gitcoin"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/autoupdater"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/router"
@@ -15,6 +15,7 @@ import (
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/logger"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/web"
 	"github.com/spf13/cobra"
+	"golang.org/x/sync/errgroup"
 )
 
 func init() {
@@ -51,31 +52,22 @@ func RunAutoUpdater(cmd *cobra.Command, args []string) error {
 }
 
 func RunAutoCrawler(cmd *cobra.Command, args []string) error {
-	srv := &web.Server{
-		RunMode:      config.Config.Indexer.Server.RunMode,
-		HttpPort:     config.Config.Indexer.Server.HttpPort,
-		ReadTimeout:  config.Config.Indexer.Server.ReadTimeout,
-		WriteTimeout: config.Config.Indexer.Server.WriteTimeout,
-	}
+	eg := errgroup.Group{}
 
-	// TODO: remove gitcoin crawler for now
-	logger.Info("Start crawling gitcoin")
-	// gitcoin crawler
-	go gitcoin.Start(gitcoin.Polygon)
-	go gitcoin.Start(gitcoin.ETH)
-	go gitcoin.Start(gitcoin.ZkSync)
-	logger.Info("Start crawling arweave")
+	// GitCoin crawler
+	eg.Go(func() error {
+		return gitcoin.Start(gitcoin.ETH, gitcoin.Polygon, gitcoin.ZkSync)
+	})
 
-	//arweave crawler
+	// Arweave crawler
 	ar := arweave.NewCrawler(arweave.MirrorUploader, arweave.DefaultCrawlConfig)
 
-	if err := ar.Start(); err != nil {
-		logger.Errorf("arweave crawler start error: %v", err)
-	}
+	eg.Go(ar.Start)
 
-	srv.Start()
+	// Crossbell crawler
+	eg.Go(crossbell.Run)
 
-	return nil
+	return eg.Wait()
 }
 
 var rootCmd = &cobra.Command{Use: "indexer"}
