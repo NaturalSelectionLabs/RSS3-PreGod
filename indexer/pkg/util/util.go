@@ -2,8 +2,10 @@ package util
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database"
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database/common"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database/model"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/constants"
 )
@@ -69,6 +71,9 @@ func SetCrawlerMetadata(
 		AccountInstance: instance,
 		PlatformID:      platformID,
 		LastBlock:       fromHeight,
+		Table: common.Table{
+			UpdatedAt: time.Now(),
+		},
 	}, true); err != nil {
 		return fmt.Errorf("set last position error: %s", err)
 	}
