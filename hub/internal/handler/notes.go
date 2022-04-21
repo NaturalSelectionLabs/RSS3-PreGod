@@ -23,6 +23,7 @@ type GetNoteListRequest struct {
 	Limit          int      `form:"limit"`
 	LastIdentifier string   `form:"last_identifier"`
 	Tags           []string `form:"tags"`
+	ExcludeTags    []string `form:"exclude_tags"`
 	MimeTypes      []string `form:"mime_types"`
 	ItemSources    []string `form:"item_sources"`
 	LinkSources    []string `form:"link_sources"`
@@ -145,7 +146,7 @@ func GetNoteListHandlerFunc(c *gin.Context) {
 	})
 }
 
-// nolint:funlen // TODO
+// nolint:funlen,gocognit // TODO
 func getNoteListByInstance(c *gin.Context, instance rss3uri.Instance, request GetNoteListRequest) ([]model.Note, int64, error) {
 	// Get instance's profiles
 	var profiles []model.Profile
@@ -206,6 +207,10 @@ func getNoteListByInstance(c *gin.Context, instance rss3uri.Instance, request Ge
 
 	if request.Tags != nil && len(request.Tags) != 0 {
 		internalDB = internalDB.Where("tags && ?", pq.StringArray(request.Tags))
+	}
+
+	if request.ExcludeTags != nil && len(request.ExcludeTags) != 0 {
+		internalDB = internalDB.Where("tags && ? = FALSE", pq.StringArray(request.ExcludeTags))
 	}
 
 	if request.ProfileSources != nil && len(request.ProfileSources) != 0 {
@@ -333,6 +338,10 @@ func getNoteListsByLink(c *gin.Context, instance rss3uri.Instance, request GetNo
 
 	if request.Tags != nil && len(request.Tags) != 0 {
 		internalDB = internalDB.Where("tags && ?", pq.StringArray(request.Tags))
+	}
+
+	if request.ExcludeTags != nil && len(request.ExcludeTags) != 0 {
+		internalDB = internalDB.Where("tags && ? = FALSE", pq.StringArray(request.ExcludeTags))
 	}
 
 	if request.ItemSources != nil && len(request.ItemSources) != 0 {

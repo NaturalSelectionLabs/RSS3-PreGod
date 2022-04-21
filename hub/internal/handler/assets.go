@@ -23,6 +23,7 @@ type GetAssetListRequest struct {
 	Limit          int      `form:"limit"`
 	LastIdentifier string   `form:"last_identifier"`
 	Tags           []string `form:"tags"`
+	ExcludeTags    []string `form:"exclude_tags"`
 	MimeTypes      []string `form:"mime_types"`
 	ItemSources    []string `form:"item_sources"`
 	LinkSources    []string `form:"link_sources"`
@@ -142,7 +143,7 @@ func GetAssetListHandlerFunc(c *gin.Context) {
 	})
 }
 
-// nolint:funlen // TODO
+// nolint:funlen,gocognit // TODO
 func getAssetListByInstance(c *gin.Context, instance rss3uri.Instance, request GetAssetListRequest) ([]model.Asset, int64, error) {
 	// Get instance's profiles
 	var profiles []model.Profile
@@ -200,6 +201,10 @@ func getAssetListByInstance(c *gin.Context, instance rss3uri.Instance, request G
 
 	if request.Tags != nil && len(request.Tags) != 0 {
 		internalDB = internalDB.Where("tags && ?", pq.StringArray(request.Tags))
+	}
+
+	if request.ExcludeTags != nil && len(request.ExcludeTags) != 0 {
+		internalDB = internalDB.Where("tags && ? = FALSE", pq.StringArray(request.ExcludeTags))
 	}
 
 	if request.ItemSources != nil && len(request.ItemSources) != 0 {
@@ -327,6 +332,10 @@ func getAssetListsByLink(c *gin.Context, instance rss3uri.Instance, request GetA
 
 	if request.Tags != nil && len(request.Tags) != 0 {
 		internalDB = internalDB.Where("tags && ?", pq.StringArray(request.Tags))
+	}
+
+	if request.ExcludeTags != nil && len(request.ExcludeTags) != 0 {
+		internalDB = internalDB.Where("tags && ? = FALSE", pq.StringArray(request.ExcludeTags))
 	}
 
 	if request.ItemSources != nil && len(request.ItemSources) != 0 {
