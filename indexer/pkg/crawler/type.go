@@ -43,7 +43,7 @@ type WorkParam struct {
 	NetworkID       constants.NetworkID
 	PlatformID      constants.PlatformID      // optional
 	Limit           int                       // optional, aka Count, limit the number of items to be crawled
-	BlockHeight     int                       // optional, used by [X]scan
+	BlockHeight     int64                     // optional, used by [X]scan
 	Timestamp       time.Time                 // optional, if provided, only index items newer than this time
 	OwnerID         string                    // required, to know the real owner of the items
 	OwnerPlatformID constants.PlatformID      // required, to know the real owner of the items

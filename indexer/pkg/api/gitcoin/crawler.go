@@ -2,221 +2,148 @@ package gitcoin
 
 import (
 	"fmt"
-	"os"
-	"os/signal"
-	"strings"
+	"strconv"
 	"time"
 
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/api/moralis"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/api/xscan"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/api/zksync"
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/util"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database/datatype"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database/model"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/constants"
-	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/httpx"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/logger"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/rss3uri"
-	"github.com/valyala/fastjson"
 )
 
-type crawler struct {
-	eth     crawlerConfig
-	polygon crawlerConfig
-	zk      crawlerConfig
-
-	ZksTokensCache       map[int64]zksync.Token
-	inactiveAdminsCache  map[string]bool
-	hostingProjectsCache map[string]ProjectInfo
+type crawler interface {
+	run() error
+	start() error
+	getConfig() crawlerConfig
+	getPlatform() GitcoinPlatform
 }
 
-func NewCrawler(ethParam, polygonParam, zkParam crawlerConfig) *crawler {
-	return &crawler{
-		ethParam,
-		polygonParam,
-		zkParam,
-		make(map[int64]zksync.Token),
-		make(map[string]bool),
-		make(map[string]ProjectInfo),
+type crawlerProperty struct {
+	config           *crawlerConfig
+	platform         GitcoinPlatform
+	networkID        constants.NetworkID
+	platformID       constants.PlatformID
+	metadataIdentity string
+}
+
+type zksyncCrawlerProperty struct {
+	crawlerProperty
+}
+
+type xscanRunCrawlerProperty struct {
+	crawlerProperty
+}
+
+var (
+	zkCP = zksyncCrawlerProperty{
+		crawlerProperty{
+			config:           DefaultZksyncConfig,
+			platform:         ZkSync,
+			networkID:        constants.NetworkIDEthereum,
+			platformID:       constants.PlatformID(1002),
+			metadataIdentity: string("gitcoin-" + ZkSync),
+		},
+	}
+
+	ethCP = xscanRunCrawlerProperty{
+		crawlerProperty{
+			config:           DefaultEthConfig,
+			platform:         ETH,
+			networkID:        constants.NetworkIDEthereum,
+			platformID:       constants.PlatformID(1003),
+			metadataIdentity: string("gitcoin-" + ETH),
+		},
+	}
+
+	PolygonCP = xscanRunCrawlerProperty{
+		crawlerProperty{
+			config:           DefaultPolygonConfig,
+			platform:         Polygon,
+			networkID:        constants.NetworkIDPolygon,
+			platformID:       constants.PlatformID(1004),
+			metadataIdentity: string("gitcoin-" + Polygon),
+		},
+	}
+
+	crawlerPropertyMap = map[GitcoinPlatform]crawler{
+		ZkSync:  &zkCP,
+		ETH:     &ethCP,
+		Polygon: &PolygonCP,
+	}
+)
+
+func loopRun(property crawler) {
+	for {
+		property.run()
+		time.Sleep(500 * time.Millisecond)
 	}
 }
 
-func (gc *crawler) InitZksTokenCache() error {
-	tokens, err := zksync.GetTokens()
-	if err != nil {
-		logger.Errorf("zksync get tokens error: %v", err)
+func (property *crawlerProperty) getConfig() crawlerConfig {
+	return *property.config
+}
 
-		return err
+func (property *crawlerProperty) getPlatform() GitcoinPlatform {
+	return property.platform
+}
+
+func (property *crawlerProperty) checkConfig() error {
+	if property.config.FromHeight < 0 {
+		return fmt.Errorf("invalid from height: %d", property.config.FromHeight)
 	}
 
-	for _, token := range tokens {
-		gc.ZksTokensCache[token.Id] = token
+	if property.config.Step <= 0 ||
+		property.config.MinStep <= 0 {
+		return fmt.Errorf("invalid step: %d, minStep: %d", property.config.Step, property.config.MinStep)
+	}
+
+	if property.config.Confirmations <= 0 {
+		return fmt.Errorf("invalid confirmations: %d", property.config.Confirmations)
+	}
+
+	if property.config.SleepInterval <= 0 {
+		return fmt.Errorf("invalid sleep interval: %d", property.config.SleepInterval)
 	}
 
 	return nil
 }
 
-func (gc *crawler) InitGrants() error {
-	grants, err := GetGrantsInfo() // get grant project list metadata
+func (property *zksyncCrawlerProperty) start() error {
+	if err := UpdateZksToken(); err != nil {
+		return fmt.Errorf("update zks token error: %v", err)
+	}
+
+	height, err := util.GetCrawlerMetadata(
+		property.metadataIdentity, property.platformID)
 	if err != nil {
-		return err
-	}
-
-	for _, item := range grants {
-		if item.AdminAddress != "0x0" {
-			gc.updateHostingProject(item) // get grant project detailed info
-
-			time.Sleep(10 * time.Second)
-		}
-	}
-
-	return nil
-}
-
-// UpdateZksToken update Token by tokenId
-func (gc *crawler) UpdateZksToken() error {
-	tokens, err := zksync.GetTokens()
-	if err != nil {
-		logger.Errorf("zksync get tokens error: %v", err)
-
-		return err
-	}
-
-	for _, token := range tokens {
-		gc.ZksTokensCache[token.Id] = token
-	}
-
-	return nil
-}
-
-// GetZksToken returns Token by tokenId
-func (gc *crawler) GetZksToken(id int64) zksync.Token {
-	return gc.ZksTokensCache[id]
-}
-
-// inactiveAdminAddress checks an admin address is active or not
-func (gc *crawler) inactiveAdminAddress(adminAddress string) bool {
-	adminAddress = strings.ToLower(adminAddress)
-
-	return gc.inactiveAdminsCache[adminAddress]
-}
-
-// addInactiveAdminAddress adds an admin address
-func (gc *crawler) addInactiveAdminAddress(adminAddress string) {
-	adminAddress = strings.ToLower(adminAddress)
-	gc.inactiveAdminsCache[adminAddress] = true
-}
-
-func (gc *crawler) hostingProject(adminAddress string) (ProjectInfo, bool) {
-	p, ok := gc.hostingProjectsCache[adminAddress]
-
-	return p, ok
-}
-
-func (gc *crawler) needUpdateProject(adminAddress string) bool {
-	if len(gc.hostingProjectsCache) == 0 {
-		return true
-	}
-
-	p, ok := gc.hostingProject(adminAddress)
-
-	return ok && !p.Active
-}
-
-func (gc *crawler) updateHostingProject(info GrantInfo) (inactive bool, err error) {
-	project, err := GetProjectsInfo(info.AdminAddress, info.Title)
-	if err != nil {
-		logger.Errorf("zksync get projects info error: %v", err)
-
-		return
-	}
-
-	if !project.Active {
-		gc.addInactiveAdminAddress(info.AdminAddress)
-	}
-
-	gc.hostingProjectsCache[info.AdminAddress] = project // TODO: add to db
-	inactive = !project.Active
-
-	return
-}
-
-// GetProjectsInfo returns project info from gitcoin
-func GetProjectsInfo(adminAddress string, title string) (ProjectInfo, error) {
-	var project ProjectInfo
-
-	headers := make(map[string]string)
-	httpx.SetCommonHeader(headers)
-
-	url := grantsApi + "?admin_address=" + adminAddress
-
-	maxRetries := 3
-	content, err := httpx.Get(url, headers)
-
-	for i := 1; i <= maxRetries; i++ {
-		if err == nil {
-			break
-		}
-
-		content, err = httpx.Get(url, headers)
-
-		logger.Warnf("GetProjectsInfo error [%v], times: [%d]", err, i)
-		time.Sleep(10 * time.Second)
-	}
-
-	if err != nil {
-		logger.Errorf("gitcoin get project info error: [%v]", err)
-
-		return project, err
-	}
-
-	// check reCAPTCHA
-	if strings.Contains(string(content), "Hold up, the bots want to know if you're one of them") {
-		err = fmt.Errorf("gitcoin get project info error, reCAPTCHA")
-
-		return project, err
-	}
-
-	logger.Infof("GetProjectsInfo success, url: [%s]", url)
-
-	var parser fastjson.Parser
-	parsedJson, parseErr := parser.Parse(string(content))
-
-	if parseErr != nil {
-		logger.Errorf("gitcoin parse json error: [%v]", parseErr)
-
-		return project, parseErr
-	}
-
-	if "[]" == string(content) {
-		// project is inactive
-		project.Active = false
-		project.AdminAddress = adminAddress
-		project.Title = title
+		logger.Warnf("get last height error: %v", err)
 	} else {
-		// project is active
-		project.Active = true
-		project.AdminAddress = adminAddress
-		project.Title = string(parsedJson.GetStringBytes("title"))
-		project.Id = parsedJson.GetInt64("id")
-		project.Slug = string(parsedJson.GetStringBytes("slug"))
-		project.Description = string(parsedJson.GetStringBytes("description"))
-		project.ReferUrl = string(parsedJson.GetStringBytes("reference_url"))
-		project.Logo = string(parsedJson.GetStringBytes("logo"))
-		project.TokenAddress = string(parsedJson.GetStringBytes("token_address"))
-		project.TokenSymbol = string(parsedJson.GetStringBytes("token_symbol"))
-		project.ContractAddress = string(parsedJson.GetStringBytes("contract_address"))
+		property.config.FromHeight = height
 	}
 
-	return project, nil
+	loopRun(property)
+
+	return nil
 }
 
-func (gc *crawler) zksyncRun() error {
-	if gc.zk.NextRoundTime.After(time.Now()) {
+func (property *zksyncCrawlerProperty) run() error {
+	if err := property.checkConfig(); err != nil {
+		return fmt.Errorf("zksync crawler run error: %s", err)
+	}
+
+	config := property.config
+
+	if config.NextRoundTime.After(time.Now()) {
 		return nil
 	}
 
-	latestConfirmedBlockHeight, err := zksync.GetLatestBlockHeightWithConfirmations(gc.zk.Confirmations)
+	latestConfirmedBlockHeight, err := zksync.GetLatestBlockHeightWithConfirmations(config.Confirmations)
 	if err != nil {
 		logger.Errorf("zksync get latest block error: %v", err)
 
@@ -224,21 +151,21 @@ func (gc *crawler) zksyncRun() error {
 	}
 
 	// scan the latest block content periodically
-	endBlockHeight := gc.zk.FromHeight + gc.zk.Step
-	if latestConfirmedBlockHeight < endBlockHeight {
-		gc.zk.NextRoundTime = gc.zk.NextRoundTime.Add(gc.zk.SleepInterval)
-		// use minStep when catching up with the latest block height
-		gc.zk.Step = gc.zk.MinStep
+	endBlockHeight := config.FromHeight + config.Step - 1
+	if endBlockHeight <= 0 {
+		logger.Fatalf("config.FromHeight [%d] + config.Step [%d] - 1 <= 0", config.FromHeight, config.Step)
+	}
 
-		logger.Info("zksync catch up with the latest block height")
+	if latestConfirmedBlockHeight < endBlockHeight {
+		config.NextRoundTime = config.NextRoundTime.Add(config.SleepInterval)
+		// use minStep when catching up with the latest block height
+		config.Step = config.MinStep
 
 		return nil
 	}
 
-	logger.Infof("get zksync donations, from [%d] to [%d]", gc.zk.FromHeight, endBlockHeight)
-
 	// get zksync donations
-	donations, err := gc.GetZkSyncDonations(gc.zk.FromHeight, endBlockHeight)
+	donations, adminAddresses, err := GetZkSyncDonations(config.FromHeight, endBlockHeight)
 	if err != nil {
 		logger.Errorf("zksync get donations error: %v", err)
 
@@ -246,94 +173,235 @@ func (gc *crawler) zksyncRun() error {
 	}
 
 	if len(donations) > 0 {
-		setDB(donations, constants.NetworkIDZksync)
+		err := setDB(donations, constants.NetworkIDEthereum, adminAddresses)
+		if err != nil {
+			logger.Errorf("set db error: %v", err)
+
+			return err
+		}
 	}
+
+	logger.Infof("Getting [%s] donations, from [%d] to [%d], the latest confirmed block height [%d]",
+		property.platform, config.FromHeight, endBlockHeight, latestConfirmedBlockHeight)
 
 	// set new fromHeight
-	gc.zk.FromHeight = endBlockHeight
+	config.FromHeight = endBlockHeight + 1
 
-	return nil
-}
-
-func (gc *crawler) getConfig(networkId constants.NetworkID) *crawlerConfig {
-	if networkId == constants.NetworkIDEthereum {
-		return &gc.eth
-	}
-
-	if networkId == constants.NetworkIDPolygon {
-		return &gc.polygon
-	}
-
-	logger.Errorf("unsupported network")
-
-	return nil
-}
-
-func getDonationPlatform(networkId constants.NetworkID) GitcoinPlatform {
-	if networkId == constants.NetworkIDEthereum {
-		return ETH
-	}
-
-	if networkId == constants.NetworkIDPolygon {
-		return Polygon
-	}
-
-	logger.Errorf("unsupported network")
-
-	return ""
-}
-
-func (gc *crawler) xscanRun(networkId constants.NetworkID) error {
-	donationPlatform := getDonationPlatform(networkId)
-	p := gc.getConfig(networkId)
-
-	if p.NextRoundTime.After(time.Now()) {
-		return nil
-	}
-
-	latestConfirmedBlockHeight, err := xscan.GetLatestBlockHeightWithConfirmations(networkId, p.Confirmations)
-	if err != nil {
-		logger.Errorf("[%s] get latest block error: %v", networkId.Symbol(), err)
+	if err := util.SetCrawlerMetadata(
+		property.metadataIdentity, config.FromHeight, property.platformID,
+	); err != nil {
+		logger.Errorf("set crawler metadata error: %v", err)
 
 		return err
 	}
 
-	endBlockHeight := p.FromHeight + p.Step
-	if latestConfirmedBlockHeight < endBlockHeight {
-		p.NextRoundTime = p.NextRoundTime.Add(p.SleepInterval)
-		// use minStep when catching up with the latest block height
-		p.Step = p.MinStep
+	return nil
+}
 
-		logger.Infof("gitcoin [%s] catch up with the latest block height", networkId.Symbol())
+func (property *xscanRunCrawlerProperty) start() error {
+	if err := UpdateEthAndPolygonTokens(); err != nil {
+		return fmt.Errorf("xscan run error: %v", err)
+	}
+
+	height, err := util.GetCrawlerMetadata(
+		property.metadataIdentity, property.platformID)
+	if err != nil {
+		logger.Warnf("get last height error: %v", err)
+	} else {
+		property.config.FromHeight = height
+	}
+
+	loopRun(property)
+
+	return nil
+}
+
+func (property *xscanRunCrawlerProperty) run() error {
+	config := property.config
+
+	if config.NextRoundTime.After(time.Now()) {
+		return nil
+	}
+
+	latestConfirmedBlockHeight, err := xscan.GetLatestBlockHeightWithConfirmations(property.networkID, config.Confirmations)
+	if err != nil {
+		logger.Errorf("[%s] get latest block error: %v", property.networkID.Symbol(), err)
+
+		return err
+	}
+
+	endBlockHeight := config.FromHeight + config.Step - 1
+	if latestConfirmedBlockHeight < endBlockHeight {
+		config.NextRoundTime = config.NextRoundTime.Add(config.SleepInterval)
+		// use minStep when catching up with the latest block height
+		config.Step = config.MinStep
 
 		return nil
 	}
 
-	logger.Infof("get [%s] donations, from [%d] to [%d]", networkId.Symbol(), p.FromHeight, endBlockHeight)
-
-	donations, err := GetEthDonations(p.FromHeight, endBlockHeight, donationPlatform)
+	donations, adminAddresses, err := GetEthDonations(config.FromHeight, endBlockHeight, property.platform)
 	if err != nil {
-		logger.Errorf("[%s] get donations error: %v", networkId.Symbol(), err)
+		logger.Errorf("[%s] get donations error: %v", property.networkID.Symbol(), err)
 
 		return err
 	}
 
 	if len(donations) > 0 {
-		setDB(donations, networkId)
+		setDB(donations, property.networkID, adminAddresses)
 	}
 
+	logger.Infof("Getting [%s] donations, from [%d] to [%d], the latest confirmed block height [%d]",
+		property.platform, config.FromHeight, endBlockHeight, latestConfirmedBlockHeight)
+
 	// set new fromHeight
-	p.FromHeight = endBlockHeight
+	config.FromHeight = endBlockHeight + 1
+
+	if err := util.SetCrawlerMetadata(
+		property.metadataIdentity, config.FromHeight, property.platformID,
+	); err != nil {
+		logger.Errorf("set crawler metadata error: %v", err)
+
+		return err
+	}
 
 	return nil
 }
 
-func setDB(donations []DonationInfo, networkId constants.NetworkID) error {
+// Since the txhash transaction that pulls eth and polygon may have batch transactions in the same txhash,
+// it is necessary to use an array suffix to mark different transactions of
+// the same txhash when storing in the database as the primary key
+type noteInstanceBuilder struct {
+	countMap map[string]int
+}
+
+func getNewNoteInstanceBuilder() *noteInstanceBuilder {
+	return &noteInstanceBuilder{
+		countMap: map[string]int{},
+	}
+}
+
+func setNoteInstance(
+	niBuilder *noteInstanceBuilder,
+	txHash string,
+) (string, error) {
+	if niBuilder == nil {
+		return "", fmt.Errorf("note instance builder is nil")
+	}
+
+	if txHash == "" {
+		return "", fmt.Errorf("tx hash is empty")
+	}
+
+	hashCount, ok := niBuilder.countMap[txHash]
+	if !ok {
+		niBuilder.countMap[txHash] = 0
+
+		return txHash + "-0", nil
+	}
+
+	hashCount += 1
+
+	niBuilder.countMap[txHash] = hashCount
+
+	return txHash + "-" + strconv.Itoa(hashCount), nil
+}
+
+func setNote(
+	donationInfo *DonationInfo,
+	networkID constants.NetworkID,
+	projectInfo *ProjectInfo,
+	v *DonationInfo,
+	tsp time.Time,
+	niBuilder *noteInstanceBuilder,
+) (*model.Note, error) {
+	if projectInfo == nil || v == nil {
+		return nil, fmt.Errorf("invalid projectInfo or donationInfo")
+	}
+
+	if niBuilder == nil {
+		return nil, fmt.Errorf("note instance builder is nil")
+	}
+
+	author := rss3uri.NewAccountInstance(donationInfo.Donor, constants.PlatformSymbolEthereum).UriString()
+	summary := util.SummarizeContent(projectInfo.Description, 400)
+	instanceKey, err := setNoteInstance(niBuilder, donationInfo.TxHash)
+
+	if err != nil {
+		return nil, fmt.Errorf("set note instance error: %s", err)
+	}
+
+	note := model.Note{
+		Identifier: rss3uri.NewNoteInstance(instanceKey, networkID.Symbol()).UriString(),
+		Owner:      author,
+		RelatedURLs: []string{
+			moralis.GetTxHashURL(networkID.Symbol(), v.TxHash),
+			"https://gitcoin.co/grants" + strconv.Itoa(projectInfo.Id) + "/" + projectInfo.Slug,
+		},
+		Tags:    constants.ItemTagsDonationGitcoin.ToPqStringArray(),
+		Authors: []string{author},
+		Title:   projectInfo.Title,
+		Summary: summary,
+		Attachments: database.MustWrapJSON(datatype.Attachments{
+			{
+				Type:     "title",
+				Content:  projectInfo.Title,
+				MimeType: "text/plain",
+			},
+			{
+				Type:     "description",
+				Content:  projectInfo.Description,
+				MimeType: "text/plain",
+			},
+			{
+				Type:        "logo",
+				Address:     projectInfo.Logo,
+				MimeType:    "image/png", //TODO
+				SizeInBytes: 0,           //TODO
+			},
+		}),
+		Source:          constants.NoteSourceNameGitcoinContribution.String(),
+		MetadataNetwork: constants.NetworkSymbolEthereum.String(),
+		MetadataProof:   v.TxHash,
+		Metadata: database.MustWrapJSON(map[string]interface{}{
+			"from": v.Donor,
+			"to":   v.GetTxTo(),
+
+			"destination":  v.AdminAddress,
+			"value_amount": v.FormatedAmount.String(),
+			"value_symbol": v.Symbol,
+			"approach":     v.Approach,
+		}),
+		DateCreated: tsp,
+		DateUpdated: tsp,
+	}
+
+	return &note, nil
+}
+
+func setDB(
+	donations []DonationInfo,
+	networkID constants.NetworkID,
+	adminAddresses []string,
+) error {
 	items := make([]model.Note, 0)
 
-	for _, v := range donations {
-		author := rss3uri.NewAccountInstance(v.Donor, constants.PlatformSymbolEthereum).UriString()
+	if len(donations) <= 0 {
+		return nil
+	}
 
+	// get all project infos from db
+	projects, err := GetProjectsInfo(adminAddresses)
+	if err != nil {
+		return fmt.Errorf("get projects error: %v", err)
+	}
+
+	if len(projects) <= 0 {
+		return nil
+	}
+
+	niBuilder := getNewNoteInstanceBuilder()
+
+	for _, v := range donations {
 		tsp, err := time.Parse(time.RFC3339, v.Timestamp)
 		if err != nil {
 			logger.Errorf("gitcoin parse time error: %v", err)
@@ -341,57 +409,20 @@ func setDB(donations []DonationInfo, networkId constants.NetworkID) error {
 			tsp = time.Now()
 		}
 
-		ok := true // TODO: read from db to get project info; if not in db, ok is false
+		// TODO: here will be add cache to reduce db interview time
+		projectInfo, ok := projects[v.AdminAddress]
 		if !ok {
-			GetProjectsInfo(v.AdminAddress, "")
+			continue
 		}
 
-		note := model.Note{
-			Identifier: rss3uri.NewNoteInstance(author, networkId.Symbol()).UriString(),
-			Owner:      author,
-			RelatedURLs: []string{
-				moralis.GetTxHashURL(networkId.Symbol(), v.TxHash),
-				"https://gitcoin.co/grants/2679/rss3-rss-with-human-curation", //TODO: read from db
-			},
-			Tags:    constants.ItemTagsDonationGitcoin.ToPqStringArray(),
-			Authors: []string{author},
-			Title:   "",
-			Summary: "",
-			Attachments: database.MustWrapJSON(datatype.Attachments{
-				{
-					Type:     "title",
-					Content:  "", //TODO: Read from db
-					MimeType: "text/plain",
-				},
-				{
-					Type:     "description",
-					Content:  "", //TODO: Read from db
-					MimeType: "text/plain",
-				},
-				{
-					Type:        "logo",
-					Content:     "", //TODO: Read from db
-					MimeType:    "", // TODO
-					SizeInBytes: 0,  //TODO
-				},
-			}),
-			Source:          constants.NoteSourceNameGitcoinContribution.String(),
-			MetadataNetwork: constants.NetworkSymbolEthereum.String(),
-			MetadataProof:   v.TxHash,
-			Metadata: database.MustWrapJSON(map[string]interface{}{
-				"from": v.Donor,
-				"to":   v.GetTxTo(),
+		note, err := setNote(&v, networkID, &projectInfo, &v, tsp, niBuilder)
+		if err != nil {
+			logger.Errorf("gitcoin set note error: %v", err)
 
-				"destination":  v.AdminAddress,
-				"value_amount": v.FormatedAmount.String(),
-				"value_symbol": v.Symbol,
-				"approach":     v.Approach,
-			}),
-			DateCreated: tsp,
-			DateUpdated: tsp,
+			continue
 		}
 
-		items = append(items, note)
+		items = append(items, *note)
 	}
 
 	// TODO: make insert db a general method @Zerber
@@ -411,50 +442,15 @@ func setDB(donations []DonationInfo, networkId constants.NetworkID) error {
 	return nil
 }
 
-func (gc *crawler) ZkStart() error {
-	signal.Notify(gc.zk.Interrupt, os.Interrupt)
-
-	for {
-		select {
-		case <-gc.zk.Interrupt:
-			logger.Info("ZkStart gets interrupt signal")
-
-			return nil
-		default:
-			gc.zksyncRun()
-			time.Sleep(500 * time.Millisecond)
-		}
+func Start(platform GitcoinPlatform) error {
+	property, ok := crawlerPropertyMap[platform]
+	if !ok {
+		return fmt.Errorf("invalid network id: %s", platform)
 	}
-}
 
-func (gc *crawler) EthStart() error {
-	signal.Notify(gc.eth.Interrupt, os.Interrupt)
-
-	for {
-		select {
-		case <-gc.eth.Interrupt:
-			logger.Info("EthStart gets interrupt signal")
-
-			return nil
-		default:
-			gc.xscanRun(constants.NetworkIDEthereum)
-			time.Sleep(500 * time.Millisecond)
-		}
+	if err := property.start(); err != nil {
+		return fmt.Errorf("start crawler error: %v", err)
 	}
-}
 
-func (gc *crawler) PolygonStart() error {
-	signal.Notify(gc.polygon.Interrupt, os.Interrupt)
-
-	for {
-		select {
-		case <-gc.polygon.Interrupt:
-			logger.Info("PolygonStart gets interrupt signal")
-
-			return nil
-		default:
-			gc.xscanRun(constants.NetworkIDPolygon)
-			time.Sleep(500 * time.Millisecond)
-		}
-	}
+	return nil
 }

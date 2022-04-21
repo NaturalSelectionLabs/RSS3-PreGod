@@ -27,7 +27,8 @@
     "valyala",
     "Warnf",
     "httpsvc",
-    "zksync"
+    "zksync",
+    "ipfs"
   ],
   "go.lintTool": "golangci-lint",
   "go.lintFlags": [

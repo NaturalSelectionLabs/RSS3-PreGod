@@ -64,12 +64,12 @@ func GetLatestBlockHeight(networkId constants.NetworkID) (int64, error) {
 		return 0, fmt.Errorf("api error, %s", result)
 	}
 
-	blockHeight, err := strconv.ParseUint(result[2:], 16, 64)
+	blockHeight, err := strconv.ParseInt(result[2:], 16, 64)
 	if err != nil {
 		return 0, fmt.Errorf("parse height error, %s", result)
 	}
 
-	return int64(blockHeight), nil
+	return blockHeight, nil
 }
 
 func GetLatestBlockHeightWithConfirmations(networkId constants.NetworkID, confirmations int64) (int64, error) {

@@ -31,3 +31,9 @@ func Ping(ctx context.Context) error {
 
 	return err
 }
+
+func init() {
+	if err := Setup(); err != nil {
+		panic(err)
+	}
+}

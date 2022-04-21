@@ -14,7 +14,7 @@ const (
 
 	ETH     GitcoinPlatform = "eth"
 	Polygon GitcoinPlatform = "polygon"
-	ZKSYNC  GitcoinPlatform = "zksync"
+	ZkSync  GitcoinPlatform = "zksync"
 )
 
 func (p GitcoinPlatform) getContractAddress() string {
@@ -39,6 +39,16 @@ type crawlerConfig struct {
 	Interrupt     chan os.Signal
 }
 
+var DefaultZksyncConfig = &crawlerConfig{
+	FromHeight:    2600,
+	Step:          50,
+	MinStep:       10,
+	Confirmations: 15,
+	SleepInterval: 600 * time.Second,
+	NextRoundTime: time.Now(),
+	Interrupt:     make(chan os.Signal, 1),
+}
+
 var DefaultEthConfig = &crawlerConfig{
 	FromHeight:    10245999, // gitcoin bulkCheckout contract was created at block #10245999
 	Step:          50,
@@ -59,22 +69,12 @@ var DefaultPolygonConfig = &crawlerConfig{
 	Interrupt:     make(chan os.Signal, 1),
 }
 
-var DefaultZksyncConfig = &crawlerConfig{
-	FromHeight:    2600,
-	Step:          50,
-	MinStep:       10,
-	Confirmations: 15,
-	SleepInterval: 600 * time.Second,
-	NextRoundTime: time.Now(),
-	Interrupt:     make(chan os.Signal, 1),
-}
-
 type DonationApproach string
 
 const (
 	DonationApproachEthereum = "Standard"
 	DonationApproachPolygon  = "Polygon"
-	DonationApproachZksync   = "zkSync"
+	DonationApproachZkSync   = "zkSync"
 )
 
 type GrantInfo struct {
@@ -83,18 +83,21 @@ type GrantInfo struct {
 }
 
 type ProjectInfo struct {
-	Active          bool
-	Id              int64
-	Title           string
-	Slug            string
-	Description     string
-	ReferUrl        string
-	Logo            string
-	AdminAddress    string
-	TokenAddress    string
-	TokenSymbol     string
-	ContractAddress string
-	Network         string
+	Active          bool   `gorm:"column:active"`
+	Id              int    `gorm:"column:id"`
+	Title           string `gorm:"column:title"`
+	Slug            string `gorm:"column:slug"`
+	Description     string `gorm:"column:description"`
+	ReferUrl        string `gorm:"column:reference_url"`
+	Logo            string `gorm:"column:logo"`
+	AdminAddress    string `gorm:"column:admin_address"`
+	TokenAddress    string `gorm:"column:token_address"`
+	TokenSymbol     string `gorm:"column:token_symbol"`
+	ContractAddress string `gorm:"column:contract_address"`
+}
+
+func (ProjectInfo) TableName() string {
+	return "reptile-gitcoin.data"
 }
 
 type DonationInfo struct {
@@ -104,7 +107,7 @@ type DonationInfo struct {
 	Amount         string
 	Symbol         string
 	FormatedAmount *big.Int
-	Decimals       int64
+	Decimals       int
 	Timestamp      string
 	TxHash         string
 	Approach       DonationApproach
@@ -124,9 +127,15 @@ func (d DonationInfo) GetTxTo() string {
 		return bulkCheckoutAddressPolygon
 	}
 
-	if d.Approach == DonationApproachZksync {
+	if d.Approach == DonationApproachZkSync {
 		return d.AdminAddress
 	}
 
 	return ""
+}
+
+type TokenMeta struct {
+	Address string `json:"address"`
+	Decimal int    `json:"decimal"`
+	Symbol  string `json:"symbol"`
 }
