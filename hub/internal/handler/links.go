@@ -115,14 +115,15 @@ func getLinkList(instance rss3uri.Instance, request GetLinkListRequest) ([]model
 	}
 
 	if request.LastIdentifier != "" {
-		lastIdentifier, err := rss3uri.Parse(request.LastIdentifier)
+		lastIdentifier, err := rss3uri.Parse(strings.ToLower(request.LastIdentifier))
 		if err != nil {
 			return nil, 0, err
 		}
 
 		var lastItem model.Link
 		if err := database.DB.Where(&model.Link{
-			To: lastIdentifier.Instance.GetIdentity(),
+			From: instance.GetIdentity(),
+			To:   lastIdentifier.Instance.GetIdentity(),
 		}).First(&lastItem).Error; err != nil {
 			return nil, 0, err
 		}
@@ -177,7 +178,7 @@ func getLinkList(instance rss3uri.Instance, request GetLinkListRequest) ([]model
 			From:             strings.ToLower(instance.GetIdentity()),
 			FromInstanceType: constants.PlatformSymbol(instance.GetSuffix()).ID().Int(),
 		}).
-		Order("date_created DESC").
+		Order("created_at DESC").
 		Count(&count).Error; err != nil {
 		return nil, 0, err
 	}

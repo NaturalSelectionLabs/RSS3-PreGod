@@ -19,7 +19,6 @@ import (
 
 type GetBackLinkListRequest struct {
 	Type           string   `form:"type"`
-	Offset         int      `form:"offset"`
 	Limit          int      `form:"limit"`
 	LastIdentifier string   `form:"last_identifier"`
 	From           string   `form:"from"`
@@ -117,7 +116,7 @@ func getBackLinkList(instance rss3uri.Instance, request GetBackLinkListRequest) 
 	}
 
 	if request.LastIdentifier != "" {
-		lastIdentifier, err := rss3uri.Parse(request.LastIdentifier)
+		lastIdentifier, err := rss3uri.Parse(strings.ToLower(request.LastIdentifier))
 		if err != nil {
 			return nil, 0, err
 		}
@@ -125,6 +124,7 @@ func getBackLinkList(instance rss3uri.Instance, request GetBackLinkListRequest) 
 		var lastItem model.Link
 		if err := database.DB.Where(&model.Link{
 			From: lastIdentifier.Instance.GetIdentity(),
+			To:   instance.GetIdentity(),
 		}).First(&lastItem).Error; err != nil {
 			return nil, 0, err
 		}
@@ -164,7 +164,6 @@ func getBackLinkList(instance rss3uri.Instance, request GetBackLinkListRequest) 
 			To:             strings.ToLower(instance.GetIdentity()),
 			ToPlatformID:   constants.PlatformSymbol(instance.GetSuffix()).ID().Int(),
 		}).
-		Offset(request.Offset).
 		Limit(request.Limit).
 		Order("created_at DESC").
 		Find(&linkList).Error; err != nil {

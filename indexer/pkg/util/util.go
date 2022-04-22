@@ -2,8 +2,10 @@ package util
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database"
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database/common"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database/model"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/constants"
 )
@@ -41,8 +43,8 @@ func GotKey(strategy string, indexer_id string, keys []string) string {
 }
 
 func SummarizeContent(summary string, maxLength int) string {
-	if maxSummaryLength := maxLength; len(summary) > maxSummaryLength { // TODO: define the max length specifically in protocol?
-		summary = string([]rune(summary)[:maxSummaryLength]) + "..."
+	if summ := []rune(summary); len(summ) > maxLength { // TODO: define the max length specifically in protocol?
+		summary = string(summ[:maxLength]) + "..."
 	}
 
 	return summary
@@ -69,6 +71,9 @@ func SetCrawlerMetadata(
 		AccountInstance: instance,
 		PlatformID:      platformID,
 		LastBlock:       fromHeight,
+		Table: common.Table{
+			UpdatedAt: time.Now(),
+		},
 	}, true); err != nil {
 		return fmt.Errorf("set last position error: %s", err)
 	}
