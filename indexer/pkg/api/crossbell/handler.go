@@ -6,7 +6,7 @@ import (
 
 func Run() error {
 	instance := New(&Config{
-		RPC: config.Config.Crossbell.RPC,
+		RPC: config.Config.Indexer.Crossbell.RPC,
 	})
 
 	return instance.Run()

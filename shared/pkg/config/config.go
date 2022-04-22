@@ -134,6 +134,7 @@ type IndexerStruct struct {
 	Twitter     TwitterStruct     `koanf:"twitter"`
 	Aribtrum    ArbitrumStruct    `koanf:"arbitrum"`
 	Gateway     GatewayStruct     `koanf:"gateway"`
+	Crossbell   CrossbellStruct   `koanf:"crossbell"`
 }
 
 type HubStruct struct {
@@ -162,7 +163,6 @@ type ConfigStruct struct {
 	Logger        LoggerStruct        `koanf:"logger"`
 	Network       NetWorkStruct       `koanf:"network"`
 	Indexer       IndexerStruct       `koanf:"indexer"`
-	Crossbell     CrossbellStruct     `koanf:"crossbell"`
 }
 
 var (
