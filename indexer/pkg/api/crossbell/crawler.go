@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"sync/atomic"
+	"time"
 
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database/model"
@@ -13,6 +14,7 @@ import (
 	"github.com/ethereum/go-ethereum/ethclient"
 	"golang.org/x/sync/errgroup"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 type Crawler interface {
@@ -94,9 +96,21 @@ func (c *crawler) runHandler() error {
 		return err
 	}
 
-	// TODO
+	for {
+		if c.internalBlockNumber < atomic.LoadInt64(&c.latestBlockNumber) {
+			logger.Info(c.internalBlockNumber)
 
-	return nil
+			tx := c.db.Begin()
+
+			if err := c.updateInternalBlockNumber(tx); err != nil {
+				tx.Rollback()
+
+				return err
+			}
+		} else {
+			time.Sleep(time.Second)
+		}
+	}
 }
 
 func (c *crawler) runSubscriber() error {
@@ -109,6 +123,33 @@ func (c *crawler) runSubscriber() error {
 
 	for header := range c.headerCh {
 		atomic.StoreInt64(&c.latestBlockNumber, header.Number.Int64())
+	}
+
+	return nil
+}
+
+func (c *crawler) updateInternalBlockNumber(tx *gorm.DB) error {
+	c.internalBlockNumber++
+
+	if err := tx.
+		Model(&model.CrawlerMetadata{}).
+		Clauses(clause.OnConflict{
+			DoUpdates: clause.AssignmentColumns([]string{"updated_at"}),
+			UpdateAll: true,
+		}).Create(&model.CrawlerMetadata{
+		AccountInstance: ContractAddressProfile,
+		PlatformID:      0,
+		LastBlock:       c.internalBlockNumber,
+	}).Error; err != nil {
+		c.internalBlockNumber--
+
+		return err
+	}
+
+	if err := tx.Commit().Error; err != nil {
+		c.internalBlockNumber--
+
+		return err
 	}
 
 	return nil
