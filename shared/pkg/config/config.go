@@ -147,6 +147,10 @@ type ElasticsearchStruct struct {
 	Password string `koanf:"password"`
 }
 
+type CrossbellStruct struct {
+	RPC string `koanf:"rpc"`
+}
+
 type ConfigStruct struct {
 	Protocol      ProtocolStruct      `koanf:"protocol"`
 	Hub           HubStruct           `koanf:"hub"`
@@ -158,6 +162,7 @@ type ConfigStruct struct {
 	Logger        LoggerStruct        `koanf:"logger"`
 	Network       NetWorkStruct       `koanf:"network"`
 	Indexer       IndexerStruct       `koanf:"indexer"`
+	Crossbell     CrossbellStruct     `koanf:"crossbell"`
 }
 
 var (
