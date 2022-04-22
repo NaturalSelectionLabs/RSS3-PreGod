@@ -43,8 +43,8 @@ func GotKey(strategy string, indexer_id string, keys []string) string {
 }
 
 func SummarizeContent(summary string, maxLength int) string {
-	if maxSummaryLength := maxLength; len(summary) > maxSummaryLength { // TODO: define the max length specifically in protocol?
-		summary = string([]rune(summary)[:maxSummaryLength]) + "..."
+	if summ, maxSummaryLength := []rune(summary), maxLength; len(summ) > maxSummaryLength { // TODO: define the max length specifically in protocol?
+		summary = string(summ[:maxSummaryLength]) + "..."
 	}
 
 	return summary
