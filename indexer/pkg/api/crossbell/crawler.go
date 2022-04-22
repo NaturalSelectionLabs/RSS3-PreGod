@@ -2,10 +2,13 @@ package crossbell
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"sync/atomic"
 
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database"
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database/model"
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/logger"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"golang.org/x/sync/errgroup"
@@ -44,6 +47,8 @@ func (c *crawler) Initialize() (err error) {
 		return err
 	}
 
+	logger.Info("connected to crossbell rpc")
+
 	c.headerCh = make(chan *types.Header)
 
 	if database.DB == nil {
@@ -67,11 +72,31 @@ func (c *crawler) Run() error {
 
 	defer subscription.Unsubscribe()
 
+	logger.Info("subscribe new head success")
+
 	eg := errgroup.Group{}
 
+	eg.Go(c.runHandler)
 	eg.Go(c.runSubscriber)
 
 	return eg.Wait()
+}
+
+func (c *crawler) runHandler() error {
+	if err := c.db.
+		Table("crawler_metadata").
+		Select("last_block").
+		Where(&model.CrawlerMetadata{
+			AccountInstance: ContractAddressProfile,
+			PlatformID:      0,
+		}).
+		Scan(&c.internalBlockNumber).Error; err != nil && !errors.Is(err, sql.ErrNoRows) {
+		return err
+	}
+
+	// TODO
+
+	return nil
 }
 
 func (c *crawler) runSubscriber() error {
