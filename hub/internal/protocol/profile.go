@@ -10,6 +10,7 @@ type Profile struct {
 	Name              string              `json:"name,omitempty"`
 	Avatars           []string            `json:"avatars,omitempty"`
 	Bio               string              `json:"bio"`
+	Authors           []string            `json:"authors,omitempty"`
 	Tags              []string            `json:"tags,omitempty"`
 	RelatedURLs       []string            `json:"related_urls,omitempty"`
 	Attachments       []ProfileAttachment `json:"attachments"`
