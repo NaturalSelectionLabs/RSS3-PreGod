@@ -70,7 +70,11 @@ func RunAutoCrawler(cmd *cobra.Command, args []string) error {
 	return eg.Wait()
 }
 
-var rootCmd = &cobra.Command{Use: "indexer"}
+var rootCmd = &cobra.Command{
+	Use:           "indexer",
+	SilenceUsage:  true,
+	SilenceErrors: true,
+}
 
 func main() {
 	rootCmd.AddCommand(&cobra.Command{
@@ -87,6 +91,6 @@ func main() {
 	})
 
 	if err := rootCmd.Execute(); err != nil {
-		panic(err)
+		logger.Fatal(err)
 	}
 }
