@@ -20,6 +20,5 @@ var DefaultCrawlConfig = &crawlConfig{
 	DefaultConfirmations,
 	DefaultCrawlStep,
 	DefaultCrawlMinStep,
-	time.Duration(600),
-	time.Now(),
+	60 * time.Second,
 }

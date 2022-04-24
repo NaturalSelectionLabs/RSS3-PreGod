@@ -25,7 +25,6 @@ type crawlConfig struct {
 	step          int64
 	minStep       int64
 	sleepInterval time.Duration
-	nextRoundTime time.Time
 }
 
 type crawler struct {
@@ -47,12 +46,6 @@ func (ar *crawler) run() error {
 		// handle interrupt
 		if ar.gotInterrupt() {
 			return ErrInterrupt
-		}
-
-		if ar.cfg.nextRoundTime.After(time.Now()) {
-			time.Sleep(1 * time.Second)
-
-			continue
 		}
 
 		startBlockHeight := ar.cfg.fromHeight
@@ -77,14 +70,11 @@ func (ar *crawler) run() error {
 		}
 
 		if latestConfirmedBlockHeight <= endBlockHeight {
-			logger.Info("catch up with the latest block height...")
-
-			ar.cfg.nextRoundTime = ar.cfg.nextRoundTime.Add(ar.cfg.sleepInterval)
+			logger.Infof("catch up with the latest block height (%d)... will sleep for %v", latestConfirmedBlockHeight, ar.cfg.sleepInterval)
+			time.Sleep(ar.cfg.sleepInterval)
 
 			// use minStep if we are at the end of the chain
 			ar.cfg.step = ar.cfg.minStep
-
-			logger.Info("arweave catch up with the latest block height")
 
 			continue
 		}
