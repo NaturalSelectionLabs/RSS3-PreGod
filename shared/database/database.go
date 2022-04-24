@@ -29,6 +29,7 @@ func Setup() error {
 		NamingStrategy:                           schema.NamingStrategy{SingularTable: true},
 		NowFunc:                                  func() time.Time { return time.Now().UTC() },
 		DisableForeignKeyConstraintWhenMigrating: true,
+		CreateBatchSize:                          1000,
 		Logger:                                   logger.New(),
 	})
 
