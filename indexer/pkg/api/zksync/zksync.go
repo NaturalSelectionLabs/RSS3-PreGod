@@ -60,7 +60,6 @@ func GetTokens() ([]Token, error) {
 
 func GetTxsByBlock(blockHeight int64) ([]ZKTransaction, error) {
 	url := fmt.Sprintf("%s/api/v0.1/blocks/%d/transactions", endpoint, blockHeight)
-	logger.Infof("GetTxsByBlock, url: [%s]", url)
 	response, err := httpx.Get(url, nil)
 
 	if err != nil {
