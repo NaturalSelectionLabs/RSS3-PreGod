@@ -13,14 +13,14 @@ import (
 // var reptileDB *gorm.DB
 
 const GitcoinProjectIdentity = "gitcoin-project"
-const GitcoinProjectNetworkID = 1000
+const GitcoinProjectPlatformID = 1000
 const GitcoinProjectIdentity2 = "gitcoin-project2"
-const GitcoinProjectNetworkID2 = 1001
+const GitcoinProjectPlatformID2 = 1001
 
-func SetLastPostion(pos int, identity string, networkID constants.NetworkID) error {
+func SetLastPostion(pos int, identity string, platformID constants.PlatformID) error {
 	if _, err := database.CreateCrawlerMetadata(database.DB, &model.CrawlerMetadata{
 		AccountInstance: identity,
-		NetworkId:       networkID,
+		PlatformID:      platformID,
 		LastBlock:       pos,
 	}, true); err != nil {
 		return fmt.Errorf("set last position error: %s", err)
@@ -29,8 +29,8 @@ func SetLastPostion(pos int, identity string, networkID constants.NetworkID) err
 	return nil
 }
 
-func GetLastPostion(identity string, networkID constants.NetworkID) int {
-	metadata, dbQcmErr := database.QueryCrawlerMetadata(database.DB, identity, networkID)
+func GetLastPostion(identity string, platformID constants.PlatformID) int {
+	metadata, dbQcmErr := database.QueryCrawlerMetadata(database.DB, identity, platformID)
 	if dbQcmErr != nil {
 		logger.Errorf("query crawler metadata error: %s", dbQcmErr)
 
@@ -60,14 +60,22 @@ func SetResultsInDB(projects []gitcoin.ProjectInfo) error {
 	return nil
 }
 
-func GetResultTotal() int64 {
-	var count int64
+func GetResultMax() int {
+	max := 0
 
-	if err := database.DB.Model(&gitcoin.ProjectInfo{}).Distinct("id").Count(&count).Error; err != nil {
-		logger.Errorf("get result total error: %s", err)
+	rows, err := database.DB.Table("reptile-gitcoin.data").Select("max(id)").Rows()
+	if err != nil {
+		logger.Errorf("get result max error: %s", err)
 	}
 
-	return count
+	if rows.Next() {
+		err := rows.Scan(&max)
+		if err != nil {
+			logger.Errorf("get result max error: %s", err)
+		}
+	}
+
+	return max
 }
 
 func GetResultFromDB(pos int, endpos int) ([]gitcoin.ProjectInfo, error) {
@@ -75,7 +83,7 @@ func GetResultFromDB(pos int, endpos int) ([]gitcoin.ProjectInfo, error) {
 
 	internalDB := database.DB.
 		Where("id > ?", pos).
-		Where("id <= ?", pos+endpos)
+		Where("id <= ?", endpos)
 
 	if err := internalDB.Find(&projects).Error; err != nil {
 		return nil, err

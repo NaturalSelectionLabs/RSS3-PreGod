@@ -124,7 +124,7 @@ func (gc *crawler) needUpdateProject(adminAddress string) bool {
 }
 
 func (gc *crawler) updateHostingProject(info GrantInfo) (inactive bool, err error) {
-	project, err := GetProjectsInfo(info.AdminAddress, info.Title)
+	project, err := getProjectsInfo(info.AdminAddress, info.Title)
 	if err != nil {
 		logger.Errorf("zksync get projects info error: %v", err)
 

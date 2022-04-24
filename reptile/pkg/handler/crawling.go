@@ -34,7 +34,7 @@ func GetResult(pos int) (*gitcoin.ProjectInfo, error) {
 	}
 
 	if parsedJson.GetInt("status") != 200 {
-		logger.Errorf("get result [%d] not find: %s", pos,
+		logger.Warnf("get result [%d] not find: %s", pos,
 			string(parsedJson.GetStringBytes("message")))
 
 		return nil, nil
