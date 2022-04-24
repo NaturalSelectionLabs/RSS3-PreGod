@@ -165,7 +165,9 @@ func formatContent(note *fastjson.Value, ns *Note, instance string) {
 			Content:  renoteText,
 		}
 
-		address := fmt.Sprintf("https://%s/@%s/%s", instance, renoteUser, renoteId)
+		renoteInstance := string(note.GetStringBytes("renote", "user", "host"))
+
+		address := fmt.Sprintf("https://%s/@%s/%s", renoteInstance, renoteUser, renoteId)
 
 		quoteAddress := datatype.Attachment{
 			Type:     "quote_address",
