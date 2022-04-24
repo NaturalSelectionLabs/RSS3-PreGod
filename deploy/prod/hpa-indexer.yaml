@@ -4,8 +4,8 @@ metadata:
   name: pregod-indexer
   namespace: pregod
 spec:
-  maxReplicas: 16
-  minReplicas: 6
+  maxReplicas: 20
+  minReplicas: 10
   scaleTargetRef:
     apiVersion: apps/v1
     kind: Deployment
