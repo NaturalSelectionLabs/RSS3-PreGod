@@ -22,6 +22,7 @@ type crawler interface {
 	start() error
 	getConfig() crawlerConfig
 	getPlatform() GitcoinPlatform
+	getLoopTime() time.Duration
 }
 
 type crawlerProperty struct {
@@ -30,6 +31,7 @@ type crawlerProperty struct {
 	networkID        constants.NetworkID
 	platformID       constants.PlatformID
 	metadataIdentity string
+	loopTime         time.Duration
 }
 
 type zksyncCrawlerProperty struct {
@@ -48,6 +50,7 @@ var (
 			networkID:        constants.NetworkIDEthereum,
 			platformID:       constants.PlatformID(1002),
 			metadataIdentity: string("gitcoin-" + ZkSync),
+			loopTime:         500 * time.Millisecond,
 		},
 	}
 
@@ -58,6 +61,7 @@ var (
 			networkID:        constants.NetworkIDEthereum,
 			platformID:       constants.PlatformID(1003),
 			metadataIdentity: string("gitcoin-" + ETH),
+			loopTime:         500 * time.Millisecond,
 		},
 	}
 
@@ -68,6 +72,7 @@ var (
 			networkID:        constants.NetworkIDPolygon,
 			platformID:       constants.PlatformID(1004),
 			metadataIdentity: string("gitcoin-" + Polygon),
+			loopTime:         500 * time.Millisecond,
 		},
 	}
 
@@ -81,7 +86,7 @@ var (
 func loopRun(property crawler) {
 	for {
 		property.run()
-		time.Sleep(500 * time.Millisecond)
+		time.Sleep(property.getLoopTime())
 	}
 }
 
@@ -91,6 +96,10 @@ func (property *crawlerProperty) getConfig() crawlerConfig {
 
 func (property *crawlerProperty) getPlatform() GitcoinPlatform {
 	return property.platform
+}
+
+func (property *crawlerProperty) getLoopTime() time.Duration {
+	return property.loopTime
 }
 
 func (property *crawlerProperty) checkConfig() error {

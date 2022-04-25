@@ -24,7 +24,7 @@ func GetLatestBlockHeight() (int64, error) {
 	}
 
 	latestBlockResult := new(ArLatestBlockResult)
-	if err := jsoni.UnmarshalFromString(string(response), latestBlockResult); err != nil {
+	if err := jsoni.UnmarshalFromString(string(response.RespBody), latestBlockResult); err != nil {
 		logger.Errorf("arweave GetLatestBlockHeight unmarshalFromString error: %v", err)
 
 		return 0, err
@@ -50,7 +50,12 @@ func GetContentByTxHash(hash string) ([]byte, error) {
 		"Referer": "https://viewblock.io",
 	}
 
-	return httpx.Get(arweaveEndpoint+"/"+hash, headers)
+	resp, err := httpx.Get(arweaveEndpoint+"/"+hash, headers)
+	if err != nil {
+		return nil, err
+	}
+
+	return resp.RespBody, nil
 }
 
 // GetTransactions gets all transactions using filters.
@@ -69,6 +74,11 @@ func GetTransactions(from, to int64, owner ArAccount) ([]byte, error) {
 			"sort: HEIGHT_ASC ) { edges { node {id tags { name value } } } }" +
 			"}\"}"
 	data := fmt.Sprintf(queryVariables, from, to, owner)
+
+	resp, err := httpx.Post(arweaveGraphqlEndpoint, headers, data)
+	if err != nil {
+		return nil, err
+	}
 
 	return httpx.Post(arweaveGraphqlEndpoint, headers, data)
 }

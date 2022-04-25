@@ -16,11 +16,26 @@ type ContentHeader struct {
 	SizeInByte int
 }
 
-func Get(url string, headers map[string]string) ([]byte, error) {
+type Response struct {
+	RespBody   []byte
+	RespHeader http.Header
+}
+
+func NewResponse() *Response {
+	return &Response{
+		RespBody:   []byte{},
+		RespHeader: http.Header{},
+	}
+}
+
+func Get(url string, headers map[string]string) (*Response, error) {
+	resp := NewResponse()
+
 	// get from cache fist
-	response, ok := getCache(url, methodGet, "")
+	cacheResp, ok := getCache(url, methodGet, "")
 	if ok {
-		return []byte(response), nil
+		resp.RespBody = []byte(cacheResp)
+		return resp, nil
 	}
 
 	client := getClient()
@@ -32,27 +47,31 @@ func Get(url string, headers map[string]string) ([]byte, error) {
 	request := client.R().EnableTrace().SetHeaders(headers)
 
 	// Get url
-	resp, err := request.Get(url)
+	urlResp, err := request.Get(url)
 	if err != nil {
 		return nil, err
 	}
 
-	if resp.StatusCode() != 200 {
-		return nil, fmt.Errorf("StatusCode [%d]", resp.StatusCode())
+	if urlResp.StatusCode() != 200 {
+		return nil, fmt.Errorf("StatusCode [%d]", urlResp.StatusCode())
 	}
 
-	if cacheErr := setCache(url, methodGet, "", string(resp.Body())); cacheErr != nil {
+	if cacheErr := setCache(url, methodGet, "", string(urlResp.Body())); cacheErr != nil {
 		logger.Errorf("Failed to set cache for url [%s]. err: %+v", url, cacheErr)
 	}
+	resp.RespBody = urlResp.Body()
 
-	return resp.Body(), err
+	return resp, err
 }
 
-func Post(url string, headers map[string]string, data string) ([]byte, error) {
+func Post(url string, headers map[string]string, data string) (*Response, error) {
+	resp := NewResponse()
+
 	// get from cache fist
-	response, ok := getCache(url, methodPost, "")
+	cacheResp, ok := getCache(url, methodPost, "")
 	if ok {
-		return []byte(response), nil
+		resp.RespBody = []byte(cacheResp)
+		return resp, nil
 	}
 
 	client := getClient()
@@ -64,13 +83,13 @@ func Post(url string, headers map[string]string, data string) ([]byte, error) {
 	request := client.R().EnableTrace().SetHeaders(headers).SetBody(data)
 
 	// Post url
-	resp, err := request.Post(url)
+	urlResp, err := request.Post(url)
 
-	if cacheErr := setCache(url, methodPost, data, string(resp.Body())); cacheErr != nil {
+	if cacheErr := setCache(url, methodPost, data, string(urlResp.Body())); cacheErr != nil {
 		logger.Errorf("Failed to set cache for url [%s]. err: %+v", url, cacheErr)
 	}
 
-	return resp.Body(), err
+	return resp, err
 }
 
 // PostRaw returns raw *resty.Response for Jike
