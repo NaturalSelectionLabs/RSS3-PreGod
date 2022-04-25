@@ -29,8 +29,8 @@ type GraphqlResult struct {
 	Data struct {
 		Transactions struct {
 			PageInfo struct {
-				HasNextPage bool `json:"hasNextPage"`
-			} `json:"pageInfo"`
+				HasNextPage bool `json:"hasNextPage"` // nolint:tagliatelle // returned by arewave api
+			} `json:"pageInfo"` // nolint:tagliatelle // returned by arewave api
 			Edges []GraphqlResultEdges `json:"edges"`
 		} `json:"transactions"`
 	} `json:"data"`
