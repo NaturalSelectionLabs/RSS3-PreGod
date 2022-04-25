@@ -357,7 +357,9 @@ func QueryCrawlerMetadata(db *gorm.DB, identity string, platformId constants.Pla
 }
 
 func NewCreateClauses(updateAll bool) []clause.Expression {
-	clauses := []clause.Expression{clause.Returning{}}
+	clauses := []clause.Expression{
+		// clause.Returning{}
+	}
 
 	if updateAll {
 		clauses = append(clauses, clause.OnConflict{
