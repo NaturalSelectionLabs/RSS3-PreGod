@@ -1,0 +1,285 @@
+openapi: 3.0.0
+info:
+  description: |
+    This is a simple API guide for RSS3 PreGod. You can find out more about RSS3 PreGod at [rss3.io](http://rss3.io/) or on [GitHub](https://github.com/NaturalSelectionLabs/RSS3-PreGod).
+  version: "0.4.0"
+  title: RSS3 PreGod API
+  # termsOfService: 'http://rss3.io/terms/'
+  contact:
+    email: contact@rss3.io
+  license:
+    name: GNU Affero General Public License v3.0
+    url: "https://www.gnu.org/licenses/agpl-3.0.en.html"
+servers:
+  # Added by API Auto Mocking Plugin
+  - description: SwaggerHub API Auto Mocking
+    url: https://virtserver.swaggerhub.com/HenryQW/PreGod/0.4.0
+  - description: PreGod API Test Instance
+    url: "https://test-pregod.rss3.dev/v0.4.0"
+tags:
+  - name: item
+    externalDocs:
+      description: Find out more
+      url: "https://rss3.io/"
+paths:
+  "/account:{instance}@{platform}/{type}":
+    get:
+      tags:
+        - item
+      summary: Get items by Instance
+      description: Returns a list of items
+      operationId: getItemByInstance
+      parameters:
+        - name: instance
+          in: path
+          description: The address of the instance
+          required: true
+          example: "0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045"
+          schema:
+            type: string
+        - name: platform
+          in: path
+          description: The platform of the instance
+          required: true
+          schema:
+            type: string
+            enum:
+              - ethereum
+              - solana
+              - flow
+              - arweave
+              - rss
+              - twitter
+              - misskey
+              - jike
+              - playstation
+              - github
+        - name: type
+          in: path
+          description: The type of items to retrieve
+          required: true
+          schema:
+            type: string
+            enum:
+              - notes
+              - assets
+        - name: last_identifier
+          in: query
+          description: The pointer used for paging
+          required: false
+          schema:
+            type: string
+        - name: limit
+          in: query
+          description: Limit the number of items returned by the server.
+          required: false
+          schema:
+            type: number
+            default: 100
+            maximum: 100
+        - name: tags
+          in: query
+          description: Include items based by tags
+          required: false
+          example: "NFT"
+          schema:
+            type: string
+        - name: exclude_tags
+          in: query
+          description: Filter out items by tags
+          required: false
+          example: "POAP"
+          schema:
+            type: string
+        # Swagger UI doesn't not render `oneOf` schema properly.
+        - name: item_sources
+          in: query
+          description: "Include items by indexing sources. Depending on the `type`, please see the supported values below in Schemas: `NoteSource` or `AssetSource`"
+          required: false
+          example: "Ethereum NFT"
+          schema:
+            oneOf:
+              - $ref: "#/components/schemas/NoteSource"
+              - $ref: "#/components/schemas/AssetSource"
+      responses:
+        "200":
+          description: valid request
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: "#/components/schemas/Response"
+                  - $ref: "#/components/schemas/InvalidRequest"
+externalDocs:
+  description: Find out more about RSS3
+  url: "https://rss3.io"
+components:
+  schemas:
+    Response:
+      type: object
+      required: ["version", "date_updated", "identifier", "total", "list"]
+      properties:
+        version:
+          type: string
+          description: "The version of the RSS3 PreGod instance"
+          example: v0.4.0
+        date_updated:
+          type: string
+          description: "The last update time, conforms to the RFC3339 datetime"
+          format: date-time
+          example: "2022-04-05T01:22:33.000Z"
+        identifier:
+          type: string
+          example: rss3://account:0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045@ethereum/notes?limit=100
+          description: The pointer of the current request
+        total:
+          type: number
+          example: 123
+          description: The total number of items indexed for the instance
+        list:
+          type: array
+          description: The requested items
+          items:
+            $ref: "#/components/schemas/Item"
+    InvalidRequest:
+      type: object
+      required: [code, error]
+      properties:
+        code:
+          type: integer
+          example: 0
+          format: int32
+        error:
+          type: string
+          example: "no router"
+    AssetSource:
+      type: string
+      enum:
+        - Crossbell
+        - Ethereum NFT
+        - Solana NFT
+        - Flow NFT
+        - PlayStation Trophy
+        - GitHub Achievement
+    NoteSource:
+      type: string
+      enum:
+        - Crossbell
+        - Ethereum NFT
+        - Solana NFT
+        - Flow NFT
+        - Mirror Entry
+        - Gitcoin Contribution
+        - Twitter Tweet
+        - Misskey Note
+        - Jike Post
+    Date:
+      type: string
+      description: "Conform to the RFC3339 Datetime format"
+      format: date-time
+      example: "2022-01-19T02:06:38.000Z"
+    Item:
+      type: object
+      required:
+        [
+          identifier,
+          date_created,
+          date_updated,
+          related_urls,
+          links,
+          backlinks,
+          tags,
+          authors,
+          summary,
+          attachments,
+          source,
+        ]
+      properties:
+        identifier:
+          type: string
+          example: "rss3://asset:0xb9619cf4f875cdf0e3ce48b28a1c725bc4f6c0fb-1800@ethereum"
+        date_created:
+          $ref: "#/components/schemas/Date"
+        date_updated:
+          $ref: "#/components/schemas/Date"
+        related_urls:
+          type: array
+          items:
+            type: string
+            example:
+              [
+                "https://etherscan.io/nft/0xb9619cf4f875cdf0e3ce48b28a1c725bc4f6c0fb/1800",
+                "https://opensea.io/assets/0xb9619cf4f875cdf0e3ce48b28a1c725bc4f6c0fb/1800",
+              ]
+        links:
+          type: string
+          example: "rss3://asset:0xb9619cf4f875cdf0e3ce48b28a1c725bc4f6c0fb-1800@ethereum/links"
+        backlinks:
+          type: string
+          example: "rss3://asset:0xb9619cf4f875cdf0e3ce48b28a1c725bc4f6c0fb-1800@ethereum/backlinks"
+        tags:
+          type: array
+          items:
+            type: string
+            example: ["Tweet"]
+        authors:
+          type: array
+          items:
+            type: string
+            example:
+              [
+                "rss3://account:0xC8b960D09C0078c18Dcbe7eB9AB9d816BcCa8944@ethereum",
+              ]
+        summary:
+          type: string
+          example: "Here we go. https://t.co/DyyJsje3SR"
+        attachments:
+          type: array
+          items:
+            $ref: "#/components/schemas/Attachments"
+        source:
+          $ref: "#/components/schemas/Metadata"
+    Attachments:
+      type: object
+      required: [type, address, mime_type]
+      properties:
+        type:
+          type: string
+          example: "object"
+        address:
+          type: string
+          example: "ipfs://bafybeicij6vw6xcsgwldofnmmh3c3j4w5yiocs6l72yubpbcldxcglkvqe/rss3-whitepaper-no-1800.glb"
+        content:
+          type: string
+          example: '{"Author(s)":"Natural Selection Labs","Edition":"First Edition","Edition Language":"English","File Format":"PDF","No.":1800,"date":1610323200}'
+        mime_type:
+          type: string
+          example: "model/gltf-binary"
+        size_in_bytes:
+          type: number
+          example: 3983376
+    Metadata:
+      type: object
+      required: [network, proof]
+      properties:
+        network:
+          type: string
+          example: "Ethereum"
+        proof:
+          type: string
+          example: "0xb9619cf4f875cdf0e3ce48b28a1c725bc4f6c0fb-1800"
+        token_standard:
+          type: string
+          example: "ERC-721"
+        token_id:
+          type: string
+          example: "1800"
+        token_symbol:
+          type: string
+          example: "RWP"
+        collection_address:
+          type: string
+          example: "0xb9619cf4f875cdf0e3ce48b28a1c725bc4f6c0fb"
+        collection_name:
+          type: string
+          example: "RSS3 Whitepaper"
