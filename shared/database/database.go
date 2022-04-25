@@ -20,6 +20,8 @@ const (
 
 var DB *gorm.DB
 
+var ErrRecordNotFound = gorm.ErrRecordNotFound
+
 func Setup() error {
 	db, err := gorm.Open(postgres.New(postgres.Config{
 		// TODO Refactor config package
@@ -56,12 +58,12 @@ func Setup() error {
 	}
 
 	if err := DB.AutoMigrate(
-		&model.Profile{},
-		&model.Account{},
-		&model.Link{},
-		&model.Asset{},
-		&model.Note{},
-		&model.CrawlerMetadata{},
+	//&model.Profile{},
+	//&model.Account{},
+	//&model.Link{},
+	//&model.Asset{},
+	//&model.Note{},
+	//&model.CrawlerMetadata{},
 	); err != nil {
 		return err
 	}
