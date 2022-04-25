@@ -111,7 +111,7 @@ func GetMirrorContents(from, to int64, owner ArAccount) ([]MirrorContent, error)
 
 		graphqlResult := new(GraphqlResult)
 		if err := jsoni.UnmarshalFromString(string(response), graphqlResult); err != nil {
-			logger.Errorf("arweave unmarshalFromString error: %v", err)
+			logger.Errorf("arweave unmarshalFromString error: %v for response %s", err, string(response))
 
 			return nil, err
 		}
@@ -120,13 +120,12 @@ func GetMirrorContents(from, to int64, owner ArAccount) ([]MirrorContent, error)
 		l := len(edges)
 
 		hasNextPage := graphqlResult.Data.Transactions.PageInfo.HasNextPage
-		lastCursor = edges[l-1].Cursor
-
-		logger.Infof("Getting transactions from [%d] to [%d], [%d] edges in total, hasNextPage: [%v]", from, to, l, hasNextPage)
 
 		for i := 0; i < l; i++ {
 			res, err := parseGraphqlNode(edges[i])
 			if err != nil {
+				logger.Errorf("parseGraphqlNode error %v for edge", err, edges[i])
+
 				continue
 			}
 
@@ -135,9 +134,11 @@ func GetMirrorContents(from, to int64, owner ArAccount) ([]MirrorContent, error)
 			}
 		}
 
-		if !hasNextPage {
+		if !hasNextPage || l == 0 {
 			break
 		}
+
+		lastCursor = edges[l-1].Cursor
 
 		time.Sleep(DefaultCrawlConfig.sleepInterval)
 	}
