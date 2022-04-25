@@ -5,6 +5,8 @@ import (
 	"math/big"
 	"os"
 	"time"
+
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database/common"
 )
 
 type GitcoinPlatform string
@@ -94,6 +96,8 @@ type ProjectInfo struct {
 	TokenAddress    string `gorm:"column:token_address"`
 	TokenSymbol     string `gorm:"column:token_symbol"`
 	ContractAddress string `gorm:"column:contract_address"`
+
+	common.Table
 }
 
 func (ProjectInfo) TableName() string {
