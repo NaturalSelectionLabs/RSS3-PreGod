@@ -42,7 +42,7 @@ func TestGetContentByTxHash(t *testing.T) {
 }
 
 func TestGetTransacitons(t *testing.T) {
-	response, err := arweave.GetTransactions(877250, 877250, arweave.MirrorUploader)
+	response, err := arweave.GetTransactions(877250, 877250, arweave.MirrorUploader, "")
 	// assert for nil
 	assert.Nil(t, err)
 	assert.NotEmpty(t, response)

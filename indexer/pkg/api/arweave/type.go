@@ -15,7 +15,8 @@ type ArLatestBlockResult struct {
 }
 
 type GraphqlResultEdges struct {
-	Node struct {
+	Cursor string `json:"cursor"`
+	Node   struct {
 		Id   string `json:"id"`
 		Tags []struct {
 			Name  string `json:"name"`
@@ -27,6 +28,9 @@ type GraphqlResultEdges struct {
 type GraphqlResult struct {
 	Data struct {
 		Transactions struct {
+			PageInfo struct {
+				HasNextPage bool `json:"hasNextPage"`
+			} `json:"pageInfo"`
 			Edges []GraphqlResultEdges `json:"edges"`
 		} `json:"transactions"`
 	} `json:"data"`
