@@ -6,7 +6,6 @@ import (
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/crawler"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/util"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database"
-	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database/model"
 )
 
 type GetItemsHandler struct {
@@ -99,12 +98,12 @@ func (pt *GetItemsHandler) Excute() (*GetItemsResult, error) {
 	result.Result = r
 
 	// stores the crawler last worked metadata
-	if _, err := database.CreateCrawlerMetadata(database.DB, &model.CrawlerMetadata{
-		AccountInstance: pt.WorkParam.OwnerID,
-		PlatformID:      pt.WorkParam.PlatformID,
-	}, true); err != nil {
-		return result, err
-	}
+	//if _, err := database.CreateCrawlerMetadata(database.DB, &model.CrawlerMetadata{
+	//	AccountInstance: pt.WorkParam.OwnerID,
+	//	PlatformID:      pt.WorkParam.PlatformID,
+	//}, true); err != nil {
+	//	return result, err
+	//}
 
 	return result, nil
 }

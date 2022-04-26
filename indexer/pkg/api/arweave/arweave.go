@@ -2,6 +2,7 @@ package arweave
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/httpx"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/logger"
@@ -59,7 +60,7 @@ func GetContentByTxHash(hash string) ([]byte, error) {
 }
 
 // GetTransactions gets all transactions using filters.
-func GetTransactions(from, to int64, owner ArAccount) ([]byte, error) {
+func GetTransactions(from, to int64, owner ArAccount, cursor string) ([]byte, error) {
 	var headers = map[string]string{
 		"Accept-Encoding": "gzip, deflate, br",
 		"Content-Type":    "application/json",
@@ -67,51 +68,89 @@ func GetTransactions(from, to int64, owner ArAccount) ([]byte, error) {
 		"Origin":          "https://arweave.net",
 	}
 
-	queryVariables :=
-		"{\"query\":\"query { transactions( " +
-			"block: { min: %d, max: %d } " +
-			"owners: [\\\"%s\\\"] " +
-			"sort: HEIGHT_ASC ) { edges { node {id tags { name value } } } }" +
-			"}\"}"
-	data := fmt.Sprintf(queryVariables, from, to, owner)
+	queryString := `query {
+		transactions(
+			block: { min: %d, max: %d }
+			owners: ["%s"]
+			sort: HEIGHT_ASC
+			first: 100
+			after: "%s"
+		) {
+			pageInfo {
+				hasNextPage
+			}
+			edges {
+				cursor
+				node {
+					id
+					tags {
+						name
+						value
+					}
+				}
+			}
+		}
+	}`
 
-	resp, err := httpx.Post(arweaveGraphqlEndpoint, headers, data)
-	if err != nil {
-		return nil, err
+	data := map[string]string{
+		"query": fmt.Sprintf(queryString, from, to, owner, cursor),
 	}
 
-	return resp.Body, nil
+	json, _ := jsoni.MarshalToString(data)
+
+	resp, err := httpx.Post(arweaveGraphqlEndpoint, headers, json)
+
+	return resp.Body, err
 }
 
 // GetMirrorContents gets all articles from arweave using filters.
 func GetMirrorContents(from, to int64, owner ArAccount) ([]MirrorContent, error) {
-	response, err := GetTransactions(from, to, owner)
-	if err != nil {
-		logger.Errorf("GetTransactions error: [%v]", err)
-
-		return nil, nil
-	}
-
-	graphqlResult := new(GraphqlResult)
-	if err := jsoni.UnmarshalFromString(string(response), graphqlResult); err != nil {
-		logger.Errorf("arweave unmarshalFromString error: %v", err)
-
-		return nil, err
-	}
-	// edges
-	edges := graphqlResult.Data.Transactions.Edges
+	lastCursor := ""
 	results := make([]MirrorContent, 0)
 
-	for i := 0; i < len(edges); i++ {
-		res, err := parseGraphqlNode(edges[i])
+	for {
+		response, err := GetTransactions(from, to, owner, lastCursor)
 		if err != nil {
+			logger.Errorf("GetTransactions error: [%v]", err)
+
 			return nil, nil
 		}
 
-		if res != nil {
-			results = append(results, *res)
+		graphqlResult := new(GraphqlResult)
+		if err := jsoni.UnmarshalFromString(string(response), graphqlResult); err != nil {
+			logger.Errorf("arweave unmarshalFromString error: %v for response %s", err, string(response))
+
+			return nil, err
 		}
+		// edges
+		edges := graphqlResult.Data.Transactions.Edges
+		l := len(edges)
+
+		hasNextPage := graphqlResult.Data.Transactions.PageInfo.HasNextPage
+
+		for i := 0; i < l; i++ {
+			res, err := parseGraphqlNode(edges[i])
+			if err != nil {
+				logger.Errorf("parseGraphqlNode error %v for edge", err, edges[i])
+
+				continue
+			}
+
+			if res != nil {
+				results = append(results, *res)
+			}
+		}
+
+		if !hasNextPage || l == 0 {
+			break
+		}
+
+		lastCursor = edges[l-1].Cursor
+
+		time.Sleep(DefaultCrawlConfig.sleepInterval)
 	}
+
+	logger.Infof("Getting transactions from [%d] to [%d], [%d] results in total. ", from, to, len(results))
 
 	return results, nil
 }
