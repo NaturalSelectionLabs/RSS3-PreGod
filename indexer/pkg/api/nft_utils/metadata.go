@@ -68,7 +68,7 @@ func ParseNFTMetadata(metadata string) (Metadata, error) {
 // Mainly used for formatting ipfs url to http url
 func FormatUrl(url string) string {
 	// 1. is base64 encode?
-	if strings.Contains(url, ";base64,") {
+	if strings.Contains(url, "data:") {
 		return url
 	}
 

@@ -4,11 +4,13 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/config"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/logger"
 	"github.com/go-resty/resty/v2"
+	"github.com/vincent-petithory/dataurl"
 )
 
 type ContentHeader struct {
@@ -23,29 +25,41 @@ func Get(url string, headers map[string]string) ([]byte, error) {
 		return []byte(response), nil
 	}
 
-	client := getClient()
+	// nolint: nestif // should be nested if
+	if strings.HasPrefix(url, "data:") {
+		dataUrl, err := dataurl.DecodeString(url)
+		if err != nil {
+			return nil, err
+		}
 
-	if headers != nil {
-		SetCommonHeader(headers)
+		response = string(dataUrl.Data)
+	} else {
+		client := getClient()
+
+		if headers != nil {
+			SetCommonHeader(headers)
+		}
+
+		request := client.R().EnableTrace().SetHeaders(headers)
+
+		// Get url
+		resp, err := request.Get(url)
+		if err != nil {
+			return nil, err
+		}
+
+		if resp.StatusCode() != 200 {
+			return nil, fmt.Errorf("StatusCode [%d]", resp.StatusCode())
+		}
+
+		response = string(resp.Body())
 	}
 
-	request := client.R().EnableTrace().SetHeaders(headers)
-
-	// Get url
-	resp, err := request.Get(url)
-	if err != nil {
-		return nil, err
-	}
-
-	if resp.StatusCode() != 200 {
-		return nil, fmt.Errorf("StatusCode [%d]", resp.StatusCode())
-	}
-
-	if cacheErr := setCache(url, methodGet, "", string(resp.Body())); cacheErr != nil {
+	if cacheErr := setCache(url, methodGet, "", response); cacheErr != nil {
 		logger.Errorf("Failed to set cache for url [%s]. err: %+v", url, cacheErr)
 	}
 
-	return resp.Body(), err
+	return []byte(response), nil
 }
 
 func Post(url string, headers map[string]string, data string) ([]byte, error) {

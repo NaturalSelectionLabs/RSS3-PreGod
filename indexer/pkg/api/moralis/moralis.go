@@ -63,7 +63,7 @@ func GetNFTs(userAddress string, chainType ChainType, apiKey string) (NFTResult,
 	lop.ForEach(res.Result, func(item NFTItem, i int) {
 		if item.MetaData == "" && item.TokenURI != "" {
 			if metadataRes, err := httpx.Get(nft_utils.FormatUrl(item.TokenURI), nil); err != nil {
-				logger.Warnf("http get nft metadata error: [%v]", err)
+				logger.Warnf("http get nft metadata error with url '%s': [%v]", item.TokenURI, err)
 			} else {
 				res.Result[i].MetaData = string(metadataRes)
 			}

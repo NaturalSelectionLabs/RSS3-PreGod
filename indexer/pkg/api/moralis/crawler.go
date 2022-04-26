@@ -126,7 +126,7 @@ func (c *moralisCrawler) Work(param crawler.WorkParam) error {
 		}
 
 		//convert to string
-		proof := item.TransactionHash + "-" + strconv.FormatInt(item.LogIndex, 10)
+		proof := item.TransactionHash + "-" + strconv.FormatInt(item.LogIndex, 10) + "-" + item.TokenId
 		note := model.Note{
 			Identifier:      rss3uri.NewNoteInstance(proof, networkSymbol).UriString(),
 			Owner:           owner,
@@ -202,6 +202,7 @@ func (c *moralisCrawler) Work(param crawler.WorkParam) error {
 				"token_symbol":       asset.Symbol,
 				"collection_address": asset.TokenAddress,
 				"collection_name":    m.Name,
+				"contract_type":      asset.ContractType,
 			}),
 			DateCreated: tsp,
 			DateUpdated: tsp,
