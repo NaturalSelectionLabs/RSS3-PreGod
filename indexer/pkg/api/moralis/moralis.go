@@ -2,7 +2,6 @@ package moralis
 
 import (
 	"fmt"
-	"log"
 	"strconv"
 	"time"
 
