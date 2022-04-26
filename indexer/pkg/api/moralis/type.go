@@ -172,10 +172,11 @@ func (i GetLogsItem) String() string {
 }
 
 type GetLogsResult struct {
-	Total    int64         `json:"total"`
-	Page     int64         `json:"page"`
-	PageSize int64         `json:"page_size"`
-	Result   []GetLogsItem `json:"result"`
+	Total        int64         `json:"total"`
+	Page         int64         `json:"page"`
+	PageSize     int64         `json:"page_size"`
+	Result       []GetLogsItem `json:"result"`
+	MinRateLimit int
 }
 
 // Returns related urls based on the network and contract tx hash.

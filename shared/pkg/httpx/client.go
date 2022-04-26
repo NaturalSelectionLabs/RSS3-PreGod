@@ -17,25 +17,36 @@ type ContentHeader struct {
 }
 
 type Response struct {
-	RespBody   []byte
-	RespHeader http.Header
+	Body   []byte
+	Header http.Header
 }
 
 func NewResponse() *Response {
 	return &Response{
-		RespBody:   []byte{},
-		RespHeader: http.Header{},
+		Body:   []byte{},
+		Header: http.Header{},
 	}
 }
 
+func NoCacheGet(url string, headers map[string]string) (*Response, error) {
+	return get(url, headers, false)
+}
+
 func Get(url string, headers map[string]string) (*Response, error) {
+	return get(url, headers, true)
+}
+
+func get(url string, headers map[string]string, useCache bool) (*Response, error) {
 	resp := NewResponse()
 
-	// get from cache fist
-	cacheResp, ok := getCache(url, methodGet, "")
-	if ok {
-		resp.RespBody = []byte(cacheResp)
-		return resp, nil
+	if useCache {
+		// get from cache fist
+		cacheResp, ok := getCache(url, methodGet, "")
+		if ok {
+			resp.Body = []byte(cacheResp)
+
+			return resp, nil
+		}
 	}
 
 	client := getClient()
@@ -56,21 +67,34 @@ func Get(url string, headers map[string]string) (*Response, error) {
 		return nil, fmt.Errorf("StatusCode [%d]", urlResp.StatusCode())
 	}
 
-	if cacheErr := setCache(url, methodGet, "", string(urlResp.Body())); cacheErr != nil {
-		logger.Errorf("Failed to set cache for url [%s]. err: %+v", url, cacheErr)
+	if useCache {
+		if cacheErr := setCache(url, methodGet, "", string(urlResp.Body())); cacheErr != nil {
+			logger.Errorf("Failed to set cache for url [%s]. err: %+v", url, cacheErr)
+		}
 	}
-	resp.RespBody = urlResp.Body()
+
+	resp.Body = urlResp.Body()
+	resp.Header = urlResp.Header()
 
 	return resp, err
 }
 
+func NoCachePost(url string, headers map[string]string, data string) (*Response, error) {
+	return post(url, headers, data, false)
+}
+
 func Post(url string, headers map[string]string, data string) (*Response, error) {
+	return post(url, headers, data, true)
+}
+
+func post(url string, headers map[string]string, data string, useCache bool) (*Response, error) {
 	resp := NewResponse()
 
 	// get from cache fist
 	cacheResp, ok := getCache(url, methodPost, "")
 	if ok {
-		resp.RespBody = []byte(cacheResp)
+		resp.Body = []byte(cacheResp)
+
 		return resp, nil
 	}
 
@@ -88,6 +112,9 @@ func Post(url string, headers map[string]string, data string) (*Response, error)
 	if cacheErr := setCache(url, methodPost, data, string(urlResp.Body())); cacheErr != nil {
 		logger.Errorf("Failed to set cache for url [%s]. err: %+v", url, cacheErr)
 	}
+
+	resp.Body = urlResp.Body()
+	resp.Header = urlResp.Header()
 
 	return resp, err
 }

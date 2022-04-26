@@ -29,7 +29,7 @@ func GetUserShow(name string) (*UserShow, error) {
 	}
 
 	var parser fastjson.Parser
-	parsedJson, err := parser.Parse(string(response))
+	parsedJson, err := parser.Parse(string(response.Body))
 
 	if err != nil {
 		return nil, err
@@ -67,7 +67,7 @@ func GetTimeline(name string, count uint32) ([]*ContentInfo, error) {
 
 	var parser fastjson.Parser
 
-	parsedJson, err := parser.Parse(string(response))
+	parsedJson, err := parser.Parse(string(response.Body))
 	if err != nil {
 		return nil, err
 	}

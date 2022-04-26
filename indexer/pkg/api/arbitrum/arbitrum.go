@@ -20,7 +20,7 @@ func GetNFTTxs(owner string) ([]byte, error) {
 		return nil, err
 	}
 
-	return response, nil
+	return response.Body, nil
 }
 
 func GetNFTTransfers(owner string) ([]NFTTransferItem, error) {

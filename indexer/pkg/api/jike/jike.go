@@ -85,7 +85,7 @@ func RefreshJikeToken() error {
 
 	token := new(RefreshTokenStruct)
 
-	err = jsoni.Unmarshal(response, &token)
+	err = jsoni.Unmarshal(response.Body, &token)
 
 	if err == nil {
 		if token.Success {
@@ -128,7 +128,7 @@ func GetUserProfile(name string) (*UserProfile, error) {
 		return nil, err
 	}
 
-	parsedJson, err := parser.Parse(string(response))
+	parsedJson, err := parser.Parse(string(response.Body))
 
 	if err != nil {
 		logger.Errorf("Jike GetUserProfile err: %v", "error parsing response")
@@ -270,7 +270,7 @@ func GetUserTimeline(name string) ([]Timeline, error) {
 		return nil, err
 	}
 
-	parsedJson, err := parser.Parse(string(response))
+	parsedJson, err := parser.Parse(string(response.Body))
 
 	author := string(parsedJson.GetStringBytes("data", "userProfile", "username"))
 
