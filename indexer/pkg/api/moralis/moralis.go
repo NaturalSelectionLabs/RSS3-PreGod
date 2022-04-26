@@ -5,6 +5,7 @@ import (
 	"log"
 	"time"
 
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/api/nft_utils"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database/datatype"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/httpx"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/logger"
@@ -60,8 +61,8 @@ func GetNFTs(userAddress string, chainType ChainType, apiKey string) (NFTResult,
 	}
 
 	lop.ForEach(res.Result, func(item NFTItem, i int) {
-		if item.MetaData == "" {
-			if metadataRes, err := httpx.Get(item.TokenURI, nil); err != nil {
+		if item.MetaData == "" && item.TokenURI != "" {
+			if metadataRes, err := httpx.Get(nft_utils.FormatUrl(item.TokenURI), nil); err != nil {
 				logger.Warnf("http get nft metadata error: [%v]", err)
 			} else {
 				res.Result[i].MetaData = string(metadataRes)

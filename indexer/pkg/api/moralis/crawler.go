@@ -2,6 +2,7 @@ package moralis
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 	"time"
 
@@ -48,7 +49,7 @@ func getGatewayClient() {
 	client = c
 }
 
-//nolint:funlen,gocognit,maintidx // disable line length check
+//nolint:funlen,gocognit,maintidx,gocyclo // disable line length check
 func (c *moralisCrawler) Work(param crawler.WorkParam) error {
 	chainType := GetChainType(param.NetworkID)
 	if chainType == Unknown {
@@ -124,8 +125,10 @@ func (c *moralisCrawler) Work(param crawler.WorkParam) error {
 			}
 		}
 
+		//convert to string
+		proof := item.TransactionHash + "-" + strconv.FormatInt(item.LogIndex, 10)
 		note := model.Note{
-			Identifier:      rss3uri.NewNoteInstance(item.TransactionHash, networkSymbol).UriString(),
+			Identifier:      rss3uri.NewNoteInstance(proof, networkSymbol).UriString(),
 			Owner:           owner,
 			RelatedURLs:     GetTxRelatedURLs(networkSymbol, item.TokenAddress, item.TokenId, &item.TransactionHash),
 			Tags:            constants.ItemTagsNFT.ToPqStringArray(),
@@ -135,7 +138,7 @@ func (c *moralisCrawler) Work(param crawler.WorkParam) error {
 			Attachments:     database.MustWrapJSON(utils.Meta2NoteAtt(m)),
 			Source:          constants.NoteSourceNameEthereumNFT.String(),
 			MetadataNetwork: networkSymbol.String(),
-			MetadataProof:   item.TransactionHash,
+			MetadataProof:   proof,
 			Metadata: database.MustWrapJSON(map[string]interface{}{
 				"from":               item.FromAddress,
 				"to":                 item.ToAddress,
@@ -144,6 +147,8 @@ func (c *moralisCrawler) Work(param crawler.WorkParam) error {
 				"token_symbol":       theAsset.Symbol,
 				"collection_address": item.TokenAddress,
 				"collection_name":    theAsset.Name,
+				"log_index":          item.LogIndex,
+				"contract_type":      item.ContractType,
 			}),
 			DateCreated: tsp,
 			DateUpdated: tsp,
@@ -203,6 +208,28 @@ func (c *moralisCrawler) Work(param crawler.WorkParam) error {
 		}
 
 		c.Assets = append(c.Assets, asset)
+	}
+
+	// check duplicates in assets
+	for i := 0; i < len(c.Assets); i++ {
+		for j := i + 1; j < len(c.Assets); j++ {
+			if c.Assets[i].Identifier == c.Assets[j].Identifier {
+				logger.Errorf("Duplicate asset found: %v!!! This is temporarily removed.", c.Assets[i].Identifier)
+				c.Assets = append(c.Assets[:j], c.Assets[j+1:]...)
+				j--
+			}
+		}
+	}
+
+	// check duplicates in notes
+	for i := 0; i < len(c.Notes); i++ {
+		for j := i + 1; j < len(c.Notes); j++ {
+			if c.Notes[i].Identifier == c.Notes[j].Identifier {
+				logger.Errorf("Duplicate note found: %v!!! This is temporarily removed.", c.Notes[i].Identifier)
+				c.Notes = append(c.Notes[:j], c.Notes[j+1:]...)
+				j--
+			}
+		}
 	}
 
 	// find old data in the database
