@@ -32,7 +32,7 @@ func GetUserShow(accountInfo []string) (*UserShow, error) {
 	parsedJson, parseErr := parser.Parse(string(response.Body))
 
 	if parseErr != nil || parsedJson == nil {
-		return nil, requestErr
+		return nil, parseErr
 	}
 
 	// check response error

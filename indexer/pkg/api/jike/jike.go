@@ -271,6 +271,11 @@ func GetUserTimeline(name string) ([]Timeline, error) {
 	}
 
 	parsedJson, err := parser.Parse(string(response.Body))
+	if err != nil {
+		logger.Errorf("Jike Parsed Json:%s", err)
+
+		return nil, err
+	}
 
 	author := string(parsedJson.GetStringBytes("data", "userProfile", "username"))
 
