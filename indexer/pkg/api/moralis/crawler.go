@@ -43,7 +43,7 @@ func getGatewayClient() {
 	c, err := ethclient.Dial(config.Config.Indexer.Gateway.Endpoint)
 
 	if err != nil {
-		logger.Errorf("connect to Infura: %v", err)
+		logger.Errorf("connect to json rpc endpoint error: %v", err)
 	}
 
 	client = c
@@ -252,30 +252,31 @@ func (c *moralisCrawler) Work(param crawler.WorkParam) error {
 	//	})
 	//}
 
-	// index ENS
-	ensList, err := GetENSList(param.Identity)
-
-	if err != nil {
-		return err
-	}
-
-	for _, ens := range ensList {
-		metadata := make(map[string]interface{}, len(ens.Text))
-		for k, v := range ens.Text {
-			metadata[k] = v
+	// index ENS (only on eth mainnet)
+	if chainType == ETH {
+		ensList, err := GetENSList(param.Identity)
+		if err != nil {
+			return err
 		}
 
-		profile := model.Profile{
-			ID:          strings.ToLower(param.Identity),
-			Platform:    constants.PlatformIDEthereum.Int(),
-			Source:      constants.ProfileSourceIDENS.Int(),
-			Name:        database.WrapNullString(ens.Domain),
-			Bio:         database.WrapNullString(ens.Description),
-			Avatars:     []string{ens.Avatar},
-			Attachments: database.MustWrapJSON(ens.Attachments),
-		}
+		for _, ens := range ensList {
+			metadata := make(map[string]interface{}, len(ens.Text))
+			for k, v := range ens.Text {
+				metadata[k] = v
+			}
 
-		c.Profiles = append(c.Profiles, profile)
+			profile := model.Profile{
+				ID:          strings.ToLower(param.Identity),
+				Platform:    constants.PlatformIDEthereum.Int(),
+				Source:      constants.ProfileSourceIDENS.Int(),
+				Name:        database.WrapNullString(ens.Domain),
+				Bio:         database.WrapNullString(ens.Description),
+				Avatars:     []string{ens.Avatar},
+				Attachments: database.MustWrapJSON(ens.Attachments),
+			}
+
+			c.Profiles = append(c.Profiles, profile)
+		}
 	}
 
 	if err := utils.CompleteMimeTypesForItems(c.Notes, c.Assets, c.Profiles); err != nil {
