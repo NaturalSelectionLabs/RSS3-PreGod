@@ -15,6 +15,7 @@ func BatchGetNodeList(req m.BatchGetNodeListRequest) ([]model.Note, int64, error
 	for _, instance := range req.InstanceList[1:] {
 		internalDB = internalDB.Or("owner = ?", strings.ToLower(rss3uri.New(instance).String()))
 	}
+
 	internalDB = internalDB.Order("date_created DESC").Order("identifier DESC")
 
 	var count int64

@@ -23,8 +23,10 @@ func BatchGetNodeList(req m.BatchGetNodeListRequest) (protocol.File, error, erro
 		if err != nil {
 			continue
 		}
+
 		req.InstanceList = append(req.InstanceList, uri.Instance)
 	}
+
 	if len(req.InstanceList) == 0 {
 		return protocol.File{}, nil, nil
 	}
@@ -35,7 +37,9 @@ func BatchGetNodeList(req m.BatchGetNodeListRequest) (protocol.File, error, erro
 	}
 
 	var dateUpdated *timex.Time
+
 	var itemList = []protocol.Item{}
+
 	for _, note := range noteList {
 		attachmentList := []protocol.ItemAttachment{}
 		if err = json.Unmarshal(note.Attachments, &attachmentList); err != nil {
@@ -51,6 +55,7 @@ func BatchGetNodeList(req m.BatchGetNodeListRequest) (protocol.File, error, erro
 		if err = json.Unmarshal(note.Metadata, &metadata); err != nil {
 			return protocol.File{}, api.ErrorIndexer, err
 		}
+
 		metadata["network"] = note.MetadataNetwork
 		metadata["proof"] = note.MetadataProof
 
@@ -76,5 +81,6 @@ func BatchGetNodeList(req m.BatchGetNodeListRequest) (protocol.File, error, erro
 		Total:       total,
 		List:        itemList,
 	}
+
 	return file, nil, nil
 }

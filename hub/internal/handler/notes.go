@@ -393,14 +393,19 @@ func getNoteListsByLink(c *gin.Context, instance rss3uri.Instance, request GetNo
 // BatchGetNoteListHandlerFunc can batch query notes by request body.
 func BatchGetNoteListHandlerFunc(c *gin.Context) {
 	var data, _ = ioutil.ReadAll(c.Request.Body)
+
 	var req m.BatchGetNodeListRequest
+
 	if err := json.Unmarshal(data, &req); err != nil {
 		api.SetError(c, api.ErrorInvalidParams, err)
+
 		return
 	}
+
 	if req.Page <= 0 {
 		req.Page = 1
 	}
+
 	if req.Limit <= 0 {
 		req.Limit = 100
 	}
@@ -408,6 +413,7 @@ func BatchGetNoteListHandlerFunc(c *gin.Context) {
 	resp, errType, err := service.BatchGetNodeList(req)
 	if err != nil {
 		api.SetError(c, errType, err)
+
 		return
 	}
 
