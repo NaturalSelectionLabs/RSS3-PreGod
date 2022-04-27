@@ -67,7 +67,8 @@ type DonationsResult struct {
 
 type EthDonationsResult struct {
 	DonationsResult
-	MinRateLimit int
+	MinRateLimit     int
+	MinRateLimitUsed int
 }
 
 func NewEthDonationsResult() *EthDonationsResult {
@@ -76,7 +77,8 @@ func NewEthDonationsResult() *EthDonationsResult {
 			Donations:      make([]DonationInfo, 0),
 			AdminAddresses: make([]string, 0),
 		},
-		MinRateLimit: 0,
+		MinRateLimit:     0,
+		MinRateLimitUsed: 0,
 	}
 }
 
@@ -102,6 +104,7 @@ func GetEthDonations(fromBlock int64, toBlock int64, chainType GitcoinPlatform) 
 	logs, err := moralis.GetLogs(fromBlock, toBlock, checkoutAddress, donationSentTopic,
 		moralis.ChainType(chainType), config.Config.Indexer.Moralis.ApiKey)
 	ethDonationsResult.MinRateLimit = logs.MinRateLimit
+	ethDonationsResult.MinRateLimitUsed = logs.MinRateLimitUsed
 
 	if err != nil {
 		// MinRateLimit must be sent here

@@ -248,13 +248,17 @@ func (property *xscanRunCrawlerProperty) run() error {
 	}
 
 	ethDonationsResult, err := GetEthDonations(config.FromHeight, endBlockHeight, property.platform)
-	if err != nil {
+	if err != nil { // nolint:nestif // i don't want to change
 		if err.Error() == "getLogs error: [StatusCode [429]]" {
 			if ethDonationsResult.MinRateLimit > 0 {
 				// If it is because of the 429 error code,
 				// you need to pull the opposite header and then change the frequency control rate.
 				// MinRateLimit is the number of visits that Moralis can obtain within one minute.
-				config.SleepInterval = time.Duration(60/(ethDonationsResult.MinRateLimit)+1) * time.Second
+				if ethDonationsResult.MinRateLimitUsed < int(float32(ethDonationsResult.MinRateLimit)*0.9) {
+					config.SleepInterval = time.Duration(60/(ethDonationsResult.MinRateLimit)+1) * time.Second
+				} else {
+					config.SleepInterval = time.Minute
+				}
 			}
 		}
 

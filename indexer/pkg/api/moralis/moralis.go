@@ -103,9 +103,20 @@ func GetLogs(fromBlock int64, toBlock int64, address string, topic string, chain
 
 	res := new(GetLogsResult)
 	MinRateLimitStr := response.Header.Get("x-rate-limit-limit")
+	MinRateLimitUsed := response.Header.Get("x-rate-limit-used")
 
 	if MinRateLimitStr != "" {
-		res.MinRateLimit, _ = strconv.Atoi(MinRateLimitStr)
+		res.MinRateLimit, err = strconv.Atoi(MinRateLimitStr)
+		if err != nil {
+			logger.Warnf("res.MinRateLimit Atoi error: [%v]", err)
+		}
+	}
+
+	if MinRateLimitUsed != "" {
+		res.MinRateLimitUsed, err = strconv.Atoi(MinRateLimitUsed)
+		if err != nil {
+			logger.Warnf("res.MinRateLimitUsed Atoi error: [%v]", err)
+		}
 	}
 
 	err = jsoni.Unmarshal(response.Body, &res)
