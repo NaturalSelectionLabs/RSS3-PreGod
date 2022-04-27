@@ -3,13 +3,16 @@ package handler
 import (
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"strings"
 
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/internal/api"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/internal/indexer"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/internal/middleware"
+	m "github.com/NaturalSelectionLabs/RSS3-PreGod/hub/internal/model"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/internal/protocol"
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/internal/service"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database/model"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/constants"
@@ -385,4 +388,28 @@ func getNoteListsByLink(c *gin.Context, instance rss3uri.Instance, request GetNo
 	}
 
 	return notes, count, nil
+}
+
+// BatchGetNoteListHandlerFunc can batch query notes by request body.
+func BatchGetNoteListHandlerFunc(c *gin.Context) {
+	var data, _ = ioutil.ReadAll(c.Request.Body)
+	var req m.BatchGetNodeListRequest
+	if err := json.Unmarshal(data, &req); err != nil {
+		api.SetError(c, api.ErrorInvalidParams, err)
+		return
+	}
+	if req.Page <= 0 {
+		req.Page = 1
+	}
+	if req.Limit <= 0 {
+		req.Limit = 100
+	}
+
+	resp, errType, err := service.BatchGetNodeList(req)
+	if err != nil {
+		api.SetError(c, errType, err)
+		return
+	}
+
+	c.JSON(http.StatusOK, resp)
 }

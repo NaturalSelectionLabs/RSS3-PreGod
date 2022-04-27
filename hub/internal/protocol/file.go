@@ -22,7 +22,7 @@ func (v version) MarshalJSON() ([]byte, error) {
 type File struct {
 	Version        version     `json:"version"`
 	DateUpdated    *timex.Time `json:"date_updated,omitempty"`
-	Identifier     string      `json:"identifier"`
+	Identifier     string      `json:"identifier,omitempty"`
 	IdentifierNext string      `json:"identifier_next,omitempty"`
 	Total          int64       `json:"total"`
 	List           any         `json:"list"`
