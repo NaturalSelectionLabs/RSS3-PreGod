@@ -14,7 +14,6 @@ var _ schema.Tabler = &Asset{}
 type Asset struct {
 	Identifier      string         `gorm:"column:identifier;primaryKey"`
 	ContractAddress string         `gorm:"column:contract_address;index"`
-	LogIndex        int            `gorm:"column:log_index;index"`
 	TokenID         string         `gorm:"column:token_id;index"`
 	Owner           string         `gorm:"colum:owner;index:index_asset_owner"`
 	ProfileSourceID int            `gorm:"profile_source_id;index:index_asset_profile_source_id"`
