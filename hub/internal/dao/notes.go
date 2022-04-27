@@ -27,7 +27,9 @@ func BatchGetNodeList(req m.BatchGetNodeListRequest) ([]model.Note, int64, error
 		}
 
 		internalDB = internalDB.Where("date_created <= ?", lastItem.DateCreated).
-			Where("identifier != ?", lastItem.Identifier)
+			Where("identifier != ?", lastItem.Identifier).
+			Where("log_index <= ?", lastItem.LogIndex).
+			Where("token_id < ?", lastItem.TokenID)
 	}
 
 	internalDB = internalDB.Where("owner IN ?", ownerList).Order("date_created DESC").Order("identifier DESC")

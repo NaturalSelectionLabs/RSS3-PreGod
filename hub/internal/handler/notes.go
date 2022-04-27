@@ -17,7 +17,6 @@ import (
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database/model"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/constants"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/rss3uri"
-	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/timex"
 	"github.com/gin-gonic/gin"
 	"github.com/lib/pq"
 )
@@ -66,56 +65,11 @@ func GetNoteListHandlerFunc(c *gin.Context) {
 		return
 	}
 
-	uri := rss3uri.New(instance)
+	noteList, dateUpdated, errType, err := service.FormatProtocolItemByNote(noteModels)
+	if err != nil {
+		api.SetError(c, errType, err)
 
-	var dateUpdated *timex.Time
-
-	noteList := make([]protocol.Item, len(noteModels))
-
-	for i, noteModel := range noteModels {
-		attachmentList := make([]protocol.ItemAttachment, 0)
-		if err = json.Unmarshal(noteModel.Attachments, &attachmentList); err != nil {
-			api.SetError(c, api.ErrorInvalidParams, err)
-
-			return
-		}
-
-		internalTime := timex.Time(noteModel.DateUpdated)
-		if dateUpdated == nil {
-			dateUpdated = &internalTime
-		} else if dateUpdated.Time().Before(noteModel.DateUpdated) {
-			dateUpdated = &internalTime
-		}
-
-		// Build metadata
-		metadata := make(map[string]interface{})
-
-		if noteModel.Metadata != nil {
-			if err := json.Unmarshal(noteModel.Metadata, &metadata); err != nil {
-				api.SetError(c, api.ErrorIndexer, err)
-
-				return
-			}
-		}
-
-		metadata["network"] = noteModel.MetadataNetwork
-		metadata["proof"] = noteModel.MetadataProof
-
-		noteList[i] = protocol.Item{
-			Identifier:  noteModel.Identifier,
-			DateCreated: timex.Time(noteModel.DateCreated),
-			DateUpdated: timex.Time(noteModel.DateUpdated),
-			RelatedURLs: noteModel.RelatedURLs,
-			Links:       fmt.Sprintf("%s/links", noteModel.Identifier),
-			BackLinks:   fmt.Sprintf("%s/backlinks", noteModel.Identifier),
-			Tags:        noteModel.Tags,
-			Authors:     noteModel.Authors,
-			Title:       noteModel.Title,
-			Summary:     noteModel.Summary,
-			Attachments: attachmentList,
-			Source:      noteModel.Source,
-			Metadata:    metadata,
-		}
+		return
 	}
 
 	var lastItem *protocol.Item
@@ -129,6 +83,7 @@ func GetNoteListHandlerFunc(c *gin.Context) {
 	}
 
 	identifierNext := ""
+	uri := rss3uri.New(instance)
 
 	if len(noteList) == database.MaxLimit {
 		nextQuery := c.Request.URL.Query()

@@ -8,6 +8,7 @@ import (
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/internal/dao"
 	m "github.com/NaturalSelectionLabs/RSS3-PreGod/hub/internal/model"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/internal/protocol"
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database/model"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/rss3uri"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/timex"
 )
@@ -36,14 +37,30 @@ func BatchGetNodeList(req m.BatchGetNodeListRequest) (protocol.File, error, erro
 		return protocol.File{}, api.ErrorDatabase, err
 	}
 
+	itemList, dateUpdated, errType, err := FormatProtocolItemByNote(noteList)
+	if err != nil {
+		return protocol.File{}, errType, err
+	}
+
+	file := protocol.File{
+		DateUpdated: dateUpdated,
+		Total:       total,
+		List:        itemList,
+	}
+
+	return file, nil, nil
+}
+
+// FormatProtocolItemByNote format data
+func FormatProtocolItemByNote(noteList []model.Note) ([]protocol.Item, *timex.Time, error, error) {
 	var dateUpdated *timex.Time
 
 	var itemList = []protocol.Item{}
 
 	for _, note := range noteList {
 		attachmentList := []protocol.ItemAttachment{}
-		if err = json.Unmarshal(note.Attachments, &attachmentList); err != nil {
-			return protocol.File{}, api.ErrorInvalidParams, err
+		if err := json.Unmarshal(note.Attachments, &attachmentList); err != nil {
+			return nil, nil, api.ErrorInvalidParams, err
 		}
 
 		updated := timex.Time(note.DateCreated)
@@ -52,8 +69,8 @@ func BatchGetNodeList(req m.BatchGetNodeListRequest) (protocol.File, error, erro
 		}
 
 		metadata := make(map[string]interface{})
-		if err = json.Unmarshal(note.Metadata, &metadata); err != nil {
-			return protocol.File{}, api.ErrorIndexer, err
+		if err := json.Unmarshal(note.Metadata, &metadata); err != nil {
+			return nil, nil, api.ErrorIndexer, err
 		}
 
 		metadata["network"] = note.MetadataNetwork
@@ -76,11 +93,5 @@ func BatchGetNodeList(req m.BatchGetNodeListRequest) (protocol.File, error, erro
 		})
 	}
 
-	file := protocol.File{
-		DateUpdated: dateUpdated,
-		Total:       total,
-		List:        itemList,
-	}
-
-	return file, nil, nil
+	return itemList, dateUpdated, nil, nil
 }
