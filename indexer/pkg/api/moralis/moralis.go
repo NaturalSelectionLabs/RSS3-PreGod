@@ -2,7 +2,6 @@ package moralis
 
 import (
 	"fmt"
-	"log"
 	"time"
 
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/api/nft_utils"
@@ -78,8 +77,6 @@ func GetNFTTransfers(userAddress string, chainType ChainType, blockHeight int64,
 	url := fmt.Sprintf("%s/api/v2/%s/nft/transfers?chain=%s&from_block=%d&format=decimal&direction=both",
 		endpoint, userAddress, chainType, blockHeight)
 	response, err := requestMoralisApi(url, apiKey)
-
-	log.Println(string(response))
 
 	if err != nil {
 		return NFTTransferResult{}, err

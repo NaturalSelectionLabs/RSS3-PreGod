@@ -27,12 +27,22 @@ func Get(url string, headers map[string]string) ([]byte, error) {
 
 	// nolint: nestif // should be nested if
 	if strings.HasPrefix(url, "data:") {
-		dataUrl, err := dataurl.DecodeString(url)
-		if err != nil {
-			return nil, err
-		}
+		if strings.Contains(url, "base64") {
+			dataUrl, err := dataurl.DecodeString(url)
+			if err != nil {
+				return nil, err
+			}
 
-		response = string(dataUrl.Data)
+			response = string(dataUrl.Data)
+		} else {
+			// normal data url
+			strArr := strings.Split(url, ",")
+			if len(strArr) != 2 {
+				return nil, fmt.Errorf("invalid data url: %s", url)
+			}
+
+			response = strArr[1]
+		}
 	} else {
 		client := getClient()
 

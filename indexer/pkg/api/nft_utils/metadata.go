@@ -67,7 +67,7 @@ func ParseNFTMetadata(metadata string) (Metadata, error) {
 
 // Mainly used for formatting ipfs url to http url
 func FormatUrl(url string) string {
-	// 1. is base64 encode?
+	// 1. is data url?
 	if strings.Contains(url, "data:") {
 		return url
 	}
@@ -139,7 +139,7 @@ func getCommAtt(meta Metadata) []datatype.Attachment {
 		})
 	}
 
-	if len(meta.Attributes) != 0 {
+	if len(meta.Attributes) != 0 || meta.Attributes == `""` {
 		as = append(as, datatype.Attachment{
 			Type:     "attributes",
 			Content:  meta.Attributes, //TODO: extract trait_type/value
