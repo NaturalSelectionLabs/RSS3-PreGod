@@ -196,7 +196,8 @@ func getAssetListByInstance(c *gin.Context, instance rss3uri.Instance, request G
 
 		internalDB = internalDB.
 			Where("date_created <= ?", lastItem.DateCreated).
-			Where("identifier != ?", lastItem.Identifier)
+			Where("identifier != ?", lastItem.Identifier).
+			Where("token_id < ?", lastItem.TokenID)
 	}
 
 	if request.Tags != nil && len(request.Tags) != 0 {
@@ -329,7 +330,8 @@ func getAssetListsByLink(c *gin.Context, instance rss3uri.Instance, request GetA
 
 		internalDB = internalDB.
 			Where("date_created <= ?", lastItem.DateCreated).
-			Where("identifier != ?", lastItem.Identifier)
+			Where("identifier != ?", lastItem.Identifier).
+			Where("token_id < ?", lastItem.TokenID)
 	}
 
 	if request.Tags != nil && len(request.Tags) != 0 {
