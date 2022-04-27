@@ -11,12 +11,26 @@ import (
 
 // BatchGetNodeList query data through database
 func BatchGetNodeList(req m.BatchGetNodeListRequest) ([]model.Note, int64, error) {
-	internalDB := database.DB.Where("owner = ?", strings.ToLower(rss3uri.New(req.InstanceList[0]).String()))
-	for _, instance := range req.InstanceList[1:] {
-		internalDB = internalDB.Or("owner = ?", strings.ToLower(rss3uri.New(instance).String()))
+	internalDB := database.DB
+	ownerList := []string{}
+
+	for _, instance := range req.InstanceList {
+		ownerList = append(ownerList, strings.ToLower(rss3uri.New(instance).String()))
 	}
 
-	internalDB = internalDB.Order("date_created DESC").Order("identifier DESC")
+	if len(req.LastIdentifier) > 0 {
+		lastItem := model.Note{}
+		if err := database.DB.Where(&model.Note{
+			Identifier: strings.ToLower(req.LastIdentifier),
+		}).First(&lastItem).Error; err != nil {
+			return nil, 0, err
+		}
+
+		internalDB = internalDB.Where("date_created <= ?", lastItem.DateCreated).
+			Where("identifier != ?", lastItem.Identifier)
+	}
+
+	internalDB = internalDB.Where("owner IN ?", ownerList).Order("date_created DESC").Order("identifier DESC")
 
 	var count int64
 	if err := internalDB.Model(&model.Note{}).Count(&count).Error; err != nil {
@@ -24,7 +38,7 @@ func BatchGetNodeList(req m.BatchGetNodeListRequest) ([]model.Note, int64, error
 	}
 
 	noteList := []model.Note{}
-	if err := internalDB.Limit(req.Limit).Offset((req.Page - 1) * req.Limit).Find(&noteList).Error; err != nil {
+	if err := internalDB.Limit(req.Limit).Find(&noteList).Error; err != nil {
 		return nil, 0, err
 	}
 

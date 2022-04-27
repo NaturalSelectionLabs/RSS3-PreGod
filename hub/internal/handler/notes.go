@@ -205,7 +205,9 @@ func getNoteListByInstance(c *gin.Context, instance rss3uri.Instance, request Ge
 
 		internalDB = internalDB.
 			Where("date_created <= ?", lastItem.DateCreated).
-			Where("identifier != ?", lastItem.Identifier)
+			Where("identifier != ?", lastItem.Identifier).
+			Where("log_index <= ?", lastItem.LogIndex).
+			Where("token_id < ?", lastItem.TokenID)
 	}
 
 	if request.Tags != nil && len(request.Tags) != 0 {
@@ -338,7 +340,9 @@ func getNoteListsByLink(c *gin.Context, instance rss3uri.Instance, request GetNo
 
 		internalDB = internalDB.
 			Where("date_created <= ?", lastItem.DateCreated).
-			Where("identifier != ?", lastItem.Identifier)
+			Where("identifier != ?", lastItem.Identifier).
+			Where("log_index <= ?", lastItem.LogIndex).
+			Where("token_id < ?", lastItem.TokenID)
 	}
 
 	if request.Tags != nil && len(request.Tags) != 0 {
@@ -400,10 +404,6 @@ func BatchGetNoteListHandlerFunc(c *gin.Context) {
 		api.SetError(c, api.ErrorInvalidParams, err)
 
 		return
-	}
-
-	if req.Page <= 0 {
-		req.Page = 1
 	}
 
 	if req.Limit <= 0 {
