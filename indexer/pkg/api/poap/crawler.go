@@ -7,6 +7,7 @@ import (
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/api/nft_utils"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/crawler"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database"
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database/common"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database/datatype"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database/model"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/constants"
@@ -27,6 +28,7 @@ func NewPoapCrawler() crawler.Crawler {
 	}
 }
 
+// nolint:funlen // TODO
 func (pc *poapCrawler) Work(param crawler.WorkParam) error {
 	if param.NetworkID != constants.NetworkIDGnosisMainnet {
 		return fmt.Errorf("network is not gnosis")
@@ -100,7 +102,30 @@ func (pc *poapCrawler) Work(param crawler.WorkParam) error {
 		asset.Identifier = rss3uri.NewAssetInstance(id, constants.NetworkSymbolGnosisMainnet).UriString()
 		asset.Source = constants.AssetSourceNameEthereumNFT.String()
 
-		pc.Assets = append(pc.Assets, model.Asset(asset))
+		pc.Assets = append(pc.Assets, model.Asset{
+			Identifier:      asset.Identifier,
+			ContractAddress: asset.ContractAddress,
+			TokenID:         asset.TokenID,
+			Owner:           asset.Owner,
+			ProfileSourceID: asset.ProfileSourceID,
+			RelatedURLs:     asset.RelatedURLs,
+			Tags:            asset.Tags,
+			Authors:         asset.Authors,
+			Title:           asset.Title,
+			Summary:         asset.Summary,
+			Attachments:     asset.Attachments,
+			Source:          asset.Source,
+			MetadataNetwork: asset.MetadataNetwork,
+			MetadataProof:   asset.MetadataProof,
+			Metadata:        asset.Metadata,
+			DateCreated:     asset.DateCreated,
+			DateUpdated:     asset.DateUpdated,
+			Table: common.Table{
+				CreatedAt: asset.CreatedAt,
+				UpdatedAt: asset.UpdatedAt,
+				DeletedAt: asset.DeletedAt,
+			},
+		})
 
 		if err := nft_utils.CompleteMimeTypesForItems(pc.Notes, pc.Assets, pc.Profiles); err != nil {
 			logger.Error("poap complete mime types error:", err)
