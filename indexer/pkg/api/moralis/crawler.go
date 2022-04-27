@@ -137,6 +137,9 @@ func (c *moralisCrawler) Work(param crawler.WorkParam) error {
 			Summary:         m.Description,
 			Attachments:     database.MustWrapJSON(utils.Meta2NoteAtt(m)),
 			Source:          constants.NoteSourceNameEthereumNFT.String(),
+			ContractAddress: item.TokenAddress,
+			LogIndex:        int(item.LogIndex),
+			TokenID:         item.TokenId,
 			MetadataNetwork: networkSymbol.String(),
 			MetadataProof:   proof,
 			Metadata: database.MustWrapJSON(map[string]interface{}{
@@ -194,6 +197,8 @@ func (c *moralisCrawler) Work(param crawler.WorkParam) error {
 			Summary:         m.Description,
 			Attachments:     database.MustWrapJSON(utils.Meta2AssetAtt(m)),
 			Source:          constants.AssetSourceNameEthereumNFT.String(),
+			ContractAddress: asset.TokenAddress,
+			TokenID:         asset.TokenId,
 			MetadataNetwork: string(networkSymbol),
 			MetadataProof:   proof,
 			Metadata: database.MustWrapJSON(map[string]interface{}{
