@@ -229,10 +229,6 @@ func (property *xscanRunCrawlerProperty) start() error {
 func (property *xscanRunCrawlerProperty) run() error {
 	config := property.config
 
-	if config.NextRoundTime.After(time.Now()) {
-		return nil
-	}
-
 	latestConfirmedBlockHeight, err := xscan.GetLatestBlockHeightWithConfirmations(property.networkID, config.Confirmations)
 	if err != nil {
 		logger.Errorf("[%s] get latest block error: %v", property.networkID.Symbol(), err)
