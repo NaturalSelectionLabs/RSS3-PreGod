@@ -4,11 +4,13 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/config"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/logger"
 	"github.com/go-resty/resty/v2"
+	"github.com/vincent-petithory/dataurl"
 )
 
 type ContentHeader struct {
@@ -49,34 +51,53 @@ func get(url string, headers map[string]string, useCache bool) (*Response, error
 		}
 	}
 
-	client := getClient()
+	// nolint: nestif // should be nested if
+	if strings.HasPrefix(url, "data:") {
+		if strings.Contains(url, "base64") {
+			dataUrl, err := dataurl.DecodeString(url)
+			if err != nil {
+				return nil, err
+			}
 
-	if headers != nil {
-		SetCommonHeader(headers)
-	}
+			resp.Body = dataUrl.Data
+		} else {
+			// normal data url
+			strArr := strings.Split(url, ",")
+			if len(strArr) != 2 {
+				return nil, fmt.Errorf("invalid data url: %s", url)
+			}
 
-	request := client.R().EnableTrace().SetHeaders(headers)
+			resp.Body = []byte(strArr[1])
+		}
+	} else {
+		client := getClient()
 
-	// Get url
-	urlResp, err := request.Get(url)
-	if err != nil {
-		return nil, err
-	}
+		if headers != nil {
+			SetCommonHeader(headers)
+		}
 
-	if urlResp.StatusCode() != 200 {
-		return nil, fmt.Errorf("StatusCode [%d]", urlResp.StatusCode())
+		request := client.R().EnableTrace().SetHeaders(headers)
+
+		urlResp, err := request.Get(url)
+		if err != nil {
+			return nil, err
+		}
+
+		if urlResp.StatusCode() != 200 {
+			return nil, fmt.Errorf("StatusCode [%d]", urlResp.StatusCode())
+		}
+
+		resp.Body = urlResp.Body()
+		resp.Header = urlResp.Header()
 	}
 
 	if useCache {
-		if cacheErr := setCache(url, methodGet, "", string(urlResp.Body())); cacheErr != nil {
+		if cacheErr := setCache(url, methodGet, "", string(resp.Body)); cacheErr != nil {
 			logger.Errorf("Failed to set cache for url [%s]. err: %+v", url, cacheErr)
 		}
 	}
 
-	resp.Body = urlResp.Body()
-	resp.Header = urlResp.Header()
-
-	return resp, err
+	return resp, nil
 }
 
 func NoCachePost(url string, headers map[string]string, data string) (*Response, error) {

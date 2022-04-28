@@ -2,6 +2,7 @@ package moralis
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 	"time"
 
@@ -42,13 +43,13 @@ func getGatewayClient() {
 	c, err := ethclient.Dial(config.Config.Indexer.Gateway.Endpoint)
 
 	if err != nil {
-		logger.Errorf("connect to Infura: %v", err)
+		logger.Errorf("connect to json rpc endpoint error: %v", err)
 	}
 
 	client = c
 }
 
-//nolint:funlen,gocognit,maintidx // disable line length check
+//nolint:funlen,gocognit,maintidx,gocyclo // disable line length check
 func (c *moralisCrawler) Work(param crawler.WorkParam) error {
 	chainType := GetChainType(param.NetworkID)
 	if chainType == Unknown {
@@ -124,8 +125,10 @@ func (c *moralisCrawler) Work(param crawler.WorkParam) error {
 			}
 		}
 
+		//convert to string
+		proof := item.TransactionHash + "-" + strconv.FormatInt(item.LogIndex, 10) + "-" + item.TokenId
 		note := model.Note{
-			Identifier:      rss3uri.NewNoteInstance(item.TransactionHash, networkSymbol).UriString(),
+			Identifier:      rss3uri.NewNoteInstance(proof, networkSymbol).UriString(),
 			Owner:           owner,
 			RelatedURLs:     GetTxRelatedURLs(networkSymbol, item.TokenAddress, item.TokenId, &item.TransactionHash),
 			Tags:            constants.ItemTagsNFT.ToPqStringArray(),
@@ -134,8 +137,11 @@ func (c *moralisCrawler) Work(param crawler.WorkParam) error {
 			Summary:         m.Description,
 			Attachments:     database.MustWrapJSON(utils.Meta2NoteAtt(m)),
 			Source:          constants.NoteSourceNameEthereumNFT.String(),
+			ContractAddress: item.TokenAddress,
+			LogIndex:        int(item.LogIndex),
+			TokenID:         item.TokenId,
 			MetadataNetwork: networkSymbol.String(),
-			MetadataProof:   item.TransactionHash,
+			MetadataProof:   proof,
 			Metadata: database.MustWrapJSON(map[string]interface{}{
 				"from":               item.FromAddress,
 				"to":                 item.ToAddress,
@@ -144,6 +150,8 @@ func (c *moralisCrawler) Work(param crawler.WorkParam) error {
 				"token_symbol":       theAsset.Symbol,
 				"collection_address": item.TokenAddress,
 				"collection_name":    theAsset.Name,
+				"log_index":          item.LogIndex,
+				"contract_type":      item.ContractType,
 			}),
 			DateCreated: tsp,
 			DateUpdated: tsp,
@@ -189,6 +197,8 @@ func (c *moralisCrawler) Work(param crawler.WorkParam) error {
 			Summary:         m.Description,
 			Attachments:     database.MustWrapJSON(utils.Meta2AssetAtt(m)),
 			Source:          constants.AssetSourceNameEthereumNFT.String(),
+			ContractAddress: asset.TokenAddress,
+			TokenID:         asset.TokenId,
 			MetadataNetwork: string(networkSymbol),
 			MetadataProof:   proof,
 			Metadata: database.MustWrapJSON(map[string]interface{}{
@@ -197,12 +207,35 @@ func (c *moralisCrawler) Work(param crawler.WorkParam) error {
 				"token_symbol":       asset.Symbol,
 				"collection_address": asset.TokenAddress,
 				"collection_name":    m.Name,
+				"contract_type":      asset.ContractType,
 			}),
 			DateCreated: tsp,
 			DateUpdated: tsp,
 		}
 
 		c.Assets = append(c.Assets, asset)
+	}
+
+	// check duplicates in assets
+	for i := 0; i < len(c.Assets); i++ {
+		for j := i + 1; j < len(c.Assets); j++ {
+			if c.Assets[i].Identifier == c.Assets[j].Identifier {
+				logger.Errorf("Duplicate asset found: %v!!! This is temporarily removed.", c.Assets[i].Identifier)
+				c.Assets = append(c.Assets[:j], c.Assets[j+1:]...)
+				j--
+			}
+		}
+	}
+
+	// check duplicates in notes
+	for i := 0; i < len(c.Notes); i++ {
+		for j := i + 1; j < len(c.Notes); j++ {
+			if c.Notes[i].Identifier == c.Notes[j].Identifier {
+				logger.Errorf("Duplicate note found: %v!!! This is temporarily removed.", c.Notes[i].Identifier)
+				c.Notes = append(c.Notes[:j], c.Notes[j+1:]...)
+				j--
+			}
+		}
 	}
 
 	// find old data in the database
@@ -224,30 +257,31 @@ func (c *moralisCrawler) Work(param crawler.WorkParam) error {
 	//	})
 	//}
 
-	// index ENS
-	ensList, err := GetENSList(param.Identity)
-
-	if err != nil {
-		return err
-	}
-
-	for _, ens := range ensList {
-		metadata := make(map[string]interface{}, len(ens.Text))
-		for k, v := range ens.Text {
-			metadata[k] = v
+	// index ENS (only on eth mainnet)
+	if chainType == ETH {
+		ensList, err := GetENSList(param.Identity)
+		if err != nil {
+			return err
 		}
 
-		profile := model.Profile{
-			ID:          strings.ToLower(param.Identity),
-			Platform:    constants.PlatformIDEthereum.Int(),
-			Source:      constants.ProfileSourceIDENS.Int(),
-			Name:        database.WrapNullString(ens.Domain),
-			Bio:         database.WrapNullString(ens.Description),
-			Avatars:     []string{ens.Avatar},
-			Attachments: database.MustWrapJSON(ens.Attachments),
-		}
+		for _, ens := range ensList {
+			metadata := make(map[string]interface{}, len(ens.Text))
+			for k, v := range ens.Text {
+				metadata[k] = v
+			}
 
-		c.Profiles = append(c.Profiles, profile)
+			profile := model.Profile{
+				ID:          strings.ToLower(param.Identity),
+				Platform:    constants.PlatformIDEthereum.Int(),
+				Source:      constants.ProfileSourceIDENS.Int(),
+				Name:        database.WrapNullString(ens.Domain),
+				Bio:         database.WrapNullString(ens.Description),
+				Avatars:     []string{ens.Avatar},
+				Attachments: database.MustWrapJSON(ens.Attachments),
+			}
+
+			c.Profiles = append(c.Profiles, profile)
+		}
 	}
 
 	if err := utils.CompleteMimeTypesForItems(c.Notes, c.Assets, c.Profiles); err != nil {

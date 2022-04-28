@@ -13,6 +13,9 @@ var _ schema.Tabler = &Note{}
 
 type Note struct {
 	Identifier      string         `gorm:"column:identifier;primaryKey"`
+	ContractAddress string         `gorm:"column:contract_address;index"`
+	LogIndex        int            `gorm:"column:log_index;index"`
+	TokenID         string         `gorm:"column:token_id;index"`
 	Owner           string         `gorm:"colum:owner;index:index_note_owner"`
 	ProfileSourceID int            `gorm:"colum:profile_source_id;index:index_note_profile_source_id"`
 	RelatedURLs     pq.StringArray `gorm:"column:related_urls;type:text[]"`

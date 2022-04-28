@@ -28,15 +28,17 @@ func Initialize() (router *gin.Engine) {
 	// Latest version API
 	apiRouter := router.Group(fmt.Sprintf("/%s", protocol.Version))
 	{
-		apiRouter.Use(middleware.Instance())
+		instanceMiddleware := middleware.Instance()
+
 		apiRouter.Use(middleware.ListLimit())
 
-		apiRouter.GET("/:instance", handler.GetInstanceHandlerFunc)
-		apiRouter.GET("/:instance/profiles", handler.GetProfileListHandlerFunc)
-		apiRouter.GET("/:instance/links", handler.GetLinkListHandlerFunc)
-		apiRouter.GET("/:instance/backlinks", handler.GetBackLinkListHandlerFunc)
-		apiRouter.GET("/:instance/assets", handler.GetAssetListHandlerFunc)
-		apiRouter.GET("/:instance/notes", handler.GetNoteListHandlerFunc)
+		apiRouter.GET("/:instance", instanceMiddleware, handler.GetInstanceHandlerFunc)
+		apiRouter.GET("/:instance/profiles", instanceMiddleware, handler.GetProfileListHandlerFunc)
+		apiRouter.GET("/:instance/links", instanceMiddleware, handler.GetLinkListHandlerFunc)
+		apiRouter.GET("/:instance/backlinks", instanceMiddleware, handler.GetBackLinkListHandlerFunc)
+		apiRouter.GET("/:instance/assets", instanceMiddleware, handler.GetAssetListHandlerFunc)
+		apiRouter.GET("/:instance/notes", instanceMiddleware, handler.GetNoteListHandlerFunc)
+		apiRouter.POST("/notes", handler.BatchGetNoteListHandlerFunc)
 	}
 
 	// Older version API

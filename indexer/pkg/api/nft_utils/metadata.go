@@ -65,6 +65,33 @@ func ParseNFTMetadata(metadata string) (Metadata, error) {
 	}, nil
 }
 
+// Mainly used for formatting ipfs url to http url
+func FormatUrl(url string) string {
+	// 1. is data url?
+	if strings.Contains(url, "data:") {
+		return url
+	}
+
+	// 2. is ipfs?
+	if strings.HasPrefix(url, "ipfs://") {
+		cid := strings.Split(url, "ipfs://")[1]
+		ret := "https://cloudflare-ipfs.com/ipfs/" + cid
+
+		return ret
+	}
+
+	// TODO: need a smarter way to check if it is a ipfs gateway url
+	if strings.Contains(url, "/ipfs/") {
+		cid := strings.Split(url, "/ipfs/")[1]
+		ret := "https://cloudflare-ipfs.com/ipfs/" + cid
+
+		return ret
+	}
+
+	// 3. normal url
+	return url
+}
+
 func getContentHeader(uri string) *httpx.ContentHeader {
 	// 1. is base64 encode?
 	if strings.Contains(uri, ";base64,") {
@@ -74,14 +101,8 @@ func getContentHeader(uri string) *httpx.ContentHeader {
 		}
 	}
 
-	// 2. is ipfs?
-	if strings.HasPrefix(uri, "ipfs://") {
-		cid := strings.Split(uri, "ipfs://")[1]
-		url := "https://cloudflare-ipfs.com/ipfs/" + cid
-		contentHeader, _ := httpx.GetContentHeader(url)
-
-		return contentHeader
-	}
+	// 2. format ipfs
+	uri = FormatUrl(uri)
 
 	// 3. is http?
 	if strings.HasPrefix(uri, "https://") || strings.HasPrefix(uri, "http://") {
@@ -118,7 +139,7 @@ func getCommAtt(meta Metadata) []datatype.Attachment {
 		})
 	}
 
-	if len(meta.Attributes) != 0 {
+	if len(meta.Attributes) != 0 || meta.Attributes == `""` {
 		as = append(as, datatype.Attachment{
 			Type:     "attributes",
 			Content:  meta.Attributes, //TODO: extract trait_type/value

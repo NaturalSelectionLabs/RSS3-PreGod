@@ -48,12 +48,13 @@ GET /item?proof=<proof>&platform_id=<platform_id>&network_id=<network_id>&limit=
 Examples:
 
 - Ethereum platforms:
-  - Ethereum: `GET /item?proof=0x08d66b34054a174841e2361bd4746Ff9F4905cC2&platform_id=1&network_id=1&owner_id=0x08d66b34054a174841e2361bd4746Ff9F4905cC2&owner_platform_id=1`
-  - Polygon: `GET /item?proof=0x08d66b34054a174841e2361bd4746Ff9F4905cC2&platform_id=1&network_id=2&owner_id=0x08d66b34054a174841e2361bd4746Ff9F4905cC2&owner_platform_id=1`
-  - POAP: `GET /item?proof=0x08d66b34054a174841e2361bd4746Ff9F4905cC2&platform_id=1&network_id=7&owner_id=0x08d66b34054a174841e2361bd4746Ff9F4905cC2&owner_platform_id=1`
-  - Mirror (Arweave): `GET /item?proof=0x08d66b34054a174841e2361bd4746Ff9F4905cC2&platform_id=1&network_id=10&owner_id=0x08d66b34054a174841e2361bd4746Ff9F4905cC2&owner_platform_id=1`
-  - Arbitrum: `GET /item?proof=0x08d66b34054a174841e2361bd4746Ff9F4905cC2&platform_id=1&network_id=4&owner_id=0x08d66b34054a174841e2361bd4746Ff9F4905cC2&owner_platform_id=1`
+  - Ethereum: `GET /item?proof=0x08d66b34054a174841e2361bd4746Ff9F4905cC2&platform_id=1&network_id=1&owner_id=0x08d66b34054a174841e2361bd4746Ff9F4905cC2&owner_platform_id=1&profile_source_id=0`
+  - Polygon: `GET /item?proof=0x08d66b34054a174841e2361bd4746Ff9F4905cC2&platform_id=1&network_id=2&owner_id=0x08d66b34054a174841e2361bd4746Ff9F4905cC2&owner_platform_id=1&profile_source_id=0`
+  - Bnb: `GET /item?proof=0x08d66b34054a174841e2361bd4746Ff9F4905cC2&platform_id=1&network_id=3&owner_id=0x08d66b34054a174841e2361bd4746Ff9F4905cC2&owner_platform_id=1&profile_source_id=0`
+  - Arbitrum: `GET /item?proof=0x08d66b34054a174841e2361bd4746Ff9F4905cC2&platform_id=1&network_id=4&owner_id=0x08d66b34054a174841e2361bd4746Ff9F4905cC2&owner_platform_id=1&profile_source_id=0`
+  - POAP: `GET /item?proof=0x08d66b34054a174841e2361bd4746Ff9F4905cC2&platform_id=1&network_id=7&owner_id=0x08d66b34054a174841e2361bd4746Ff9F4905cC2&owner_platform_id=1&profile_source_id=0`
+  - Mirror (Arweave): `GET /item?proof=0x08d66b34054a174841e2361bd4746Ff9F4905cC2&platform_id=1&network_id=10&owner_id=0x08d66b34054a174841e2361bd4746Ff9F4905cC2&owner_platform_id=1&profile_source_id=0`
   - Gitcoin: ``
-- Twitter: `GET /item?proof=diygod&platform_id=6&network_id=12&owner_id=0x08d66b34054a174841e2361bd4746Ff9F4905cC2&owner_platform_id=1`
-- Misskey: `GET /item?proof=Candinya@nya.one&platform_id=7&network_id=13&limit=10&owner_id=0x08d66b34054a174841e2361bd4746Ff9F4905cC2&owner_platform_id=1`
-- Jike: `GET /item?proof=169a5be6-f874-4df9-a2d1-a07e9e0e429b&platform_id=8&network_id=14&owner_id=0x08d66b34054a174841e2361bd4746Ff9F4905cC2&owner_platform_id=1`
+- Twitter: `GET /item?proof=diygod&platform_id=6&network_id=12&owner_id=0x08d66b34054a174841e2361bd4746Ff9F4905cC2&owner_platform_id=1&profile_source_id=0`
+- Misskey: `GET /item?proof=Candinya@nya.one&platform_id=7&network_id=13&limit=10&owner_id=0x08d66b34054a174841e2361bd4746Ff9F4905cC2&owner_platform_id=1&profile_source_id=0`
+- Jike: `GET /item?proof=169a5be6-f874-4df9-a2d1-a07e9e0e429b&platform_id=8&network_id=14&owner_id=0x08d66b34054a174841e2361bd4746Ff9F4905cC2&owner_platform_id=1&profile_source_id=0`

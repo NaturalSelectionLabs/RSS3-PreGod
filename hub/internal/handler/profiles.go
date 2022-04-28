@@ -159,6 +159,15 @@ func getPlatformInstanceProfileList(
 			)
 		}
 
+		metadata := make(map[string]interface{})
+
+		if err := json.Unmarshal(profileModel.Metadata, &metadata); err != nil {
+			return nil, 0, err
+		}
+
+		metadata["network"] = profileModel.MetadataNetwork
+		metadata["proof"] = profileModel.MetadataProof
+
 		profiles = append(profiles, protocol.Profile{
 			DateCreated:       timex.Time(profileModel.CreatedAt),
 			DateUpdated:       timex.Time(profileModel.UpdatedAt),
@@ -168,11 +177,7 @@ func getPlatformInstanceProfileList(
 			Attachments:       attachments,
 			ConnectedAccounts: connectedAccounts,
 			Source:            constants.ProfileSourceID(profileModel.Source).Name().String(),
-			Metadata: protocol.ProfileMetadata{
-				// TODO Now only Crossbell is supported
-				Network: strings.ToLower(constants.NetworkSymbolCrossbell.String()),
-				Proof:   instance.Identity,
-			},
+			Metadata:          metadata,
 		})
 
 		if err := indexer.GetItems(c.Request.URL, instance, accountModels); err != nil {
@@ -209,6 +214,16 @@ func getAssetProfile(instance *rss3uri.NetworkInstance, request GetProfileListRe
 		return nil, 0, err
 	}
 
+	// Build metadata
+	metadata := make(map[string]interface{})
+
+	if err := json.Unmarshal(asset.Metadata, &metadata); err != nil {
+		return nil, 0, err
+	}
+
+	metadata["network"] = asset.MetadataNetwork
+	metadata["proof"] = asset.MetadataProof
+
 	profiles := []protocol.Profile{
 		{
 			DateCreated: timex.Time(asset.DateCreated),
@@ -220,10 +235,7 @@ func getAssetProfile(instance *rss3uri.NetworkInstance, request GetProfileListRe
 			Tags:        asset.Tags,
 			RelatedURLs: asset.RelatedURLs,
 			Source:      asset.Source,
-			Metadata: protocol.ProfileMetadata{
-				Network: strings.ToLower(asset.MetadataNetwork),
-				Proof:   asset.MetadataProof,
-			},
+			Metadata:    metadata,
 		},
 	}
 
@@ -256,6 +268,16 @@ func getNoteProfile(instance *rss3uri.NetworkInstance, request GetProfileListReq
 		return nil, 0, err
 	}
 
+	// Build metadata
+	metadata := make(map[string]interface{})
+
+	if err := json.Unmarshal(note.Metadata, &metadata); err != nil {
+		return nil, 0, err
+	}
+
+	metadata["network"] = note.MetadataNetwork
+	metadata["proof"] = note.MetadataProof
+
 	profiles := []protocol.Profile{
 		{
 			DateCreated: timex.Time(note.DateCreated),
@@ -267,10 +289,7 @@ func getNoteProfile(instance *rss3uri.NetworkInstance, request GetProfileListReq
 			Tags:        note.Tags,
 			RelatedURLs: note.RelatedURLs,
 			Source:      note.Source,
-			Metadata: protocol.ProfileMetadata{
-				Network: strings.ToLower(note.MetadataNetwork),
-				Proof:   note.MetadataProof,
-			},
+			Metadata:    metadata,
 		},
 	}
 

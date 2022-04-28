@@ -2,9 +2,9 @@ package moralis
 
 import (
 	"fmt"
-	"strconv"
 	"time"
 
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/api/nft_utils"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database/datatype"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/httpx"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/logger"
@@ -61,9 +61,9 @@ func GetNFTs(userAddress string, chainType ChainType, apiKey string) (NFTResult,
 	}
 
 	lop.ForEach(res.Result, func(item NFTItem, i int) {
-		if item.MetaData == "" {
-			if metadataRes, err := httpx.Get(item.TokenURI, nil); err != nil {
-				logger.Warnf("http get nft metadata error: [%v]", err)
+		if item.MetaData == "" && item.TokenURI != "" {
+			if metadataRes, err := httpx.Get(nft_utils.FormatUrl(item.TokenURI), nil); err != nil {
+				logger.Warnf("http get nft metadata error with url '%s': [%v]", item.TokenURI, err)
 			} else {
 				res.Result[i].MetaData = string(metadataRes.Body)
 			}
@@ -105,20 +105,6 @@ func GetLogs(fromBlock int64, toBlock int64, address string, topic string, chain
 
 	res := new(GetLogsResult)
 	SetMoralisAttributes(&res.MoralisAttributes, response)
-
-	if MinRateLimitStr != "" {
-		res.MinRateLimit, err = strconv.Atoi(MinRateLimitStr)
-		if err != nil {
-			logger.Warnf("res.MinRateLimit Atoi error: [%v]", err)
-		}
-	}
-
-	if MinRateLimitUsed != "" {
-		res.MinRateLimitUsed, err = strconv.Atoi(MinRateLimitUsed)
-		if err != nil {
-			logger.Warnf("res.MinRateLimitUsed Atoi error: [%v]", err)
-		}
-	}
 
 	err = jsoni.Unmarshal(response.Body, &res)
 	if err != nil {
