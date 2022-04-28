@@ -255,14 +255,18 @@ func (property *xscanRunCrawlerProperty) run() error {
 				// you need to pull the opposite header and then change the frequency control rate.
 				// MinRateLimit is the number of visits that Moralis can obtain within one minute.
 				if ethDonationsResult.MinRateLimitUsed < int(float32(ethDonationsResult.MinRateLimit)*0.9) {
-					config.SleepInterval = time.Duration(60/(ethDonationsResult.MinRateLimit)+1) * time.Second
+					// Due to the different weight of requests for each interface of Moralis
+					// Therefore, synthesizing the proportion and frequency of different interfaces,
+					// we give it an intermediate weight of 8
+					// See https://docs.moralis.io/misc/rate-limit#request-weights for details
+					config.SleepInterval = time.Duration(60/(ethDonationsResult.MinRateLimit/8)+1) * time.Second
 				} else {
 					config.SleepInterval = time.Minute
 				}
 			}
+		} else {
+			logger.Errorf("[%s] get donations error: %v", property.networkID.Symbol(), err)
 		}
-
-		logger.Errorf("[%s] get donations error: %v", property.networkID.Symbol(), err)
 
 		return err
 	}
