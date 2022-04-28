@@ -23,7 +23,7 @@ func GetLatestBlockHeight() (int64, error) {
 	}
 
 	statusResult := new(StatusResult)
-	if err := jsoni.UnmarshalFromString(string(response), statusResult); err != nil {
+	if err := jsoni.UnmarshalFromString(string(response.Body), statusResult); err != nil {
 		logger.Errorf("zksync GetLatestBlockHeight unmarshalFromString error: %v", err)
 
 		return 0, err
@@ -51,7 +51,7 @@ func GetTokens() ([]Token, error) {
 	}
 
 	var tokens []Token
-	if err = jsoni.UnmarshalFromString(string(response), &tokens); err != nil {
+	if err = jsoni.UnmarshalFromString(string(response.Body), &tokens); err != nil {
 		return nil, fmt.Errorf("GetTokens UnmarshalFromString error: [%v]", err)
 	}
 
@@ -67,7 +67,7 @@ func GetTxsByBlock(blockHeight int64) ([]ZKTransaction, error) {
 	}
 
 	var zkTxs []ZKTransaction
-	if err = jsoni.UnmarshalFromString(string(response), &zkTxs); err != nil {
+	if err = jsoni.UnmarshalFromString(string(response.Body), &zkTxs); err != nil {
 		return nil, fmt.Errorf("GetTokens UnmarshalFromString error: [%v]", err)
 	}
 

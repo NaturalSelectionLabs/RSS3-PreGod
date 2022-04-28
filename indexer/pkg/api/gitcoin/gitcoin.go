@@ -42,7 +42,7 @@ func UpdateEthAndPolygonTokens() error {
 	}
 
 	var result []TokenMeta
-	if err = jsoni.UnmarshalFromString(string(response), &result); err != nil {
+	if err = jsoni.UnmarshalFromString(string(response.Body), &result); err != nil {
 		return fmt.Errorf("get eth and polygon token err:%s", err)
 	}
 
@@ -60,11 +60,35 @@ func UpdateEthAndPolygonTokens() error {
 	return nil
 }
 
+type DonationsResult struct {
+	Donations      []DonationInfo
+	AdminAddresses []string
+}
+
+type EthDonationsResult struct {
+	DonationsResult
+	MinRateLimit     int
+	MinRateLimitUsed int
+}
+
+func NewEthDonationsResult() *EthDonationsResult {
+	return &EthDonationsResult{
+		DonationsResult: DonationsResult{
+			Donations:      make([]DonationInfo, 0),
+			AdminAddresses: make([]string, 0),
+		},
+		MinRateLimit:     0,
+		MinRateLimitUsed: 0,
+	}
+}
+
 // GetEthDonations returns donations from ethereum and polygon
-func GetEthDonations(fromBlock int64, toBlock int64, chainType GitcoinPlatform) ([]DonationInfo, []string, error) {
+func GetEthDonations(fromBlock int64, toBlock int64, chainType GitcoinPlatform) (*EthDonationsResult, error) {
 	var checkoutAddress string
 
 	var donationApproach DonationApproach
+
+	ethDonationsResult := NewEthDonationsResult()
 
 	if chainType == ETH {
 		checkoutAddress = bulkCheckoutAddressETH
@@ -73,20 +97,19 @@ func GetEthDonations(fromBlock int64, toBlock int64, chainType GitcoinPlatform) 
 		checkoutAddress = bulkCheckoutAddressPolygon
 		donationApproach = DonationApproachPolygon
 	} else {
-		return nil, nil, fmt.Errorf("invalid chainType %s", string(chainType))
+		return nil, fmt.Errorf("invalid chainType %s", string(chainType))
 	}
 
 	// at most 1000 results in one response. But our default step is only 50, safe.
 	logs, err := moralis.GetLogs(fromBlock, toBlock, checkoutAddress, donationSentTopic,
 		moralis.ChainType(chainType), config.Config.Indexer.Moralis.ApiKey)
+	ethDonationsResult.MinRateLimit = logs.MinRateLimit
+	ethDonationsResult.MinRateLimitUsed = logs.MinRateLimitUsed
+
 	if err != nil {
-		logger.Errorf("getLogs error: [%v]", err)
-
-		return nil, nil, err
+		// MinRateLimit must be sent here
+		return ethDonationsResult, fmt.Errorf("getLogs error: [%v]", err)
 	}
-
-	donations := make([]DonationInfo, 0)
-	adminAddresses := make([]string, 0)
 
 	for _, item := range logs.Result {
 		donor := "0x" + item.Topic3[26:]
@@ -119,11 +142,11 @@ func GetEthDonations(fromBlock int64, toBlock int64, chainType GitcoinPlatform) 
 			Approach:       donationApproach,
 		}
 
-		donations = append(donations, donation)
-		adminAddresses = append(adminAddresses, adminAddress)
+		ethDonationsResult.Donations = append(ethDonationsResult.Donations, donation)
+		ethDonationsResult.AdminAddresses = append(ethDonationsResult.AdminAddresses, adminAddress)
 	}
 
-	return donations, adminAddresses, nil
+	return ethDonationsResult, nil
 }
 
 // Asynchronous Zk query start
@@ -148,17 +171,29 @@ func GetZksToken(id int) zksync.Token {
 	return ZksTokensCache[id]
 }
 
+type ZkSyncDonationResult struct {
+	DonationsResult
+}
+
+func NewZkSyncDonationResult() *ZkSyncDonationResult {
+	return &ZkSyncDonationResult{
+		DonationsResult: DonationsResult{
+			Donations:      make([]DonationInfo, 0),
+			AdminAddresses: make([]string, 0),
+		},
+	}
+}
+
 // GetZkSyncDonations returns donations from zksync
-func GetZkSyncDonations(fromBlock int64, toBlock int64) ([]DonationInfo, []string, error) {
-	donations := make([]DonationInfo, 0)
-	adminAddresses := make([]string, 0)
+func GetZkSyncDonations(fromBlock int64, toBlock int64) (*ZkSyncDonationResult, error) {
+	ethDonationsResult := NewZkSyncDonationResult()
 
 	for i := fromBlock; i <= toBlock; i++ {
 		trxs, err := zksync.GetTxsByBlock(i)
 		if err != nil {
 			logger.Errorf("get txs by block error: [%v]", err)
 
-			return nil, nil, err
+			return nil, err
 		}
 
 		for _, tx := range trxs {
@@ -192,12 +227,12 @@ func GetZkSyncDonations(fromBlock int64, toBlock int64) ([]DonationInfo, []strin
 				TxHash:         tx.TxHash,
 				Approach:       DonationApproachZkSync,
 			}
-			donations = append(donations, d)
-			adminAddresses = append(adminAddresses, tx.Op.To)
+			ethDonationsResult.Donations = append(ethDonationsResult.Donations, d)
+			ethDonationsResult.AdminAddresses = append(ethDonationsResult.AdminAddresses, adminAddress)
 		}
 	}
 
-	return donations, adminAddresses, nil
+	return ethDonationsResult, nil
 }
 
 // GetProjectsInfo returns project info from gitcoin

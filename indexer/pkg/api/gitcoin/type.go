@@ -29,6 +29,11 @@ func (p GitcoinPlatform) getContractAddress() string {
 	return ""
 }
 
+var (
+	DeafultGetNextBlockDuration = 500 * time.Millisecond
+	GetLatestNextBlockDuration  = 600 * time.Second
+)
+
 type crawlerConfig struct {
 	FromHeight    int64
 	Step          int64
@@ -44,7 +49,7 @@ var DefaultZksyncConfig = &crawlerConfig{
 	Step:          50,
 	MinStep:       10,
 	Confirmations: 15,
-	SleepInterval: 600 * time.Second,
+	SleepInterval: DeafultGetNextBlockDuration,
 	NextRoundTime: time.Now(),
 	Interrupt:     make(chan os.Signal, 1),
 }
@@ -54,7 +59,7 @@ var DefaultEthConfig = &crawlerConfig{
 	Step:          50,
 	MinStep:       10,
 	Confirmations: 15,
-	SleepInterval: 600 * time.Second,
+	SleepInterval: DeafultGetNextBlockDuration,
 	NextRoundTime: time.Now(),
 	Interrupt:     make(chan os.Signal, 1),
 }
@@ -64,7 +69,7 @@ var DefaultPolygonConfig = &crawlerConfig{
 	Step:          50,
 	MinStep:       10,
 	Confirmations: 120,
-	SleepInterval: 600 * time.Second,
+	SleepInterval: DeafultGetNextBlockDuration,
 	NextRoundTime: time.Now(),
 	Interrupt:     make(chan os.Signal, 1),
 }

@@ -27,7 +27,7 @@ func GetActions(user string) ([]PoapResponse, error) {
 
 	res := new([]PoapResponse)
 
-	err = jsoni.Unmarshal(response, &res)
+	err = jsoni.Unmarshal(response.Body, &res)
 	if err != nil {
 		return []PoapResponse{}, err
 	}

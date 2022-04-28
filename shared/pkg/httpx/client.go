@@ -18,11 +18,37 @@ type ContentHeader struct {
 	SizeInByte int
 }
 
-func Get(url string, headers map[string]string) ([]byte, error) {
-	// get from cache fist
-	response, ok := getCache(url, methodGet, "")
-	if ok {
-		return []byte(response), nil
+type Response struct {
+	Body   []byte
+	Header http.Header
+}
+
+func NewResponse() *Response {
+	return &Response{
+		Body:   []byte{},
+		Header: http.Header{},
+	}
+}
+
+func NoCacheGet(url string, headers map[string]string) (Response, error) {
+	return get(url, headers, false)
+}
+
+func Get(url string, headers map[string]string) (Response, error) {
+	return get(url, headers, true)
+}
+
+func get(url string, headers map[string]string, useCache bool) (Response, error) {
+	resp := NewResponse()
+
+	if useCache {
+		// get from cache fist
+		cacheResp, ok := getCache(url, methodGet, "")
+		if ok {
+			resp.Body = []byte(cacheResp)
+
+			return *resp, nil
+		}
 	}
 
 	// nolint: nestif // should be nested if
@@ -30,18 +56,18 @@ func Get(url string, headers map[string]string) ([]byte, error) {
 		if strings.Contains(url, "base64") {
 			dataUrl, err := dataurl.DecodeString(url)
 			if err != nil {
-				return nil, err
+				return *resp, err
 			}
 
-			response = string(dataUrl.Data)
+			resp.Body = dataUrl.Data
 		} else {
 			// normal data url
 			strArr := strings.Split(url, ",")
 			if len(strArr) != 2 {
-				return nil, fmt.Errorf("invalid data url: %s", url)
+				return *resp, fmt.Errorf("invalid data url: %s", url)
 			}
 
-			response = strArr[1]
+			resp.Body = []byte(strArr[1])
 		}
 	} else {
 		client := getClient()
@@ -52,31 +78,45 @@ func Get(url string, headers map[string]string) ([]byte, error) {
 
 		request := client.R().EnableTrace().SetHeaders(headers)
 
-		// Get url
-		resp, err := request.Get(url)
+		urlResp, err := request.Get(url)
 		if err != nil {
-			return nil, err
+			return *resp, err
 		}
 
-		if resp.StatusCode() != 200 {
-			return nil, fmt.Errorf("StatusCode [%d]", resp.StatusCode())
+		if urlResp.StatusCode() != 200 {
+			return *resp, fmt.Errorf("StatusCode [%d]", urlResp.StatusCode())
 		}
 
-		response = string(resp.Body())
+		resp.Body = urlResp.Body()
+		resp.Header = urlResp.Header()
 	}
 
-	if cacheErr := setCache(url, methodGet, "", response); cacheErr != nil {
-		logger.Errorf("Failed to set cache for url [%s]. err: %+v", url, cacheErr)
+	if useCache {
+		if cacheErr := setCache(url, methodGet, "", string(resp.Body)); cacheErr != nil {
+			logger.Errorf("Failed to set cache for url [%s]. err: %+v", url, cacheErr)
+		}
 	}
 
-	return []byte(response), nil
+	return *resp, nil
 }
 
-func Post(url string, headers map[string]string, data string) ([]byte, error) {
+func NoCachePost(url string, headers map[string]string, data string) (Response, error) {
+	return post(url, headers, data, false)
+}
+
+func Post(url string, headers map[string]string, data string) (Response, error) {
+	return post(url, headers, data, true)
+}
+
+func post(url string, headers map[string]string, data string, useCache bool) (Response, error) {
+	resp := NewResponse()
+
 	// get from cache fist
-	response, ok := getCache(url, methodPost, "")
+	cacheResp, ok := getCache(url, methodPost, "")
 	if ok {
-		return []byte(response), nil
+		resp.Body = []byte(cacheResp)
+
+		return *resp, nil
 	}
 
 	client := getClient()
@@ -88,13 +128,16 @@ func Post(url string, headers map[string]string, data string) ([]byte, error) {
 	request := client.R().EnableTrace().SetHeaders(headers).SetBody(data)
 
 	// Post url
-	resp, err := request.Post(url)
+	urlResp, err := request.Post(url)
 
-	if cacheErr := setCache(url, methodPost, data, string(resp.Body())); cacheErr != nil {
+	if cacheErr := setCache(url, methodPost, data, string(urlResp.Body())); cacheErr != nil {
 		logger.Errorf("Failed to set cache for url [%s]. err: %+v", url, cacheErr)
 	}
 
-	return resp.Body(), err
+	resp.Body = urlResp.Body()
+	resp.Header = urlResp.Header()
+
+	return *resp, err
 }
 
 // PostRaw returns raw *resty.Response for Jike

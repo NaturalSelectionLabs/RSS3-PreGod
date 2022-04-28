@@ -51,7 +51,7 @@ func GetLatestBlockHeight(networkId constants.NetworkID) (int64, error) {
 	}
 
 	var parser fastjson.Parser
-	parsedJson, parseErr := parser.Parse(string(response))
+	parsedJson, parseErr := parser.Parse(string(response.Body))
 
 	if parseErr != nil {
 		return 0, parseErr

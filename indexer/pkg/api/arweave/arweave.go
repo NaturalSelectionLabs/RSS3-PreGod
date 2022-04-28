@@ -25,7 +25,7 @@ func GetLatestBlockHeight() (int64, error) {
 	}
 
 	latestBlockResult := new(ArLatestBlockResult)
-	if err := jsoni.UnmarshalFromString(string(response), latestBlockResult); err != nil {
+	if err := jsoni.UnmarshalFromString(string(response.Body), latestBlockResult); err != nil {
 		logger.Errorf("arweave GetLatestBlockHeight unmarshalFromString error: %v", err)
 
 		return 0, err
@@ -51,7 +51,12 @@ func GetContentByTxHash(hash string) ([]byte, error) {
 		"Referer": "https://viewblock.io",
 	}
 
-	return httpx.Get(arweaveEndpoint+"/"+hash, headers)
+	resp, err := httpx.Get(arweaveEndpoint+"/"+hash, headers)
+	if err != nil {
+		return nil, err
+	}
+
+	return resp.Body, nil
 }
 
 // GetTransactions gets all transactions using filters.
@@ -93,7 +98,9 @@ func GetTransactions(from, to int64, owner ArAccount, cursor string) ([]byte, er
 
 	json, _ := jsoni.MarshalToString(data)
 
-	return httpx.Post(arweaveGraphqlEndpoint, headers, json)
+	resp, err := httpx.Post(arweaveGraphqlEndpoint, headers, json)
+
+	return resp.Body, err
 }
 
 // GetMirrorContents gets all articles from arweave using filters.

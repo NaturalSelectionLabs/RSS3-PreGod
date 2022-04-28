@@ -20,7 +20,7 @@ import (
 type crawler interface {
 	run() error
 	start() error
-	getConfig() crawlerConfig
+	getConfig() *crawlerConfig
 	getPlatform() GitcoinPlatform
 }
 
@@ -32,6 +32,7 @@ type crawlerProperty struct {
 	metadataIdentity string
 }
 
+// TODO : I think zksyncCrawlerProperty run() and xscanRunCrawlerProperty run() can be merged
 type zksyncCrawlerProperty struct {
 	crawlerProperty
 }
@@ -81,12 +82,24 @@ var (
 func loopRun(property crawler) {
 	for {
 		property.run()
-		time.Sleep(500 * time.Millisecond)
+
+		// Since the interval time of each time may change dynamically,
+		// it is necessary to read the interval time of the next round from config.SleepInterval
+		config := property.getConfig()
+
+		sleepInterval := config.SleepInterval
+		if property.getConfig().SleepInterval <= 0 {
+			sleepInterval = DeafultGetNextBlockDuration
+		}
+
+		time.Sleep(sleepInterval)
+
+		config.SleepInterval = DeafultGetNextBlockDuration
 	}
 }
 
-func (property *crawlerProperty) getConfig() crawlerConfig {
-	return *property.config
+func (property *crawlerProperty) getConfig() *crawlerConfig {
+	return property.config
 }
 
 func (property *crawlerProperty) getPlatform() GitcoinPlatform {
@@ -139,10 +152,6 @@ func (property *zksyncCrawlerProperty) run() error {
 
 	config := property.config
 
-	if config.NextRoundTime.After(time.Now()) {
-		return nil
-	}
-
 	latestConfirmedBlockHeight, err := zksync.GetLatestBlockHeightWithConfirmations(config.Confirmations)
 	if err != nil {
 		logger.Errorf("zksync get latest block error: %v", err)
@@ -157,7 +166,8 @@ func (property *zksyncCrawlerProperty) run() error {
 	}
 
 	if latestConfirmedBlockHeight < endBlockHeight {
-		config.NextRoundTime = config.NextRoundTime.Add(config.SleepInterval)
+		config.SleepInterval = GetLatestNextBlockDuration
+
 		// use minStep when catching up with the latest block height
 		config.Step = config.MinStep
 
@@ -165,15 +175,15 @@ func (property *zksyncCrawlerProperty) run() error {
 	}
 
 	// get zksync donations
-	donations, adminAddresses, err := GetZkSyncDonations(config.FromHeight, endBlockHeight)
+	zkSyncDonations, err := GetZkSyncDonations(config.FromHeight, endBlockHeight)
 	if err != nil {
 		logger.Errorf("zksync get donations error: %v", err)
 
 		return err
 	}
 
-	if len(donations) > 0 {
-		err := setDB(donations, constants.NetworkIDEthereum, adminAddresses)
+	if len(zkSyncDonations.Donations) > 0 {
+		err := setDB(zkSyncDonations.Donations, constants.NetworkIDEthereum, zkSyncDonations.AdminAddresses)
 		if err != nil {
 			logger.Errorf("set db error: %v", err)
 
@@ -219,10 +229,6 @@ func (property *xscanRunCrawlerProperty) start() error {
 func (property *xscanRunCrawlerProperty) run() error {
 	config := property.config
 
-	if config.NextRoundTime.After(time.Now()) {
-		return nil
-	}
-
 	latestConfirmedBlockHeight, err := xscan.GetLatestBlockHeightWithConfirmations(property.networkID, config.Confirmations)
 	if err != nil {
 		logger.Errorf("[%s] get latest block error: %v", property.networkID.Symbol(), err)
@@ -231,23 +237,42 @@ func (property *xscanRunCrawlerProperty) run() error {
 	}
 
 	endBlockHeight := config.FromHeight + config.Step - 1
+
 	if latestConfirmedBlockHeight < endBlockHeight {
-		config.NextRoundTime = config.NextRoundTime.Add(config.SleepInterval)
+		config.SleepInterval = GetLatestNextBlockDuration
+
 		// use minStep when catching up with the latest block height
 		config.Step = config.MinStep
 
 		return nil
 	}
 
-	donations, adminAddresses, err := GetEthDonations(config.FromHeight, endBlockHeight, property.platform)
-	if err != nil {
-		logger.Errorf("[%s] get donations error: %v", property.networkID.Symbol(), err)
+	ethDonationsResult, err := GetEthDonations(config.FromHeight, endBlockHeight, property.platform)
+	if err != nil { // nolint:nestif // i don't want to change
+		if err.Error() == "getLogs error: [StatusCode [429]]" {
+			if ethDonationsResult.MinRateLimit > 0 {
+				// If it is because of the 429 error code,
+				// you need to pull the opposite header and then change the frequency control rate.
+				// MinRateLimit is the number of visits that Moralis can obtain within one minute.
+				if ethDonationsResult.MinRateLimitUsed < int(float32(ethDonationsResult.MinRateLimit)*0.9) {
+					// Due to the different weight of requests for each interface of Moralis
+					// Therefore, synthesizing the proportion and frequency of different interfaces,
+					// we give it an intermediate weight of 8
+					// See https://docs.moralis.io/misc/rate-limit#request-weights for details
+					config.SleepInterval = time.Duration(60/(ethDonationsResult.MinRateLimit/8)+1) * time.Second
+				} else {
+					config.SleepInterval = time.Minute
+				}
+			}
+		} else {
+			logger.Errorf("[%s] get donations error: %v", property.networkID.Symbol(), err)
+		}
 
 		return err
 	}
 
-	if len(donations) > 0 {
-		setDB(donations, property.networkID, adminAddresses)
+	if len(ethDonationsResult.Donations) > 0 {
+		setDB(ethDonationsResult.Donations, property.networkID, ethDonationsResult.AdminAddresses)
 	}
 
 	logger.Infof("Getting [%s] donations, from [%d] to [%d], the latest confirmed block height [%d]",

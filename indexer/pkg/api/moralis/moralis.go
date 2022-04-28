@@ -24,18 +24,18 @@ var (
 	endpoint    = "https://deep-index.moralis.io"
 )
 
-func requestMoralisApi(url string, apiKey string) ([]byte, error) {
+func requestMoralisApi(url string, apiKey string) (httpx.Response, error) {
 	var headers = map[string]string{
 		"accept":    "application/json",
 		"X-API-Key": apiKey,
 	}
 
-	response, err := httpx.Get(url, headers)
+	response, err := httpx.NoCacheGet(url, headers)
 	if err != nil {
 		logger.Errorf("http get error with url '%s': [%v]. response: %s",
-			url, err, string(response))
+			url, err, string(response.Body))
 
-		return nil, err
+		return response, err
 	}
 
 	return response, nil
@@ -53,8 +53,9 @@ func GetNFTs(userAddress string, chainType ChainType, apiKey string) (NFTResult,
 	}
 
 	res := new(NFTResult)
+	SetMoralisAttributes(&res.MoralisAttributes, response)
 
-	err = jsoni.Unmarshal(response, &res)
+	err = jsoni.Unmarshal(response.Body, &res)
 	if err != nil {
 		return NFTResult{}, err
 	}
@@ -64,7 +65,7 @@ func GetNFTs(userAddress string, chainType ChainType, apiKey string) (NFTResult,
 			if metadataRes, err := httpx.Get(nft_utils.FormatUrl(item.TokenURI), nil); err != nil {
 				logger.Warnf("http get nft metadata error with url '%s': [%v]", item.TokenURI, err)
 			} else {
-				res.Result[i].MetaData = string(metadataRes)
+				res.Result[i].MetaData = string(metadataRes.Body)
 			}
 		}
 	})
@@ -83,8 +84,9 @@ func GetNFTTransfers(userAddress string, chainType ChainType, blockHeight int64,
 	}
 
 	res := new(NFTTransferResult)
+	SetMoralisAttributes(&res.MoralisAttributes, response)
 
-	err = jsoni.Unmarshal(response, &res)
+	err = jsoni.Unmarshal(response.Body, &res)
 	if err != nil {
 		return NFTTransferResult{}, err
 	}
@@ -102,8 +104,9 @@ func GetLogs(fromBlock int64, toBlock int64, address string, topic string, chain
 	}
 
 	res := new(GetLogsResult)
+	SetMoralisAttributes(&res.MoralisAttributes, response)
 
-	err = jsoni.Unmarshal(response, &res)
+	err = jsoni.Unmarshal(response.Body, &res)
 	if err != nil {
 		logger.Errorf("unmarshal error: [%v]", err)
 
@@ -126,8 +129,9 @@ func GetNFTByContract(userAddress string, contactAddress string, chainType Chain
 	}
 
 	res := new(NFTResult)
+	SetMoralisAttributes(&res.MoralisAttributes, response)
 
-	err = jsoni.Unmarshal(response, &res)
+	err = jsoni.Unmarshal(response.Body, &res)
 	if err != nil {
 		return NFTResult{}, err
 	}
@@ -146,8 +150,9 @@ func GetTxByToken(tokenAddress string, tokenId string, chainType ChainType, apiK
 	}
 
 	res := new(NFTTransferItem)
+	SetMoralisAttributes(&res.MoralisAttributes, response)
 
-	parsedJson, err := parser.Parse(string(response))
+	parsedJson, err := parser.Parse(string(response.Body))
 	if err != nil {
 		logger.Errorf("GetTxByToken: %v", err)
 
@@ -171,8 +176,9 @@ func GetMetadataByToken(tokenAddress string, tokenId string, chainType ChainType
 	}
 
 	res := new(NFTItem)
+	SetMoralisAttributes(&res.MoralisAttributes, response)
 
-	err = jsoni.Unmarshal(response, &res)
+	err = jsoni.Unmarshal(response.Body, &res)
 	if err != nil {
 		return NFTItem{}, nil
 	}

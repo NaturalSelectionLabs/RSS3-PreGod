@@ -29,10 +29,10 @@ func GetUserShow(accountInfo []string) (*UserShow, error) {
 		return nil, requestErr
 	}
 
-	parsedJson, parseErr := parser.Parse(string(response))
+	parsedJson, parseErr := parser.Parse(string(response.Body))
 
 	if parseErr != nil || parsedJson == nil {
-		return nil, requestErr
+		return nil, parseErr
 	}
 
 	// check response error
@@ -89,7 +89,7 @@ func GetUserNoteList(address string, count int, until time.Time) ([]Note, error)
 		return nil, requestErr
 	}
 
-	parsedJson, parseErr := parser.Parse(string(response))
+	parsedJson, parseErr := parser.Parse(string(response.Body))
 
 	if parseErr != nil {
 		return nil, parseErr
