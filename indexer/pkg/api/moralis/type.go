@@ -2,10 +2,12 @@ package moralis
 
 import (
 	"fmt"
+	"strconv"
 	"time"
 
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database/datatype"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/constants"
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/httpx"
 )
 
 type ChainType string
@@ -54,8 +56,32 @@ func (mt ChainType) GetNetworkSymbol() constants.NetworkSymbol {
 	}
 }
 
+type MoralisAttributes struct {
+	// Speed limit property obtained from Moralis header
+	MinRateLimit     int
+	MinRateLimitUsed int
+}
+
+func SetMoralisAttributes(attributes *MoralisAttributes, response *httpx.Response) {
+	if attributes == nil || response == nil {
+		return
+	}
+
+	MinRateLimitStr := response.Header.Get("x-rate-limit-limit")
+	if MinRateLimitStr != "" {
+		attributes.MinRateLimit, _ = strconv.Atoi(MinRateLimitStr)
+	}
+
+	MinRateLimitUsedStr := response.Header.Get("x-rate-limit-used")
+	if MinRateLimitUsedStr != "" {
+		attributes.MinRateLimitUsed, _ = strconv.Atoi(MinRateLimitUsedStr)
+	}
+}
+
 // NFTItem store all indexed NFTs from moralis api.
 type NFTItem struct {
+	MoralisAttributes
+
 	TokenAddress      string `json:"token_address"`
 	TokenId           string `json:"token_id"`
 	BlockNumberMinted string `json:"block_number_minted"`
@@ -87,6 +113,8 @@ type NFTMetadataAttribute struct {
 }
 
 type NFTResult struct {
+	MoralisAttributes
+
 	Total    int64     `json:"total"`
 	Page     int64     `json:"page"`
 	PageSize int64     `json:"page_size"`
@@ -105,6 +133,8 @@ func (i NFTItem) GetAssetProof() string {
 
 // NFTTransferItem store the transfers of NFTS.
 type NFTTransferItem struct {
+	MoralisAttributes
+
 	BlockNumber      string `json:"block_number"`
 	BlockTimestamp   string `json:"block_timestamp"`
 	BlockHash        string `json:"block_hash"`
@@ -124,6 +154,8 @@ type NFTTransferItem struct {
 }
 
 type NFTTransferResult struct {
+	MoralisAttributes
+
 	Total       int64             `json:"total"`
 	Page        int64             `json:"page"`
 	PageSize    int64             `json:"page_size"`
@@ -172,12 +204,12 @@ func (i GetLogsItem) String() string {
 }
 
 type GetLogsResult struct {
-	Total            int64         `json:"total"`
-	Page             int64         `json:"page"`
-	PageSize         int64         `json:"page_size"`
-	Result           []GetLogsItem `json:"result"`
-	MinRateLimit     int
-	MinRateLimitUsed int
+	MoralisAttributes
+
+	Total    int64         `json:"total"`
+	Page     int64         `json:"page"`
+	PageSize int64         `json:"page_size"`
+	Result   []GetLogsItem `json:"result"`
 }
 
 // Returns related urls based on the network and contract tx hash.

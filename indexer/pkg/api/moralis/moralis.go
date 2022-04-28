@@ -53,6 +53,7 @@ func GetNFTs(userAddress string, chainType ChainType, apiKey string) (NFTResult,
 	}
 
 	res := new(NFTResult)
+	SetMoralisAttributes(&res.MoralisAttributes, response)
 
 	err = jsoni.Unmarshal(response.Body, &res)
 	if err != nil {
@@ -83,6 +84,7 @@ func GetNFTTransfers(userAddress string, chainType ChainType, blockHeight int64,
 	}
 
 	res := new(NFTTransferResult)
+	SetMoralisAttributes(&res.MoralisAttributes, response)
 
 	err = jsoni.Unmarshal(response.Body, &res)
 	if err != nil {
@@ -102,8 +104,7 @@ func GetLogs(fromBlock int64, toBlock int64, address string, topic string, chain
 	}
 
 	res := new(GetLogsResult)
-	MinRateLimitStr := response.Header.Get("x-rate-limit-limit")
-	MinRateLimitUsed := response.Header.Get("x-rate-limit-used")
+	SetMoralisAttributes(&res.MoralisAttributes, response)
 
 	if MinRateLimitStr != "" {
 		res.MinRateLimit, err = strconv.Atoi(MinRateLimitStr)
@@ -142,6 +143,7 @@ func GetNFTByContract(userAddress string, contactAddress string, chainType Chain
 	}
 
 	res := new(NFTResult)
+	SetMoralisAttributes(&res.MoralisAttributes, response)
 
 	err = jsoni.Unmarshal(response.Body, &res)
 	if err != nil {
@@ -162,6 +164,7 @@ func GetTxByToken(tokenAddress string, tokenId string, chainType ChainType, apiK
 	}
 
 	res := new(NFTTransferItem)
+	SetMoralisAttributes(&res.MoralisAttributes, response)
 
 	parsedJson, err := parser.Parse(string(response.Body))
 	if err != nil {
@@ -187,6 +190,7 @@ func GetMetadataByToken(tokenAddress string, tokenId string, chainType ChainType
 	}
 
 	res := new(NFTItem)
+	SetMoralisAttributes(&res.MoralisAttributes, response)
 
 	err = jsoni.Unmarshal(response.Body, &res)
 	if err != nil {
