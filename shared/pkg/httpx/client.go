@@ -30,15 +30,15 @@ func NewResponse() *Response {
 	}
 }
 
-func NoCacheGet(url string, headers map[string]string) (*Response, error) {
+func NoCacheGet(url string, headers map[string]string) (Response, error) {
 	return get(url, headers, false)
 }
 
-func Get(url string, headers map[string]string) (*Response, error) {
+func Get(url string, headers map[string]string) (Response, error) {
 	return get(url, headers, true)
 }
 
-func get(url string, headers map[string]string, useCache bool) (*Response, error) {
+func get(url string, headers map[string]string, useCache bool) (Response, error) {
 	resp := NewResponse()
 
 	if useCache {
@@ -47,7 +47,7 @@ func get(url string, headers map[string]string, useCache bool) (*Response, error
 		if ok {
 			resp.Body = []byte(cacheResp)
 
-			return resp, nil
+			return *resp, nil
 		}
 	}
 
@@ -56,7 +56,7 @@ func get(url string, headers map[string]string, useCache bool) (*Response, error
 		if strings.Contains(url, "base64") {
 			dataUrl, err := dataurl.DecodeString(url)
 			if err != nil {
-				return nil, err
+				return *resp, err
 			}
 
 			resp.Body = dataUrl.Data
@@ -64,7 +64,7 @@ func get(url string, headers map[string]string, useCache bool) (*Response, error
 			// normal data url
 			strArr := strings.Split(url, ",")
 			if len(strArr) != 2 {
-				return nil, fmt.Errorf("invalid data url: %s", url)
+				return *resp, fmt.Errorf("invalid data url: %s", url)
 			}
 
 			resp.Body = []byte(strArr[1])
@@ -80,11 +80,11 @@ func get(url string, headers map[string]string, useCache bool) (*Response, error
 
 		urlResp, err := request.Get(url)
 		if err != nil {
-			return nil, err
+			return *resp, err
 		}
 
 		if urlResp.StatusCode() != 200 {
-			return nil, fmt.Errorf("StatusCode [%d]", urlResp.StatusCode())
+			return *resp, fmt.Errorf("StatusCode [%d]", urlResp.StatusCode())
 		}
 
 		resp.Body = urlResp.Body()
@@ -97,18 +97,18 @@ func get(url string, headers map[string]string, useCache bool) (*Response, error
 		}
 	}
 
-	return resp, nil
+	return *resp, nil
 }
 
-func NoCachePost(url string, headers map[string]string, data string) (*Response, error) {
+func NoCachePost(url string, headers map[string]string, data string) (Response, error) {
 	return post(url, headers, data, false)
 }
 
-func Post(url string, headers map[string]string, data string) (*Response, error) {
+func Post(url string, headers map[string]string, data string) (Response, error) {
 	return post(url, headers, data, true)
 }
 
-func post(url string, headers map[string]string, data string, useCache bool) (*Response, error) {
+func post(url string, headers map[string]string, data string, useCache bool) (Response, error) {
 	resp := NewResponse()
 
 	// get from cache fist
@@ -116,7 +116,7 @@ func post(url string, headers map[string]string, data string, useCache bool) (*R
 	if ok {
 		resp.Body = []byte(cacheResp)
 
-		return resp, nil
+		return *resp, nil
 	}
 
 	client := getClient()
@@ -137,7 +137,7 @@ func post(url string, headers map[string]string, data string, useCache bool) (*R
 	resp.Body = urlResp.Body()
 	resp.Header = urlResp.Header()
 
-	return resp, err
+	return *resp, err
 }
 
 // PostRaw returns raw *resty.Response for Jike

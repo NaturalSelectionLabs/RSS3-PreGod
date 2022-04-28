@@ -62,8 +62,8 @@ type MoralisAttributes struct {
 	MinRateLimitUsed int
 }
 
-func SetMoralisAttributes(attributes *MoralisAttributes, response *httpx.Response) {
-	if attributes == nil || response == nil {
+func SetMoralisAttributes(attributes *MoralisAttributes, response httpx.Response) {
+	if attributes == nil {
 		return
 	}
 

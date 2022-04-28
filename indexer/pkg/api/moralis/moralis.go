@@ -24,7 +24,7 @@ var (
 	endpoint    = "https://deep-index.moralis.io"
 )
 
-func requestMoralisApi(url string, apiKey string) (*httpx.Response, error) {
+func requestMoralisApi(url string, apiKey string) (httpx.Response, error) {
 	var headers = map[string]string{
 		"accept":    "application/json",
 		"X-API-Key": apiKey,
@@ -35,7 +35,7 @@ func requestMoralisApi(url string, apiKey string) (*httpx.Response, error) {
 		logger.Errorf("http get error with url '%s': [%v]. response: %s",
 			url, err, string(response.Body))
 
-		return nil, err
+		return response, err
 	}
 
 	return response, nil

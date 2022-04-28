@@ -33,7 +33,7 @@ type GetNoteListRequest struct {
 	ProfileSources []string `form:"profile_sources"`
 }
 
-// nolint:funlen // TODO
+// TODO
 func GetNoteListHandlerFunc(c *gin.Context) {
 	instance, err := middleware.GetPlatformInstance(c)
 	if err != nil {
