@@ -46,7 +46,8 @@ type crawlerConfig struct {
 
 var DefaultZksyncConfig = &crawlerConfig{
 	FromHeight:    2600,
-	Step:          50,
+// 	Step:          50,
+	Step:          10,
 	MinStep:       10,
 	Confirmations: 15,
 	SleepInterval: DeafultGetNextBlockDuration,
