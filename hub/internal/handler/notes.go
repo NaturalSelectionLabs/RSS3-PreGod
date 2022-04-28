@@ -30,6 +30,7 @@ type GetNoteListRequest struct {
 	ItemSources    []string `form:"item_sources"`
 	LinkSources    []string `form:"link_sources"`
 	LinkType       string   `form:"link_type"`
+	Networks       []string `form:"networks"`
 	ProfileSources []string `form:"profile_sources"`
 }
 
@@ -194,6 +195,10 @@ func getNoteListByInstance(c *gin.Context, instance rss3uri.Instance, request Ge
 		internalDB = internalDB.Where("source IN ?", request.ItemSources)
 	}
 
+	if request.Networks != nil && len(request.Networks) != 0 {
+		internalDB = internalDB.Where("metadata_network IN ?", request.Networks)
+	}
+
 	notes := make([]model.Note, 0)
 	if err := internalDB.
 		Where("owner = ?", strings.ToLower(rss3uri.New(instance).String())).
@@ -314,6 +319,10 @@ func getNoteListsByLink(c *gin.Context, instance rss3uri.Instance, request GetNo
 
 	if request.ItemSources != nil && len(request.ItemSources) != 0 {
 		internalDB = internalDB.Where("source IN ?", request.ItemSources)
+	}
+
+	if request.Networks != nil && len(request.Networks) != 0 {
+		internalDB = internalDB.Where("metadata_network IN ?", request.Networks)
 	}
 
 	if request.ProfileSources != nil && len(request.ProfileSources) != 0 {

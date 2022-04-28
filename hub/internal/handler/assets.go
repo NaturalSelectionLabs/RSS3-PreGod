@@ -28,6 +28,7 @@ type GetAssetListRequest struct {
 	ItemSources    []string `form:"item_sources"`
 	LinkSources    []string `form:"link_sources"`
 	LinkType       string   `form:"link_type"`
+	Networks       []string `form:"networks"`
 	ProfileSources []string `form:"profile_sources"`
 }
 
@@ -225,6 +226,10 @@ func getAssetListByInstance(c *gin.Context, instance rss3uri.Instance, request G
 		internalDB = internalDB.Where("authors && ?", pq.StringArray(authors))
 	}
 
+	if request.Networks != nil && len(request.Networks) != 0 {
+		internalDB = internalDB.Where("metadata_network IN ?", request.Networks)
+	}
+
 	assets := make([]model.Asset, 0)
 	if err := internalDB.
 		Where("owner = ?", strings.ToLower(rss3uri.New(instance).String())).
@@ -357,6 +362,10 @@ func getAssetListsByLink(c *gin.Context, instance rss3uri.Instance, request GetA
 		}
 
 		internalDB = internalDB.Where("authors && ?", pq.StringArray(authors))
+	}
+
+	if request.Networks != nil && len(request.Networks) != 0 {
+		internalDB = internalDB.Where("metadata_network IN ?", request.Networks)
 	}
 
 	assets := make([]model.Asset, 0)
