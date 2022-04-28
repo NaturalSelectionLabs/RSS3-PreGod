@@ -24,7 +24,7 @@ func ListLimit() gin.HandlerFunc {
 			return
 		}
 
-		if request.Limit == nil || *request.Limit > MaxListLimit {
+		if request.Limit == nil || *request.Limit > MaxListLimit || *request.Limit < 0 {
 			query := c.Request.URL.Query()
 			query.Set("limit", strconv.Itoa(MaxListLimit))
 			c.Request.URL.RawQuery = query.Encode()

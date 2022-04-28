@@ -38,6 +38,7 @@ func Initialize() (router *gin.Engine) {
 		apiRouter.GET("/:instance/backlinks", instanceMiddleware, handler.GetBackLinkListHandlerFunc)
 		apiRouter.GET("/:instance/assets", instanceMiddleware, handler.GetAssetListHandlerFunc)
 		apiRouter.GET("/:instance/notes", instanceMiddleware, handler.GetNoteListHandlerFunc)
+		apiRouter.POST("/notes", handler.BatchGetNoteListHandlerFunc)
 	}
 
 	// Older version API
