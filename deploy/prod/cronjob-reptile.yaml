@@ -5,7 +5,7 @@ metadata:
   namespace: pregod
 spec:
   concurrencyPolicy: Forbid
-  failedJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 3
   jobTemplate:
     spec:
       backoffLimit: 0
