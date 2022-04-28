@@ -120,10 +120,8 @@ func getNoteListByInstance(c *gin.Context, instance rss3uri.Instance, request Ge
 		internalDB = internalDB.Where("source IN ?", profileSources)
 	}
 
-	if err := internalDB.Where(&model.Profile{
-		ID:       strings.ToLower(instance.GetIdentity()),
-		Platform: constants.PlatformSymbol(instance.GetSuffix()).ID().Int(),
-	}).Find(&profiles).Error; err != nil {
+	if err := internalDB.Where("id = ? AND platform = ?", strings.ToLower(instance.GetIdentity()),
+		constants.PlatformSymbol(instance.GetSuffix()).ID().Int()).Find(&profiles).Error; err != nil {
 		return nil, 0, err
 	}
 
@@ -160,9 +158,15 @@ func getNoteListByInstance(c *gin.Context, instance rss3uri.Instance, request Ge
 
 		internalDB = internalDB.
 			Where("date_created <= ?", lastItem.DateCreated).
-			Where("identifier != ?", lastItem.Identifier).
-			Where("log_index <= ?", lastItem.LogIndex).
-			Where("token_id < ?", lastItem.TokenID)
+			Where("identifier != ?", lastItem.Identifier)
+
+		if lastItem.LogIndex > 0 {
+			internalDB = internalDB.Where("log_index <= ?", lastItem.LogIndex)
+		}
+
+		if len(lastItem.TokenID) > 0 {
+			internalDB = internalDB.Where("token_id < ?", lastItem.TokenID)
+		}
 	}
 
 	if request.Tags != nil && len(request.Tags) != 0 {
