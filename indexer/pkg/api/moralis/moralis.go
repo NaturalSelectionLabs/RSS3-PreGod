@@ -94,13 +94,13 @@ func GetNFTTransfers(userAddress string, chainType ChainType, blockHeight int64,
 	return *res, nil
 }
 
-func GetLogs(fromBlock int64, toBlock int64, address string, topic string, chainType ChainType, apiKey string) (*GetLogsResult, error) {
+func GetLogs(fromBlock int64, toBlock int64, address string, topic string, chainType ChainType, apiKey string) (GetLogsResult, error) {
 	url := fmt.Sprintf("%s/api/v2/%s/logs?chain=%s&from_block=%d&to_block=%d&topic0=%s",
 		endpoint, address, string(chainType), fromBlock, toBlock, topic)
 	response, err := requestMoralisApi(url, apiKey)
 
 	if err != nil {
-		return nil, err
+		return GetLogsResult{}, err
 	}
 
 	res := new(GetLogsResult)
@@ -110,10 +110,10 @@ func GetLogs(fromBlock int64, toBlock int64, address string, topic string, chain
 	if err != nil {
 		logger.Errorf("unmarshal error: [%v]", err)
 
-		return nil, err
+		return *res, err
 	}
 
-	return res, nil
+	return *res, nil
 }
 
 // Gets all NFT items of user
