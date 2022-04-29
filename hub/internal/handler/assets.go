@@ -235,7 +235,6 @@ func getAssetListByInstance(c *gin.Context, instance rss3uri.Instance, request G
 		Limit(request.Limit).
 		Order("date_created DESC").
 		Order("contract_address DESC").
-		Order("log_index DESC").
 		Order("token_id DESC").
 		Find(&assets).Error; err != nil {
 		return nil, 0, err
@@ -248,7 +247,6 @@ func getAssetListByInstance(c *gin.Context, instance rss3uri.Instance, request G
 		Where("owner = ?", strings.ToLower(rss3uri.New(instance).String())).
 		Order("date_created DESC").
 		Order("contract_address DESC").
-		Order("log_index DESC").
 		Order("token_id DESC").
 		Count(&count).Error; err != nil {
 		return nil, 0, err
@@ -376,7 +374,6 @@ func getAssetListsByLink(c *gin.Context, instance rss3uri.Instance, request GetA
 		Limit(request.Limit).
 		Order("date_created DESC").
 		Order("contract_address DESC").
-		Order("log_index DESC").
 		Order("token_id DESC").
 		Find(&assets).Error; err != nil {
 		return nil, 0, err
@@ -389,7 +386,6 @@ func getAssetListsByLink(c *gin.Context, instance rss3uri.Instance, request GetA
 		Where("owner = ?", strings.ToLower(rss3uri.New(instance).String())).
 		Order("date_created DESC").
 		Order("contract_address DESC").
-		Order("log_index DESC").
 		Order("token_id DESC").
 		Count(&count).Error; err != nil {
 		return nil, 0, err
