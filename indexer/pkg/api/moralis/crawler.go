@@ -113,16 +113,16 @@ func (c *moralisCrawler) Work(param crawler.WorkParam) error {
 			}
 		}
 
-		m, parseErr := utils.ParseNFTMetadata(theAsset.MetaData)
-		if parseErr != nil {
-			logger.Warnf("%v", parseErr)
-		}
-
 		if !hasObject {
 			theAsset, err = GetMetadataByToken(item.TokenAddress, item.TokenId, chainType, getApiKey())
 			if err != nil {
 				logger.Warnf("fail to get metadata of token: " + item.String())
 			}
+		}
+
+		m, parseErr := utils.ParseNFTMetadata(theAsset.MetaData)
+		if parseErr != nil {
+			logger.Warnf("%v", parseErr)
 		}
 
 		//convert to string
