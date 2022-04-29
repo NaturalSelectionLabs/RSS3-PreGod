@@ -11,35 +11,32 @@ info:
     name: GNU Affero General Public License v3.0
     url: "https://www.gnu.org/licenses/agpl-3.0.en.html"
 servers:
-  # Added by API Auto Mocking Plugin
-  - description: SwaggerHub API Auto Mocking
-    url: https://virtserver.swaggerhub.com/HenryQW/PreGod/0.4.0
   - description: PreGod API Test Instance
     url: "https://test-pregod.rss3.dev/v0.4.0"
 tags:
   - name: item
     externalDocs:
-      description: Find out more
+      description: Find out more.
       url: "https://rss3.io/"
 paths:
   "/account:{instance}@{platform}/{type}":
     get:
       tags:
         - item
-      summary: Get items by Instance
-      description: Returns a list of items
-      operationId: getItemByInstance
+      summary: Get items by RSS3URI.
+      description: Returns a list of items.
+      operationId: getItemByRSS3URI
       parameters:
         - name: instance
           in: path
-          description: The address of the instance
+          description: The address of the instance.
           required: true
           example: "0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045"
           schema:
             type: string
         - name: platform
           in: path
-          description: The platform of the instance
+          description: The platform of the instance.
           required: true
           schema:
             type: string
@@ -56,7 +53,7 @@ paths:
               - github
         - name: type
           in: path
-          description: The type of items to retrieve
+          description: The type of items to retrieve.
           required: true
           schema:
             type: string
@@ -65,28 +62,30 @@ paths:
               - assets
         - name: last_identifier
           in: query
-          description: The pointer used for paging
+          description: The pointer used for paging.
           required: false
+          example: "rss3://account:0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045@ethereum/notes?limit=10"
           schema:
             type: string
         - name: limit
           in: query
           description: Limit the number of items returned by the server.
           required: false
+          example: 10
           schema:
             type: number
             default: 100
             maximum: 100
         - name: tags
           in: query
-          description: Include items based by tags
+          description: Include items based by tags.
           required: false
           example: "NFT"
           schema:
             type: string
         - name: exclude_tags
           in: query
-          description: Filter out items by tags
+          description: Filter out items by tags.
           required: false
           example: "POAP"
           schema:
@@ -103,6 +102,24 @@ paths:
               - $ref: "#/components/schemas/AssetSource"
       responses:
         "200":
+          description: A valid request.
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: "#/components/schemas/Response"
+                  - $ref: "#/components/schemas/InvalidRequest"
+  "/notes":
+    post:
+      tags:
+        - item
+      summary: Get notes by an RSS3URI list.
+      description: Returns a list of notes.
+      operationId: getNoteByRSS3URIList
+      requestBody:
+        $ref: "#/components/requestBodies/NoteList"
+      responses:
+        "200":
           description: valid request
           content:
             application/json:
@@ -111,7 +128,7 @@ paths:
                   - $ref: "#/components/schemas/Response"
                   - $ref: "#/components/schemas/InvalidRequest"
 externalDocs:
-  description: Find out more about RSS3
+  description: Find out more about RSS3.
   url: "https://rss3.io"
 components:
   schemas:
@@ -121,24 +138,24 @@ components:
       properties:
         version:
           type: string
-          description: "The version of the RSS3 PreGod instance"
+          description: The version of the RSS3 PreGod instance.
           example: v0.4.0
         date_updated:
           type: string
-          description: "The last update time, conforms to the RFC3339 datetime"
+          description: The last update time, conforms to the RFC3339 datetime.
           format: date-time
           example: "2022-04-05T01:22:33.000Z"
         identifier:
           type: string
           example: rss3://account:0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045@ethereum/notes?limit=100
-          description: The pointer of the current request
+          description: The pointer of the current request.
         total:
           type: number
           example: 123
-          description: The total number of items indexed for the instance
+          description: The total number of items indexed for the instance.
         list:
           type: array
-          description: The requested items
+          description: The requested items.
           items:
             $ref: "#/components/schemas/Item"
     InvalidRequest:
@@ -175,7 +192,7 @@ components:
         - Jike Post
     Date:
       type: string
-      description: "Conform to the RFC3339 Datetime format"
+      description: Conform to the RFC3339 Datetime format.
       format: date-time
       example: "2022-01-19T02:06:38.000Z"
     Item:
@@ -283,3 +300,43 @@ components:
         collection_name:
           type: string
           example: "RSS3 Whitepaper"
+  requestBodies:
+    NoteList:
+      description: Retrieve a list of notes belonging to the supplied list of RSS3URIs.
+      required: true
+      content:
+        application/json:
+          schema:
+            required: ["addresses"]
+            properties:
+              addresses:
+                type: array
+                description: The list of RSS3URIs
+                example:
+                  [
+                    "rss3://account:0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045@ethereum",
+                    "rss3://account:0x827431510a5D249cE4fdB7F00C83a3353F471848@ethereum",
+                  ]
+              last_identifier:
+                type: string
+                description: The pointer used for paging.
+                example: ""
+              limit:
+                type: number
+                description: Limit the number of notes returned by the server.
+                default: 0
+                maximum: 0
+                example: 10
+              tags:
+                description: Include notes based by tags.
+                example: "NFT"
+              exclude_tags:
+                description: Filter out notes by tags.
+                example: "POAP"
+              item_sources:
+                type: array
+                description: "Include items by indexing sources. Depending on the `type`, please see the supported values below in Schemas: `NoteSource` or `AssetSource`"
+                example: ["Ethereum NFT"]
+                oneOf:
+                  - $ref: "#/components/schemas/NoteSource"
+                  - $ref: "#/components/schemas/AssetSource"
