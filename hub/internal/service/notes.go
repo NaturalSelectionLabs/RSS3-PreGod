@@ -29,17 +29,23 @@ func BatchGetNodeList(req m.BatchGetNodeListRequest) (protocol.File, error, erro
 	}
 
 	if len(req.InstanceList) == 0 {
-		return protocol.File{}, nil, nil
+		return protocol.File{
+			List: make([]protocol.Item, 0),
+		}, nil, nil
 	}
 
 	noteList, total, err := dao.BatchGetNodeList(req)
 	if err != nil {
-		return protocol.File{}, api.ErrorDatabase, err
+		return protocol.File{
+			List: make([]protocol.Item, 0),
+		}, api.ErrorDatabase, err
 	}
 
 	itemList, dateUpdated, errType, err := FormatProtocolItemByNote(noteList)
 	if err != nil {
-		return protocol.File{}, errType, err
+		return protocol.File{
+			List: make([]protocol.Item, 0),
+		}, errType, err
 	}
 
 	file := protocol.File{
@@ -55,10 +61,10 @@ func BatchGetNodeList(req m.BatchGetNodeListRequest) (protocol.File, error, erro
 func FormatProtocolItemByNote(noteList []model.Note) ([]protocol.Item, *timex.Time, error, error) {
 	var dateUpdated *timex.Time
 
-	var itemList = []protocol.Item{}
+	var itemList = make([]protocol.Item, 0)
 
 	for _, note := range noteList {
-		attachmentList := []protocol.ItemAttachment{}
+		attachmentList := make([]protocol.ItemAttachment, 0)
 		if err := json.Unmarshal(note.Attachments, &attachmentList); err != nil {
 			return nil, nil, api.ErrorInvalidParams, err
 		}
