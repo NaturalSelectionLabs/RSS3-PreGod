@@ -34,7 +34,6 @@ type GetNoteListRequest struct {
 	ProfileSources []string `form:"profile_sources"`
 }
 
-// TODO
 func GetNoteListHandlerFunc(c *gin.Context) {
 	instance, err := middleware.GetPlatformInstance(c)
 	if err != nil {
@@ -160,14 +159,6 @@ func getNoteListByInstance(c *gin.Context, instance rss3uri.Instance, request Ge
 		internalDB = internalDB.
 			Where("date_created <= ?", lastItem.DateCreated).
 			Where("identifier != ?", lastItem.Identifier)
-
-		if lastItem.LogIndex > 0 {
-			internalDB = internalDB.Where("log_index <= ?", lastItem.LogIndex)
-		}
-
-		if len(lastItem.TokenID) > 0 {
-			internalDB = internalDB.Where("token_id < ?", lastItem.TokenID)
-		}
 	}
 
 	if request.Tags != nil && len(request.Tags) != 0 {
@@ -204,7 +195,9 @@ func getNoteListByInstance(c *gin.Context, instance rss3uri.Instance, request Ge
 		Where("owner = ?", strings.ToLower(rss3uri.New(instance).String())).
 		Limit(request.Limit).
 		Order("date_created DESC").
-		Order("identifier DESC").
+		Order("contract_address DESC").
+		Order("log_index DESC").
+		Order("token_id DESC").
 		Find(&notes).Error; err != nil {
 		return nil, 0, err
 	}
@@ -215,7 +208,9 @@ func getNoteListByInstance(c *gin.Context, instance rss3uri.Instance, request Ge
 		Model(&model.Note{}).
 		Where("owner = ?", strings.ToLower(rss3uri.New(instance).String())).
 		Order("date_created DESC").
-		Order("identifier DESC").
+		Order("contract_address DESC").
+		Order("log_index DESC").
+		Order("token_id DESC").
 		Count(&count).Error; err != nil {
 		return nil, 0, err
 	}
@@ -304,9 +299,7 @@ func getNoteListsByLink(c *gin.Context, instance rss3uri.Instance, request GetNo
 
 		internalDB = internalDB.
 			Where("date_created <= ?", lastItem.DateCreated).
-			Where("identifier != ?", lastItem.Identifier).
-			Where("log_index <= ?", lastItem.LogIndex).
-			Where("token_id < ?", lastItem.TokenID)
+			Where("identifier != ?", lastItem.Identifier)
 	}
 
 	if request.Tags != nil && len(request.Tags) != 0 {
@@ -343,7 +336,9 @@ func getNoteListsByLink(c *gin.Context, instance rss3uri.Instance, request GetNo
 		Where("owner IN ?", owners).
 		Limit(request.Limit).
 		Order("date_created DESC").
-		Order("identifier DESC").
+		Order("contract_address DESC").
+		Order("log_index DESC").
+		Order("token_id DESC").
 		Find(&notes).Error; err != nil {
 		return nil, 0, err
 	}
@@ -354,7 +349,9 @@ func getNoteListsByLink(c *gin.Context, instance rss3uri.Instance, request GetNo
 		Model(&model.Note{}).
 		Where("owner IN ?", owners).
 		Order("date_created DESC").
-		Order("identifier DESC").
+		Order("contract_address DESC").
+		Order("log_index DESC").
+		Order("token_id DESC").
 		Count(&count).Error; err != nil {
 		return nil, 0, err
 	}
