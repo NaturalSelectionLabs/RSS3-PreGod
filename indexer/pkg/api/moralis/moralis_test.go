@@ -2,7 +2,6 @@ package moralis_test
 
 import (
 	"testing"
-	"time"
 
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/api/moralis"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/config"
@@ -89,24 +88,24 @@ func TestGetNFTByContract(t *testing.T) {
 	}
 }
 
-func TestGetENSList(t *testing.T) {
-	t.Parallel()
+// func TestGetENSList(t *testing.T) {
+// 	t.Parallel()
 
-	result, getErr := moralis.GetENSList("0xC8b960D09C0078c18Dcbe7eB9AB9d816BcCa8944")
+// 	result, getErr := moralis.GetENSList("0xC8b960D09C0078c18Dcbe7eB9AB9d816BcCa8944")
 
-	if assert.NotEmpty(t, result) {
-		ens := result[0]
+// 	if assert.NotEmpty(t, result) {
+// 		ens := result[0]
 
-		assert.Nil(t, getErr)
-		assert.Equal(t, 1, len(result))
+// 		assert.Nil(t, getErr)
+// 		assert.Equal(t, 1, len(result))
 
-		assert.Equal(t, "diygod.eth", ens.Domain)
-		assert.Equal(t, "diygod.eth, an ENS name.", ens.Description)
-		assert.Equal(t, "0xc600982712df36668321bfc782deacb17a1c32f09165eb1e66d1d76294db6156", ens.TxHash)
+// 		assert.Equal(t, "diygod.eth", ens.Domain)
+// 		assert.Equal(t, "diygod.eth, an ENS name.", ens.Description)
+// 		assert.Equal(t, "0xc600982712df36668321bfc782deacb17a1c32f09165eb1e66d1d76294db6156", ens.TxHash)
 
-		time, timeErr := time.Parse(time.RFC3339, "2021-11-16T05:54:43.000Z")
-		assert.Nil(t, timeErr)
+// 		time, timeErr := time.Parse(time.RFC3339, "2021-11-16T05:54:43.000Z")
+// 		assert.Nil(t, timeErr)
 
-		assert.Equal(t, time, ens.CreatedAt)
-	}
-}
+// 		assert.Equal(t, time, ens.CreatedAt)
+// 	}
+// }
