@@ -76,6 +76,9 @@
     },
     "infura": {
       "api_key": "__PLACEHOLDER__"
+    },
+    "crossbell": {
+      "rpc": "__PLACEHOLDER__"
     }
   }
 }

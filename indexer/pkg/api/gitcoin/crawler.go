@@ -15,6 +15,7 @@ import (
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/constants"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/logger"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/rss3uri"
+	"golang.org/x/sync/errgroup"
 )
 
 type crawler interface {
@@ -467,15 +468,17 @@ func setDB(
 	return nil
 }
 
-func Start(platform GitcoinPlatform) error {
-	property, ok := crawlerPropertyMap[platform]
-	if !ok {
-		return fmt.Errorf("invalid network id: %s", platform)
+func Start(platforms ...GitcoinPlatform) error {
+	wg := errgroup.Group{}
+
+	for _, platform := range platforms {
+		property, ok := crawlerPropertyMap[platform]
+		if !ok {
+			return fmt.Errorf("invalid network id: %s", platform)
+		}
+
+		wg.Go(property.start)
 	}
 
-	if err := property.start(); err != nil {
-		return fmt.Errorf("start crawler error: %v", err)
-	}
-
-	return nil
+	return wg.Wait()
 }

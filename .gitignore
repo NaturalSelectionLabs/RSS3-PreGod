@@ -29,6 +29,8 @@ tmp_data/
 
 .vscode/
 
+.DS_Store
+
 # docker volume
 docker/volume
 

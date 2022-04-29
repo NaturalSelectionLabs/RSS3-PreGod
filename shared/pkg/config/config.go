@@ -134,6 +134,7 @@ type IndexerStruct struct {
 	Twitter     TwitterStruct     `koanf:"twitter"`
 	Aribtrum    ArbitrumStruct    `koanf:"arbitrum"`
 	Gateway     GatewayStruct     `koanf:"gateway"`
+	Crossbell   CrossbellStruct   `koanf:"crossbell"`
 }
 
 type HubStruct struct {
@@ -145,6 +146,10 @@ type ElasticsearchStruct struct {
 	Address  string `koanf:"address"`
 	Username string `koanf:"username"`
 	Password string `koanf:"password"`
+}
+
+type CrossbellStruct struct {
+	RPC string `koanf:"rpc"`
 }
 
 type ConfigStruct struct {
