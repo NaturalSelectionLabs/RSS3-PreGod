@@ -103,13 +103,14 @@ func GetEthDonations(fromBlock int64, toBlock int64, chainType GitcoinPlatform) 
 	// at most 1000 results in one response. But our default step is only 50, safe.
 	logs, err := moralis.GetLogs(fromBlock, toBlock, checkoutAddress, donationSentTopic,
 		moralis.ChainType(chainType), config.Config.Indexer.Moralis.ApiKey)
-	ethDonationsResult.MinRateLimit = logs.MinRateLimit
-	ethDonationsResult.MinRateLimitUsed = logs.MinRateLimitUsed
 
 	if err != nil {
 		// MinRateLimit must be sent here
 		return ethDonationsResult, fmt.Errorf("getLogs error: [%v]", err)
 	}
+
+	ethDonationsResult.MinRateLimit = logs.MinRateLimit
+	ethDonationsResult.MinRateLimitUsed = logs.MinRateLimitUsed
 
 	for _, item := range logs.Result {
 		donor := "0x" + item.Topic3[26:]
