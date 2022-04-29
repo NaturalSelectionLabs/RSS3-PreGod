@@ -7,6 +7,7 @@ import (
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database/model"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/rss3uri"
+	"github.com/lib/pq"
 )
 
 // BatchGetNodeList query data through database
@@ -16,6 +17,22 @@ func BatchGetNodeList(req m.BatchGetNodeListRequest) ([]model.Note, int64, error
 
 	for _, instance := range req.InstanceList {
 		ownerList = append(ownerList, strings.ToLower(rss3uri.New(instance).String()))
+	}
+
+	if req.Tags != nil && len(req.Tags) != 0 {
+		internalDB = internalDB.Where("tags && ?", pq.StringArray(req.Tags))
+	}
+
+	if req.ExcludeTags != nil && len(req.ExcludeTags) != 0 {
+		internalDB = internalDB.Where("tags && ? = FALSE", pq.StringArray(req.ExcludeTags))
+	}
+
+	if req.ItemSources != nil && len(req.ItemSources) != 0 {
+		internalDB = internalDB.Where("source IN ?", req.ItemSources)
+	}
+
+	if req.Networks != nil && len(req.Networks) != 0 {
+		internalDB = internalDB.Where("metadata_network IN ?", req.Networks)
 	}
 
 	if len(req.LastIdentifier) > 0 {

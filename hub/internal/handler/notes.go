@@ -1,9 +1,7 @@
 package handler
 
 import (
-	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"net/http"
 	"strings"
 
@@ -361,11 +359,9 @@ func getNoteListsByLink(c *gin.Context, instance rss3uri.Instance, request GetNo
 
 // BatchGetNoteListHandlerFunc can batch query notes by request body.
 func BatchGetNoteListHandlerFunc(c *gin.Context) {
-	var data, _ = ioutil.ReadAll(c.Request.Body)
+	req := m.BatchGetNodeListRequest{}
 
-	var req m.BatchGetNodeListRequest
-
-	if err := json.Unmarshal(data, &req); err != nil {
+	if err := c.ShouldBindJSON(&req); err != nil {
 		api.SetError(c, api.ErrorInvalidParams, err)
 
 		return
