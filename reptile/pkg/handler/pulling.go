@@ -203,7 +203,9 @@ func GetResultByStage() {
 		countPos++
 	}
 
-	if err := SetResultsInDB(projectCountArr); err != nil {
-		logger.Fatal(err)
+	if len(projectCountArr) > 0 {
+		if err := SetResultsInDB(projectCountArr); err != nil {
+			logger.Fatal(err)
+		}
 	}
 }
