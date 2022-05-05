@@ -1,6 +1,7 @@
 package rss3uri_test
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/constants"
@@ -13,14 +14,14 @@ func TestNew(t *testing.T) {
 	assert.Nil(t, err)
 
 	uri := rss3uri.New(instance)
-	assert.Equal(t, uri.String(), "rss3://account:0xC8b960D09C0078c18Dcbe7eB9AB9d816BcCa8944@ethereum")
+	assert.Equal(t, uri.String(), strings.ToLower("rss3://account:0xC8b960D09C0078c18Dcbe7eB9AB9d816BcCa8944@ethereum"))
 
 	uri = rss3uri.New(&rss3uri.PlatformInstance{
 		Prefix:   constants.PrefixNameAccount,
 		Identity: "0xC8b960D09C0078c18Dcbe7eB9AB9d816BcCa8944",
 		Platform: constants.PlatformSymbolEthereum,
 	})
-	assert.Equal(t, uri.String(), "rss3://account:0xC8b960D09C0078c18Dcbe7eB9AB9d816BcCa8944@ethereum")
+	assert.Equal(t, uri.String(), strings.ToLower("rss3://account:0xC8b960D09C0078c18Dcbe7eB9AB9d816BcCa8944@ethereum"))
 }
 
 func BenchmarkNew(b *testing.B) {
