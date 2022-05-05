@@ -123,7 +123,7 @@ jobs:
             sed -i 's/NOLIMITHEADER/${{ secrets.NOLIMITHEADER }}/g' ./deploy/dev/route.yaml
             sed -i 's/NOLIMITVALUE/${{ secrets.NOLIMITVALUE}}/g' ./deploy/dev/route.yaml
       - run: |
-          aws eks update-kubeconfig --region us-west-2 --name production
+          aws eks update-kubeconfig --region us-west-2 --name development
           curl -LO https://storage.googleapis.com/kubernetes-release/release/v1.21.5/bin/linux/amd64/kubectl && chmod +x kubectl && mv kubectl /usr/local/bin/kubectl
       - run: |
           kubectl apply -f deploy/dev
