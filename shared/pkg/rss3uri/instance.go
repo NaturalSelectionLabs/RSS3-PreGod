@@ -2,6 +2,7 @@ package rss3uri
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/constants"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/logger"
@@ -74,6 +75,8 @@ func (n NetworkInstance) UriString() string {
 }
 
 func NewAccountInstance(identity string, platform constants.PlatformSymbol) Instance {
+	identity = strings.ToLower(identity)
+
 	r, err := NewInstance("account", identity, string(platform))
 	if err != nil {
 		logger.Errorf("Error when creating account instance: %s", err)
@@ -89,6 +92,8 @@ func NewAccountInstance(identity string, platform constants.PlatformSymbol) Inst
 }
 
 func NewNoteInstance(identity string, network constants.NetworkSymbol) Instance {
+	identity = strings.ToLower(identity)
+
 	r, err := NewInstance("note", identity, string(network))
 	if err != nil {
 		logger.Errorf("Error when creating note instance: %s", err)
@@ -104,6 +109,8 @@ func NewNoteInstance(identity string, network constants.NetworkSymbol) Instance 
 }
 
 func NewAssetInstance(identity string, network constants.NetworkSymbol) Instance {
+	identity = strings.ToLower(identity)
+
 	r, err := NewInstance("asset", identity, string(network))
 	if err != nil {
 		logger.Errorf("Error when creating asset instance: %s", err)
@@ -119,6 +126,8 @@ func NewAssetInstance(identity string, network constants.NetworkSymbol) Instance
 }
 
 func NewInstance(prefix, identity, platform string) (Instance, error) {
+	identity = strings.ToLower(identity)
+
 	if !constants.IsValidPrefix(prefix) {
 		return nil, ErrInvalidPrefix
 	}

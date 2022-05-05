@@ -2,6 +2,7 @@ package poap
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/api/nft_utils"
@@ -90,7 +91,7 @@ func (pc *poapCrawler) Work(param crawler.WorkParam) error {
 			MetadataProof:   id, // TODO: this should be the tx hash in note actually?
 			Metadata: database.MustWrapJSON(map[string]interface{}{
 				"from": "0x0",
-				"to":   item.Owner,
+				"to":   strings.ToLower(item.Owner),
 			}),
 			DateCreated: tsp,
 			DateUpdated: tsp,
