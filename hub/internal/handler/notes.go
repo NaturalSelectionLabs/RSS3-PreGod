@@ -83,7 +83,7 @@ func GetNoteListHandlerFunc(c *gin.Context) {
 	identifierNext := ""
 	uri := rss3uri.New(instance)
 
-	if len(noteList) == database.MaxLimit {
+	if total > int64(request.Limit) {
 		nextQuery := c.Request.URL.Query()
 
 		if lastItem != nil {

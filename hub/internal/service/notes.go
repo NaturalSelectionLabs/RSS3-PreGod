@@ -48,10 +48,16 @@ func BatchGetNodeList(req m.BatchGetNodeListRequest) (protocol.File, error, erro
 		}, errType, err
 	}
 
+	identifierNext := ""
+	if total > int64(req.Limit) {
+		identifierNext = itemList[len(itemList)-1].Identifier
+	}
+
 	file := protocol.File{
-		DateUpdated: dateUpdated,
-		Total:       total,
-		List:        itemList,
+		DateUpdated:    dateUpdated,
+		Total:          total,
+		List:           itemList,
+		IdentifierNext: identifierNext,
 	}
 
 	return file, nil, nil
