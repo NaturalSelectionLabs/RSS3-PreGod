@@ -73,7 +73,9 @@ jobs:
         with:
           cmd: |
             yq -i '.spec.jobTemplate.spec.template.spec.containers[0].image = "${{ env.IMAGE_NAME_REPTILE }}:${{ steps.meta.outputs.version }}"' ./deploy/dev/cronjob-reptile.yaml
-      - run: aws eks update-kubeconfig --region us-west-2 --name development
+      - run: |
+          aws eks update-kubeconfig --region us-west-2 --name production
+          curl -LO https://storage.googleapis.com/kubernetes-release/release/v1.21.5/bin/linux/amd64/kubectl && chmod +x kubectl && mv kubectl /usr/local/bin/kubectl
       - run: |
           kubectl apply -f ./deploy/dev/cronjob-reptile.yaml
 
@@ -99,6 +101,8 @@ jobs:
         with:
           cmd: |
             yq -i '.spec.jobTemplate.spec.template.spec.containers[0].image = "${{ env.IMAGE_NAME_REPTILE }}:${{ steps.meta.outputs.version }}"' ./deploy/prod/cronjob-reptile.yaml
-      - run: aws eks update-kubeconfig --region us-west-2 --name production
+      - run: |
+          aws eks update-kubeconfig --region us-west-2 --name production
+          curl -LO https://storage.googleapis.com/kubernetes-release/release/v1.21.5/bin/linux/amd64/kubectl && chmod +x kubectl && mv kubectl /usr/local/bin/kubectl
       - run: |
           kubectl apply -f deploy/prod/cronjob-reptile.yaml
