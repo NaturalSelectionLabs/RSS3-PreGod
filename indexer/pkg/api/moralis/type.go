@@ -182,9 +182,14 @@ func (i NFTTransferItem) GetUid() string {
 }
 
 func (i NFTTransferItem) GetTsp() (time.Time, error) {
-	if t, err := time.Parse(time.RFC3339, i.BlockTimestamp); err != nil {
+	if t, err := time.Parse(time.RFC1123, i.BlockTimestamp); err != nil {
 		// try another format
-		return time.Parse("2006-01-02T15:04:05.000Z", i.BlockTimestamp)
+		if t, err = time.Parse(time.RFC3339, i.BlockTimestamp); err != nil {
+			// try another format
+			return time.Parse("2006-01-02T15:04:05.000Z", i.BlockTimestamp)
+		} else {
+			return t, err
+		}
 	} else {
 		return t, err
 	}
