@@ -31,7 +31,7 @@ type PoapAction struct {
 
 type PoapResponse struct {
 	PoapAction
-	Created string `json:"created"`
+	//Created string `json:"created"` // the new api removes the `created` field
 }
 
 type PoapSupply struct {
@@ -45,5 +45,7 @@ type TokenResponse struct {
 }
 
 func (i PoapResponse) GetTsp() (time.Time, error) {
-	return time.Parse("2006-01-02 15:04:05", i.Created)
+	//return time.Parse("2006-01-02 15:04:05", i.Created)
+	// the new api removes the `created` field
+	return time.Parse("02-Jan-2006", i.PoapEventInfo.StartDate)
 }
