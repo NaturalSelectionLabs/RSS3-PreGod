@@ -26,7 +26,7 @@ func BenchmarkNewInstance(b *testing.B) {
 func TestParseInstance(t *testing.T) {
 	instance, err := rss3uri.ParseInstance("account:0xC8b960D09C0078c18Dcbe7eB9AB9d816BcCa8944@ethereum")
 	assert.Nil(t, err, err)
-	assert.Equal(t, instance.String(), "account:0xC8b960D09C0078c18Dcbe7eB9AB9d816BcCa8944@ethereum")
+	assert.Equal(t, instance.String(), strings.ToLower("account:0xC8b960D09C0078c18Dcbe7eB9AB9d816BcCa8944@ethereum"))
 
 	_, err = rss3uri.ParseInstance("foobar:0xC8b960D09C0078c18Dcbe7eB9AB9d816BcCa8944@ethereum")
 	assert.ErrorIs(t, err, rss3uri.ErrInvalidPrefix)
