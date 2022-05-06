@@ -8,7 +8,7 @@ import (
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/logger"
 )
 
-var expiredTime = 5 * time.Minute
+var expiredTime = 10 * time.Minute
 
 var methodGet = "get"
 var methodPost = "post"
