@@ -49,7 +49,7 @@ func getGatewayClient() {
 	client = c
 }
 
-//nolint:funlen,gocognit,maintidx,gocyclo // disable line length check
+//nolint:funlen,gocognit,maintidx // disable line length check
 func (c *moralisCrawler) Work(param crawler.WorkParam) error {
 	chainType := GetChainType(param.NetworkID)
 	if chainType == Unknown {
