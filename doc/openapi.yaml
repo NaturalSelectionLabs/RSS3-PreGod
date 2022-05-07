@@ -11,6 +11,9 @@ info:
     name: GNU Affero General Public License v3.0
     url: "https://www.gnu.org/licenses/agpl-3.0.en.html"
 servers:
+  # Added by API Auto Mocking Plugin
+  - description: SwaggerHub API Auto Mocking
+    url: https://virtserver.swaggerhub.com/HenryQW/PreGod/0.4.0
   - description: PreGod API Test Instance
     url: "https://test-pregod.rss3.dev/v0.4.0"
 tags:
@@ -125,7 +128,7 @@ paths:
             application/json:
               schema:
                 oneOf:
-                  - $ref: "#/components/schemas/Response"
+                  - $ref: "#/components/schemas/NotesResponse"
                   - $ref: "#/components/schemas/InvalidRequest"
 externalDocs:
   description: Find out more about RSS3.
@@ -134,7 +137,15 @@ components:
   schemas:
     Response:
       type: object
-      required: ["version", "date_updated", "identifier", "total", "list"]
+      required:
+        [
+          "version",
+          "date_updated",
+          "identifier",
+          "identifier_next",
+          "total",
+          "list",
+        ]
       properties:
         version:
           type: string
@@ -148,6 +159,36 @@ components:
         identifier:
           type: string
           example: rss3://account:0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045@ethereum/notes?limit=100
+          description: The identifier of the current request.
+        identifier_next:
+          type: string
+          example: rss3://account:0xd8da6bf26964af9d7eed9e03e53415d37aa96045@ethereum/notes?last_identifier=rss3%3A%2F%2Fnote%3A0x90b2a3072915d194bf8d8eea937545bb196eeb0f4894f068d334b666cf75d2bc-178-18%40ethereum&limit=100
+          description: The pointer of the current request.
+        total:
+          type: number
+          example: 123
+          description: The total number of items indexed for the instance.
+        list:
+          type: array
+          description: The requested items.
+          items:
+            $ref: "#/components/schemas/Item"
+    NotesResponse:
+      type: object
+      required: ["version", "date_updated", "identifier_next", "total", "list"]
+      properties:
+        version:
+          type: string
+          description: The version of the RSS3 PreGod instance.
+          example: v0.4.0
+        date_updated:
+          type: string
+          description: The last update time, conforms to the RFC3339 datetime.
+          format: date-time
+          example: "2022-04-05T01:22:33.000Z"
+        identifier_next:
+          type: string
+          example: rss3://account:0xd8da6bf26964af9d7eed9e03e53415d37aa96045@ethereum/notes?last_identifier=rss3%3A%2F%2Fnote%3A0x90b2a3072915d194bf8d8eea937545bb196eeb0f4894f068d334b666cf75d2bc-178-18%40ethereum&limit=100
           description: The pointer of the current request.
         total:
           type: number
@@ -320,12 +361,12 @@ components:
               last_identifier:
                 type: string
                 description: The pointer used for paging.
-                example: ""
+                example: "rss3://note:0x5175b715019267bf8bcf37f95129c0ff400129eee675cdf261907701ac2da568-295-22@ethereum"
               limit:
                 type: number
                 description: Limit the number of notes returned by the server.
-                default: 0
-                maximum: 0
+                default: 100
+                maximum: 100
                 example: 10
               tags:
                 description: Include notes based by tags.
