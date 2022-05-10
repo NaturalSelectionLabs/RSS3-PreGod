@@ -346,14 +346,14 @@ func (c *moralisCrawler) Work(param crawler.WorkParam) error {
 	owner := rss3uri.NewAccountInstance(param.OwnerID, param.OwnerPlatformID.Symbol()).UriString()
 	author := rss3uri.NewAccountInstance(param.Identity, constants.PlatformSymbolEthereum).UriString()
 
-	// err := c.setNFTTransfers(param, owner, author, networkSymbol, chainType)
-	// if err != nil {
-	// 	logger.Errorf("fail to set nft transfers in db: %v", err)
+	err := c.setNFTTransfers(param, owner, author, networkSymbol, chainType)
+	if err != nil {
+		logger.Errorf("fail to set nft transfers in db: %v", err)
 
-	// 	return err
-	// }
+		return err
+	}
 
-	err := c.setERC20(param, owner, author, networkSymbol, chainType)
+	err = c.setERC20(param, owner, author, networkSymbol, chainType)
 	if err != nil {
 		logger.Errorf("fail to set erc20 in db: %v", err)
 
