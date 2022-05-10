@@ -159,10 +159,6 @@ func (crawler *crawler) formatZkSyncMetadata(fromBlock int64, toBlock int64) ([]
 		}
 
 		for _, tx := range trxs {
-			if tx.Op.Type != "Transfer" || !tx.Success {
-				continue
-			}
-
 			// to address empty
 			to := strings.ToLower(tx.Op.To)
 			if to == "" ||

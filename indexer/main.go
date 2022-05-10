@@ -62,6 +62,10 @@ func RunAutoCrawler(cmd *cobra.Command, args []string) error {
 	// zksync
 	go zksync.Start()
 
+	if err := gitcoin.Setup(); err != nil {
+		log.Fatalf("gitcoin.Setup err: %v", err)
+	}
+
 	// TODO: remove gitcoin crawler for now
 	logger.Info("Start crawling gitcoin")
 	// gitcoin crawler
