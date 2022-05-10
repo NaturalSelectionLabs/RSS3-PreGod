@@ -479,3 +479,11 @@ func Start(platform GitcoinPlatform) error {
 
 	return nil
 }
+
+func Setup() error {
+	if err := UpdateEthAndPolygonTokens(); err != nil {
+		return fmt.Errorf("update eth and polygon tokens error: %v", err)
+	}
+
+	return nil
+}
