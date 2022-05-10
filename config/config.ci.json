@@ -31,6 +31,10 @@
       }
     ]
   },
+  "sentry": {
+    "dsn": "",
+    "server_name": "pregod-ci"
+  },
   "indexer": {
     "server": {
       "run_mode": "debug",
