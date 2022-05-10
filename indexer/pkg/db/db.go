@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/db/model"
-	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/config"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/constants"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/rss3uri"
 	"github.com/kamva/mgm/v3"
@@ -13,12 +12,12 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-func Setup() error {
-	err := mgm.SetDefaultConfig(nil, config.Config.Mongo.DB, options.Client().ApplyURI(config.Config.Mongo.URI))
-	// TODO: Create Indexes
-	// Reference: https://github.com/Kamva/mgm/issues/35
-	return err
-}
+// func Setup() error {
+// 	err := mgm.SetDefaultConfig(nil, config.Config.Mongo.DB, options.Client().ApplyURI(config.Config.Mongo.URI))
+// 	// TODO: Create Indexes
+// 	// Reference: https://github.com/Kamva/mgm/issues/35
+// 	return err
+// }
 
 // SetAssets refresh users' all assets by network
 func SetAssets(instance rss3uri.Instance, assets []*model.ObjectId, refreshBy constants.NetworkID) {
