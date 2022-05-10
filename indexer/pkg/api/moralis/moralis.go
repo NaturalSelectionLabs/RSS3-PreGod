@@ -24,6 +24,10 @@ var (
 	endpoint    = "https://deep-index.moralis.io"
 )
 
+type Erc20TokensMap map[string]Erc20TokenMetaDataItem
+
+var erc20TokensCache = Erc20TokensMap{}
+
 func requestMoralisApi(url string, apiKey string) (httpx.Response, error) {
 	var headers = map[string]string{
 		"accept":    "application/json",
@@ -164,6 +168,99 @@ func GetTxByToken(tokenAddress string, tokenId string, chainType ChainType, apiK
 	}
 
 	return *res, nil
+}
+
+func GetErc20Transfers(userAddress string, blockHeight int64, chainType ChainType, apiKey string) (ERC20Transfer, error) {
+	url := fmt.Sprintf("%s/api/v2/%s/erc20/transfers?chain=%s&from_block=%d",
+		endpoint, userAddress, chainType, blockHeight)
+	response, err := requestMoralisApi(url, apiKey)
+	logger.Debugf("url: %s", url)
+
+	if err != nil {
+		return ERC20Transfer{}, err
+	}
+
+	res := new(ERC20Transfer)
+	SetMoralisAttributes(&res.MoralisAttributes, response)
+
+	if err = jsoni.Unmarshal(response.Body, &res); err != nil {
+		return ERC20Transfer{}, err
+	}
+	// logger.Infof("parsedJson: %s", parsedJson)
+
+	logger.Debugf("GetErc20Transfers: %+v", res)
+
+	return *res, nil
+}
+
+func GetErc20TokenMetaData(chainType ChainType, addresses []string, apiKey string) (Erc20TokensMap, error) {
+	if len(addresses) <= 0 {
+		return Erc20TokensMap{}, fmt.Errorf("addresss is empty")
+	}
+
+	res := Erc20TokensMap{}
+
+	getErc20TokenMetaDataFromCache(addresses, res)
+	logger.Debugf("GetErc20TokenMetaData")
+
+	if len(res) == len(addresses) {
+		return res, nil
+	}
+
+	getErc20TokenMetaDataFromUrl(chainType, addresses, apiKey, res)
+	logger.Debugf("GetErc20: %d", len(res))
+
+	setErc20TokenMetaDataInCache(res)
+
+	return res, nil
+}
+
+func getErc20TokenMetaDataFromCache(addresses []string, res Erc20TokensMap) {
+	for _, address := range addresses {
+		if v, ok := erc20TokensCache[address]; ok {
+			res[address] = v
+		}
+	}
+}
+
+func getErc20TokenMetaDataFromUrl(chainType ChainType, addresses []string, apiKey string, res Erc20TokensMap) error {
+	url := fmt.Sprintf("%s/api/v2/erc20/metadata?chain=%s",
+		endpoint, chainType)
+	for _, address := range addresses {
+		url += fmt.Sprintf("&addresses=%s", address)
+	}
+
+	response, err := requestMoralisApi(url, apiKey)
+
+	if err != nil {
+		return err
+	}
+
+	resp := make([]Erc20TokenMetaDataItem, 0)
+	attributes := new(MoralisAttributes)
+	SetMoralisAttributes(attributes, response)
+
+	err = jsoni.Unmarshal(response.Body, &resp)
+	if err != nil {
+		return err
+	}
+
+	if len(resp) > 0 {
+		for _, item := range resp {
+			res[item.Address] = item
+		}
+	}
+
+	return nil
+}
+
+func setErc20TokenMetaDataInCache(res Erc20TokensMap) {
+	for address, metaData := range res {
+		_, ok := erc20TokensCache[address]
+		if !ok {
+			res[address] = metaData
+		}
+	}
 }
 
 func GetMetadataByToken(tokenAddress string, tokenId string, chainType ChainType, apiKey string) (NFTItem, error) {
