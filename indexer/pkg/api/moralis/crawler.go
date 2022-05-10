@@ -306,7 +306,7 @@ func (c *moralisCrawler) setERC20(
 			Identifier: rss3uri.NewNoteInstance(proof, networkSymbol).UriString(),
 			Owner:      owner,
 			RelatedURLs: []string{
-				"https://etherscan.io/address" + item.TokenAddress,
+				"https://etherscan.io/tx" + item.TokenAddress,
 			},
 			Tags:            constants.ItemTagsNFT.ToPqStringArray(),
 			Authors:         []string{author},
