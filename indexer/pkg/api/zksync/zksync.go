@@ -73,3 +73,18 @@ func GetTxsByBlock(blockHeight int64) ([]ZKTransaction, error) {
 
 	return zkTxs, nil
 }
+
+func UpdateZksToken() error {
+	tokens, err := GetTokens()
+	if err != nil {
+		logger.Errorf("zksync get tokens error: %v", err)
+
+		return err
+	}
+
+	for _, token := range tokens {
+		ZksTokensCache[token.Id] = token
+	}
+
+	return nil
+}
