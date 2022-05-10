@@ -148,11 +148,11 @@ type ElasticsearchStruct struct {
 }
 
 type ConfigStruct struct {
-	Protocol      ProtocolStruct      `koanf:"protocol"`
-	Hub           HubStruct           `koanf:"hub"`
-	Redis         RedisStruct         `koanf:"redis"`
-	Postgres      PostgresStruct      `koanf:"postgres"`
-	Mongo         MongoStruct         `koanf:"mongo"`
+	Protocol ProtocolStruct `koanf:"protocol"`
+	Hub      HubStruct      `koanf:"hub"`
+	Redis    RedisStruct    `koanf:"redis"`
+	Postgres PostgresStruct `koanf:"postgres"`
+	// Mongo         MongoStruct         `koanf:"mongo"`
 	Elasticsearch ElasticsearchStruct `koanf:"elasticsearch"`
 	Broker        BrokerStruct        `koanf:"broker"`
 	Logger        LoggerStruct        `koanf:"logger"`
