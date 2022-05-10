@@ -30,6 +30,7 @@ type GetNoteListRequest struct {
 	LinkType       string   `form:"link_type"`
 	Networks       []string `form:"networks"`
 	ProfileSources []string `form:"profile_sources"`
+	Latest         bool     `form:"latest"`
 }
 
 func GetNoteListHandlerFunc(c *gin.Context) {
@@ -139,7 +140,7 @@ func getNoteListByInstance(c *gin.Context, instance rss3uri.Instance, request Ge
 		return nil, 0, err
 	}
 
-	if err := indexer.GetItems(c.Request.URL, instance, accounts); err != nil {
+	if err := indexer.GetItems(c.Request.URL, instance, accounts, request.Latest); err != nil {
 		return nil, 0, err
 	}
 
@@ -266,7 +267,7 @@ func getNoteListsByLink(c *gin.Context, instance rss3uri.Instance, request GetNo
 		return nil, 0, err
 	}
 
-	if err := indexer.GetItems(c.Request.URL, instance, accounts); err != nil {
+	if err := indexer.GetItems(c.Request.URL, instance, accounts, request.Latest); err != nil {
 		return nil, 0, err
 	}
 

@@ -20,12 +20,6 @@
     "conn_max_idle_time": -1,
     "conn_max_life_time": -1
   },
-  "mongo": {
-    "uri": "mongodb://rss3:Pa33WoRD@localhost:27017",
-    "db": "rss3-prod",
-    "max_pool_size": 200,
-    "min_pool_size": 50
-  },
   "network": {
     "proxy": "http://localhost:7890"
   },
@@ -39,6 +33,10 @@
         "type": "stdout"
       }
     ]
+  },
+  "sentry": {
+    "dsn": "",
+    "server_name": "pregod-dev"
   },
   "indexer": {
     "server": {
