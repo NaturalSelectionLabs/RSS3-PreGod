@@ -174,7 +174,6 @@ func GetErc20Transfers(userAddress string, blockHeight int64, chainType ChainTyp
 	url := fmt.Sprintf("%s/api/v2/%s/erc20/transfers?chain=%s&from_block=%d",
 		endpoint, userAddress, chainType, blockHeight)
 	response, err := requestMoralisApi(url, apiKey)
-	logger.Debugf("url: %s", url)
 
 	if err != nil {
 		return ERC20Transfer{}, err
@@ -188,8 +187,6 @@ func GetErc20Transfers(userAddress string, blockHeight int64, chainType ChainTyp
 	}
 	// logger.Infof("parsedJson: %s", parsedJson)
 
-	logger.Debugf("GetErc20Transfers: %+v", res)
-
 	return *res, nil
 }
 
@@ -201,14 +198,12 @@ func GetErc20TokenMetaData(chainType ChainType, addresses []string, apiKey strin
 	res := Erc20TokensMap{}
 
 	getErc20TokenMetaDataFromCache(addresses, res)
-	logger.Debugf("GetErc20TokenMetaData")
 
 	if len(res) == len(addresses) {
 		return res, nil
 	}
 
 	getErc20TokenMetaDataFromUrl(chainType, addresses, apiKey, res)
-	logger.Debugf("GetErc20: %d", len(res))
 
 	setErc20TokenMetaDataInCache(res)
 
