@@ -263,7 +263,6 @@ func (c *moralisCrawler) setERC20(
 		return err
 	}
 
-
 	// get the token address
 	tokenAddresses := []string{}
 	for _, item := range erc20Transfers.Result {
@@ -279,7 +278,6 @@ func (c *moralisCrawler) setERC20(
 	}
 
 	niBuilder := getNewNoteInstanceBuilder()
-
 
 	// complete the note list
 	for _, item := range erc20Transfers.Result {
@@ -299,10 +297,17 @@ func (c *moralisCrawler) setERC20(
 			continue
 		}
 
+		decimals, err := strconv.Atoi(m.Decimals)
+		if err != nil {
+			logger.Warnf("%s get decimal failse: %v", item.TransactionHash, err)
+		}
+
 		note := model.Note{
-			Identifier:      rss3uri.NewNoteInstance(proof, networkSymbol).UriString(),
-			Owner:           owner,
-			RelatedURLs:     []string{},
+			Identifier: rss3uri.NewNoteInstance(proof, networkSymbol).UriString(),
+			Owner:      owner,
+			RelatedURLs: []string{
+				"https://etherscan.io/address" + item.TokenAddress,
+			},
 			Tags:            constants.ItemTagsNFT.ToPqStringArray(),
 			Authors:         []string{author},
 			Source:          constants.NoteSourceNameEthereumERC20.String(),
@@ -314,7 +319,7 @@ func (c *moralisCrawler) setERC20(
 				"from":           strings.ToLower(item.FromAddress),
 				"to":             strings.ToLower(item.ToAddress),
 				"amount":         item.Value,
-				"decimal":        m.Decimals,
+				"decimal":        decimals,
 				"token_standard": "ERC20",
 				"token_symbol":   m.Symbol,
 				"token_address":  strings.ToLower(item.TokenAddress),
