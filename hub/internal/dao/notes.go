@@ -8,6 +8,7 @@ import (
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database/model"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/rss3uri"
 	"github.com/lib/pq"
+	"github.com/samber/lo"
 )
 
 // BatchGetNodeList query data through database
@@ -21,6 +22,12 @@ func BatchGetNodeList(req m.BatchGetNodeListRequest) ([]model.Note, int64, error
 
 	if req.Tags != nil && len(req.Tags) != 0 {
 		internalDB = internalDB.Where("tags && ?", pq.StringArray(req.Tags))
+
+		nftSpamAllowList := []string{"", "0x0", "instance.GetIdentity()"}
+
+		if lo.Contains(req.Tags, "NFT") {
+			internalDB = internalDB.Where("metadata ->> 'from' in", pq.StringArray(nftSpamAllowList))
+		}
 	}
 
 	if req.ExcludeTags != nil && len(req.ExcludeTags) != 0 {

@@ -17,6 +17,7 @@ import (
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/rss3uri"
 	"github.com/gin-gonic/gin"
 	"github.com/lib/pq"
+	"github.com/samber/lo"
 )
 
 type GetNoteListRequest struct {
@@ -32,6 +33,8 @@ type GetNoteListRequest struct {
 	ProfileSources []string `form:"profile_sources"`
 	Latest         bool     `form:"latest"`
 }
+
+var nftSpamAllowList = []string{"", "0x0"}
 
 func GetNoteListHandlerFunc(c *gin.Context) {
 	instance, err := middleware.GetPlatformInstance(c)
@@ -162,6 +165,11 @@ func getNoteListByInstance(c *gin.Context, instance rss3uri.Instance, request Ge
 
 	if request.Tags != nil && len(request.Tags) != 0 {
 		internalDB = internalDB.Where("tags && ?", pq.StringArray(request.Tags))
+
+		nftSpamAllowList = append(nftSpamAllowList, instance.GetIdentity())
+		if lo.Contains(request.Tags, "NFT") {
+			internalDB = internalDB.Where("metadata ->> 'from' in", pq.StringArray(nftSpamAllowList))
+		}
 	}
 
 	if request.ExcludeTags != nil && len(request.ExcludeTags) != 0 {
@@ -303,6 +311,11 @@ func getNoteListsByLink(c *gin.Context, instance rss3uri.Instance, request GetNo
 
 	if request.Tags != nil && len(request.Tags) != 0 {
 		internalDB = internalDB.Where("tags && ?", pq.StringArray(request.Tags))
+
+		nftSpamAllowList = append(nftSpamAllowList, instance.GetIdentity())
+		if lo.Contains(request.Tags, "NFT") {
+			internalDB = internalDB.Where("metadata ->> 'from' in", pq.StringArray(nftSpamAllowList))
+		}
 	}
 
 	if request.ExcludeTags != nil && len(request.ExcludeTags) != 0 {
