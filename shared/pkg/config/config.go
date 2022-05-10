@@ -147,6 +147,11 @@ type ElasticsearchStruct struct {
 	Password string `koanf:"password"`
 }
 
+type SentryStruct struct {
+	DSN        string `koanf:"dsn"`
+	ServerName string `koanf:"server_name"`
+}
+
 type ConfigStruct struct {
 	Protocol ProtocolStruct `koanf:"protocol"`
 	Hub      HubStruct      `koanf:"hub"`
@@ -158,6 +163,7 @@ type ConfigStruct struct {
 	Logger        LoggerStruct        `koanf:"logger"`
 	Network       NetWorkStruct       `koanf:"network"`
 	Indexer       IndexerStruct       `koanf:"indexer"`
+	Sentry        SentryStruct        `koanf:"sentry"`
 }
 
 var (
