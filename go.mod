@@ -10,6 +10,7 @@ require (
 	github.com/elastic/go-elasticsearch/v7 v7.17.1
 	github.com/ethereum/go-ethereum v1.10.15
 	github.com/getsentry/sentry-go v0.13.0
+	github.com/gin-contrib/cors v1.3.1
 	github.com/gin-gonic/gin v1.7.7
 	github.com/go-redis/redis/v8 v8.11.4
 	github.com/go-resty/resty/v2 v2.7.0

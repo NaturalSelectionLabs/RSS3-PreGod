@@ -2,14 +2,14 @@ package router
 
 import (
 	"fmt"
-
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/internal/api"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/internal/handler"
-	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/internal/middleware"
+	middlewarex "github.com/NaturalSelectionLabs/RSS3-PreGod/hub/internal/middleware"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/internal/protocol"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/config"
 	"github.com/getsentry/sentry-go"
 	sentrygin "github.com/getsentry/sentry-go/gin"
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 )
 
@@ -31,8 +31,12 @@ func Initialize() (router *gin.Engine) {
 		router.Use(sentrygin.New(sentrygin.Options{}))
 	}
 
+	router.Use(cors.New(cors.Config{
+		AllowAllOrigins: true,
+	}))
+
 	// Response wrapper
-	router.Use(middleware.Wrapper())
+	router.Use(middlewarex.Wrapper())
 
 	router.NoRoute(api.NoRouterHandlerFunc)
 	router.NoMethod(api.NoMethodHandlerFunc)
@@ -41,9 +45,9 @@ func Initialize() (router *gin.Engine) {
 	// Latest version API
 	apiRouter := router.Group(fmt.Sprintf("/%s", protocol.Version))
 	{
-		instanceMiddleware := middleware.Instance()
+		instanceMiddleware := middlewarex.Instance()
 
-		apiRouter.Use(middleware.ListLimit())
+		apiRouter.Use(middlewarex.ListLimit())
 
 		apiRouter.GET("/:instance", instanceMiddleware, handler.GetInstanceHandlerFunc)
 		apiRouter.GET("/:instance/profiles", instanceMiddleware, handler.GetProfileListHandlerFunc)
