@@ -309,7 +309,7 @@ func (c *moralisCrawler) setERC20(
 			RelatedURLs: []string{
 				"https://etherscan.io/tx/" + item.TransactionHash,
 			},
-			Tags:            constants.ItemTagsNFT.ToPqStringArray(),
+			Tags:            constants.ItemTagsToken.ToPqStringArray(),
 			Authors:         []string{author},
 			Source:          constants.NoteSourceNameEthereumERC20.String(),
 			ContractAddress: item.TokenAddress,
@@ -324,6 +324,7 @@ func (c *moralisCrawler) setERC20(
 				"token_standard": "ERC20",
 				"token_symbol":   m.Symbol,
 				"token_address":  strings.ToLower(item.TokenAddress),
+				"transaction_hash": item.TransactionHash,
 			}),
 			DateCreated: tsp,
 			DateUpdated: tsp,
