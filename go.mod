@@ -9,6 +9,7 @@ require (
 	github.com/arl/statsviz v0.4.1
 	github.com/elastic/go-elasticsearch/v7 v7.17.1
 	github.com/ethereum/go-ethereum v1.10.15
+	github.com/getsentry/sentry-go v0.13.0
 	github.com/gin-gonic/gin v1.7.7
 	github.com/go-redis/redis/v8 v8.11.4
 	github.com/go-resty/resty/v2 v2.7.0
@@ -42,7 +43,6 @@ require (
 	github.com/deckarep/golang-set v1.8.0 // indirect
 	github.com/dgryski/go-rendezvous v0.0.0-20200823014737-9f7001d12a5f // indirect
 	github.com/fsnotify/fsnotify v1.4.9 // indirect
-	github.com/getsentry/sentry-go v0.13.0 // indirect
 	github.com/gin-contrib/sse v0.1.0 // indirect
 	github.com/go-ole/go-ole v1.2.6 // indirect
 	github.com/go-playground/locales v0.13.0 // indirect
