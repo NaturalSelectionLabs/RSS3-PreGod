@@ -44,6 +44,7 @@ var (
 	NoteSourceNameTwitterTweet        NoteSourceName = "Twitter Tweet"
 	NoteSourceNameMisskeyNote         NoteSourceName = "Misskey Note"
 	NoteSourceNameJikePost            NoteSourceName = "Jike Post"
+	NoteSourceNameEthereumERC20       NoteSourceName = "Ethereum ERC20"
 
 	noteSourceNameMap = map[NoteSourceID]NoteSourceName{
 		NoteSourceIDUnknown:             NoteSourceNameUnknown,
@@ -56,6 +57,7 @@ var (
 		NoteSourceIDTwitterTweet:        NoteSourceNameTwitterTweet,
 		NoteSourceIDMisskeyNote:         NoteSourceNameMisskeyNote,
 		NoteSourceIDJikePost:            NoteSourceNameJikePost,
+		NoteSourceIDEthereumERC20:       NoteSourceNameEthereumERC20,
 	}
 	noteSourceIDMap = map[NoteSourceName]NoteSourceID{}
 )
