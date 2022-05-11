@@ -250,7 +250,7 @@ func setNoteInstance(
 	return txHash + "-" + strconv.Itoa(hashCount), nil
 }
 
-// nolint:tolong  // disable line length check
+// nolint:funlen  // disable line length check
 func (c *moralisCrawler) setERC20(
 	param crawler.WorkParam,
 	owner string,

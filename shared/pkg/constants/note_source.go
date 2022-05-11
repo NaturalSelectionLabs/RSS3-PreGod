@@ -36,7 +36,6 @@ var (
 	NoteSourceNameUnknown             NoteSourceName = "Unknown"
 	NoteSourceNameCrossbell           NoteSourceName = "Crossbell"
 	NoteSourceNameEthereumNFT         NoteSourceName = "Ethereum NFT"
-	NoteSourceNameEthereumERC20       NoteSourceName = "Ethereum ERC20"
 	NoteSourceNameSolanaNFT           NoteSourceName = "Solana NFT"
 	NoteSourceNameFlowNFT             NoteSourceName = "Flow NFT"
 	NoteSourceNameMirrorEntry         NoteSourceName = "Mirror Entry"
