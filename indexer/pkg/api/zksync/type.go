@@ -2,6 +2,11 @@ package zksync
 
 import (
 	"fmt"
+	"math/big"
+	"os"
+	"time"
+
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/constants"
 )
 
 type Token struct {
@@ -67,4 +72,72 @@ type StatusResult struct {
 		ReplicaDatabaseAvailable bool `json:"replica_database_available"`
 		Web3Available            bool `json:"web3_available"`
 	} `json:"core_status"`
+}
+
+var (
+	DeafultGetNextBlockDuration = 500 * time.Millisecond
+	GetLatestNextBlockDuration  = 600 * time.Second
+)
+
+type crawlerConfig struct {
+	FromHeight    int64
+	Step          int64
+	MinStep       int64
+	Confirmations int64
+	SleepInterval time.Duration
+	NextRoundTime time.Time
+	Interrupt     chan os.Signal
+}
+
+var DefaultZksyncConfig = &crawlerConfig{
+	FromHeight:    0,
+	Step:          50,
+	MinStep:       10,
+	Confirmations: 15,
+	SleepInterval: DeafultGetNextBlockDuration,
+	NextRoundTime: time.Now(),
+	Interrupt:     make(chan os.Signal, 1),
+}
+
+type ZkSyncPlatform string
+
+const (
+	ZkSync ZkSyncPlatform = "zksync"
+)
+
+type crawler struct {
+	config           *crawlerConfig
+	platform         ZkSyncPlatform
+	networkID        constants.NetworkID
+	platformID       constants.PlatformID
+	metadataIdentity string
+}
+
+var ZksTokensCache = map[int]Token{}
+
+type ZkSyncInfo struct {
+	From           string
+	To             string
+	TokenAddress   string
+	Amount         string
+	Symbol         string
+	FormatedAmount *big.Int
+	Decimals       int
+	Timestamp      string
+	TxHash         string
+	Type           string
+}
+
+var (
+	zkCP = crawler{
+		config:           DefaultZksyncConfig,
+		platform:         ZkSync,
+		networkID:        constants.NetworkIDZkSync,
+		platformID:       constants.PlatformID(1010),
+		metadataIdentity: "zksync",
+	}
+)
+
+type noteInstanceBuilder struct {
+	countMap map[string]int
 }
