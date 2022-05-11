@@ -49,13 +49,9 @@ func (pt *GetItemsHandler) Excute() (*GetItemsResult, error) {
 	}
 
 	metadata, dbQcmErr := database.QueryCrawlerMetadata(database.DB, pt.WorkParam.Identity, pt.WorkParam.PlatformID)
-	if dbQcmErr == nil && metadata != nil {
-		return result, fmt.Errorf("[%s], platform[%s] crawler metadata found, but not used",
-			pt.WorkParam.Identity, pt.WorkParam.PlatformID.Symbol())
-	}
 
 	// the error here does not affect the execution of the crawler
-	if dbQcmErr != nil {
+	if dbQcmErr != nil && metadata != nil {
 		pt.WorkParam.BlockHeight = metadata.LastBlock
 		pt.WorkParam.Timestamp = metadata.UpdatedAt
 	}

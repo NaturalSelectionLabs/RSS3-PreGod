@@ -110,7 +110,7 @@ func (c *moralisCrawler) setNFTTransfers(
 		if !hasObject {
 			theAsset, err = GetMetadataByToken(item.TokenAddress, item.TokenId, chainType, getApiKey())
 			if err != nil {
-				logger.Warnf("fail to get metadata of token: " + item.String())
+				logger.Warnf("fail to get metadata of token [" + item.String() + "] err[" + err.Error() + "]")
 			}
 		}
 
@@ -316,14 +316,14 @@ func (c *moralisCrawler) setERC20(
 			MetadataNetwork: networkSymbol.String(),
 			MetadataProof:   proof,
 			Metadata: database.MustWrapJSON(map[string]interface{}{
-				"network":        networkSymbol.String(),
-				"from":           strings.ToLower(item.FromAddress),
-				"to":             strings.ToLower(item.ToAddress),
-				"amount":         item.Value,
-				"decimal":        decimals,
-				"token_standard": "ERC20",
-				"token_symbol":   m.Symbol,
-				"token_address":  strings.ToLower(item.TokenAddress),
+				"network":          networkSymbol.String(),
+				"from":             strings.ToLower(item.FromAddress),
+				"to":               strings.ToLower(item.ToAddress),
+				"amount":           item.Value,
+				"decimal":          decimals,
+				"token_standard":   "ERC20",
+				"token_symbol":     m.Symbol,
+				"token_address":    strings.ToLower(item.TokenAddress),
 				"transaction_hash": item.TransactionHash,
 			}),
 			DateCreated: tsp,
