@@ -22,7 +22,7 @@ func (s sysLogSink) Close() error {
 	return nil
 }
 
-func (s sysLogSink) Write(p []byte) (n int, err error) {
+func (s sysLogSink) Write(p []byte) (int, error) {
 	s.sysLogWriter.Write(p)
 
 	return len(p), nil

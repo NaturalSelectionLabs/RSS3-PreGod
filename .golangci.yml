@@ -39,6 +39,7 @@ linters: # https://golangci-lint.run/usage/linters
     - gofumpt # too strict so far
     - paralleltest # Not for our situation
     - tparallel # Not for our situation
+    - execinquery # https://github.com/golangci/golangci-lint/issues/2835
   enable:
     - exportloopref # in replacement of scopelint
     - deadcode # no dead code

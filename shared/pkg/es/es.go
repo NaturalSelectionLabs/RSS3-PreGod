@@ -11,7 +11,9 @@ var (
 	client *elasticsearch.Client
 )
 
-func Setup() (err error) {
+func Setup() error {
+	var err error
+
 	client, err = elasticsearch.NewClient(elasticsearch.Config{
 		Addresses: []string{config.Config.Elasticsearch.Address},
 		Username:  config.Config.Elasticsearch.Username,
