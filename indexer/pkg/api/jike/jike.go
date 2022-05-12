@@ -310,40 +310,40 @@ func GetUserTimeline(name string) ([]Timeline, error) {
 	return result, err
 }
 
-func formatFeed(node *fastjson.Value) string {
-	text := string(node.GetStringBytes("content"))
-
-	if node.Exists("pictures") {
-		for _, picture := range node.GetArray("pictures") {
-			var url string
-
-			if picture.Exists("picUrl") {
-				url = string(picture.GetStringBytes("picUrl"))
-			}
-
-			if picture.Exists("thumbnailUrl") {
-				url = string(picture.GetStringBytes("thumbnailUrl"))
-			}
-
-			text += fmt.Sprintf("<img class=\"media\" src=\"%s\">", string(url))
-		}
-	}
-
-	if node.Exists("target") && string(node.GetStringBytes("type")) == "REPOST" {
-		target := node.Get("target")
-		// a status key means the feed is unavailable, e.g, DELETED
-		if !target.Exists("status") {
-			var user string
-			if target.Exists("user", "screenName") {
-				user = string(target.GetStringBytes("user", "screenName"))
-			}
-
-			text += fmt.Sprintf("\nRT %s: %s", user, formatFeed(target))
-		}
-	}
-
-	return text
-}
+// func formatFeed(node *fastjson.Value) string {
+// 	text := string(node.GetStringBytes("content"))
+//
+// 	if node.Exists("pictures") {
+// 		for _, picture := range node.GetArray("pictures") {
+// 			var url string
+//
+// 			if picture.Exists("picUrl") {
+// 				url = string(picture.GetStringBytes("picUrl"))
+// 			}
+//
+// 			if picture.Exists("thumbnailUrl") {
+// 				url = string(picture.GetStringBytes("thumbnailUrl"))
+// 			}
+//
+// 			text += fmt.Sprintf("<img class=\"media\" src=\"%s\">", string(url))
+// 		}
+// 	}
+//
+// 	if node.Exists("target") && string(node.GetStringBytes("type")) == "REPOST" {
+// 		target := node.Get("target")
+// 		// a status key means the feed is unavailable, e.g, DELETED
+// 		if !target.Exists("status") {
+// 			var user string
+// 			if target.Exists("user", "screenName") {
+// 				user = string(target.GetStringBytes("user", "screenName"))
+// 			}
+//
+// 			text += fmt.Sprintf("\nRT %s: %s", user, formatFeed(target))
+// 		}
+// 	}
+//
+// 	return text
+// }
 
 func getAttachment(node *fastjson.Value) []datatype.Attachment {
 	var content string

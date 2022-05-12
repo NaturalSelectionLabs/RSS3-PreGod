@@ -13,7 +13,8 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func Initialize() (router *gin.Engine) {
+func Initialize() *gin.Engine {
+	var router *gin.Engine
 	if config.Config.Hub.Server.RunMode == "debug" {
 		router = gin.Default()
 	} else {

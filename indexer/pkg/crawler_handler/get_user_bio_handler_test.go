@@ -31,7 +31,7 @@ func TestGetBio(t *testing.T) {
 			identity:   "diygod",
 			platformID: constants.PlatformIDTwitter,
 			success:    true,
-			contains:   "diygod.cheers.bio",
+			contains:   "diygod.me",
 		},
 		{
 			name:       "jike-ok",

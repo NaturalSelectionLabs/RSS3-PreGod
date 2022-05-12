@@ -21,7 +21,7 @@ func TestNew(t *testing.T) {
 		Identity: "0xC8b960D09C0078c18Dcbe7eB9AB9d816BcCa8944",
 		Platform: constants.PlatformSymbolEthereum,
 	})
-	assert.Equal(t, uri.String(), strings.ToLower("rss3://account:0xC8b960D09C0078c18Dcbe7eB9AB9d816BcCa8944@ethereum"))
+	assert.Equal(t, uri.String(), "rss3://account:0xC8b960D09C0078c18Dcbe7eB9AB9d816BcCa8944@ethereum")
 }
 
 func BenchmarkNew(b *testing.B) {
@@ -33,7 +33,7 @@ func BenchmarkNew(b *testing.B) {
 func TestParse(t *testing.T) {
 	uri, err := rss3uri.Parse("rss3://account:0xC8b960D09C0078c18Dcbe7eB9AB9d816BcCa8944@ethereum")
 	assert.Nil(t, err, err)
-	assert.Equal(t, uri.String(), "rss3://account:0xC8b960D09C0078c18Dcbe7eB9AB9d816BcCa8944@ethereum")
+	assert.Equal(t, uri.String(), strings.ToLower("rss3://account:0xC8b960D09C0078c18Dcbe7eB9AB9d816BcCa8944@ethereum"))
 
 	_, err = rss3uri.Parse("https://github.com/NaturalSelectionLabs/RSS3-PreGod")
 	assert.ErrorIs(t, err, rss3uri.ErrInvalidScheme)

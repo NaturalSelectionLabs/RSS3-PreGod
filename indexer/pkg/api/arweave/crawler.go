@@ -154,7 +154,7 @@ func (ar *crawler) parseMirrorArticles(from, to int64, owner ArAccount) error {
 	tx := database.DB.Begin()
 	defer tx.Rollback()
 
-	if items != nil && len(items) > 0 {
+	if len(items) > 0 {
 		if _, dbErr := database.CreateNotes(tx, items, true); dbErr != nil {
 			return dbErr
 		}

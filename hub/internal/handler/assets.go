@@ -310,19 +310,17 @@ func getAssetListsByLink(c *gin.Context, instance rss3uri.Instance, request GetA
 		return nil, 0, err
 	}
 
-	owners := make([]string, len(links))
+	// owners := make([]string, len(links))
 
 	for _, link := range links {
-		ownerInstance, err := rss3uri.NewInstance(
+		_, err := rss3uri.NewInstance(
 			constants.InstanceTypeID(link.ToInstanceType).String(),
 			link.To,
 			constants.PlatformID(link.ToPlatformID).Symbol().String(),
 		)
 		if err != nil {
 			return nil, 0, err
-		}
-
-		owners = append(owners, strings.ToLower(rss3uri.New(ownerInstance).String()))
+		} // owners = append(owners, strings.ToLower(rss3uri.New(ownerInstance).String()))
 	}
 
 	internalDB = database.DB
