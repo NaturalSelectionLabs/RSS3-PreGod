@@ -49,15 +49,13 @@ func getGatewayClient() {
 	client = c
 }
 
-//nolint:funlen,gocognit,maintidx // disable line length check
-func (c *moralisCrawler) Work(param crawler.WorkParam) error {
-	chainType := GetChainType(param.NetworkID)
-	if chainType == Unknown {
-		return fmt.Errorf("unsupported network: %s", chainType)
-	}
-
-	networkSymbol := chainType.GetNetworkSymbol()
-
+//nolint:funlen,gocognit // disable line length check
+func (c *moralisCrawler) setNFTTransfers(
+	param crawler.WorkParam,
+	owner string,
+	author string,
+	networkSymbol constants.NetworkSymbol,
+	chainType ChainType) error {
 	// nftTransfers for notes
 	nftTransfers, err := GetNFTTransfers(param.Identity, chainType, param.BlockHeight, getApiKey())
 	if err != nil {
@@ -89,13 +87,9 @@ func (c *moralisCrawler) Work(param crawler.WorkParam) error {
 		}
 	}
 
-	// those two should be expected to be equal actually
-	owner := rss3uri.NewAccountInstance(param.OwnerID, param.OwnerPlatformID.Symbol()).UriString()
-	author := rss3uri.NewAccountInstance(param.Identity, constants.PlatformSymbolEthereum).UriString()
-
 	// complete the note list
 	for _, item := range nftTransfers.Result {
-		tsp, tspErr := item.GetTsp()
+		tsp, tspErr := GetTsp(item.BlockTimestamp)
 		if tspErr != nil {
 			logger.Warnf("asset: %s fails at GetTsp(): %v", item.String(), tspErr)
 
@@ -116,7 +110,7 @@ func (c *moralisCrawler) Work(param crawler.WorkParam) error {
 		if !hasObject {
 			theAsset, err = GetMetadataByToken(item.TokenAddress, item.TokenId, chainType, getApiKey())
 			if err != nil {
-				logger.Warnf("fail to get metadata of token: " + item.String())
+				logger.Warnf("fail to get metadata of token [" + item.String() + "] err[" + err.Error() + "]")
 			}
 		}
 
@@ -216,6 +210,158 @@ func (c *moralisCrawler) Work(param crawler.WorkParam) error {
 		c.Assets = append(c.Assets, asset)
 	}
 
+	return nil
+}
+
+// ERC20 used
+type noteInstanceBuilder struct {
+	countMap map[string]int
+}
+
+func getNewNoteInstanceBuilder() *noteInstanceBuilder {
+	return &noteInstanceBuilder{
+		countMap: map[string]int{},
+	}
+}
+
+func setNoteInstance(
+	niBuilder *noteInstanceBuilder,
+	txHash string,
+) (string, error) {
+	if niBuilder == nil {
+		return "", fmt.Errorf("note instance builder is nil")
+	}
+
+	if txHash == "" {
+		return "", fmt.Errorf("tx hash is empty")
+	}
+
+	hashCount, ok := niBuilder.countMap[txHash]
+	if !ok {
+		niBuilder.countMap[txHash] = 0
+
+		return txHash + "-0", nil
+	}
+
+	hashCount += 1
+
+	niBuilder.countMap[txHash] = hashCount
+
+	return txHash + "-" + strconv.Itoa(hashCount), nil
+}
+
+// nolint:funlen  // disable line length check
+func (c *moralisCrawler) setERC20(
+	param crawler.WorkParam,
+	owner string,
+	author string,
+	networkSymbol constants.NetworkSymbol,
+	chainType ChainType) error {
+	erc20Transfers, err := GetErc20Transfers(param.Identity, param.BlockHeight, chainType, getApiKey())
+	if err != nil {
+		logger.Errorf("get erc20 transfers: %v", err)
+
+		return err
+	}
+
+	// get the token address
+	tokenAddresses := []string{}
+	for _, item := range erc20Transfers.Result {
+		tokenAddresses = append(tokenAddresses, item.TokenAddress)
+	}
+
+	// get the token metadata
+	erc20Tokens, err := GetErc20TokenMetaData(chainType, tokenAddresses, getApiKey())
+	if err != nil {
+		logger.Errorf("get erc20 token metadata: %v", err)
+
+		return err
+	}
+
+	niBuilder := getNewNoteInstanceBuilder()
+
+	// complete the note list
+	for _, item := range erc20Transfers.Result {
+		tsp, tspErr := GetTsp(item.BlockTimestamp)
+		if tspErr != nil {
+			logger.Warnf("asset: %s fails at GetTsp(): %v", item.String(), tspErr)
+
+			tsp = time.Now()
+		}
+
+		m := erc20Tokens[item.TokenAddress]
+
+		proof, err := setNoteInstance(niBuilder, item.TransactionHash)
+		if err != nil {
+			logger.Warnf("%s get instance key failse: %v", item.TransactionHash, err)
+
+			continue
+		}
+
+		decimals, err := strconv.Atoi(m.Decimals)
+		if err != nil {
+			logger.Warnf("%s get decimal failse: %v", item.TransactionHash, err)
+		}
+
+		note := model.Note{
+			Identifier: rss3uri.NewNoteInstance(proof, networkSymbol).UriString(),
+			Owner:      owner,
+			RelatedURLs: []string{
+				"https://etherscan.io/tx/" + item.TransactionHash,
+			},
+			Tags:            constants.ItemTagsToken.ToPqStringArray(),
+			Authors:         []string{author},
+			Source:          constants.NoteSourceNameEthereumERC20.String(),
+			ContractAddress: item.TokenAddress,
+			MetadataNetwork: networkSymbol.String(),
+			MetadataProof:   proof,
+			Metadata: database.MustWrapJSON(map[string]interface{}{
+				"network":          networkSymbol.String(),
+				"from":             strings.ToLower(item.FromAddress),
+				"to":               strings.ToLower(item.ToAddress),
+				"amount":           item.Value,
+				"decimal":          decimals,
+				"token_standard":   "ERC20",
+				"token_symbol":     m.Symbol,
+				"token_address":    strings.ToLower(item.TokenAddress),
+				"transaction_hash": item.TransactionHash,
+			}),
+			DateCreated: tsp,
+			DateUpdated: tsp,
+		}
+
+		c.Notes = append(c.Notes, note)
+	}
+
+	return nil
+}
+
+func (c *moralisCrawler) Work(param crawler.WorkParam) error {
+	chainType := GetChainType(param.NetworkID)
+	if chainType == Unknown {
+		return fmt.Errorf("unsupported network: %s", chainType)
+	}
+
+	networkSymbol := chainType.GetNetworkSymbol()
+
+	// those two should be expected to be equal actually
+	owner := rss3uri.NewAccountInstance(param.OwnerID, param.OwnerPlatformID.Symbol()).UriString()
+	author := rss3uri.NewAccountInstance(param.Identity, constants.PlatformSymbolEthereum).UriString()
+
+	err := c.setNFTTransfers(param, owner, author, networkSymbol, chainType)
+	if err != nil {
+		logger.Errorf("fail to set nft transfers in db: %v", err)
+
+		return err
+	}
+
+	err = c.setERC20(param, owner, author, networkSymbol, chainType)
+	if err != nil {
+		logger.Errorf("fail to set erc20 in db: %v", err)
+
+		return err
+	}
+
 	// check duplicates in assets
 	for i := 0; i < len(c.Assets); i++ {
 		for j := i + 1; j < len(c.Assets); j++ {
@@ -237,52 +383,6 @@ func (c *moralisCrawler) Work(param crawler.WorkParam) error {
 			}
 		}
 	}
-
-	// find old data in the database
-	// TODO: need to find a better way to do this
-	//newAssetProofs := lo.Map(c.Assets, func(asset model.Asset, _ int) string {
-	//	return asset.MetadataProof
-	//})
-	//oldAssets, err := database.QueryAllAssets(database.DB, []string{owner}, networkSymbol)
-	//if err != nil {
-	//	logger.Warnf("fail to query old assets: %v", err)
-	//} else {
-	//	lop.ForEach(oldAssets, func(oldAsset model.Asset, _ int) {
-	//		if !lo.Contains(newAssetProofs, oldAsset.MetadataProof) {
-	//			// remove this old asset from database
-	//			if _, err := database.DeleteAsset(database.DB, &oldAsset); err != nil {
-	//				logger.Warnf("fail to delete old asset: %v", err)
-	//			}
-	//		}
-	//	})
-	//}
-
-	// index ENS (only on eth mainnet)
-	//if chainType == ETH {
-	//	ensList, err := GetENSList(param.Identity)
-	//	if err != nil {
-	//		return err
-	//	}
-	//
-	//	for _, ens := range ensList {
-	//		metadata := make(map[string]interface{}, len(ens.Text))
-	//		for k, v := range ens.Text {
-	//			metadata[k] = v
-	//		}
-	//
-	//		profile := model.Profile{
-	//			ID:          strings.ToLower(param.Identity),
-	//			Platform:    constants.PlatformIDEthereum.Int(),
-	//			Source:      constants.ProfileSourceIDENS.Int(),
-	//			Name:        database.WrapNullString(ens.Domain),
-	//			Bio:         database.WrapNullString(ens.Description),
-	//			Avatars:     []string{ens.Avatar},
-	//			Attachments: database.MustWrapJSON(ens.Attachments),
-	//		}
-	//
-	//		c.Profiles = append(c.Profiles, profile)
-	//	}
-	//}
 
 	if err := utils.CompleteMimeTypesForItems(c.Notes, c.Assets, c.Profiles); err != nil {
 		logger.Error("moralis complete mime types error:", err)

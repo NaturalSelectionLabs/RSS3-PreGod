@@ -181,18 +181,47 @@ func (i NFTTransferItem) GetUid() string {
 	return fmt.Sprintf("%s.%s", i.TokenAddress, i.TokenId)
 }
 
-func (i NFTTransferItem) GetTsp() (time.Time, error) {
-	if t, err := time.Parse(time.RFC1123, i.BlockTimestamp); err != nil {
-		// try another format
-		if t, err = time.Parse(time.RFC3339, i.BlockTimestamp); err != nil {
-			// try another format
-			return time.Parse("2006-01-02T15:04:05.000Z", i.BlockTimestamp)
-		} else {
-			return t, err
-		}
-	} else {
-		return t, err
-	}
+type ERC20Transfer struct {
+	MoralisAttributes
+
+	Total    int64               `json:"total"`
+	Page     int64               `json:"page"`
+	PageSize int64               `json:"page_size"`
+	Cursor   string              `json:"cursor"`
+	Result   []ERC20TransferItem `json:"result"`
+}
+
+type ERC20TransferItem struct {
+	MoralisAttributes
+
+	TransactionHash string `json:"transaction_hash"`
+	TokenAddress    string `json:"address"`
+	BlockTimestamp  string `json:"block_timestamp"`
+	BlockNumber     string `json:"block_number"`
+	BlockHash       string `json:"block_hash"`
+	ToAddress       string `json:"to_address"`
+	FromAddress     string `json:"from_address"`
+	Value           string `json:"value"`
+}
+
+type Erc20TokenMetaDataItem struct {
+	MoralisAttributes
+
+	Address     string `json:"address"`
+	Name        string `json:"name"`
+	Symbol      string `json:"symbol"`
+	Decimals    string `json:"decimals"`
+	Logo        string `json:"logo"`
+	LogoHash    string `json:"logo_hash"`
+	Thumbnail   string `json:"thumbnail"`
+	BlockNumber string `json:"block_number"`
+	Validated   int    `json:"validated"`
+	CreatedAt   string `json:"created_at"`
+}
+
+func (i ERC20TransferItem) String() string {
+	return fmt.Sprintf(`From: %s, To: %s`,
+		i.FromAddress, i.ToAddress)
 }
 
 type GetLogsItem struct {
@@ -291,4 +320,18 @@ type ENSTextRecord struct {
 func getTextRecordKeyList() []string {
 	// nolint:lll // this is a list of keys
 	return []string{"email", "url", "avatar", "description", "notice", "keywords", "com.discord", "com.github", "com.reddit", "com.twitter", "org.telegram", "eth.ens.delegate"}
+}
+
+func GetTsp(blockTimestamp string) (time.Time, error) {
+	if t, err := time.Parse(time.RFC1123, blockTimestamp); err != nil {
+		// try another format
+		if t, err = time.Parse(time.RFC3339, blockTimestamp); err != nil {
+			// try another format
+			return time.Parse("2006-01-02T15:04:05.000Z", blockTimestamp)
+		} else {
+			return t, err
+		}
+	} else {
+		return t, err
+	}
 }
