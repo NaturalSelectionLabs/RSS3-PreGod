@@ -50,7 +50,7 @@ func (pt *GetItemsHandler) Excute() (*GetItemsResult, error) {
 
 	metadata, dbQcmErr := database.QueryCrawlerMetadata(database.DB, pt.WorkParam.Identity, pt.WorkParam.PlatformID)
 
-	// Historical legacy, the code here is no longer needed
+	// Historical legacy, the code here is no longer needed, LastBlock = 0
 	// the error here does not affect the execution of the crawler
 	if dbQcmErr != nil && metadata != nil {
 		pt.WorkParam.BlockHeight = metadata.LastBlock
