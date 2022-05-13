@@ -96,18 +96,15 @@ func (c *moralisCrawler) setNFTTransfers(
 			tsp = time.Now()
 		}
 
-		hasObject := false
-
 		var theAsset NFTItem
 
 		for _, asset := range assets.Result {
 			if item.EqualsToToken(asset) && asset.MetaData != "" {
-				hasObject = true
 				theAsset = asset
 			}
 		}
 
-		if !hasObject {
+		if theAsset.MetaData == "" {
 			theAsset, err = GetMetadataByToken(item.TokenAddress, item.TokenId, chainType, getApiKey())
 			if err != nil {
 				logger.Warnf("fail to get metadata of token [" + item.String() + "] err[" + err.Error() + "]")
