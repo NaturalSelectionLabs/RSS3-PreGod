@@ -2,6 +2,7 @@ package moralis
 
 import (
 	"fmt"
+	"strconv"
 	"time"
 
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/api/nft_utils"
@@ -170,24 +171,97 @@ func GetTxByToken(tokenAddress string, tokenId string, chainType ChainType, apiK
 	return *res, nil
 }
 
-func GetErc20Transfers(userAddress string, blockHeight int64, chainType ChainType, apiKey string) (ERC20Transfer, error) {
+func GetErc20Transfers(userAddress string, chainType ChainType, apiKey string) ([]ERC20TransferItem, error) {
+	var toBlock = int64(0)
+	transferItems := make([]ERC20TransferItem, 0)
+	var lastTransfer *ERC20Transfer
+
+	for {
+		transfer, err := getErc20Once(userAddress, toBlock, chainType, apiKey)
+		if err != nil {
+			logger.Warnf("get erc20 once error: %v", err)
+			continue
+		}
+
+		// Since there is a problem with the page-turning function of Moralis,
+		// it is necessary to check whether the page is turned to the end from the previous block result each time.
+		if transferCompare(transfer, lastTransfer) {
+			break
+		}
+
+		currLen := len(transfer.Result)
+		toBlock, err = strconv.ParseInt(transfer.Result[currLen-1].BlockNumber, 10, 0)
+		if err != nil {
+			logger.Warnf("parse int error: %v", err)
+			continue
+		}
+
+		transferItems = append(transferItems, transfer.Result...)
+
+		if transfer.Total < transfer.PageSize {
+			break
+		}
+
+		// Due to a problem with the interface of Moralis,
+		// the situation where there may be a page in the same block is filtered out here.
+		lastTransfer = transfer
+	}
+
+	return transferItems, nil
+}
+
+func transferCompare(currTrans *ERC20Transfer, lastTrans *ERC20Transfer) bool {
+	if currTrans == nil || lastTrans == nil {
+		return false
+	}
+
+	if currTrans.Total != lastTrans.Total {
+		return false
+	}
+
+	if currTrans.Page != lastTrans.Page {
+		return false
+	}
+
+	if currTrans.PageSize != lastTrans.PageSize {
+		return false
+	}
+
+	if currTrans.Cursor != lastTrans.Cursor {
+		return false
+	}
+
+	for i, item := range currTrans.Result {
+		if lastTrans.Result[i] != item {
+			return false
+		}
+	}
+
+	return true
+}
+
+func getErc20Once(userAddress string, toBlock int64, chainType ChainType, apiKey string) (*ERC20Transfer, error) {
 	url := fmt.Sprintf("%s/api/v2/%s/erc20/transfers?chain=%s&from_block=%d",
-		endpoint, userAddress, chainType, blockHeight)
+		endpoint, userAddress, chainType, 0)
+
+	if toBlock > 0 {
+		url = fmt.Sprintf("%s&to_block=%d", url, toBlock)
+	}
 	response, err := requestMoralisApi(url, apiKey)
 
 	if err != nil {
-		return ERC20Transfer{}, err
+		return nil, err
 	}
 
 	res := new(ERC20Transfer)
 	SetMoralisAttributes(&res.MoralisAttributes, response)
 
 	if err = jsoni.Unmarshal(response.Body, &res); err != nil {
-		return ERC20Transfer{}, err
+		return nil, err
 	}
 	// logger.Infof("parsedJson: %s", parsedJson)
 
-	return *res, nil
+	return res, nil
 }
 
 func GetErc20TokenMetaData(chainType ChainType, addresses []string, apiKey string) (Erc20TokensMap, error) {

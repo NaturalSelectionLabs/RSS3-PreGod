@@ -86,14 +86,14 @@ func GetItemHandlerFunc(c *gin.Context) {
 	}
 
 	// get items from crawler
-	result, errorBase := getItemsResult(c.Request.Context(), request)
-	response.ErrorBase = errorBase
+	// result, errorBase := getItemsResult(c.Request.Context(), request)
+	// response.ErrorBase = errorBase
 
-	if response.ErrorBase.ErrorCode == 0 {
-		response.ItemsResult = *result
+	// if response.ErrorBase.ErrorCode == 0 {
+	// 	response.ItemsResult = *result
 
-		c.JSON(http.StatusOK, response)
-	}
+	// 	c.JSON(http.StatusOK, response)
+	// }
 
 	if response.ErrorBase.ErrorCode != util.ErrorCodeSuccess {
 		logger.Errorf("[%s] get item error", request.Identity)
