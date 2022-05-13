@@ -7,12 +7,13 @@ import (
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database/model"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/rss3uri"
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/lib/pq"
 )
 
 // allow certain 'from' address:
 // 0x0: POAP
-var spamAllowList = []string{"", "0x0"}
+var spamAllowList = []string{"", "0x0", common.HexToAddress("0x0").String()}
 
 // BatchGetNodeList query data through database
 func BatchGetNodeList(req m.BatchGetNodeListRequest) ([]model.Note, int64, error) {
@@ -55,7 +56,7 @@ func BatchGetNodeList(req m.BatchGetNodeListRequest) ([]model.Note, int64, error
 
 	internalDB = internalDB.
 		Where("owner IN ?", ownerList).
-		Where("metadata ->> 'from' IN ?", spamAllowList).
+		Where("metadata ->> 'from' IS NULL OR metadata ->> 'from' IN ?", spamAllowList).
 		Order("date_created DESC").
 		Order("contract_address DESC").
 		Order("log_index DESC").

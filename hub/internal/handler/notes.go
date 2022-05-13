@@ -15,6 +15,7 @@ import (
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database/model"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/constants"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/rss3uri"
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/gin-gonic/gin"
 	"github.com/lib/pq"
 )
@@ -33,7 +34,7 @@ type GetNoteListRequest struct {
 	Latest         bool     `form:"latest"`
 }
 
-var spamAllowList = []string{"", "0x0"}
+var spamAllowList = []string{"", "0x0", common.HexToAddress("0x0").String()}
 
 func GetNoteListHandlerFunc(c *gin.Context) {
 	instance, err := middleware.GetPlatformInstance(c)
@@ -198,7 +199,7 @@ func getNoteListByInstance(c *gin.Context, instance rss3uri.Instance, request Ge
 	if err := internalDB.
 		Where("owner = ?", strings.ToLower(rss3uri.New(instance).String())).
 		Limit(request.Limit).
-		Where("metadata ->> 'from' IN ?", spamAllowList).
+		Where("metadata ->> 'from' IS NULL OR metadata ->> 'from' IN ?", spamAllowList).
 		Order("date_created DESC").
 		Order("contract_address DESC").
 		Order("log_index DESC").
@@ -212,7 +213,7 @@ func getNoteListByInstance(c *gin.Context, instance rss3uri.Instance, request Ge
 	if err := internalDB.
 		Model(&model.Note{}).
 		Where("owner = ?", strings.ToLower(rss3uri.New(instance).String())).
-		Where("metadata ->> 'from' IN ?", spamAllowList).
+		Where("metadata ->> 'from' IS NULL OR metadata ->> 'from' IN ?", spamAllowList).
 		Order("date_created DESC").
 		Order("contract_address DESC").
 		Order("log_index DESC").
@@ -343,7 +344,7 @@ func getNoteListsByLink(c *gin.Context, instance rss3uri.Instance, request GetNo
 	notes := make([]model.Note, 0)
 	if err := internalDB.
 		Where("owner IN ?", owners).
-		Where("metadata ->> 'from' IN ?", spamAllowList).
+		Where("metadata ->> 'from' IS NULL OR metadata ->> 'from' IN ?", spamAllowList).
 		Limit(request.Limit).
 		Order("date_created DESC").
 		Order("contract_address DESC").
@@ -358,7 +359,7 @@ func getNoteListsByLink(c *gin.Context, instance rss3uri.Instance, request GetNo
 	if err := internalDB.
 		Model(&model.Note{}).
 		Where("owner IN ?", owners).
-		Where("metadata ->> 'from' IN ?", spamAllowList).
+		Where("metadata ->> 'from' IS NULL OR metadata ->> 'from' IN ?", spamAllowList).
 		Order("date_created DESC").
 		Order("contract_address DESC").
 		Order("log_index DESC").
