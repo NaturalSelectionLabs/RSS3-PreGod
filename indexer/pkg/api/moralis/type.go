@@ -268,7 +268,7 @@ func GetTxRelatedURLs(
 		urls = append(urls, "https://etherscan.io/nft/"+contractAddress+"/"+tokenId)
 		urls = append(urls, "https://opensea.io/assets/"+contractAddress+"/"+tokenId)
 	case constants.NetworkSymbolPolygon:
-		urls = append(urls, "https://polygonscan.com/nft/"+contractAddress+"/"+tokenId)
+		urls = append(urls, "https://polygonscan.com/token/"+contractAddress)
 		urls = append(urls, "https://opensea.io/assets/matic/"+contractAddress+"/"+tokenId)
 	case constants.NetworkSymbolBNBChain:
 		urls = append(urls, "https://bscscan.com/nft/"+contractAddress+"/"+tokenId)
