@@ -30,6 +30,7 @@ type GetAssetListRequest struct {
 	LinkType       string   `form:"link_type"`
 	Networks       []string `form:"networks"`
 	ProfileSources []string `form:"profile_sources"`
+	Latest         bool     `form:"latest"`
 }
 
 // nolint:funlen // TODO
@@ -180,7 +181,7 @@ func getAssetListByInstance(c *gin.Context, instance rss3uri.Instance, request G
 		return nil, 0, err
 	}
 
-	if err := indexer.GetItems(c.Request.URL, instance, accounts); err != nil {
+	if err := indexer.GetItems(c.Request.URL, instance, accounts, request.Latest); err != nil {
 		return nil, 0, err
 	}
 
@@ -305,23 +306,21 @@ func getAssetListsByLink(c *gin.Context, instance rss3uri.Instance, request GetA
 		return nil, 0, err
 	}
 
-	if err := indexer.GetItems(c.Request.URL, instance, accounts); err != nil {
+	if err := indexer.GetItems(c.Request.URL, instance, accounts, request.Latest); err != nil {
 		return nil, 0, err
 	}
 
-	owners := make([]string, len(links))
+	// owners := make([]string, len(links))
 
 	for _, link := range links {
-		ownerInstance, err := rss3uri.NewInstance(
+		_, err := rss3uri.NewInstance(
 			constants.InstanceTypeID(link.ToInstanceType).String(),
 			link.To,
 			constants.PlatformID(link.ToPlatformID).Symbol().String(),
 		)
 		if err != nil {
 			return nil, 0, err
-		}
-
-		owners = append(owners, strings.ToLower(rss3uri.New(ownerInstance).String()))
+		} // owners = append(owners, strings.ToLower(rss3uri.New(ownerInstance).String()))
 	}
 
 	internalDB = database.DB

@@ -67,7 +67,6 @@ paths:
           in: query
           description: The pointer used for paging.
           required: false
-          example: "rss3://account:0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045@ethereum/notes?limit=10"
           schema:
             type: string
         - name: limit
@@ -369,11 +368,13 @@ components:
                 maximum: 100
                 example: 10
               tags:
+                type: array
                 description: Include notes based by tags.
-                example: "NFT"
+                example: ["NFT"]
               exclude_tags:
+                type: array
                 description: Filter out notes by tags.
-                example: "POAP"
+                example: ["POAP"]
               item_sources:
                 type: array
                 description: "Include items by indexing sources. Depending on the `type`, please see the supported values below in Schemas: `NoteSource` or `AssetSource`"

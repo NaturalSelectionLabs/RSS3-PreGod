@@ -147,17 +147,23 @@ type ElasticsearchStruct struct {
 	Password string `koanf:"password"`
 }
 
+type SentryStruct struct {
+	DSN        string `koanf:"dsn"`
+	ServerName string `koanf:"server_name"`
+}
+
 type ConfigStruct struct {
-	Protocol      ProtocolStruct      `koanf:"protocol"`
-	Hub           HubStruct           `koanf:"hub"`
-	Redis         RedisStruct         `koanf:"redis"`
-	Postgres      PostgresStruct      `koanf:"postgres"`
-	Mongo         MongoStruct         `koanf:"mongo"`
+	Protocol ProtocolStruct `koanf:"protocol"`
+	Hub      HubStruct      `koanf:"hub"`
+	Redis    RedisStruct    `koanf:"redis"`
+	Postgres PostgresStruct `koanf:"postgres"`
+	// Mongo         MongoStruct         `koanf:"mongo"`
 	Elasticsearch ElasticsearchStruct `koanf:"elasticsearch"`
 	Broker        BrokerStruct        `koanf:"broker"`
 	Logger        LoggerStruct        `koanf:"logger"`
 	Network       NetWorkStruct       `koanf:"network"`
 	Indexer       IndexerStruct       `koanf:"indexer"`
+	Sentry        SentryStruct        `koanf:"sentry"`
 }
 
 var (

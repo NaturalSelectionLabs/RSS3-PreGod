@@ -11,7 +11,9 @@ var (
 	client *elasticsearch.Client
 )
 
-func Setup() (err error) {
+func Setup() error {
+	var err error
+
 	client, err = elasticsearch.NewClient(elasticsearch.Config{
 		Addresses: []string{config.Config.Elasticsearch.Address},
 		Username:  config.Config.Elasticsearch.Username,
@@ -32,8 +34,8 @@ func Ping(ctx context.Context) error {
 	return err
 }
 
-func init() {
-	if err := Setup(); err != nil {
-		panic(err)
-	}
-}
+// func init() {
+// 	if err := Setup(); err != nil {
+// 		panic(err)
+// 	}
+// }

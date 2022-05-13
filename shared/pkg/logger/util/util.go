@@ -7,7 +7,12 @@ import (
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/config"
 )
 
-func GetSysLogger(c config.LoggerOutputConfig, prefix string) (w *syslog.Writer, err error) {
+func GetSysLogger(c config.LoggerOutputConfig, prefix string) (*syslog.Writer, error) {
+	var (
+		w   *syslog.Writer
+		err error
+	)
+
 	if c.Type != "syslog" || c.Facility > 7 || c.Facility < 0 {
 		err = fmt.Errorf("invalid syslog config")
 

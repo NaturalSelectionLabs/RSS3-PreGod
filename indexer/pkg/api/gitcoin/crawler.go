@@ -454,7 +454,7 @@ func setDB(
 	tx := database.DB.Begin()
 	defer tx.Rollback()
 
-	if items != nil && len(items) > 0 {
+	if len(items) > 0 {
 		if _, dbErr := database.CreateNotes(tx, items, true); dbErr != nil {
 			return dbErr
 		}
@@ -475,6 +475,14 @@ func Start(platform GitcoinPlatform) error {
 
 	if err := property.start(); err != nil {
 		return fmt.Errorf("start crawler error: %v", err)
+	}
+
+	return nil
+}
+
+func Setup() error {
+	if err := UpdateEthAndPolygonTokens(); err != nil {
+		return fmt.Errorf("update eth and polygon tokens error: %v", err)
 	}
 
 	return nil

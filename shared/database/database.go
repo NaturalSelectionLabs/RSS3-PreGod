@@ -363,7 +363,7 @@ func NewCreateClauses(updateAll bool) []clause.Expression {
 
 	if updateAll {
 		clauses = append(clauses, clause.OnConflict{
-			DoUpdates: clause.AssignmentColumns([]string{"updated_at"}),
+			DoUpdates: clause.AssignmentColumns([]string{"updated_at", "metadata"}),
 			UpdateAll: true,
 		})
 	} else {

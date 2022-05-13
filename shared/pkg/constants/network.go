@@ -44,6 +44,7 @@ const (
 	NetworkIDJike           NetworkID = 14
 	NetworkIDPlayStation    NetworkID = 15
 	NetworkIDGitHub         NetworkID = 16
+	NetworkIDZkSync         NetworkID = 17
 
 	NetworkSymbolUnknown        NetworkSymbol = "unknown"
 	NetworkSymbolCrossbell      NetworkSymbol = "crossbell"
@@ -63,6 +64,7 @@ const (
 	NetworkSymbolJike           NetworkSymbol = "jike"
 	NetworkSymbolPlayStation    NetworkSymbol = "playstation"
 	NetworkSymbolGitHub         NetworkSymbol = "github"
+	NetworkSymbolZkSync         NetworkSymbol = "zksync"
 )
 
 var (
