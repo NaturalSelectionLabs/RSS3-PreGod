@@ -184,9 +184,9 @@ func (i NFTTransferItem) GetUid() string {
 type ERC20Transfer struct {
 	MoralisAttributes
 
-	Total    int64               `json:"total"`
-	Page     int64               `json:"page"`
-	PageSize int64               `json:"page_size"`
+	Total    int                 `json:"total"`
+	Page     int                 `json:"page"`
+	PageSize int                 `json:"page_size"`
 	Cursor   string              `json:"cursor"`
 	Result   []ERC20TransferItem `json:"result"`
 }

@@ -24,10 +24,6 @@ var (
 	endpoint    = "https://deep-index.moralis.io"
 )
 
-type Erc20TokensMap map[string]Erc20TokenMetaDataItem
-
-var erc20TokensCache = Erc20TokensMap{}
-
 func requestMoralisApi(url string, apiKey string) (httpx.Response, error) {
 	var headers = map[string]string{
 		"accept":    "application/json",
@@ -44,6 +40,10 @@ func requestMoralisApi(url string, apiKey string) (httpx.Response, error) {
 
 	return response, nil
 }
+
+/*
+ * About nft handler
+ */
 
 func GetNFTs(userAddress string, chainType ChainType, apiKey string) (NFTResult, error) {
 	// Gets all NFT items of user
@@ -170,24 +170,76 @@ func GetTxByToken(tokenAddress string, tokenId string, chainType ChainType, apiK
 	return *res, nil
 }
 
-func GetErc20Transfers(userAddress string, blockHeight int64, chainType ChainType, apiKey string) (ERC20Transfer, error) {
-	url := fmt.Sprintf("%s/api/v2/%s/erc20/transfers?chain=%s&from_block=%d",
-		endpoint, userAddress, chainType, blockHeight)
+func GetMetadataByToken(tokenAddress string, tokenId string, chainType ChainType, apiKey string) (NFTItem, error) {
+	url := fmt.Sprintf("%s/api/v2/nft/%s/%s?chain=%s&format=decimal&limit=1",
+		endpoint, tokenAddress, tokenId, chainType)
 	response, err := requestMoralisApi(url, apiKey)
 
 	if err != nil {
-		return ERC20Transfer{}, err
+		return NFTItem{}, err
+	}
+
+	res := new(NFTItem)
+	SetMoralisAttributes(&res.MoralisAttributes, response)
+
+	err = jsoni.Unmarshal(response.Body, &res)
+	if err != nil {
+		return NFTItem{}, nil
+	}
+
+	return *res, nil
+}
+
+/*
+ * About erc20 handler
+ */
+
+type Erc20TokensMap map[string]Erc20TokenMetaDataItem
+
+var erc20TokensCache = Erc20TokensMap{}
+
+func GetErc20Transfers(userAddress string, chainType ChainType, apiKey string) ([]ERC20TransferItem, error) {
+	offset := 0
+	transferItems := make([]ERC20TransferItem, 0)
+
+	for {
+		transfer, err := getErc20Once(userAddress, chainType, apiKey, offset)
+		if err != nil {
+			logger.Warnf("get erc20 once error: %v", err)
+
+			break
+		}
+
+		transferItems = append(transferItems, transfer.Result...)
+
+		if len(transfer.Result) < transfer.PageSize {
+			break
+		}
+
+		offset += transfer.PageSize
+	}
+
+	return transferItems, nil
+}
+
+func getErc20Once(userAddress string, chainType ChainType, apiKey string, offest int) (*ERC20Transfer, error) {
+	url := fmt.Sprintf("%s/api/v2/%s/erc20/transfers?chain=%s&from_block=%d&offset=%d",
+		endpoint, userAddress, chainType, 0, offest)
+
+	response, err := requestMoralisApi(url, apiKey)
+
+	if err != nil {
+		return nil, err
 	}
 
 	res := new(ERC20Transfer)
 	SetMoralisAttributes(&res.MoralisAttributes, response)
 
 	if err = jsoni.Unmarshal(response.Body, &res); err != nil {
-		return ERC20Transfer{}, err
+		return nil, err
 	}
-	// logger.Infof("parsedJson: %s", parsedJson)
 
-	return *res, nil
+	return res, nil
 }
 
 func GetErc20TokenMetaData(chainType ChainType, addresses []string, apiKey string) (Erc20TokensMap, error) {
@@ -221,6 +273,7 @@ func getErc20TokenMetaDataFromCache(addresses []string, res Erc20TokensMap) {
 func getErc20TokenMetaDataFromUrl(chainType ChainType, addresses []string, apiKey string, res Erc20TokensMap) error {
 	url := fmt.Sprintf("%s/api/v2/erc20/metadata?chain=%s",
 		endpoint, chainType)
+
 	for _, address := range addresses {
 		url += fmt.Sprintf("&addresses=%s", address)
 	}
@@ -258,25 +311,9 @@ func setErc20TokenMetaDataInCache(res Erc20TokensMap) {
 	}
 }
 
-func GetMetadataByToken(tokenAddress string, tokenId string, chainType ChainType, apiKey string) (NFTItem, error) {
-	url := fmt.Sprintf("%s/api/v2/nft/%s/%s?chain=%s&format=decimal&limit=1",
-		endpoint, tokenAddress, tokenId, chainType)
-	response, err := requestMoralisApi(url, apiKey)
-
-	if err != nil {
-		return NFTItem{}, err
-	}
-
-	res := new(NFTItem)
-	SetMoralisAttributes(&res.MoralisAttributes, response)
-
-	err = jsoni.Unmarshal(response.Body, &res)
-	if err != nil {
-		return NFTItem{}, nil
-	}
-
-	return *res, nil
-}
+/*
+ * About ens handler
+ */
 
 // returns a list of ENS domains with non-empty text records
 func GetENSList(address string) ([]ENSTextRecord, error) {
