@@ -283,7 +283,6 @@ func getErc20Once(userAddress string, chainType ChainType, apiKey string, offest
 	if err = jsoni.Unmarshal(response.Body, &res); err != nil {
 		return nil, err
 	}
-	logger.Infof("len(result):%d", len(res.Result))
 
 	return res, nil
 }
