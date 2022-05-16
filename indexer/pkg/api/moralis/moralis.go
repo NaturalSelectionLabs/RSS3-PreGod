@@ -2,7 +2,6 @@ package moralis
 
 import (
 	"fmt"
-	"strconv"
 	"time"
 
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/api/nft_utils"
@@ -25,10 +24,6 @@ var (
 	endpoint    = "https://deep-index.moralis.io"
 )
 
-type Erc20TokensMap map[string]Erc20TokenMetaDataItem
-
-var erc20TokensCache = Erc20TokensMap{}
-
 func requestMoralisApi(url string, apiKey string) (httpx.Response, error) {
 	var headers = map[string]string{
 		"accept":    "application/json",
@@ -45,6 +40,10 @@ func requestMoralisApi(url string, apiKey string) (httpx.Response, error) {
 
 	return response, nil
 }
+
+/*
+ * About nft handler
+ */
 
 func GetNFTs(userAddress string, chainType ChainType, apiKey string) (NFTResult, error) {
 	// Gets all NFT items of user
@@ -171,13 +170,43 @@ func GetTxByToken(tokenAddress string, tokenId string, chainType ChainType, apiK
 	return *res, nil
 }
 
+func GetMetadataByToken(tokenAddress string, tokenId string, chainType ChainType, apiKey string) (NFTItem, error) {
+	url := fmt.Sprintf("%s/api/v2/nft/%s/%s?chain=%s&format=decimal&limit=1",
+		endpoint, tokenAddress, tokenId, chainType)
+	response, err := requestMoralisApi(url, apiKey)
+
+	if err != nil {
+		return NFTItem{}, err
+	}
+
+	res := new(NFTItem)
+	SetMoralisAttributes(&res.MoralisAttributes, response)
+
+	err = jsoni.Unmarshal(response.Body, &res)
+	if err != nil {
+		return NFTItem{}, nil
+	}
+
+	return *res, nil
+}
+
+/*
+ * About erc20 handler
+ */
+
+type Erc20TokensMap map[string]Erc20TokenMetaDataItem
+
+var erc20TokensCache = Erc20TokensMap{}
+
+var erc20TokensPackageSize = 200
+
 func GetErc20Transfers(userAddress string, chainType ChainType, apiKey string) ([]ERC20TransferItem, error) {
-	var toBlock = int64(0)
+	offset := 0
 	transferItems := make([]ERC20TransferItem, 0)
 	var lastTransfer *ERC20Transfer
 
 	for {
-		transfer, err := getErc20Once(userAddress, toBlock, chainType, apiKey)
+		transfer, err := getErc20Once(userAddress, chainType, apiKey, offset)
 		if err != nil {
 			logger.Warnf("get erc20 once error: %v", err)
 			continue
@@ -189,22 +218,16 @@ func GetErc20Transfers(userAddress string, chainType ChainType, apiKey string) (
 			break
 		}
 
-		currLen := len(transfer.Result)
-		toBlock, err = strconv.ParseInt(transfer.Result[currLen-1].BlockNumber, 10, 0)
-		if err != nil {
-			logger.Warnf("parse int error: %v", err)
-			continue
-		}
-
 		transferItems = append(transferItems, transfer.Result...)
 
-		if transfer.Total < transfer.PageSize {
+		if len(transfer.Result) < transfer.PageSize {
 			break
 		}
 
 		// Due to a problem with the interface of Moralis,
 		// the situation where there may be a page in the same block is filtered out here.
 		lastTransfer = transfer
+		offset += transfer.PageSize
 	}
 
 	return transferItems, nil
@@ -240,13 +263,14 @@ func transferCompare(currTrans *ERC20Transfer, lastTrans *ERC20Transfer) bool {
 	return true
 }
 
-func getErc20Once(userAddress string, toBlock int64, chainType ChainType, apiKey string) (*ERC20Transfer, error) {
-	url := fmt.Sprintf("%s/api/v2/%s/erc20/transfers?chain=%s&from_block=%d",
-		endpoint, userAddress, chainType, 0)
+func getErc20Once(userAddress string, chainType ChainType, apiKey string, offest int) (*ERC20Transfer, error) {
+	url := fmt.Sprintf("%s/api/v2/%s/erc20/transfers?chain=%s&from_block=%d&offset=%d",
+		endpoint, userAddress, chainType, 0, offest)
+	logger.Debugf("get erc20 once url: %s", url)
 
-	if toBlock > 0 {
-		url = fmt.Sprintf("%s&to_block=%d", url, toBlock)
-	}
+	// if toBlock > 0 {
+	// 	url = fmt.Sprintf("%s&to_block=%d", url, toBlock)
+	// }
 	response, err := requestMoralisApi(url, apiKey)
 
 	if err != nil {
@@ -259,12 +283,13 @@ func getErc20Once(userAddress string, toBlock int64, chainType ChainType, apiKey
 	if err = jsoni.Unmarshal(response.Body, &res); err != nil {
 		return nil, err
 	}
-	// logger.Infof("parsedJson: %s", parsedJson)
+	logger.Infof("len(result):%d", len(res.Result))
 
 	return res, nil
 }
 
 func GetErc20TokenMetaData(chainType ChainType, addresses []string, apiKey string) (Erc20TokensMap, error) {
+	logger.Debugf("GetErc20TokenMetaData: %v", addresses)
 	if len(addresses) <= 0 {
 		return Erc20TokensMap{}, fmt.Errorf("addresss is empty")
 	}
@@ -295,9 +320,11 @@ func getErc20TokenMetaDataFromCache(addresses []string, res Erc20TokensMap) {
 func getErc20TokenMetaDataFromUrl(chainType ChainType, addresses []string, apiKey string, res Erc20TokensMap) error {
 	url := fmt.Sprintf("%s/api/v2/erc20/metadata?chain=%s",
 		endpoint, chainType)
+
 	for _, address := range addresses {
 		url += fmt.Sprintf("&addresses=%s", address)
 	}
+	logger.Debugf("url: %s", url)
 
 	response, err := requestMoralisApi(url, apiKey)
 
@@ -332,25 +359,9 @@ func setErc20TokenMetaDataInCache(res Erc20TokensMap) {
 	}
 }
 
-func GetMetadataByToken(tokenAddress string, tokenId string, chainType ChainType, apiKey string) (NFTItem, error) {
-	url := fmt.Sprintf("%s/api/v2/nft/%s/%s?chain=%s&format=decimal&limit=1",
-		endpoint, tokenAddress, tokenId, chainType)
-	response, err := requestMoralisApi(url, apiKey)
-
-	if err != nil {
-		return NFTItem{}, err
-	}
-
-	res := new(NFTItem)
-	SetMoralisAttributes(&res.MoralisAttributes, response)
-
-	err = jsoni.Unmarshal(response.Body, &res)
-	if err != nil {
-		return NFTItem{}, nil
-	}
-
-	return *res, nil
-}
+/*
+ * About ens handler
+ */
 
 // returns a list of ENS domains with non-empty text records
 func GetENSList(address string) ([]ENSTextRecord, error) {

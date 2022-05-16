@@ -14,6 +14,7 @@ import (
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/constants"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/logger"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/rss3uri"
+	mapset "github.com/deckarep/golang-set"
 	"github.com/ethereum/go-ethereum/ethclient"
 )
 
@@ -265,9 +266,13 @@ func (c *moralisCrawler) setERC20(
 	}
 
 	// get the token address
+	tokenAddressSet := mapset.NewSet()
 	tokenAddresses := []string{}
 	for _, item := range result {
-		tokenAddresses = append(tokenAddresses, item.TokenAddress)
+		tokenAddressSet.Add(item.TokenAddress)
+	}
+	for _, tokenAddress := range tokenAddressSet.ToSlice() {
+		tokenAddresses = append(tokenAddresses, tokenAddress.(string))
 	}
 
 	// get the token metadata
