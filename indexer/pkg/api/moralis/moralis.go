@@ -206,6 +206,7 @@ func GetErc20Transfers(userAddress string, chainType ChainType, apiKey string) (
 		transfer, err := getErc20Once(userAddress, chainType, apiKey, offset)
 		if err != nil {
 			logger.Warnf("get erc20 once error: %v", err)
+
 			continue
 		}
 
