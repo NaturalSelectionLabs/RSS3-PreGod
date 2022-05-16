@@ -203,7 +203,6 @@ var erc20TokensPackageSize = 200
 func GetErc20Transfers(userAddress string, chainType ChainType, apiKey string) ([]ERC20TransferItem, error) {
 	offset := 0
 	transferItems := make([]ERC20TransferItem, 0)
-	var lastTransfer *ERC20Transfer
 
 	for {
 		transfer, err := getErc20Once(userAddress, chainType, apiKey, offset)
@@ -212,65 +211,22 @@ func GetErc20Transfers(userAddress string, chainType ChainType, apiKey string) (
 			continue
 		}
 
-		// Since there is a problem with the page-turning function of Moralis,
-		// it is necessary to check whether the page is turned to the end from the previous block result each time.
-		if transferCompare(transfer, lastTransfer) {
-			break
-		}
-
 		transferItems = append(transferItems, transfer.Result...)
 
 		if len(transfer.Result) < transfer.PageSize {
 			break
 		}
 
-		// Due to a problem with the interface of Moralis,
-		// the situation where there may be a page in the same block is filtered out here.
-		lastTransfer = transfer
 		offset += transfer.PageSize
 	}
 
 	return transferItems, nil
 }
 
-func transferCompare(currTrans *ERC20Transfer, lastTrans *ERC20Transfer) bool {
-	if currTrans == nil || lastTrans == nil {
-		return false
-	}
-
-	if currTrans.Total != lastTrans.Total {
-		return false
-	}
-
-	if currTrans.Page != lastTrans.Page {
-		return false
-	}
-
-	if currTrans.PageSize != lastTrans.PageSize {
-		return false
-	}
-
-	if currTrans.Cursor != lastTrans.Cursor {
-		return false
-	}
-
-	for i, item := range currTrans.Result {
-		if lastTrans.Result[i] != item {
-			return false
-		}
-	}
-
-	return true
-}
-
 func getErc20Once(userAddress string, chainType ChainType, apiKey string, offest int) (*ERC20Transfer, error) {
 	url := fmt.Sprintf("%s/api/v2/%s/erc20/transfers?chain=%s&from_block=%d&offset=%d",
 		endpoint, userAddress, chainType, 0, offest)
-	logger.Debugf("get erc20 once url: %s", url)
 
-	// if toBlock > 0 {
-	// 	url = fmt.Sprintf("%s&to_block=%d", url, toBlock)
-	// }
 	response, err := requestMoralisApi(url, apiKey)
 
 	if err != nil {
@@ -288,7 +244,6 @@ func getErc20Once(userAddress string, chainType ChainType, apiKey string, offest
 }
 
 func GetErc20TokenMetaData(chainType ChainType, addresses []string, apiKey string) (Erc20TokensMap, error) {
-	logger.Debugf("GetErc20TokenMetaData: %v", addresses)
 	if len(addresses) <= 0 {
 		return Erc20TokensMap{}, fmt.Errorf("addresss is empty")
 	}
@@ -323,7 +278,6 @@ func getErc20TokenMetaDataFromUrl(chainType ChainType, addresses []string, apiKe
 	for _, address := range addresses {
 		url += fmt.Sprintf("&addresses=%s", address)
 	}
-	logger.Debugf("url: %s", url)
 
 	response, err := requestMoralisApi(url, apiKey)
 
