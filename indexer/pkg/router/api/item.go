@@ -90,8 +90,6 @@ func GetItemHandlerFunc(c *gin.Context) {
 	response.ErrorBase = errorBase
 
 	if response.ErrorBase.ErrorCode == 0 {
-		// response.ItemsResult = *result
-
 		c.JSON(http.StatusOK, response)
 	}
 

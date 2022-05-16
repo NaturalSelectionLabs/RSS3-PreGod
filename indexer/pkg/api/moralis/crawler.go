@@ -265,11 +265,20 @@ func (c *moralisCrawler) setERC20(
 	// get the token address
 	tokenAddressSet := mapset.NewSet()
 	tokenAddresses := []string{}
+
 	for _, item := range result {
 		tokenAddressSet.Add(item.TokenAddress)
 	}
+
 	for _, tokenAddress := range tokenAddressSet.ToSlice() {
-		tokenAddresses = append(tokenAddresses, tokenAddress.(string))
+		addressStr, ok := tokenAddress.(string)
+		if !ok {
+			logger.Warnf("token address[%v] is not string", addressStr)
+
+			continue
+		}
+
+		tokenAddresses = append(tokenAddresses, addressStr)
 	}
 
 	// get the token metadata
