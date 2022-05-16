@@ -198,8 +198,6 @@ type Erc20TokensMap map[string]Erc20TokenMetaDataItem
 
 var erc20TokensCache = Erc20TokensMap{}
 
-var erc20TokensPackageSize = 200
-
 func GetErc20Transfers(userAddress string, chainType ChainType, apiKey string) ([]ERC20TransferItem, error) {
 	offset := 0
 	transferItems := make([]ERC20TransferItem, 0)
