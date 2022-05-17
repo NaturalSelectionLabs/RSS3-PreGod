@@ -11,24 +11,21 @@ info:
     name: GNU Affero General Public License v3.0
     url: "https://www.gnu.org/licenses/agpl-3.0.en.html"
 servers:
-  # Added by API Auto Mocking Plugin
-  - description: SwaggerHub API Auto Mocking
-    url: https://virtserver.swaggerhub.com/HenryQW/PreGod/0.4.0
   - description: PreGod API Test Instance
     url: "https://test-pregod.rss3.dev/v0.4.0"
 tags:
-  - name: item
+  - name: Note
     externalDocs:
       description: Find out more.
       url: "https://rss3.io/"
 paths:
-  "/account:{instance}@{platform}/{type}":
+  "/account:{instance}@{platform}/notes":
     get:
       tags:
-        - item
-      summary: Get items by RSS3URI.
-      description: Returns a list of items.
-      operationId: getItemByRSS3URI
+        - Note
+      summary: Get Notes by RSS3URI.
+      description: Returns a list of Notes.
+      operationId: getNotesByRSS3URI
       parameters:
         - name: instance
           in: path
@@ -48,21 +45,6 @@ paths:
               - solana
               - flow
               - arweave
-              - rss
-              - twitter
-              - misskey
-              - jike
-              - playstation
-              - github
-        - name: type
-          in: path
-          description: The type of items to retrieve.
-          required: true
-          schema:
-            type: string
-            enum:
-              - notes
-              - assets
         - name: last_identifier
           in: query
           description: The pointer used for paging.
@@ -71,7 +53,7 @@ paths:
             type: string
         - name: limit
           in: query
-          description: Limit the number of items returned by the server.
+          description: Limit the number of Notes returned by the server.
           required: false
           example: 10
           schema:
@@ -80,14 +62,14 @@ paths:
             maximum: 100
         - name: tags
           in: query
-          description: Include items based by tags.
+          description: Include Notes by tags.
           required: false
           example: "NFT"
           schema:
             type: string
         - name: exclude_tags
           in: query
-          description: Filter out items by tags.
+          description: Filter out Notes by tags.
           required: false
           example: "POAP"
           schema:
@@ -95,13 +77,18 @@ paths:
         # Swagger UI doesn't not render `oneOf` schema properly.
         - name: item_sources
           in: query
-          description: "Include items by indexing sources. Depending on the `type`, please see the supported values below in Schemas: `NoteSource` or `AssetSource`"
+          description: "Include Notes by indexing sources."
           required: false
           example: "Ethereum NFT"
           schema:
-            oneOf:
-              - $ref: "#/components/schemas/NoteSource"
-              - $ref: "#/components/schemas/AssetSource"
+            type: string
+            enum:
+              - Crossbell
+              - Ethereum NFT
+              - Solana NFT
+              - Flow NFT
+              - Mirror Entry
+              - Gitcoin Contribution
       responses:
         "200":
           description: A valid request.
@@ -109,15 +96,15 @@ paths:
             application/json:
               schema:
                 oneOf:
-                  - $ref: "#/components/schemas/Response"
+                  - $ref: "#/components/schemas/GetResponse"
                   - $ref: "#/components/schemas/InvalidRequest"
   "/notes":
     post:
       tags:
-        - item
-      summary: Get notes by an RSS3URI list.
-      description: Returns a list of notes.
-      operationId: getNoteByRSS3URIList
+        - Note
+      summary: Get Notes by an RSS3URI list.
+      description: Returns a list of Notes.
+      operationId: getNotesByRSS3URIList
       requestBody:
         $ref: "#/components/requestBodies/NoteList"
       responses:
@@ -127,14 +114,14 @@ paths:
             application/json:
               schema:
                 oneOf:
-                  - $ref: "#/components/schemas/NotesResponse"
+                  - $ref: "#/components/schemas/PostResponse"
                   - $ref: "#/components/schemas/InvalidRequest"
 externalDocs:
   description: Find out more about RSS3.
   url: "https://rss3.io"
 components:
   schemas:
-    Response:
+    GetResponse:
       type: object
       required:
         [
@@ -151,10 +138,7 @@ components:
           description: The version of the RSS3 PreGod instance.
           example: v0.4.0
         date_updated:
-          type: string
-          description: The last update time, conforms to the RFC3339 datetime.
-          format: date-time
-          example: "2022-04-05T01:22:33.000Z"
+          $ref: "#/components/schemas/Date"
         identifier:
           type: string
           example: rss3://account:0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045@ethereum/notes?limit=100
@@ -166,13 +150,13 @@ components:
         total:
           type: number
           example: 123
-          description: The total number of items indexed for the instance.
+          description: The total number of Notes indexed for the instance.
         list:
           type: array
-          description: The requested items.
+          description: The requested Notes.
           items:
-            $ref: "#/components/schemas/Item"
-    NotesResponse:
+            $ref: "#/components/schemas/Note"
+    PostResponse:
       type: object
       required: ["version", "date_updated", "identifier_next", "total", "list"]
       properties:
@@ -181,10 +165,7 @@ components:
           description: The version of the RSS3 PreGod instance.
           example: v0.4.0
         date_updated:
-          type: string
-          description: The last update time, conforms to the RFC3339 datetime.
-          format: date-time
-          example: "2022-04-05T01:22:33.000Z"
+          $ref: "#/components/schemas/Date"
         identifier_next:
           type: string
           example: rss3://account:0xd8da6bf26964af9d7eed9e03e53415d37aa96045@ethereum/notes?last_identifier=rss3%3A%2F%2Fnote%3A0x90b2a3072915d194bf8d8eea937545bb196eeb0f4894f068d334b666cf75d2bc-178-18%40ethereum&limit=100
@@ -192,12 +173,12 @@ components:
         total:
           type: number
           example: 123
-          description: The total number of items indexed for the instance.
+          description: The total number of Notes indexed for the instance.
         list:
           type: array
-          description: The requested items.
+          description: The requested Notes.
           items:
-            $ref: "#/components/schemas/Item"
+            $ref: "#/components/schemas/Note"
     InvalidRequest:
       type: object
       required: [code, error]
@@ -209,33 +190,13 @@ components:
         error:
           type: string
           example: "no router"
-    AssetSource:
-      type: string
-      enum:
-        - Crossbell
-        - Ethereum NFT
-        - Solana NFT
-        - Flow NFT
-        - PlayStation Trophy
-        - GitHub Achievement
-    NoteSource:
-      type: string
-      enum:
-        - Crossbell
-        - Ethereum NFT
-        - Solana NFT
-        - Flow NFT
-        - Mirror Entry
-        - Gitcoin Contribution
-        - Twitter Tweet
-        - Misskey Note
-        - Jike Post
+      description: Returns when an invalid request was received.
     Date:
       type: string
       description: Conform to the RFC3339 Datetime format.
       format: date-time
       example: "2022-01-19T02:06:38.000Z"
-    Item:
+    Note:
       type: object
       required:
         [
@@ -243,8 +204,6 @@ components:
           date_created,
           date_updated,
           related_urls,
-          links,
-          backlinks,
           tags,
           authors,
           summary,
@@ -268,17 +227,11 @@ components:
                 "https://etherscan.io/nft/0xb9619cf4f875cdf0e3ce48b28a1c725bc4f6c0fb/1800",
                 "https://opensea.io/assets/0xb9619cf4f875cdf0e3ce48b28a1c725bc4f6c0fb/1800",
               ]
-        links:
-          type: string
-          example: "rss3://asset:0xb9619cf4f875cdf0e3ce48b28a1c725bc4f6c0fb-1800@ethereum/links"
-        backlinks:
-          type: string
-          example: "rss3://asset:0xb9619cf4f875cdf0e3ce48b28a1c725bc4f6c0fb-1800@ethereum/backlinks"
         tags:
           type: array
           items:
             type: string
-            example: ["Tweet"]
+            example: ["NFT"]
         authors:
           type: array
           items:
@@ -296,6 +249,7 @@ components:
             $ref: "#/components/schemas/Attachments"
         source:
           $ref: "#/components/schemas/Metadata"
+      description: A Note representing an action or an event generated by the instance.
     Attachments:
       type: object
       required: [type, address, mime_type]
@@ -369,7 +323,7 @@ components:
                 example: 10
               tags:
                 type: array
-                description: Include notes based by tags.
+                description: Include notes by tags.
                 example: ["NFT"]
               exclude_tags:
                 type: array
@@ -377,8 +331,12 @@ components:
                 example: ["POAP"]
               item_sources:
                 type: array
-                description: "Include items by indexing sources. Depending on the `type`, please see the supported values below in Schemas: `NoteSource` or `AssetSource`"
+                description: "Include Notes by indexing sources."
                 example: ["Ethereum NFT"]
-                oneOf:
-                  - $ref: "#/components/schemas/NoteSource"
-                  - $ref: "#/components/schemas/AssetSource"
+                enum:
+                  - Crossbell
+                  - Ethereum NFT
+                  - Solana NFT
+                  - Flow NFT
+                  - Mirror Entry
+                  - Gitcoin Contribution

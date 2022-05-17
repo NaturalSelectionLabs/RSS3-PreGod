@@ -14,6 +14,7 @@ import (
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/constants"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/logger"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/rss3uri"
+	mapset "github.com/deckarep/golang-set"
 	"github.com/ethereum/go-ethereum/ethclient"
 )
 
@@ -254,23 +255,37 @@ func (c *moralisCrawler) setERC20(
 	author string,
 	networkSymbol constants.NetworkSymbol,
 	chainType ChainType) error {
-	erc20Transfers, err := GetErc20Transfers(param.Identity, param.BlockHeight, chainType, getApiKey())
+	result, err := GetErc20Transfers(param.Identity, chainType, getApiKey())
 	if err != nil {
-		logger.Errorf("get erc20 transfers: %v", err)
+		logger.Errorf("chain type[%s], get erc20 transfers: %v", chainType.GetNetworkSymbol().String(), err)
 
 		return err
 	}
 
 	// get the token address
+	tokenAddressSet := mapset.NewSet()
 	tokenAddresses := []string{}
-	for _, item := range erc20Transfers.Result {
-		tokenAddresses = append(tokenAddresses, item.TokenAddress)
+
+	for _, item := range result {
+		tokenAddressSet.Add(item.TokenAddress)
+	}
+
+	for _, tokenAddress := range tokenAddressSet.ToSlice() {
+		addressStr, ok := tokenAddress.(string)
+		if !ok {
+			logger.Warnf("token address[%v] is not string", addressStr)
+
+			continue
+		}
+
+		tokenAddresses = append(tokenAddresses, addressStr)
 	}
 
 	// get the token metadata
 	erc20Tokens, err := GetErc20TokenMetaData(chainType, tokenAddresses, getApiKey())
 	if err != nil {
-		logger.Errorf("get erc20 token metadata: %v", err)
+		logger.Errorf("chain type[%s], get erc20 token metadata [%v]",
+			chainType.GetNetworkSymbol().String(), err)
 
 		return err
 	}
@@ -278,10 +293,12 @@ func (c *moralisCrawler) setERC20(
 	niBuilder := getNewNoteInstanceBuilder()
 
 	// complete the note list
-	for _, item := range erc20Transfers.Result {
+	for _, item := range result {
 		tsp, tspErr := GetTsp(item.BlockTimestamp)
 		if tspErr != nil {
-			logger.Warnf("asset: %s fails at GetTsp(): %v", item.String(), tspErr)
+			logger.Warnf("chain type[%s], item[%s], fails at GetTsp err[%v]",
+				chainType.GetNetworkSymbol().String(),
+				item.String(), tspErr)
 
 			tsp = time.Now()
 		}
@@ -290,14 +307,18 @@ func (c *moralisCrawler) setERC20(
 
 		proof, err := setNoteInstance(niBuilder, item.TransactionHash)
 		if err != nil {
-			logger.Warnf("%s get instance key failse: %v", item.TransactionHash, err)
+			logger.Warnf("chain type[%s], item[%s], get instance key err[%v]",
+				chainType.GetNetworkSymbol().String(),
+				item.TransactionHash, err)
 
 			continue
 		}
 
 		decimals, err := strconv.Atoi(m.Decimals)
 		if err != nil {
-			logger.Warnf("%s get decimal failse: %v", item.TransactionHash, err)
+			logger.Warnf("chain type[%s], item[%s], get decimal err[%v]",
+				chainType.GetNetworkSymbol().String(),
+				item.TransactionHash, err)
 		}
 
 		note := model.Note{
