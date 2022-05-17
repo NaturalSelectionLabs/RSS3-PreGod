@@ -10,6 +10,7 @@ import (
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/api/zksync"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/autoupdater"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/router"
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/subscribe/ens"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/cache"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/config"
@@ -73,6 +74,9 @@ func RunAutoCrawler(cmd *cobra.Command, args []string) error {
 	go gitcoin.Start(gitcoin.ETH)
 	go gitcoin.Start(gitcoin.ZkSync)
 	logger.Info("Start crawling arweave")
+
+	// subscribe ens
+	go ens.Run()
 
 	//arweave crawler
 	ar := arweave.NewCrawler(arweave.MirrorUploader, arweave.DefaultCrawlConfig)
