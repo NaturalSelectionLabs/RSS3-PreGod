@@ -2,6 +2,7 @@ package router
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/internal/api"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/internal/handler"
@@ -33,10 +34,13 @@ func Initialize() *gin.Engine {
 		router.Use(sentrygin.New(sentrygin.Options{}))
 	}
 
-	corsConfig := cors.DefaultConfig()
-	corsConfig.AddAllowMethods("OPTIONS")
-
-	router.Use(cors.New(corsConfig))
+	router.Use(cors.New(cors.Config{
+		AllowAllOrigins:  true,
+		AllowMethods:     []string{"*"},
+		AllowHeaders:     []string{"*"},
+		AllowCredentials: false,
+		MaxAge:           12 * time.Hour,
+	}))
 
 	// Response wrapper
 	router.Use(middleware.Wrapper())
