@@ -33,7 +33,10 @@ func Initialize() *gin.Engine {
 		router.Use(sentrygin.New(sentrygin.Options{}))
 	}
 
-	router.Use(cors.Default())
+	corsConfig := cors.DefaultConfig()
+	corsConfig.AddAllowMethods("OPTIONS")
+
+	router.Use(cors.New(corsConfig))
 
 	// Response wrapper
 	router.Use(middleware.Wrapper())
