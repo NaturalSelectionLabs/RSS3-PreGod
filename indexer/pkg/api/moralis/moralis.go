@@ -455,3 +455,11 @@ func getENSTransaction(ens NFTItem, record *ENSTextRecord) error {
 
 	return nil
 }
+
+/*
+ * About eth handler native assets
+ */
+
+func GetEthTransfers(userAddress string, chainType ChainType, apiKey string) error {
+
+}

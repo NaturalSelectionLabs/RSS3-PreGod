@@ -335,3 +335,35 @@ func GetTsp(blockTimestamp string) (time.Time, error) {
 		return t, err
 	}
 }
+
+type ETHTransfer struct {
+	MoralisAttributes
+
+	Total    int               `json:"total"`
+	Page     int               `json:"page"`
+	PageSize int               `json:"page_size"`
+	Cursor   string            `json:"cursor"`
+	Result   []ETHTransferItem `json:"result"`
+}
+
+type ETHTransferItem struct {
+	MoralisAttributes
+
+	TransactionHash          string `json:"hash"`
+	Nonce                    string `json:"nonce"`
+	TransactionIndex         int    `json:"transaction_index"`
+	FromAddress              string `json:"from_address"`
+	ToAddress                string `json:"to_address"`
+	Value                    string `json:"value"`
+	Gas                      string `json:"gas"`
+	GasPrice                 string `json:"gas_price"`
+	Input                    string `json:"input"`
+	ReceiptCumulativeGasUsed string `json:"receipt_cumulative_gas_used"`
+	ReceiptGasUsed           string `json:"receipt_gas_used"`
+	ReceiptContractAddress   string `json:"receipt_contract_address"`
+	ReceiptRoot              string `json:"receipt_root"`
+	ReceiptStatus            string `json:"receipt_status"`
+	BlockTimestamp           string `json:"block_timestamp"`
+	BlockNumber              string `json:"block_number"`
+	BlockHash                string `json:"block_hash"`
+}
