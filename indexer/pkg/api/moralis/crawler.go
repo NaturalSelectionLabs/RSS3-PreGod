@@ -2,6 +2,7 @@ package moralis
 
 import (
 	"fmt"
+	"math/big"
 	"strconv"
 	"strings"
 	"time"
@@ -354,6 +355,83 @@ func (c *moralisCrawler) setERC20(
 	return nil
 }
 
+func (c *moralisCrawler) setETH(
+	param crawler.WorkParam,
+	owner string,
+	author string,
+	networkSymbol constants.NetworkSymbol,
+	chainType ChainType) error {
+	result, err := GetEthTransfers(param.Identity, chainType, getApiKey())
+	if err != nil {
+		logger.Errorf("chain type[%s], get eth transfers: %v", chainType.GetNetworkSymbol().String(), err)
+
+		return err
+	}
+
+	if len(result) <= 0 {
+		return nil
+	}
+
+	niBuilder := getNewNoteInstanceBuilder()
+
+	for _, item := range result {
+		tsp, tspErr := GetTsp(item.BlockTimestamp)
+		if tspErr != nil {
+			logger.Warnf("chain type[%s], item[%s], fails at GetTsp err[%v]",
+				chainType.GetNetworkSymbol().String(),
+				item.String(), tspErr)
+
+			tsp = time.Now()
+		}
+
+		// only value > 0 to pass
+		formatedAmount := big.NewInt(0)
+		formatedAmount.SetString(item.Value, 10)
+
+		if formatedAmount.Cmp(big.NewInt(0)) != 1 {
+			continue
+		}
+
+		proof, err := setNoteInstance(niBuilder, item.TransactionHash)
+		if err != nil {
+			logger.Warnf("chain type[%s], item[%s], get instance key err[%v]",
+				chainType.GetNetworkSymbol().String(),
+				item.TransactionHash, err)
+
+			continue
+		}
+
+		note := model.Note{
+			Identifier: rss3uri.NewNoteInstance(proof, networkSymbol).UriString(),
+			Owner:      owner,
+			RelatedURLs: []string{
+				"https://etherscan.io/tx/" + item.TransactionHash,
+			},
+			Tags:            constants.ItemTagsETH.ToPqStringArray(), // will be change
+			Authors:         []string{author},
+			Source:          constants.NoteSourceNameEthereumETH.String(),
+			ContractAddress: "0x0",
+			MetadataNetwork: networkSymbol.String(),
+			MetadataProof:   proof,
+			Metadata: database.MustWrapJSON(map[string]interface{}{
+				"network":          networkSymbol.String(),
+				"from":             strings.ToLower(item.FromAddress),
+				"to":               strings.ToLower(item.ToAddress),
+				"amount":           item.Value,
+				"token_standard":   "ERC20",
+				"token_symbol":     "ETH",
+				"transaction_hash": item.TransactionHash,
+			}),
+			DateCreated: tsp,
+			DateUpdated: tsp,
+		}
+
+		c.Notes = append(c.Notes, note)
+	}
+
+	return nil
+}
+
 func (c *moralisCrawler) Work(param crawler.WorkParam) error {
 	chainType := GetChainType(param.NetworkID)
 	if chainType == Unknown {
@@ -366,16 +444,23 @@ func (c *moralisCrawler) Work(param crawler.WorkParam) error {
 	owner := rss3uri.NewAccountInstance(param.OwnerID, param.OwnerPlatformID.Symbol()).UriString()
 	author := rss3uri.NewAccountInstance(param.Identity, constants.PlatformSymbolEthereum).UriString()
 
-	err := c.setNFTTransfers(param, owner, author, networkSymbol, chainType)
-	if err != nil {
-		logger.Errorf("fail to set nft transfers in db: %v", err)
+	// err := c.setNFTTransfers(param, owner, author, networkSymbol, chainType)
+	// if err != nil {
+	// 	logger.Errorf("fail to set nft transfers in db: %v", err)
 
-		return err
-	}
+	// 	return err
+	// }
 
-	err = c.setERC20(param, owner, author, networkSymbol, chainType)
+	// err = c.setERC20(param, owner, author, networkSymbol, chainType)
+	// if err != nil {
+	// 	logger.Errorf("fail to set erc20 in db: %v", err)
+
+	// 	return err
+	// }
+
+	err := c.setETH(param, owner, author, networkSymbol, chainType)
 	if err != nil {
-		logger.Errorf("fail to set erc20 in db: %v", err)
+		logger.Errorf("fail to set eth in db: %v", err)
 
 		return err
 	}

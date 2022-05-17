@@ -204,6 +204,11 @@ type ERC20TransferItem struct {
 	Value           string `json:"value"`
 }
 
+func (i ERC20TransferItem) String() string {
+	return fmt.Sprintf(`From: %s, To: %s, TransactionHash: %s, Value: %s`,
+		i.FromAddress, i.ToAddress, i.TransactionHash, i.Value)
+}
+
 type Erc20TokenMetaDataItem struct {
 	MoralisAttributes
 
@@ -217,11 +222,6 @@ type Erc20TokenMetaDataItem struct {
 	BlockNumber string `json:"block_number"`
 	Validated   int    `json:"validated"`
 	CreatedAt   string `json:"created_at"`
-}
-
-func (i ERC20TransferItem) String() string {
-	return fmt.Sprintf(`From: %s, To: %s`,
-		i.FromAddress, i.ToAddress)
 }
 
 type GetLogsItem struct {
@@ -351,7 +351,7 @@ type ETHTransferItem struct {
 
 	TransactionHash          string `json:"hash"`
 	Nonce                    string `json:"nonce"`
-	TransactionIndex         int    `json:"transaction_index"`
+	TransactionIndex         string `json:"transaction_index"`
 	FromAddress              string `json:"from_address"`
 	ToAddress                string `json:"to_address"`
 	Value                    string `json:"value"`
@@ -366,4 +366,9 @@ type ETHTransferItem struct {
 	BlockTimestamp           string `json:"block_timestamp"`
 	BlockNumber              string `json:"block_number"`
 	BlockHash                string `json:"block_hash"`
+}
+
+func (i ETHTransferItem) String() string {
+	return fmt.Sprintf(`From: %s, To: %s, TransactionHash: %s, Value: %s`,
+		i.FromAddress, i.ToAddress, i.TransactionHash, i.Value)
 }

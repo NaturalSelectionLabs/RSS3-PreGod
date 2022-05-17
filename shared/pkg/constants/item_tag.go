@@ -18,6 +18,7 @@ const (
 	itemTagMisskeyNote itemTag = "Misskey Note"
 	itemTagJikePost    itemTag = "Jike Post"
 	itemTagToken       itemTag = "Token"
+	itemTagETH         itemTag = "ETH"
 )
 
 // See https://rss3.io/protocol/RIPs/RIP-4.html
@@ -34,6 +35,7 @@ var (
 	ItemTagsMisskeyNote     ItemTags = []itemTag{itemTagMisskeyNote}
 	ItemTagsJikePost        ItemTags = []itemTag{itemTagJikePost}
 	ItemTagsToken           ItemTags = []itemTag{itemTagToken}
+	ItemTagsETH             ItemTags = []itemTag{itemTagETH}
 )
 
 func (t ItemTags) ToPqStringArray() pq.StringArray {
