@@ -85,30 +85,33 @@ func (s *Ens) SubscribeEns() {
 
 				// trigger task: get owner feed
 				go func() {
-					instance, err := rss3uri.NewInstance("account", owner.String(), "ethereum")
-					if err != nil {
-						return
-					}
-
-					networkIDs := constants.GetEthereumPlatformNetworks()
-					for _, networkID := range networkIDs {
-						getItemHandler := crawler_handler.NewGetItemsHandler(crawler.WorkParam{
-							Identity:   instance.GetIdentity(),
-							PlatformID: constants.PlatformIDEthereum,
-							NetworkID:  networkID,
-							OwnerID:    owner.String(),
-						})
-
-						_, err = getItemHandler.Excute()
-						if err != nil {
-							logger.Errorf("SubscribeEns: get item error, %v", err)
-
-							continue
-						}
-					}
+					s.GetOwnerFeed(owner.String())
 				}()
-
 			}
+		}
+	}
+}
+
+func (s *Ens) GetOwnerFeed(owner string) {
+	instance, err := rss3uri.NewInstance("account", owner, "ethereum")
+	if err != nil {
+		return
+	}
+
+	networkIDs := constants.GetEthereumPlatformNetworks()
+	for _, networkID := range networkIDs {
+		getItemHandler := crawler_handler.NewGetItemsHandler(crawler.WorkParam{
+			Identity:   instance.GetIdentity(),
+			PlatformID: constants.PlatformIDEthereum,
+			NetworkID:  networkID,
+			OwnerID:    owner,
+		})
+
+		_, err = getItemHandler.Excute()
+		if err != nil {
+			logger.Errorf("SubscribeEns: get item error, %v", err)
+
+			continue
 		}
 	}
 }
