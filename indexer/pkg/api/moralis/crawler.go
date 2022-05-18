@@ -262,6 +262,10 @@ func (c *moralisCrawler) setERC20(
 		return err
 	}
 
+	if len(result) == 0 {
+		return nil
+	}
+
 	// get the token address
 	tokenAddressSet := mapset.NewSet()
 	tokenAddresses := []string{}

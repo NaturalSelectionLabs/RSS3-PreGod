@@ -181,7 +181,7 @@ func getAssetListByInstance(c *gin.Context, instance rss3uri.Instance, request G
 		return nil, 0, err
 	}
 
-	if err := indexer.GetItems(c.Request.URL, instance, accounts, request.Latest); err != nil {
+	if err := indexer.GetItems(c.Request.URL.String(), instance, accounts, request.Latest); err != nil {
 		return nil, 0, err
 	}
 
@@ -306,7 +306,7 @@ func getAssetListsByLink(c *gin.Context, instance rss3uri.Instance, request GetA
 		return nil, 0, err
 	}
 
-	if err := indexer.GetItems(c.Request.URL, instance, accounts, request.Latest); err != nil {
+	if err := indexer.GetItems(c.Request.URL.String(), instance, accounts, request.Latest); err != nil {
 		return nil, 0, err
 	}
 

@@ -143,7 +143,7 @@ func getNoteListByInstance(c *gin.Context, instance rss3uri.Instance, request Ge
 		return nil, 0, err
 	}
 
-	if err := indexer.GetItems(c.Request.URL, instance, accounts, request.Latest); err != nil {
+	if err := indexer.GetItems(c.Request.URL.String(), instance, accounts, request.Latest); err != nil {
 		return nil, 0, err
 	}
 
@@ -275,7 +275,7 @@ func getNoteListsByLink(c *gin.Context, instance rss3uri.Instance, request GetNo
 		return nil, 0, err
 	}
 
-	if err := indexer.GetItems(c.Request.URL, instance, accounts, request.Latest); err != nil {
+	if err := indexer.GetItems(c.Request.URL.String(), instance, accounts, request.Latest); err != nil {
 		return nil, 0, err
 	}
 

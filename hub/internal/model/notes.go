@@ -10,6 +10,7 @@ type BatchGetNodeListRequest struct {
 	ExcludeTags    []string `json:"exclude_tags"`
 	ItemSources    []string `json:"item_sources"`
 	Networks       []string `json:"networks"`
+	Latest         bool     `json:"latest"`
 
 	InstanceList []rss3uri.Instance `json:"-"` // parsed from address list
 }
