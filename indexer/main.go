@@ -7,7 +7,6 @@ import (
 
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/api/arweave"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/api/gitcoin"
-	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/api/zksync"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/autoupdater"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/router"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/subscribe/ens"
@@ -61,7 +60,7 @@ func RunAutoCrawler(cmd *cobra.Command, args []string) error {
 	}
 
 	// zksync
-	go zksync.Start()
+	// go zksync.Start()
 
 	if err := gitcoin.Setup(); err != nil {
 		log.Fatalf("gitcoin.Setup err: %v", err)
