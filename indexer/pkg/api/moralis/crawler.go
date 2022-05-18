@@ -350,7 +350,6 @@ func (c *moralisCrawler) setERC20(
 
 		c.Notes = append(c.Notes, note)
 	}
-
 	return nil
 }
 
@@ -393,7 +392,7 @@ func (c *moralisCrawler) setETH(
 		}
 
 		note := model.Note{
-			Identifier: rss3uri.NewNoteInstance(proof, networkSymbol).UriString(),
+			Identifier: rss3uri.NewNoteInstance(proof, networkSymbol).UriString() + "#eth",
 			Owner:      owner,
 			RelatedURLs: []string{
 				"https://etherscan.io/tx/" + item.TransactionHash,
@@ -455,6 +454,9 @@ func (c *moralisCrawler) Work(param crawler.WorkParam) error {
 
 		return err
 	}
+
+	// Duplication is not expected. But just in case, we double check it
+	// and leave some debug info for future analysis.
 
 	// check duplicates in assets
 	for i := 0; i < len(c.Assets); i++ {
