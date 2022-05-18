@@ -221,6 +221,10 @@ func GetErc20Transfers(userAddress string, chainType ChainType, apiKey string) (
 
 		transferItems = append(transferItems, transfer.Result...)
 
+		if len(transferItems) >= 1000 {
+			break
+		}
+
 		if len(transfer.Result) < transfer.PageSize {
 			break
 		}
@@ -482,6 +486,10 @@ func GetEthTransfers(userAddress string, chainType ChainType, apiKey string) ([]
 		}
 
 		transferItems = append(transferItems, transfer.Result...)
+
+		if len(transferItems) >= 1000 {
+			break
+		}
 
 		if len(transfer.Result) < transfer.PageSize {
 			break

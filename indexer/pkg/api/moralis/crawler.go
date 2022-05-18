@@ -2,7 +2,6 @@ package moralis
 
 import (
 	"fmt"
-	"math/big"
 	"strconv"
 	"strings"
 	"time"
@@ -382,14 +381,6 @@ func (c *moralisCrawler) setETH(
 				item.String(), tspErr)
 
 			tsp = time.Now()
-		}
-
-		// only value > 0 to pass
-		formatedAmount := big.NewInt(0)
-		formatedAmount.SetString(item.Value, 10)
-
-		if formatedAmount.Cmp(big.NewInt(0)) != 1 {
-			continue
 		}
 
 		proof, err := setNoteInstance(niBuilder, item.TransactionHash)
