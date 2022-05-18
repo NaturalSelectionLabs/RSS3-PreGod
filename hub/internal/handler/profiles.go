@@ -180,7 +180,7 @@ func getPlatformInstanceProfileList(
 			Metadata:          metadata,
 		})
 
-		if err := indexer.GetItems(c.Request.URL, instance, accountModels, false); err != nil {
+		if err := indexer.GetItems(c.Request.URL.String(), instance, accountModels, false); err != nil {
 			return nil, 0, err
 		}
 	}

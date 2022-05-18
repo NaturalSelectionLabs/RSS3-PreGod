@@ -6,6 +6,7 @@ import (
 
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/internal/api"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/internal/dao"
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/internal/indexer"
 	m "github.com/NaturalSelectionLabs/RSS3-PreGod/hub/internal/model"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/hub/internal/protocol"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database/model"
@@ -26,6 +27,13 @@ func BatchGetNodeList(req m.BatchGetNodeListRequest) (protocol.File, error, erro
 		}
 
 		req.InstanceList = append(req.InstanceList, uri.Instance)
+
+		// get item
+		if err := indexer.GetItems("batch_get_node_list", uri.Instance, nil, req.Latest); err != nil && req.Latest {
+			return protocol.File{
+				List: make([]protocol.Item, 0),
+			}, api.ErrorIndexer, err
+		}
 	}
 
 	if len(req.InstanceList) == 0 {

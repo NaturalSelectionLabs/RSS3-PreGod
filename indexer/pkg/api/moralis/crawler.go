@@ -263,7 +263,7 @@ func (c *moralisCrawler) setERC20(
 	}
 
 	if len(result) == 0 {
-		return nil 
+		return nil
 	}
 
 	// get the token address

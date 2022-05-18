@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"net/url"
 	"strconv"
 	"strings"
 	"time"
@@ -21,8 +20,8 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
-func GetItems(requestURL *url.URL, instance rss3uri.Instance, accounts []model.Account, latest bool) error {
-	lockerKey := fmt.Sprintf("hub %s", requestURL.String())
+func GetItems(requestURL string, instance rss3uri.Instance, accounts []model.Account, latest bool) error {
+	lockerKey := fmt.Sprintf("hub %s", requestURL)
 
 	if _, err := cache.GetRaw(context.Background(), lockerKey); err != nil && errors.Is(err, redis.Nil) {
 		if err = cache.SetRaw(context.Background(), lockerKey, time.Now().String(), time.Second*10); err != nil {

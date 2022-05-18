@@ -60,6 +60,7 @@ func (s *Ens) SubscribeEns() {
 
 				// get block details
 				block, err := s.EthClient.BlockByNumber(context.Background(), big.NewInt(int64(vLog.BlockNumber)))
+
 				if err != nil {
 					logger.Errorf("SubscribeEns: get block error, %v", err)
 
@@ -76,8 +77,8 @@ func (s *Ens) SubscribeEns() {
 					Source:          "subscribe",
 					BlockTimestamp:  time.Unix(int64(block.Time()), 0),
 				}
-				err = s.CreateEns(ens)
-				if err != nil {
+
+				if err = s.CreateEns(ens); err != nil {
 					logger.Errorf("SubscribeEns: db insert error, %v", err)
 
 					continue
@@ -120,5 +121,6 @@ func (s *Ens) CreateEns(ens *model.Domains) error {
 	if err := s.Database.Create(ens).Error; err != nil {
 		return err
 	}
+
 	return nil
 }
