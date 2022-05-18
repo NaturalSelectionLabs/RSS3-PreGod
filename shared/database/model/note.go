@@ -37,3 +37,7 @@ type Note struct {
 func (Note) TableName() string {
 	return "note"
 }
+
+func (n Note) String() string {
+	return n.Identifier + " " + n.Metadata.String()
+}
