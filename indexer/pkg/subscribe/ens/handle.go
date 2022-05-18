@@ -34,7 +34,7 @@ func Run() {
 	if err != nil {
 		logger.Errorf("task: ethclient Dial error, %v", err)
 
-		return
+		return 
 	}
 
 	// get abi
@@ -42,14 +42,14 @@ func Run() {
 	if err != nil {
 		logger.Errorf("task: open abi file error, %v", err)
 
-		return
+		return 
 	}
 
 	s.ABI, err = abi.JSON(abiFile)
 	if err != nil {
 		logger.Errorf("task: abi file parse error, %v", err)
 
-		return
+		return 
 	}
 
 	s.SubscribeEns()
