@@ -43,6 +43,7 @@ metadata:
   namespace: pregod
 spec:
   headers:
+    # https://doc.traefik.io/traefik/middlewares/http/headers/#accesscontrolallowcredentials
     accessControlAllowMethods:
       - "GET"
       - "POST"
@@ -50,6 +51,8 @@ spec:
       - "DELETE"
       - "OPTIONS"
     accessControlAllowOriginList:
+      - "*"
+    accessControlAllowHeaders:
       - "*"
     accessControlMaxAge: 100
     addVaryHeader: true

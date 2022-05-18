@@ -183,7 +183,7 @@ func CreateNote(db *gorm.DB, note *model.Note, updateAll bool) (*model.Note, err
 	note.Identifier = strings.ToLower(note.Identifier)
 	note.Owner = strings.ToLower(note.Owner)
 
-	if err := db.Model(note).Clauses(NewCreateClauses(updateAll)...).Create(note).Error; err != nil {
+	if err := db.Model(note).Clauses(NewCreateClauses(updateAll, true)...).Create(note).Error; err != nil {
 		return nil, err
 	}
 
@@ -194,7 +194,7 @@ func CreateAsset(db *gorm.DB, asset *model.Asset, updateAll bool) (*model.Asset,
 	asset.Identifier = strings.ToLower(asset.Identifier)
 	asset.Owner = strings.ToLower(asset.Owner)
 
-	if err := db.Clauses(NewCreateClauses(updateAll)...).Create(asset).Error; err != nil {
+	if err := db.Clauses(NewCreateClauses(updateAll, true)...).Create(asset).Error; err != nil {
 		return nil, err
 	}
 
@@ -211,7 +211,7 @@ func CreateNotes(db *gorm.DB, notes []model.Note, updateAll bool) ([]model.Note,
 		}
 	}
 
-	if err := db.Clauses(NewCreateClauses(updateAll)...).Create(&notes).Error; err != nil {
+	if err := db.Clauses(NewCreateClauses(updateAll, true)...).Create(&notes).Error; err != nil {
 		return nil, err
 	}
 
@@ -228,7 +228,7 @@ func CreateAssets(db *gorm.DB, assets []model.Asset, updateAll bool) ([]model.As
 		}
 	}
 
-	if err := db.Clauses(NewCreateClauses(updateAll)...).Create(&assets).Error; err != nil {
+	if err := db.Clauses(NewCreateClauses(updateAll, true)...).Create(&assets).Error; err != nil {
 		return nil, err
 	}
 
@@ -315,7 +315,7 @@ func QueryNotes(db *gorm.DB, uris []string, lastTime *time.Time, limit int) ([]m
 }
 
 func CreateProfile(db *gorm.DB, profile *model.Profile, updateAll bool) (*model.Profile, error) {
-	if err := db.Clauses(NewCreateClauses(updateAll)...).Create(profile).Error; err != nil {
+	if err := db.Clauses(NewCreateClauses(updateAll, true)...).Create(profile).Error; err != nil {
 		return nil, err
 	}
 
@@ -323,7 +323,7 @@ func CreateProfile(db *gorm.DB, profile *model.Profile, updateAll bool) (*model.
 }
 
 func CreateProfiles(db *gorm.DB, profiles []model.Profile, updateAll bool) ([]model.Profile, error) {
-	if err := db.Clauses(NewCreateClauses(updateAll)...).Create(&profiles).Error; err != nil {
+	if err := db.Clauses(NewCreateClauses(updateAll, true)...).Create(&profiles).Error; err != nil {
 		return nil, err
 	}
 
@@ -331,7 +331,7 @@ func CreateProfiles(db *gorm.DB, profiles []model.Profile, updateAll bool) ([]mo
 }
 
 func CreateCrawlerMetadata(db *gorm.DB, crawler *model.CrawlerMetadata, updateAll bool) (*model.CrawlerMetadata, error) {
-	if err := db.Clauses(NewCreateClauses(updateAll)...).Create(&crawler).Error; err != nil {
+	if err := db.Clauses(NewCreateClauses(updateAll, false)...).Create(&crawler).Error; err != nil {
 		return nil, err
 	}
 
@@ -356,18 +356,25 @@ func QueryCrawlerMetadata(db *gorm.DB, identity string, platformId constants.Pla
 	return &crawler, nil
 }
 
-func NewCreateClauses(updateAll bool) []clause.Expression {
+func NewCreateClauses(updateAll bool, updateMetadata bool) []clause.Expression {
 	clauses := []clause.Expression{
 		// clause.Returning{}
 	}
 
 	if updateAll {
 		clauses = append(clauses, clause.OnConflict{
-			DoUpdates: clause.AssignmentColumns([]string{"updated_at", "metadata"}),
+			DoUpdates: clause.AssignmentColumns([]string{"updated_at"}),
 			UpdateAll: true,
 		})
 	} else {
 		clauses = append(clauses, clause.OnConflict{DoNothing: true})
+	}
+
+	if updateMetadata {
+		clauses = append(clauses, clause.OnConflict{
+			DoUpdates: clause.AssignmentColumns([]string{"metadata"}),
+			UpdateAll: true,
+		})
 	}
 
 	return clauses
