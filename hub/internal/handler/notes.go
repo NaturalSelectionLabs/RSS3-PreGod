@@ -34,8 +34,6 @@ type GetNoteListRequest struct {
 	Latest         bool     `form:"latest"`
 }
 
-var spamAllowList = []string{"", "0x0", common.HexToAddress("0x0").String()}
-
 func GetNoteListHandlerFunc(c *gin.Context) {
 	instance, err := middleware.GetPlatformInstance(c)
 	if err != nil {
@@ -192,14 +190,10 @@ func getNoteListByInstance(c *gin.Context, instance rss3uri.Instance, request Ge
 		internalDB = internalDB.Where("metadata_network IN ?", request.Networks)
 	}
 
-	// add the instance to the allowlist
-	spamAllowList = append(spamAllowList, instance.GetIdentity())
-
 	notes := make([]model.Note, 0)
 	if err := internalDB.
 		Where("owner = ?", strings.ToLower(rss3uri.New(instance).String())).
 		Limit(request.Limit).
-		Where("metadata ->> 'from' IS NULL OR metadata ->> 'from' IN ?", spamAllowList).
 		Order("date_created DESC").
 		Order("contract_address DESC").
 		Order("log_index DESC").
@@ -213,7 +207,6 @@ func getNoteListByInstance(c *gin.Context, instance rss3uri.Instance, request Ge
 	if err := internalDB.
 		Model(&model.Note{}).
 		Where("owner = ?", strings.ToLower(rss3uri.New(instance).String())).
-		Where("metadata ->> 'from' IS NULL OR metadata ->> 'from' IN ?", spamAllowList).
 		Order("date_created DESC").
 		Order("contract_address DESC").
 		Order("log_index DESC").
@@ -338,13 +331,9 @@ func getNoteListsByLink(c *gin.Context, instance rss3uri.Instance, request GetNo
 		internalDB = internalDB.Where("authors && ?", pq.StringArray(authors))
 	}
 
-	// add the instance to the allowlist
-	spamAllowList = append(spamAllowList, instance.GetIdentity())
-
 	notes := make([]model.Note, 0)
 	if err := internalDB.
 		Where("owner IN ?", owners).
-		Where("metadata ->> 'from' IS NULL OR metadata ->> 'from' IN ?", spamAllowList).
 		Limit(request.Limit).
 		Order("date_created DESC").
 		Order("contract_address DESC").
@@ -359,7 +348,6 @@ func getNoteListsByLink(c *gin.Context, instance rss3uri.Instance, request GetNo
 	if err := internalDB.
 		Model(&model.Note{}).
 		Where("owner IN ?", owners).
-		Where("metadata ->> 'from' IS NULL OR metadata ->> 'from' IN ?", spamAllowList).
 		Order("date_created DESC").
 		Order("contract_address DESC").
 		Order("log_index DESC").
