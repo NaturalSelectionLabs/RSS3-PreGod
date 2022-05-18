@@ -350,6 +350,7 @@ func (c *moralisCrawler) setERC20(
 
 		c.Notes = append(c.Notes, note)
 	}
+	
 	return nil
 }
 
