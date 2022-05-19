@@ -51,7 +51,13 @@ func main() {
 		page := 0
 
 		// get ens data
-		if err := db.Where(&model.Domains{Type: "ens"}).Limit(1000).Offset(page * 1000).Find(&domains).Error; err != nil {
+		if err := db.
+			Where(&model.Domains{Type: "ens"}).
+			Where("block_timestamp < ?", "2022-05-19").
+			Order("block_timestamp DESC").
+			Limit(1000).
+			Offset(page * 1000).
+			Find(&domains).Error; err != nil {
 			logger.Errorf("subscribe.script: database get err: %v", err)
 
 			return
