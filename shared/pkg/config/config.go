@@ -126,14 +126,15 @@ type GatewayStruct struct {
 type IndexerStruct struct {
 	Server ServerStruct `koanf:"server"`
 
-	Misc        MiscStruct        `koanf:"misc"`
-	Jike        JikeStruct        `koanf:"jike"`
-	Moralis     MoralisStruct     `koanf:"moralis"`
-	EtherScan   EtherScanStruct   `koanf:"etherscan"`
-	PolygonScan PolygonScanStruct `koanf:"polygonscan"`
-	Twitter     TwitterStruct     `koanf:"twitter"`
-	Aribtrum    ArbitrumStruct    `koanf:"arbitrum"`
-	Gateway     GatewayStruct     `koanf:"gateway"`
+	Misc                MiscStruct        `koanf:"misc"`
+	Jike                JikeStruct        `koanf:"jike"`
+	Moralis             MoralisStruct     `koanf:"moralis"`
+	EtherScan           EtherScanStruct   `koanf:"etherscan"`
+	PolygonScan         PolygonScanStruct `koanf:"polygonscan"`
+	Twitter             TwitterStruct     `koanf:"twitter"`
+	Aribtrum            ArbitrumStruct    `koanf:"arbitrum"`
+	Gateway             GatewayStruct     `koanf:"gateway"`
+	NftFallBackEndpoint string            `koanf:"nft_fallback_endpoint"`
 }
 
 type HubStruct struct {

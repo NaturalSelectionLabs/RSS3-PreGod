@@ -6,6 +6,7 @@ import (
 
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/api/nft_utils"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database/datatype"
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/config"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/httpx"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/logger"
 	"github.com/ethereum/go-ethereum/common"
@@ -73,10 +74,16 @@ func GetNFTs(userAddress string, chainType ChainType, apiKey string) (NFTResult,
 		return NFTResult{}, err
 	}
 
+	//nolint:nestif // disable line length check
 	lop.ForEach(res.Result, func(item NFTItem, i int) {
 		if item.MetaData == "" && item.TokenURI != "" {
 			if metadataRes, err := httpx.Get(nft_utils.FormatUrl(item.TokenURI), nil); err != nil {
-				logger.Warnf("http get nft metadata error with url '%s': [%v]", item.TokenURI, err)
+				fallBackMetadata, err := getNFTFallBack(item.TokenAddress, item.TokenId, chainType)
+				if err != nil {
+					logger.Warnf("http get nft metadata error with url '%s': [%v]", item.TokenURI, err)
+				} else {
+					res.Result[i].MetaData = fallBackMetadata
+				}
 			} else {
 				res.Result[i].MetaData = string(metadataRes.Body)
 			}
@@ -84,6 +91,27 @@ func GetNFTs(userAddress string, chainType ChainType, apiKey string) (NFTResult,
 	})
 
 	return *res, nil
+}
+
+func getNFTFallBack(tokenAddress string, TokenId string, chainType ChainType) (string, error) {
+	if tokenAddress == "" ||
+		TokenId == "" ||
+		chainType == Unknown ||
+		config.Config.Indexer.NftFallBackEndpoint == "" {
+		return "", fmt.Errorf("input parameter error")
+	}
+
+	url := config.Config.Indexer.NftFallBackEndpoint + "/" +
+		chainType.GetNetworkSymbol().String() + "/" +
+		tokenAddress + "/" + TokenId
+	logger.Debugf("url:%s", url)
+
+	metadataRes, err := httpx.Get(url, nil)
+	if err != nil {
+		return "", err
+	}
+
+	return string(metadataRes.Body), nil
 }
 
 func GetNFTTransfers(userAddress string, chainType ChainType, blockHeight int64, apiKey string) (NFTTransferResult, error) {

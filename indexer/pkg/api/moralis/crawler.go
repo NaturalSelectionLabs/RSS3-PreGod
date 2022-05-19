@@ -125,7 +125,7 @@ func (c *moralisCrawler) setNFTTransfers(
 			RelatedURLs:     GetTxRelatedURLs(networkSymbol, item.TokenAddress, item.TokenId, &item.TransactionHash),
 			Tags:            constants.ItemTagsNFT.ToPqStringArray(),
 			Authors:         []string{author},
-			Title:           m.Name,
+			Title:           theAsset.Name,
 			Summary:         m.Description,
 			Attachments:     database.MustWrapJSON(utils.Meta2NoteAtt(m)),
 			Source:          constants.NoteSourceNameEthereumNFT.String(),
@@ -185,7 +185,7 @@ func (c *moralisCrawler) setNFTTransfers(
 			RelatedURLs:     GetTxRelatedURLs(networkSymbol, asset.TokenAddress, asset.TokenId, nil),
 			Tags:            constants.ItemTagsNFT.ToPqStringArray(),
 			Authors:         []string{author},
-			Title:           m.Name,
+			Title:           asset.Name,
 			Summary:         m.Description,
 			Attachments:     database.MustWrapJSON(utils.Meta2AssetAtt(m)),
 			Source:          constants.AssetSourceNameEthereumNFT.String(),
@@ -198,7 +198,7 @@ func (c *moralisCrawler) setNFTTransfers(
 				"token_id":           asset.TokenId,
 				"token_symbol":       asset.Symbol,
 				"collection_address": strings.ToLower(asset.TokenAddress),
-				"collection_name":    m.Name,
+				"collection_name":    asset.Name,
 				"contract_type":      asset.ContractType,
 			}),
 			DateCreated: tsp,
@@ -485,9 +485,9 @@ func (c *moralisCrawler) Work(param crawler.WorkParam) error {
 		}
 	}
 
-	if err := utils.CompleteMimeTypesForItems(c.Notes, c.Assets, c.Profiles); err != nil {
-		logger.Error("moralis complete mime types error:", err)
-	}
+	// if err := utils.CompleteMimeTypesForItems(c.Notes, c.Assets, c.Profiles); err != nil {
+	// 	logger.Error("moralis complete mime types error:", err)
+	// }
 
 	return nil
 }

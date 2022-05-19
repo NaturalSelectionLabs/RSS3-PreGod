@@ -45,6 +45,7 @@
       "read_timeout": 60,
       "write_timeout": 60
     },
+    "nft_fallback_endpoint": "https://nft-web3.kallydev.com",
     "misc": {
       "user_agent": "RSS3-PreGod"
     },
