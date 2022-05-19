@@ -32,7 +32,7 @@ func Run() {
 	// get ethclient
 	s.EthClient, err = ethclient.Dial(config.Config.Indexer.Gateway.Endpoint)
 	if err != nil {
-		logger.Errorf("task: ethclient Dial error, %v", err)
+		logger.Errorf("subscribe.ens.Run: ethclient Dial error, %v", err)
 
 		return
 	}
@@ -40,14 +40,14 @@ func Run() {
 	// get abi
 	abiFile, err := abiFileSystem.Open("event.abi")
 	if err != nil {
-		logger.Errorf("task: open abi file error, %v", err)
+		logger.Errorf("subscribe.ens.Run: open abi file error, %v", err)
 
 		return
 	}
 
 	s.ABI, err = abi.JSON(abiFile)
 	if err != nil {
-		logger.Errorf("task: abi file parse error, %v", err)
+		logger.Errorf("subscribe.ens.Run: abi file parse error, %v", err)
 
 		return
 	}
