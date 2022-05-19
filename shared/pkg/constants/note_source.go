@@ -32,6 +32,7 @@ var (
 	NoteSourceIDMisskeyNote         NoteSourceID = 7
 	NoteSourceIDJikePost            NoteSourceID = 8
 	NoteSourceIDEthereumERC20       NoteSourceID = 9
+	NoteSourceIDEthereumETH         NoteSourceID = 10
 
 	NoteSourceNameUnknown             NoteSourceName = "Unknown"
 	NoteSourceNameCrossbell           NoteSourceName = "Crossbell"
@@ -44,6 +45,7 @@ var (
 	NoteSourceNameMisskeyNote         NoteSourceName = "Misskey Note"
 	NoteSourceNameJikePost            NoteSourceName = "Jike Post"
 	NoteSourceNameEthereumERC20       NoteSourceName = "Ethereum ERC20"
+	NoteSourceNameEthereumETH         NoteSourceName = "Ethereum ETH"
 
 	noteSourceNameMap = map[NoteSourceID]NoteSourceName{
 		NoteSourceIDUnknown:             NoteSourceNameUnknown,
@@ -57,6 +59,7 @@ var (
 		NoteSourceIDMisskeyNote:         NoteSourceNameMisskeyNote,
 		NoteSourceIDJikePost:            NoteSourceNameJikePost,
 		NoteSourceIDEthereumERC20:       NoteSourceNameEthereumERC20,
+		NoteSourceIDEthereumETH:         NoteSourceNameEthereumETH,
 	}
 	noteSourceIDMap = map[NoteSourceName]NoteSourceID{}
 )
