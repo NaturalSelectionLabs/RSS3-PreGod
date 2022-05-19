@@ -35,7 +35,7 @@ func (s *Ens) SubscribeEns() {
 	sub, err := s.EthClient.SubscribeFilterLogs(context.Background(), query, logs)
 
 	if err != nil {
-		logger.Errorf("SubscribeEns: ethclient SubscribeFilterLogs error, %v", err)
+		logger.Errorf("subscribe.ens.SubscribeEns: ethclient SubscribeFilterLogs error, %v", err)
 
 		return
 	}
@@ -43,14 +43,14 @@ func (s *Ens) SubscribeEns() {
 	for {
 		select {
 		case err := <-sub.Err():
-			logger.Errorf("SubscribeEns: ethclient subscribe error, %v", err)
+			logger.Errorf("subscribe.ens.SubscribeEns: ethclient subscribe error, %v", err)
 		case vLog := <-logs:
 			if vLog.Topics[0] == TopicHashNameRegistered {
 				var data = NameRegisteredData{}
 
 				// parse contract log
 				if err := s.ABI.UnpackIntoInterface(&data, "NameRegistered", vLog.Data); err != nil {
-					logger.Errorf("SubscribeEns: parse data into NameRegistered error, %v", err)
+					logger.Errorf("subscribe.ens.SubscribeEns: parse data into NameRegistered error, %v", err)
 
 					continue
 				}
@@ -62,7 +62,7 @@ func (s *Ens) SubscribeEns() {
 				block, err := s.EthClient.BlockByNumber(context.Background(), big.NewInt(int64(vLog.BlockNumber)))
 
 				if err != nil {
-					logger.Errorf("SubscribeEns: get block error, %v", err)
+					logger.Errorf("subscribe.ens.SubscribeEns: get block error, %v", err)
 
 					continue
 				}
@@ -79,7 +79,7 @@ func (s *Ens) SubscribeEns() {
 				}
 
 				if err = s.CreateEns(ens); err != nil {
-					logger.Errorf("SubscribeEns: db insert error, %v", err)
+					logger.Errorf("subscribe.ens.SubscribeEns: db insert error, %v", err)
 
 					continue
 				}
@@ -98,6 +98,8 @@ func (s *Ens) GetOwnerFeed(owner string) {
 	if err != nil {
 		return
 	}
+
+	logger.Infof("subscribe.ens.GetOwnerFeed: instance = %v", instance)
 
 	networkIDs := constants.GetEthereumPlatformNetworks()
 	for _, networkID := range networkIDs {
