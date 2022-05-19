@@ -10,6 +10,7 @@ import (
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/constants"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/logger"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/rss3uri"
+	"github.com/ethereum/go-ethereum/common"
 )
 
 func getOwnerFeed(owner string) {
@@ -49,6 +50,7 @@ func main() {
 		domains := make([]model.Domains, 0)
 		page := 0
 
+		// get ens data
 		if err := db.Where(&model.Domains{Type: "ens"}).Limit(1000).Offset(page * 1000).Find(&domains).Error; err != nil {
 			logger.Errorf("subscribe.script: database get err: %v", err)
 
@@ -60,8 +62,17 @@ func main() {
 		}
 
 		for _, ens := range domains {
+			address := common.BytesToAddress(ens.AddressOwner).String()
+
+			// get cache feed
+			var count int64
+			if err := db.Where("owner = ?", address).Model(&model.Note{}).Count(&count).Error; err == nil && count > 0 {
+				continue
+			}
+
+			// get latest feed
 			go func() {
-				getOwnerFeed(string(ens.AddressOwner))
+				getOwnerFeed(address)
 			}()
 
 			time.Sleep(30 * time.Second)
