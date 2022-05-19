@@ -1,6 +1,7 @@
 package nft_utils
 
 import (
+	"context"
 	"fmt"
 	"strings"
 
@@ -202,7 +203,7 @@ func CompleteMimeTypes(as []datatype.Attachment) {
 	})
 }
 
-func CompleteMimeTypesForItems(notes []model.Note, assets []model.Asset, profiles []model.Profile) error {
+func CompleteMimeTypesForItems(ctx context.Context, notes []model.Note, assets []model.Asset, profiles []model.Profile) error {
 	// complete attachments in parallel
 	g := new(errgroup.Group)
 

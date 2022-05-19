@@ -1,6 +1,7 @@
 package poap
 
 import (
+	"context"
 	"fmt"
 	"strings"
 	"time"
@@ -128,7 +129,7 @@ func (pc *poapCrawler) Work(param crawler.WorkParam) error {
 			},
 		})
 
-		if err := nft_utils.CompleteMimeTypesForItems(pc.Notes, pc.Assets, pc.Profiles); err != nil {
+		if err := nft_utils.CompleteMimeTypesForItems(context.Background(), pc.Notes, pc.Assets, pc.Profiles); err != nil {
 			logger.Error("poap complete mime types error:", err)
 		}
 	}
