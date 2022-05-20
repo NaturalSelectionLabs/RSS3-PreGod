@@ -84,6 +84,14 @@ func (pt *GetItemsHandler) Excute() (*GetItemsResult, error) {
 		}
 	}
 
+	if r.Erc20Notes != nil && len(r.Erc20Notes) > 0 {
+		if dbNotes, err := database.CreateNotes(tx, r.Erc20Notes, true); err != nil {
+			return result, err
+		} else {
+			r.Erc20Notes = dbNotes
+		}
+	}
+
 	if r.Profiles != nil && len(r.Profiles) > 0 {
 		if dbProfiles, err := database.CreateProfiles(tx, r.Profiles, true); err != nil {
 			return result, err
