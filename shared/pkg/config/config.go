@@ -152,6 +152,10 @@ type SentryStruct struct {
 	ServerName string `koanf:"server_name"`
 }
 
+type OpenTelemetry struct {
+	URL string `koanf:"url"`
+}
+
 type ConfigStruct struct {
 	Protocol ProtocolStruct `koanf:"protocol"`
 	Hub      HubStruct      `koanf:"hub"`
@@ -164,6 +168,7 @@ type ConfigStruct struct {
 	Network       NetWorkStruct       `koanf:"network"`
 	Indexer       IndexerStruct       `koanf:"indexer"`
 	Sentry        SentryStruct        `koanf:"sentry"`
+	OpenTelemetry *OpenTelemetry      `koanf:"open_telemetry"`
 }
 
 var (
