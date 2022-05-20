@@ -1,4 +1,4 @@
-package internal
+package clear
 
 import (
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database"
@@ -18,8 +18,10 @@ func GetDataFromDB(limit int, offset int) ([]model.Note, int64, error) {
 	return noteList, count, nil
 }
 
-func ClearGitCoinData() {
+func ClearGitCoinData(notes []model.Note) {
+	for _, note := range notes {
 
+	}
 }
 
 func SaveDataInDB() {
