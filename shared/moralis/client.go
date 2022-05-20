@@ -56,7 +56,7 @@ func (c *Client) DoRequest(_ context.Context, request *http.Request) (*Response,
 
 	response := &Response{}
 
-	if err := json.NewDecoder(httpResponse.Body).Decode(&response); err != nil {
+	if err = json.NewDecoder(httpResponse.Body).Decode(&response); err != nil {
 		return nil, httpResponse, err
 	}
 
@@ -74,6 +74,7 @@ type GetTransactionsOption struct {
 	Limit     int    `url:"limit,omitempty"`
 }
 
+// nolint:dupl // TODO
 func (c *Client) GetTransactions(ctx context.Context, address common.Address, option *GetTransactionsOption) ([]Transaction, *Response, error) {
 	values, err := query.Values(option)
 	if err != nil {
@@ -117,6 +118,7 @@ type GetTokenTransfersOption struct {
 	Limit     int    `url:"limit,omitempty"`
 }
 
+// nolint:dupl // TODO
 func (c *Client) GetTokenTransfers(ctx context.Context, address common.Address, option *GetTokenTransfersOption) ([]TokenTransfer, *Response, error) {
 	values, err := query.Values(option)
 	if err != nil {
@@ -160,6 +162,7 @@ type GetNFTTransfersOption struct {
 	Limit     int    `url:"limit,omitempty"`
 }
 
+// nolint:dupl // TODO
 func (c *Client) GetNFTTransfers(ctx context.Context, address common.Address, option *GetNFTTransfersOption) ([]NFTTransfer, *Response, error) {
 	values, err := query.Values(option)
 	if err != nil {
