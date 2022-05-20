@@ -66,7 +66,7 @@ func (c *moralisCrawler) setNFTTransfers(
 	defer setNFTTransfersSpan.End()
 
 	// nftTransfers for notes
-	nftTransfers, err := GetNFTTransfers(param.Identity, chainType, param.BlockHeight, getApiKey())
+	nftTransfers, err := GetNFTTransfers(param.Identity, chainType, param.BlockHeight, param.Timestamp.String(), getApiKey())
 	if err != nil {
 		logger.Errorf("get nft transfers: %v", err)
 
@@ -74,7 +74,7 @@ func (c *moralisCrawler) setNFTTransfers(
 	}
 
 	// get nft for assets
-	assets, err := GetNFTs(param.Identity, chainType, getApiKey())
+	assets, err := GetNFTs(param.Identity, chainType, param.Timestamp.String(), getApiKey())
 	if err != nil {
 		logger.Errorf("get nft: %v", err)
 
@@ -268,7 +268,7 @@ func (c *moralisCrawler) setERC20(
 
 	defer setERC20Span.End()
 
-	result, err := GetErc20Transfers(param.Identity, chainType, getApiKey())
+	result, err := GetErc20Transfers(param.Identity, chainType, param.Timestamp.String(), getApiKey())
 	if err != nil {
 		logger.Errorf("chain type[%s], get erc20 transfers: %v", chainType.GetNetworkSymbol().String(), err)
 
@@ -382,7 +382,7 @@ func (c *moralisCrawler) setETH(
 
 	defer setETH.End()
 
-	result, err := GetEthTransfers(param.Identity, chainType, getApiKey())
+	result, err := GetEthTransfers(param.Identity, chainType, param.Timestamp.String(), getApiKey())
 	if err != nil {
 		logger.Errorf("chain type[%s], get eth transfers: %v", chainType.GetNetworkSymbol().String(), err)
 
