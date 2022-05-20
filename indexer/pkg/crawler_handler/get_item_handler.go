@@ -34,6 +34,7 @@ func NewGetItemsResult() *GetItemsResult {
 	}
 }
 
+// nolint:gocognit // TODO
 func (pt *GetItemsHandler) Excute() (*GetItemsResult, error) {
 	var c crawler.Crawler
 
@@ -81,6 +82,14 @@ func (pt *GetItemsHandler) Excute() (*GetItemsResult, error) {
 			return result, err
 		} else {
 			r.Notes = dbNotes
+		}
+	}
+
+	if r.Erc20Notes != nil && len(r.Erc20Notes) > 0 {
+		if dbNotes, err := database.CreateNotes(tx, r.Erc20Notes, true); err != nil {
+			return result, err
+		} else {
+			r.Erc20Notes = dbNotes
 		}
 	}
 

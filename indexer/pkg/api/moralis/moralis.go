@@ -2,6 +2,7 @@ package moralis
 
 import (
 	"fmt"
+	"net/url"
 	"time"
 
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/api/nft_utils"
@@ -54,12 +55,13 @@ func requestMoralisApi(url string, apiKey string, isCache bool) (httpx.Response,
  * About nft handler
  */
 
-func GetNFTs(userAddress string, chainType ChainType, apiKey string) (NFTResult, error) {
+func GetNFTs(userAddress string, chainType ChainType, fromDate string, apiKey string) (NFTResult, error) {
 	// Gets all NFT items of user
-	url := fmt.Sprintf("%s/api/v2/%s/nft?chain=%s&format=decimal",
-		endpoint, userAddress, chainType)
+	requestURL := fmt.Sprintf("%s/api/v2/%s/nft?chain=%s&format=decimal&from_date=%s",
+		endpoint, userAddress, chainType, url.QueryEscape(fromDate),
+	)
 
-	response, err := requestMoralisApi(url, apiKey, true)
+	response, err := requestMoralisApi(requestURL, apiKey, true)
 
 	if err != nil {
 		return NFTResult{}, err
@@ -86,11 +88,12 @@ func GetNFTs(userAddress string, chainType ChainType, apiKey string) (NFTResult,
 	return *res, nil
 }
 
-func GetNFTTransfers(userAddress string, chainType ChainType, blockHeight int64, apiKey string) (NFTTransferResult, error) {
+func GetNFTTransfers(userAddress string, chainType ChainType, blockHeight int64, fromDate string, apiKey string) (NFTTransferResult, error) {
 	// Gets all NFT transfers of user
-	url := fmt.Sprintf("%s/api/v2/%s/nft/transfers?chain=%s&from_block=%d&format=decimal&direction=both",
-		endpoint, userAddress, chainType, blockHeight)
-	response, err := requestMoralisApi(url, apiKey, true)
+	requestURL := fmt.Sprintf("%s/api/v2/%s/nft/transfers?chain=%s&from_block=%d&format=decimal&direction=both&from_date=%s",
+		endpoint, userAddress, chainType, blockHeight, url.QueryEscape(fromDate),
+	)
+	response, err := requestMoralisApi(requestURL, apiKey, true)
 
 	if err != nil {
 		return NFTTransferResult{}, err
@@ -207,12 +210,12 @@ type Erc20TokensMap map[string]Erc20TokenMetaDataItem
 
 var erc20TokensCache = Erc20TokensMap{}
 
-func GetErc20Transfers(userAddress string, chainType ChainType, apiKey string) ([]ERC20TransferItem, error) {
+func GetErc20Transfers(userAddress string, chainType ChainType, fromDate string, apiKey string) ([]ERC20TransferItem, error) {
 	offset := 0
 	transferItems := make([]ERC20TransferItem, 0)
 
 	for {
-		transfer, err := getErc20Once(userAddress, chainType, apiKey, offset)
+		transfer, err := getErc20Once(userAddress, chainType, fromDate, apiKey, offset)
 		if err != nil {
 			logger.Errorf("get erc20 once error: %v", err)
 
@@ -235,11 +238,12 @@ func GetErc20Transfers(userAddress string, chainType ChainType, apiKey string) (
 	return transferItems, nil
 }
 
-func getErc20Once(userAddress string, chainType ChainType, apiKey string, offest int) (*ERC20Transfer, error) {
-	url := fmt.Sprintf("%s/api/v2/%s/erc20/transfers?chain=%s&from_block=%d&offset=%d",
-		endpoint, userAddress, chainType, 0, offest)
+func getErc20Once(userAddress string, chainType ChainType, fromDate string, apiKey string, offest int) (*ERC20Transfer, error) {
+	requestURL := fmt.Sprintf("%s/api/v2/%s/erc20/transfers?chain=%s&from_block=%d&offset=%d&from_date=%s",
+		endpoint, userAddress, chainType, 0, offest, url.QueryEscape(fromDate),
+	)
 
-	response, err := requestMoralisApi(url, apiKey, true)
+	response, err := requestMoralisApi(requestURL, apiKey, true)
 
 	if err != nil {
 		return nil, err
@@ -473,12 +477,12 @@ func getENSTransaction(ens NFTItem, record *ENSTextRecord) error {
  * About eth handler native assets
  */
 
-func GetEthTransfers(userAddress string, chainType ChainType, apiKey string) ([]ETHTransferItem, error) {
+func GetEthTransfers(userAddress string, chainType ChainType, fromDate string, apiKey string) ([]ETHTransferItem, error) {
 	offset := 0
 	transferItems := make([]ETHTransferItem, 0)
 
 	for {
-		transfer, err := getETHOnce(userAddress, chainType, apiKey, offset)
+		transfer, err := getETHOnce(userAddress, chainType, fromDate, apiKey, offset)
 		if err != nil {
 			logger.Errorf("get eth once error: %v", err)
 
@@ -501,12 +505,13 @@ func GetEthTransfers(userAddress string, chainType ChainType, apiKey string) ([]
 	return transferItems, nil
 }
 
-func getETHOnce(userAddress string, chainType ChainType, apiKey string, offest int) (*ETHTransfer, error) {
-	url := fmt.Sprintf("%s/api/v2/%s?chain=%s&from_block=%d&offset=%d",
-		endpoint, userAddress, chainType, 0, offest)
-	logger.Debugf("getETHOnce url: %s", url)
+func getETHOnce(userAddress string, chainType ChainType, fromDate string, apiKey string, offest int) (*ETHTransfer, error) {
+	requestURL := fmt.Sprintf("%s/api/v2/%s?chain=%s&from_block=%d&offset=%d&from_date=%s",
+		endpoint, userAddress, chainType, 0, offest, url.QueryEscape(fromDate),
+	)
+	logger.Debugf("getETHOnce url: %s", requestURL)
 
-	response, err := requestMoralisApi(url, apiKey, true)
+	response, err := requestMoralisApi(requestURL, apiKey, true)
 
 	if err != nil {
 		return nil, err
