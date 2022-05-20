@@ -209,6 +209,7 @@ func CreateNotes(db *gorm.DB, notes []model.Note, updateAll bool) ([]model.Note,
 		if notes[i].Metadata == nil {
 			notes[i].Metadata = []byte("{}")
 		}
+
 	}
 
 	if err := db.Clauses(NewCreateClauses(updateAll, true)...).Create(&notes).Error; err != nil {

@@ -28,40 +28,46 @@ func main() {
 		offset = 0
 	}
 
-	notes, err := clear.GetDataFromDB(GetNotesLimit, int(offset))
+	notes, err := clear.GetDataFromDB(1, int(offset))
 	if err != nil {
 		logger.Infof("get data from db err:%v", err)
 
 		return
 	}
 
-	logger.Infof("get %d notes", len(notes))
+	// logger.Infof("get %d notes", len(notes))
+	// logger.Debugf("notes:%v", notes)
 
-	/*
-		for {
-			// get data from db
-			notes, err := clear.GetDataFromDB(GetNotesLimit, int(offset))
-			if err != nil {
-				logger.Infof("get data from db err:%v", err)
+	// for {
+	// get data from db
+	// notes, err := clear.GetDataFromDB(GetNotesLimit, int(offset))
+	// if err != nil {
+	// 	logger.Infof("get data from db err:%v", err)
 
-				return
-			}
+	// 	return
+	// }
 
-			if len(notes) == 0 {
-				logger.Infof("mission completed")
-			}
+	if len(notes) == 0 {
+		logger.Infof("mission completed")
+	}
 
-			// change db
-			clear.ClearGitCoinData(notes)
+	// change db
+	notes = clear.ClearGitCoinData(notes)
 
-			//save in db
-			tx := database.DB.Begin()
+	//save in db
+	tx := database.DB.Begin()
 
-			if _, err := database.CreateNotes(tx, notes, true); err != nil {
-				continue
-			}
+	logger.Infof("notes[0].tags:%v", notes[0].Tags)
+	if _, err := database.CreateNotes(tx, notes, true); err != nil {
+		// continue
+	}
 
-			offset += GetNotesLimit
-		}
-	*/
+	// set the current block height as the from height
+	if err := util.SetCrawlerMetadata(crawlerID, offset, platformID); err != nil {
+		logger.Errorf("create crawler metadata error: %v", err)
+	}
+
+	offset += GetNotesLimit
+	// }
+
 }

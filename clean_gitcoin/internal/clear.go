@@ -4,6 +4,7 @@ import (
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database/model"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/constants"
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/logger"
 )
 
 func GetDataFromDB(limit int, offset int) ([]model.Note, error) {
@@ -16,17 +17,21 @@ func GetDataFromDB(limit int, offset int) ([]model.Note, error) {
 		Limit(limit).
 		Offset(offset)
 
-	var count int64
-	if err := internalDB.Model(&model.Note{}).Count(&count).Error; err != nil {
+	if err := internalDB.Find(&notes).Error; err != nil {
 		return nil, err
 	}
 
 	return notes, nil
 }
 
-func ClearGitCoinData(notes []model.Note) {
+func ClearGitCoinData(notes []model.Note) []model.Note {
 	// get projects
-	for _, note := range notes {
-		note.Tags = constants.ItemTagsToken.ToPqStringArray()
+	for i, note := range notes {
+		logger.Infof("note.Tags:%v", note.Tags)
+		note.Tags = constants.ItemTagsDonationGitcoin.ToPqStringArray()
+		logger.Infof("note.Tags:%v， %d", note.Tags, i)
 	}
+
+	logger.Infof("note[0].Tags:%v", notes[0].Tags)
+	return notes
 }
