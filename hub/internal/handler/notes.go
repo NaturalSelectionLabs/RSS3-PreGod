@@ -14,6 +14,7 @@ import (
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database/model"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/constants"
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/logger"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/rss3uri"
 	"github.com/gin-gonic/gin"
 	"github.com/lib/pq"
@@ -190,8 +191,40 @@ func getNoteListByInstance(c *gin.Context, instance rss3uri.Instance, request Ge
 	}
 
 	notes := make([]model.Note, 0)
+
+	owner := strings.ToLower(rss3uri.New(instance).String())
+
+	ethNotes := make([]model.Note, 0)
 	if err := internalDB.
-		Where("owner = ?", strings.ToLower(rss3uri.New(instance).String())).
+		Where("owner = ?", owner).
+		Where("source = ?", constants.NoteSourceNameEthereumNFT).
+		Limit(request.Limit).
+		Order("date_created DESC").
+		Find(&ethNotes).Error; err != nil {
+		return nil, 0, err
+	}
+	var activeTxList = []string{}
+	for _, ethNote := range ethNotes {
+		h := strings.Split(ethNote.MetadataProof, "-")[0]
+		activeTxList = append(activeTxList, h)
+	}
+
+	DBNoteSourceEthereumNFT := constants.NoteSourceNameEthereumNFT
+
+	logger.Info("activeTxList length is ", len(activeTxList))
+	// make sure len(activeTxList) > 100?
+
+	internalDB = internalDB.
+		Where("owner = ?", owner).
+		Where("source != ? OR (source = ? AND metadata ->> 'transaction_hash' IN ?) OR (source = ? AND tags && ?)",
+			DBNoteSourceEthereumNFT,
+			DBNoteSourceEthereumNFT,
+			activeTxList,
+			DBNoteSourceEthereumNFT,
+			constants.ItemTagsNFTPOAP.ToPqStringArray())
+
+	if err := internalDB.
+		Where("owner = ?", owner).
 		Limit(request.Limit).
 		Order("date_created DESC").
 		Order("contract_address DESC").
@@ -205,7 +238,7 @@ func getNoteListByInstance(c *gin.Context, instance rss3uri.Instance, request Ge
 
 	if err := internalDB.
 		Model(&model.Note{}).
-		Where("owner = ?", strings.ToLower(rss3uri.New(instance).String())).
+		Where("owner = ?", owner).
 		Order("date_created DESC").
 		Order("contract_address DESC").
 		Order("log_index DESC").
@@ -331,6 +364,36 @@ func getNoteListsByLink(c *gin.Context, instance rss3uri.Instance, request GetNo
 	}
 
 	notes := make([]model.Note, 0)
+
+	ethNotes := make([]model.Note, 0)
+	if err := internalDB.
+		Where("owner IN ?", owners).
+		Where("source = ?", constants.NoteSourceNameEthereumNFT).
+		Limit(request.Limit).
+		Order("date_created DESC").
+		Find(&ethNotes).Error; err != nil {
+		return nil, 0, err
+	}
+	var activeTxList = []string{}
+	for _, ethNote := range ethNotes {
+		h := strings.Split(ethNote.MetadataProof, "-")[0]
+		activeTxList = append(activeTxList, h)
+	}
+
+	DBNoteSourceEthereumNFT := constants.NoteSourceNameEthereumNFT
+
+	logger.Info("activeTxList length is ", len(activeTxList))
+	// make sure len(activeTxList) > 100?
+
+	internalDB = internalDB.
+		Where("owner IN ?", owners).
+		Where("source != ? OR (source = ? AND metadata ->> 'transaction_hash' IN ?) OR (source = ? AND tags && ?)",
+			DBNoteSourceEthereumNFT,
+			DBNoteSourceEthereumNFT,
+			activeTxList,
+			DBNoteSourceEthereumNFT,
+			constants.ItemTagsNFTPOAP.ToPqStringArray())
+
 	if err := internalDB.
 		Where("owner IN ?", owners).
 		Limit(request.Limit).
