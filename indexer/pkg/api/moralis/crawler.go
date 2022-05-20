@@ -396,6 +396,9 @@ func (c *moralisCrawler) setETH(
 	niBuilder := getNewNoteInstanceBuilder()
 
 	for _, item := range result {
+		if item.ReceiptStatus == "0" { // failed transaction
+			continue
+		}
 		tsp, tspErr := GetTsp(item.BlockTimestamp)
 		if tspErr != nil {
 			logger.Warnf("chain type[%s], item[%s], fails at GetTsp err[%v]",
