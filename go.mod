@@ -15,6 +15,7 @@ require (
 	github.com/gin-gonic/gin v1.7.7
 	github.com/go-redis/redis/v8 v8.11.4
 	github.com/go-resty/resty/v2 v2.7.0
+	github.com/google/go-querystring v1.0.0
 	github.com/json-iterator/go v1.1.12
 	github.com/kamva/mgm/v3 v3.4.1
 	github.com/knadh/koanf v1.4.1
