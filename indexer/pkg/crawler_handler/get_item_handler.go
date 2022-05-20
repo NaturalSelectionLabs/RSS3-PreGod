@@ -77,7 +77,7 @@ func (pt *GetItemsHandler) Excute() (*GetItemsResult, error) {
 	}
 
 	if r.Notes != nil && len(r.Notes) > 0 {
-		if dbNotes, err := database.CreateNotes(tx, r.Notes, true); err != nil {
+		if dbNotes, err := database.CreateNotesDoNothing(tx, r.Notes, true); err != nil {
 			return result, err
 		} else {
 			r.Notes = dbNotes
