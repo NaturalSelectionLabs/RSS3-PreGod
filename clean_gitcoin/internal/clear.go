@@ -20,7 +20,9 @@ func GetDataFromDB(limit int, offset int) ([]model.Note, int64, error) {
 
 func ClearGitCoinData(notes []model.Note) {
 	for _, note := range notes {
-
+		var relatedURLs []string = []string {
+			moralis.GetTxHashURL(
+		}
 	}
 }
 
