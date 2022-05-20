@@ -34,6 +34,7 @@ func NewGetItemsResult() *GetItemsResult {
 	}
 }
 
+// nolint:gocognit // TODO
 func (pt *GetItemsHandler) Excute() (*GetItemsResult, error) {
 	var c crawler.Crawler
 
