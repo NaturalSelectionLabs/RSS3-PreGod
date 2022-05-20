@@ -77,10 +77,18 @@ func (pt *GetItemsHandler) Excute() (*GetItemsResult, error) {
 	}
 
 	if r.Notes != nil && len(r.Notes) > 0 {
-		if dbNotes, err := database.CreateNotesDoNothing(tx, r.Notes, true); err != nil {
+		if dbNotes, err := database.CreateNotes(tx, r.Notes, true); err != nil {
 			return result, err
 		} else {
 			r.Notes = dbNotes
+		}
+	}
+
+	if r.Erc20Notes != nil && len(r.Erc20Notes) > 0 {
+		if dbNotes, err := database.CreateNotes(tx, r.Erc20Notes, true); err != nil {
+			return result, err
+		} else {
+			r.Erc20Notes = dbNotes
 		}
 	}
 

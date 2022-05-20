@@ -352,7 +352,7 @@ func (c *moralisCrawler) setERC20(
 			DateUpdated: tsp,
 		}
 
-		c.Notes = append(c.Notes, note)
+		c.Erc20Notes = append(c.Erc20Notes, note)
 	}
 
 	return nil
@@ -480,6 +480,17 @@ func (c *moralisCrawler) Work(param crawler.WorkParam) error {
 			if c.Notes[i].Identifier == c.Notes[j].Identifier {
 				logger.Errorf("Duplicate note found: %v!!! This is temporarily removed.", c.Notes[i].Identifier)
 				c.Notes = append(c.Notes[:j], c.Notes[j+1:]...)
+				j--
+			}
+		}
+	}
+
+	// check duplicates in Erc20Notes
+	for i := 0; i < len(c.Erc20Notes); i++ {
+		for j := i + 1; j < len(c.Erc20Notes); j++ {
+			if c.Erc20Notes[i].Identifier == c.Erc20Notes[j].Identifier {
+				logger.Errorf("Duplicate note found: %v!!! This is temporarily removed.", c.Notes[i].Identifier)
+				c.Erc20Notes = append(c.Erc20Notes[:j], c.Erc20Notes[j+1:]...)
 				j--
 			}
 		}

@@ -22,6 +22,8 @@ type DefaultCrawler struct {
 	Assets   []model.Asset
 	Notes    []model.Note
 	Profiles []model.Profile
+
+	Erc20Notes []model.Note // No way to fix bugs
 }
 
 // CrawlerResult inherits the function by default
