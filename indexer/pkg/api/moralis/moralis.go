@@ -509,7 +509,6 @@ func getETHOnce(userAddress string, chainType ChainType, fromDate string, apiKey
 	requestURL := fmt.Sprintf("%s/api/v2/%s?chain=%s&from_block=%d&offset=%d&from_date=%s",
 		endpoint, userAddress, chainType, 0, offest, url.QueryEscape(fromDate),
 	)
-	logger.Debugf("getETHOnce url: %s", requestURL)
 
 	response, err := requestMoralisApi(requestURL, apiKey, true)
 
