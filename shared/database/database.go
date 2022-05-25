@@ -222,7 +222,7 @@ func CreateNotes(db *gorm.DB, notes []model.Note, updateAll bool) ([]model.Note,
 	return notes, nil
 }
 
-func CreateNotesDoNothing(db *gorm.DB, notes []model.Note, updateAll bool) ([]model.Note, error) {
+func CreateNotesDoNothing(db *gorm.DB, notes []model.Note) ([]model.Note, error) {
 	for i := range notes {
 		notes[i].Identifier = strings.ToLower(notes[i].Identifier)
 		notes[i].Owner = strings.ToLower(notes[i].Owner)
