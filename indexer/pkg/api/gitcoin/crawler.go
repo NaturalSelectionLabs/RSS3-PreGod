@@ -391,9 +391,10 @@ func setNote(
 			"from": v.Donor,
 			"to":   v.GetTxTo(),
 
+			"decimal":      v.Decimals,
 			"destination":  v.AdminAddress,
-			"value_amount": v.FormatedAmount.String(),
-			"value_symbol": v.Symbol,
+			"amount":       v.FormatedAmount.String(),
+			"token_symbol": v.Symbol,
 			"approach":     v.Approach,
 		}),
 		DateCreated: tsp,

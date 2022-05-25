@@ -431,6 +431,7 @@ func (c *moralisCrawler) setETH(
 				"from":             strings.ToLower(item.FromAddress),
 				"to":               strings.ToLower(item.ToAddress),
 				"amount":           item.Value,
+				"decimal":          "18",
 				"token_standard":   "Native",
 				"token_symbol":     "ETH",
 				"transaction_hash": item.TransactionHash,
