@@ -26,9 +26,7 @@ type tokenMeta struct {
 }
 
 var (
-	token = map[string]tokenMeta{
-		"0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee": {18, "ETH"},
-	}
+	token map[string]tokenMeta
 
 	jsoni = jsoniter.ConfigCompatibleWithStandardLibrary
 )
@@ -88,14 +86,20 @@ func GetEthDonations(fromBlock int64, toBlock int64, chainType GitcoinPlatform) 
 
 	var donationApproach DonationApproach
 
+	var nativeAssets tokenMeta
+
 	ethDonationsResult := NewEthDonationsResult()
 
 	if chainType == ETH {
 		checkoutAddress = bulkCheckoutAddressETH
 		donationApproach = DonationApproachEthereum
+		nativeAssets.decimal = 18
+		nativeAssets.symbol = "ETH"
 	} else if chainType == Polygon {
 		checkoutAddress = bulkCheckoutAddressPolygon
 		donationApproach = DonationApproachPolygon
+		nativeAssets.decimal = 18
+		nativeAssets.symbol = "MATIC"
 	} else {
 		return nil, fmt.Errorf("invalid chainType %s", string(chainType))
 	}
@@ -119,11 +123,18 @@ func GetEthDonations(fromBlock int64, toBlock int64, chainType GitcoinPlatform) 
 		formatedAmount := big.NewInt(1)
 		formatedAmount.SetString(amount[2:], 16)
 
-		t, ok := token[tokenAddress]
-		if !ok {
-			logger.Warnf("token address doesn't exist: %s", tokenAddress)
+		var t tokenMeta
+		if tokenAddress == "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee" {
+			t = nativeAssets
+		} else {
+			meta, ok := token[tokenAddress]
+			if !ok {
+				logger.Warnf("token address doesn't exist: %s", tokenAddress)
 
-			continue
+				continue
+			}
+
+			t = meta
 		}
 
 		symbol := t.symbol
