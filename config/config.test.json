@@ -1,0 +1,87 @@
+{
+	"hub": {
+	 "server": {
+	   "run_mode": "debug",
+	   "http_port": 8080,
+	   "read_timeout": 60,
+	   "write_timeout": 60
+	 },
+	 "indexer_endpoint": "http://127.0.0.1:3000"
+	},
+	"redis":{
+	   "addr":"localhost:6379",
+	   "password":"Pa33WoRD",
+	   "db":0
+	},
+	"postgres":{
+	   "dsn":"host=34.219.145.46 port=5432 user=pregod password=FkSLQ765UhVime8R dbname=pregod sslmode=disable TimeZone=UTC",
+	   "max_open_conns":100,
+	   "max_idle_conns":20,
+	   "conn_max_idle_time":-1,
+	   "conn_max_life_time":-1
+	},
+	"elasticsearch":{
+	   "address":"https://es-dev.kindjeff.com",
+	   "username": "elastic",
+	   "password": "KJ7Trg*zjJR4UtM*"
+	},
+	"mongo":{
+	   "uri":"mongodb://rss3:Pa33WoRD@localhost:27017",
+	   "db":"rss3-prod",
+	   "max_pool_size":200,
+	   "min_pool_size":50
+	},
+	"logger":{
+	   "prefix_tag":"pregod",
+	   "engine":"zap",
+	   "level":"debug",
+	   "encoding":"json",
+	   "output":[
+	      {
+		 "type":"stdout"
+	      }
+	   ]
+	},
+	"indexer":{
+	   "server":{
+	      "run_mode":"debug",
+	      "http_port":3000,
+	      "read_timeout":60,
+	      "write_timeout":60,
+	      "endpoint": "http://localhost:3000"
+	   },
+	   "misc":{
+	      "user_agent":"RSS3-PreGod"
+	   },
+	   "jike":{
+	      "area_code":"+1",
+	      "mobile_phone_number":"6623683666",
+	      "password":"DVybY7m-HV69di2x",
+	      "app_version":"7.27.1"
+	   },
+	   "twitter":{
+	      "break_down_tokens":[
+		 "AAAAAAAAAAAAAAAAAAAAAOFWUgEAAAAAmjqmjuQj9JnDic89npODpCj7Bgo%3DoA4AmypC4gVbyyEpXfbARfvIyIFX6RDWO3nFQ8LkvPtctNAdo7",
+		 "AAAAAAAAAAAAAAAAAAAAAFIVywAAAAAAW2tMfd3vB6CMlPv%2FGb2QRdE72is%3DvwPKkVlu0BYiulN75A35RFlmsKDDDCXcnFBZyd3f5TXFJq9WWy",
+		 "AAAAAAAAAAAAAAAAAAAAADh01AAAAAAAxna3Hru2KPaE3MZaHF09hhZVsWk%3D0vd20thafx4rc7WnSU0neovWZIAvWnmUaOFEx8tldB7ZaWgd3r",
+		 "AAAAAAAAAAAAAAAAAAAAAPc4UgEAAAAANZbjHu2%2B3d8fBRFQVQZnfhE1rb4%3DlglTHTS0cgdFUXrNqoIjz092G7Q5he4CLuZ6NCheUIiYwhvEBz",
+		 "AAAAAAAAAAAAAAAAAAAAALBkJwEAAAAAyAcfkep6yiBTg9sqPi4052dncUI%3D1bJbFrtpL78MK1fZDbGM1jEhdNmHNKMyn3d0ppy5zm9lY9ZdPP"
+	      ]
+	   },
+	   "etherscan":{
+	      "api_key":"SG1R418UKFANBHX7BJQZQDRMQ4DHYGN9JH"
+	   },
+	   "polygonscan":{
+	      "api_key":"VF712I6ZW3MH6IF9T5X87ZX5MHVZF8UHI9"
+	   },
+	   "arbitrum":{
+	      "api_key":"YGCWJ83VDVF6U5WZZZHA7QI4FWGWM7K6SE"
+	   },
+	   "moralis":{
+	      "api_key":"lukd8lL7KnRe3E3ESvrveNwMjVz7rvZ5rT1ggkJWYE4Kj87Jp3jbo6JpVNUmxesF"
+	   },
+	   "gateway":{
+	      "endpoint":"ws://143.110.144.165:8546"
+	   }
+	}
+     }

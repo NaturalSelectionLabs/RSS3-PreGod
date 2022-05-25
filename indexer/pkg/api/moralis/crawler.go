@@ -67,19 +67,19 @@ func (c *moralisCrawler) setNFTTransfers(
 
 	// nftTransfers for notes
 	nftTransfers, err := GetNFTTransfers(param.Identity, chainType, param.BlockHeight, param.Timestamp.String(), getApiKey())
-	if err != nil {
-		logger.Errorf("get nft transfers: %v", err)
+	// if err != nil {
+	// 	logger.Errorf("get nft transfers: %v", err)
 
-		return err
-	}
+	// 	return err
+	// }
 
 	// get nft for assets
 	assets, err := GetNFTs(param.Identity, chainType, param.Timestamp.String(), getApiKey())
-	if err != nil {
-		logger.Errorf("get nft: %v", err)
+	// if err != nil {
+	// 	logger.Errorf("get nft: %v", err)
 
-		return err
-	}
+	// 	return err
+	// }
 
 	// check if each asset has a proof (only for logging issues)
 	for _, asset := range assets.Result {
