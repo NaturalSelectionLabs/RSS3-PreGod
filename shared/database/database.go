@@ -398,10 +398,5 @@ func NewCreateClauses(updateAll bool, updateMetadata bool) []clause.Expression {
 		})
 	}
 
-	clauses = append(clauses, clause.OnConflict{
-		DoUpdates: clause.AssignmentColumns([]string{"attachments"}),
-		UpdateAll: true,
-	})
-
 	return clauses
 }
