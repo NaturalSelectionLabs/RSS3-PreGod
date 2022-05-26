@@ -183,7 +183,7 @@ func (property *zksyncCrawlerProperty) run() error {
 	}
 
 	if len(zkSyncDonations.Donations) > 0 {
-		err := setDB(zkSyncDonations.Donations, constants.NetworkIDEthereum, zkSyncDonations.AdminAddresses)
+		err := setDB(zkSyncDonations.Donations, constants.NetworkIDZkSync, zkSyncDonations.AdminAddresses)
 		if err != nil {
 			logger.Errorf("set db error: %v", err)
 
