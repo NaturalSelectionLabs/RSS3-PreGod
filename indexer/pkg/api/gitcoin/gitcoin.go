@@ -11,6 +11,7 @@ import (
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/config"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/httpx"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/logger"
+	mapset "github.com/deckarep/golang-set"
 	jsoniter "github.com/json-iterator/go"
 	"gorm.io/gorm"
 )
@@ -199,6 +200,8 @@ func NewZkSyncDonationResult() *ZkSyncDonationResult {
 func GetZkSyncDonations(fromBlock int64, toBlock int64) (*ZkSyncDonationResult, error) {
 	ethDonationsResult := NewZkSyncDonationResult()
 
+	adminAddressSet := mapset.NewSet()
+
 	for i := fromBlock; i <= toBlock; i++ {
 		trxs, err := zksync.GetTxsByBlock(i)
 		if err != nil {
@@ -239,9 +242,22 @@ func GetZkSyncDonations(fromBlock int64, toBlock int64) (*ZkSyncDonationResult, 
 				Approach:       DonationApproachZkSync,
 			}
 			ethDonationsResult.Donations = append(ethDonationsResult.Donations, d)
-			ethDonationsResult.AdminAddresses = append(ethDonationsResult.AdminAddresses, adminAddress)
+			adminAddressSet.Add(adminAddress)
 		}
 	}
+
+	for _, adminAddress := range adminAddressSet.ToSlice() {
+		addressStr, ok := adminAddressSet.(string)
+		if !ok {
+			logger.Warnf("token address[%v] is not string", addressStr)
+
+			continue
+		}
+
+		ethDonationsResult.AdminAddresses = append(ethDonationsResult.AdminAddresses, addressStr)
+	}
+
+	ethDonationsResult.AdminAddresses = append(ethDonationsResult.AdminAddresses, adminAddress)
 
 	return ethDonationsResult, nil
 }
