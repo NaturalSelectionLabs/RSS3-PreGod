@@ -559,8 +559,6 @@ func (c *moralisCrawler) Work(param crawler.WorkParam) error {
 		}
 	}()
 
-	wg.Add(1)
-
 	go func() {
 		defer wg.Done()
 
