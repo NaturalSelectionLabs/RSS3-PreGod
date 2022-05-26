@@ -87,6 +87,7 @@ var (
 		NetworkSymbolJike:           NetworkIDJike,
 		NetworkSymbolPlayStation:    NetworkIDPlayStation,
 		NetworkSymbolGitHub:         NetworkIDGitHub,
+		NetworkSymbolZkSync:         NetworkIDZkSync,
 	}
 
 	networkSymbolMap = map[NetworkID]NetworkSymbol{}
