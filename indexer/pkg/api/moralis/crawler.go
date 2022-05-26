@@ -21,6 +21,21 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 )
 
+var nativeMap = map[constants.NetworkSymbol]string{
+	constants.NetworkSymbolEthereum:       "ETH",
+	constants.NetworkSymbolCrossbell:      "CSB",
+	constants.NetworkSymbolBNBChain:       "BNB",
+	constants.NetworkSymbolPolygon:        "MATIC",
+	constants.NetworkSymbolArbitrum:       "ETH",
+	constants.NetworkSymbolAvalanche:      "AVAX",
+	constants.NetworkSymbolFantom:         "FTM",
+	constants.NetworkSymbolGnosisMainnet:  "xDAI",
+	constants.NetworkSymbolSolanaMainet:   "SOL",
+	constants.NetworkSymbolFlowMainnet:    "FLOW",
+	constants.NetworkSymbolArweaveMainnet: "AR",
+	constants.NetworkSymbolZkSync:         "ETH",
+}
+
 type moralisCrawler struct {
 	crawler.DefaultCrawler
 }
@@ -371,16 +386,16 @@ func (c *moralisCrawler) setERC20(
 	return nil
 }
 
-func (c *moralisCrawler) setETH(
+func (c *moralisCrawler) setNative(
 	ctx context.Context,
 	param crawler.WorkParam,
 	owner string,
 	author string,
 	networkSymbol constants.NetworkSymbol,
 	chainType ChainType) error {
-	_, setETH := otel.Tracer("crawler_moralis").Start(ctx, "set_eth")
+	_, setNative := otel.Tracer("crawler_moralis").Start(ctx, "set_native")
 
-	defer setETH.End()
+	defer setNative.End()
 
 	result, err := GetEthTransfers(param.Identity, chainType, param.Timestamp.String(), getApiKey())
 	if err != nil {
@@ -433,7 +448,7 @@ func (c *moralisCrawler) setETH(
 				"amount":           item.Value,
 				"decimal":          "18",
 				"token_standard":   "Native",
-				"token_symbol":     "ETH",
+				"token_symbol":     nativeMap[networkSymbol],
 				"transaction_hash": item.TransactionHash,
 			}),
 			DateCreated: tsp,
@@ -489,7 +504,7 @@ func (c *moralisCrawler) Work(param crawler.WorkParam) error {
 		return err
 	}
 
-	err = c.setETH(ctx, param, owner, author, networkSymbol, chainType)
+	err = c.setNative(ctx, param, owner, author, networkSymbol, chainType)
 	if err != nil {
 		logger.Errorf("fail to set eth in db: %v", err)
 
