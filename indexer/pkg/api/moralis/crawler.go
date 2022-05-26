@@ -446,7 +446,7 @@ func (c *moralisCrawler) setNative(
 				"from":             strings.ToLower(item.FromAddress),
 				"to":               strings.ToLower(item.ToAddress),
 				"amount":           item.Value,
-				"decimal":          "18",
+				"decimal":          18,
 				"token_standard":   "Native",
 				"token_symbol":     nativeMap[networkSymbol],
 				"transaction_hash": item.TransactionHash,
