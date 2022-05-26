@@ -26,7 +26,7 @@ type tokenMeta struct {
 }
 
 var (
-	token map[string]tokenMeta
+	token map[string]tokenMeta = make(map[string]tokenMeta)
 
 	jsoni = jsoniter.ConfigCompatibleWithStandardLibrary
 )
