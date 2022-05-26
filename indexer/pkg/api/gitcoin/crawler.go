@@ -459,12 +459,6 @@ func setDB(
 
 	// TODO: make insert db a general method @Zerber
 	tx := database.DB.Begin()
-	defer func() {
-		err := tx.Rollback().Error
-		if err != nil {
-			logger.Errorf("CreateNotes error: %v", err)
-		}
-	}()
 
 	if len(items) > 0 {
 		if _, dbErr := database.CreateNotes(tx, items, true); dbErr != nil {
@@ -473,6 +467,14 @@ func setDB(
 	}
 
 	if err := tx.Commit().Error; err != nil {
+		defer func() {
+			rollbackErr := tx.Rollback().Error
+
+			if rollbackErr != nil {
+				logger.Errorf("CreateNotes error: %v", err)
+			}
+		}()
+
 		return err
 	}
 
