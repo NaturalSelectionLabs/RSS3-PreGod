@@ -1,6 +1,7 @@
 package database
 
 import (
+	"encoding/json"
 	"strings"
 	"time"
 
@@ -62,6 +63,7 @@ func Setup() error {
 		&model.Asset{},
 		&model.Note{},
 		&model.CrawlerMetadata{},
+		&model.Cache{},
 	); err != nil {
 		return err
 	}
@@ -375,6 +377,39 @@ func QueryCrawlerMetadata(db *gorm.DB, identity string, platformId constants.Pla
 	}
 
 	return &crawler, nil
+}
+
+func QueryCache(db *gorm.DB, key, network, source string) (json.RawMessage, error) {
+	cache := model.Cache{}
+
+	if err := db.
+		Model((*model.Cache)(nil)).
+		Where(map[string]interface{}{
+			"key":     key,
+			"network": network,
+			"source":  source,
+		}).
+		First(&cache).
+		Error; err != nil {
+		return nil, err
+	}
+
+	return cache.Data, nil
+}
+
+func CreateCache(db *gorm.DB, key, network, source string, data json.RawMessage) error {
+	return db.
+		Model((*model.Cache)(nil)).
+		Clauses(clause.OnConflict{
+			DoNothing: true,
+		}).
+		Create(&model.Cache{
+			Key:     key,
+			Network: network,
+			Source:  source,
+			Data:    data,
+		}).
+		Error
 }
 
 func NewCreateClauses(updateAll bool, updateMetadata bool, updateAttachments bool) []clause.Expression {
