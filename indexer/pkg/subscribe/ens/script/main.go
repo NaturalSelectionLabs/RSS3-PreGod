@@ -1,12 +1,10 @@
 package main
 
 import (
-	"fmt"
+	"time"
 
-	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/api/poap"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/crawler"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/crawler_handler"
-	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/util"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database/model"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/constants"
@@ -15,82 +13,15 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 )
 
-func MakeCrawlers[T constants.NetworkID | constants.PlatformID](network T) crawler.Crawler {
-	switch any(network).(type) {
-	case constants.NetworkID:
-		switch constants.NetworkID(network) {
-		case constants.NetworkIDGnosisMainnet:
-			return poap.NewPoapCrawler()
-		default:
-			return nil
-		}
-
-	default:
-		return nil
-	}
-}
-
-func Excute(pt *crawler_handler.GetItemsHandler) (*crawler_handler.GetItemsResult, error) {
-	var c crawler.Crawler
-
-	var r *crawler.DefaultCrawler
-
-	result := crawler_handler.NewGetItemsResult()
-
-	c = MakeCrawlers(pt.WorkParam.NetworkID)
-	if c == nil {
-		result.Error = util.GetErrorBase(util.ErrorCodeNotSupportedNetwork)
-
-		return result, fmt.Errorf("unsupported network id[%d]", pt.WorkParam.NetworkID)
-	}
-
-	metadata, dbQcmErr := database.QueryCrawlerMetadata(database.DB, pt.WorkParam.Identity, pt.WorkParam.PlatformID)
-
-	// Historical legacy, the code here is no longer needed, LastBlock = 0
-	// the error here does not affect the execution of the crawler
-	if dbQcmErr != nil && metadata != nil {
-		pt.WorkParam.BlockHeight = metadata.LastBlock
-		pt.WorkParam.Timestamp = metadata.UpdatedAt
-	}
-
-	if err := c.Work(pt.WorkParam); err != nil {
-		result.Error = util.GetErrorBase(util.ErrorCodeNotSupportedNetwork)
-
-		return result, fmt.Errorf("crawler fails while working: %s", err)
-	}
-
-	r = c.GetResult()
-
-	tx := database.DB.Begin()
-	defer tx.Rollback()
-
-	if r.Notes != nil && len(r.Notes) > 0 {
-		if dbNotes, err := database.CreateNotes(tx, r.Notes, true); err != nil {
-			return result, err
-		} else {
-			r.Notes = dbNotes
-		}
-	}
-
-	if r.Erc20Notes != nil && len(r.Erc20Notes) > 0 {
-		if dbNotes, err := database.CreateNotesDoNothing(tx, r.Erc20Notes); err != nil {
-			return result, err
-		} else {
-			r.Erc20Notes = dbNotes
-		}
-	}
-
-	if err := tx.Commit().Error; err != nil {
-		return result, err
-	}
-
-	result.Result = r
-
-	return result, nil
-}
+var success int64
+var db = database.DB
+var total int64
 
 func getOwnerFeed(instance rss3uri.Instance, owner string) {
-	networkIDs := constants.GetEthereumPlatformNetworks()
+	var networkIDs = constants.GetEthereumPlatformNetworks()
+
+	var err error
+
 	for _, networkID := range networkIDs {
 		getItemHandler := crawler_handler.NewGetItemsHandler(crawler.WorkParam{
 			Identity:   instance.GetIdentity(),
@@ -99,12 +30,18 @@ func getOwnerFeed(instance rss3uri.Instance, owner string) {
 			OwnerID:    owner,
 		})
 
-		_, err := Excute(getItemHandler)
+		_, err = getItemHandler.Excute()
 		if err != nil {
-			logger.Errorf("SubscribeEns: get item error, %v", err)
+			logger.Errorf("subscribe.script:: get item error, %v", err)
 
 			continue
 		}
+	}
+
+	if err == nil {
+		success += 1
+
+		logger.Infof("subscribe.script: success load user feed, count = %v", success)
 	}
 }
 
@@ -114,10 +51,6 @@ func main() {
 
 		return
 	}
-
-	var db = database.DB
-
-	var total int64
 
 	for {
 		domains := make([]model.Domains, 0)
@@ -157,13 +90,15 @@ func main() {
 			// get cache feed
 			var count int64
 			if err := db.Where("owner = ?", instance.UriString()).Model(&model.Note{}).Count(&count).Error; err == nil && count > 0 {
+				logger.Infof("note already exists, owner = %v", instance.UriString())
+
 				continue
 			}
 
 			// get latest feed
-			go func() {
-				getOwnerFeed(instance, address)
-			}()
+			getOwnerFeed(instance, address)
+
+			time.Sleep(10 * time.Second)
 		}
 
 		page += 1
