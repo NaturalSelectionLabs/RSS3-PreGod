@@ -3,6 +3,7 @@ package moralis
 import (
 	"fmt"
 	"net/url"
+	"sync"
 	"time"
 
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/api/nft_utils"
@@ -479,28 +480,46 @@ func getENSTransaction(ens NFTItem, record *ENSTextRecord) error {
  */
 
 func GetEthTransfers(userAddress string, chainType ChainType, fromDate string, apiKey string) ([]ETHTransferItem, error) {
-	offset := 0
-	transferItems := make([]ETHTransferItem, 0)
+	var (
+		transferItems = make([]ETHTransferItem, 0)
+		wg            sync.WaitGroup
+		errorCh       = make(chan error, 1)
+		doneCh        = make(chan bool)
+	)
 
-	for {
-		transfer, err := getETHOnce(userAddress, chainType, fromDate, apiKey, offset)
-		if err != nil {
-			logger.Errorf("get eth once error: %v", err)
+	wg.Add(2)
 
-			return nil, err
-		}
+	for offset := 0; offset < 1000; offset += 500 {
+		go func(offset int) {
+			defer wg.Done()
 
-		transferItems = append(transferItems, transfer.Result...)
+			transfer, err := getETHOnce(userAddress, chainType, fromDate, apiKey, offset)
+			if err != nil {
+				logger.Errorf("get eth once error: %v", err)
 
-		if len(transferItems) >= 1000 {
-			break
-		}
+				if _, ok := <-errorCh; ok && offset > 0 {
+					errorCh <- err
+				}
 
-		if len(transfer.Result) < transfer.PageSize {
-			break
-		}
+				return
+			}
 
-		offset += transfer.PageSize
+			transferItems = append(transferItems, transfer.Result...)
+		}(offset)
+	}
+
+	go func() {
+		wg.Wait()
+		close(doneCh)
+	}()
+
+	select {
+	case <-doneCh:
+		break
+	case err := <-errorCh:
+		close(errorCh)
+
+		return []ETHTransferItem{}, err
 	}
 
 	return transferItems, nil
