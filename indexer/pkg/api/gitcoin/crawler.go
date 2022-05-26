@@ -272,7 +272,12 @@ func (property *xscanRunCrawlerProperty) run() error {
 	}
 
 	if len(ethDonationsResult.Donations) > 0 {
-		setDB(ethDonationsResult.Donations, property.networkID, ethDonationsResult.AdminAddresses)
+		err := setDB(ethDonationsResult.Donations, property.networkID, ethDonationsResult.AdminAddresses)
+		if err != nil {
+			logger.Errorf("set db error: %v", err)
+
+			return err
+		}
 	}
 
 	logger.Infof("Getting [%s] donations, from [%d] to [%d], the latest confirmed block height [%d]",
@@ -454,7 +459,12 @@ func setDB(
 
 	// TODO: make insert db a general method @Zerber
 	tx := database.DB.Begin()
-	defer tx.Rollback()
+	defer func() {
+		err := tx.Rollback().Error
+		if err != nil {
+			logger.Errorf("CreateNotes error: %v", err)
+		}
+	}()
 
 	if len(items) > 0 {
 		if _, dbErr := database.CreateNotes(tx, items, true); dbErr != nil {

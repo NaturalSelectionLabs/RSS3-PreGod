@@ -1,6 +1,7 @@
 package database
 
 import (
+	"encoding/json"
 	"strings"
 	"time"
 
@@ -62,6 +63,7 @@ func Setup() error {
 		&model.Asset{},
 		&model.Note{},
 		&model.CrawlerMetadata{},
+		&model.Cache{},
 	); err != nil {
 		return err
 	}
@@ -377,32 +379,65 @@ func QueryCrawlerMetadata(db *gorm.DB, identity string, platformId constants.Pla
 	return &crawler, nil
 }
 
+func QueryCache(db *gorm.DB, key, network, source string) (json.RawMessage, error) {
+	cache := model.Cache{}
+
+	if err := db.
+		Model((*model.Cache)(nil)).
+		Where(map[string]interface{}{
+			"key":     key,
+			"network": network,
+			"source":  source,
+		}).
+		First(&cache).
+		Error; err != nil {
+		return nil, err
+	}
+
+	return cache.Data, nil
+}
+
+func CreateCache(db *gorm.DB, key, network, source string, data json.RawMessage) error {
+	return db.
+		Model((*model.Cache)(nil)).
+		Clauses(clause.OnConflict{
+			DoNothing: true,
+		}).
+		Create(&model.Cache{
+			Key:     key,
+			Network: network,
+			Source:  source,
+			Data:    data,
+		}).
+		Error
+}
+
 func NewCreateClauses(updateAll bool, updateMetadata bool, updateAttachments bool) []clause.Expression {
 	clauses := []clause.Expression{
 		// clause.Returning{}
 	}
 
+	assignmentArrary := []string{}
+
 	if updateAll {
+		assignmentArrary = append(assignmentArrary, "updated_at")
+	}
+
+	if updateMetadata {
+		assignmentArrary = append(assignmentArrary, "metadata")
+	}
+
+	if updateAttachments {
+		assignmentArrary = append(assignmentArrary, "attachments")
+	}
+
+	if len(assignmentArrary) > 0 {
 		clauses = append(clauses, clause.OnConflict{
-			DoUpdates: clause.AssignmentColumns([]string{"updated_at"}),
+			DoUpdates: clause.AssignmentColumns(assignmentArrary),
 			UpdateAll: true,
 		})
 	} else {
 		clauses = append(clauses, clause.OnConflict{DoNothing: true})
-	}
-
-	if updateMetadata {
-		clauses = append(clauses, clause.OnConflict{
-			DoUpdates: clause.AssignmentColumns([]string{"metadata"}),
-			UpdateAll: true,
-		})
-	}
-
-	if updateAttachments {
-		clauses = append(clauses, clause.OnConflict{
-			DoUpdates: clause.AssignmentColumns([]string{"attachments"}),
-			UpdateAll: true,
-		})
 	}
 
 	return clauses
