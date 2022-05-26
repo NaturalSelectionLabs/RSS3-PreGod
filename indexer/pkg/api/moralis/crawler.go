@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	utils "github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/api/nft_utils"
@@ -80,18 +81,55 @@ func (c *moralisCrawler) setNFTTransfers(
 
 	defer setNFTTransfersSpan.End()
 
-	// nftTransfers for notes
-	nftTransfers, err := GetNFTTransfers(param.Identity, chainType, param.BlockHeight, param.Timestamp.String(), getApiKey())
-	if err != nil {
-		logger.Errorf("get nft transfers: %v", err)
+	var (
+		wg           sync.WaitGroup
+		err          error
+		nftTransfers = NFTTransferResult{}
+		assets       = NFTResult{}
+		errorCh      = make(chan error, 1)
+		doneCh       = make(chan bool)
+	)
 
-		return err
-	}
+	// nftTransfers for notes
+	wg.Add(2)
+
+	go func() {
+		defer wg.Done()
+
+		nftTransfers, err = GetNFTTransfers(param.Identity, chainType, param.BlockHeight, param.Timestamp.String(), getApiKey())
+		if err != nil {
+			logger.Errorf("moralis.GetNFTTransfers: get nft transfers: %v", err)
+
+			if _, ok := <-errorCh; ok {
+				errorCh <- err
+			}
+		}
+	}()
 
 	// get nft for assets
-	assets, err := GetNFTs(param.Identity, chainType, param.Timestamp.String(), getApiKey())
-	if err != nil {
-		logger.Errorf("get nft: %v", err)
+	go func() {
+		defer wg.Done()
+
+		assets, err = GetNFTs(param.Identity, chainType, param.Timestamp.String(), getApiKey())
+		if err != nil {
+			logger.Errorf("moralis.GetNFTs: get nft: %v", err)
+
+			if _, ok := <-errorCh; ok {
+				errorCh <- err
+			}
+		}
+	}()
+
+	go func() {
+		wg.Wait()
+		close(doneCh)
+	}()
+
+	select {
+	case <-doneCh:
+		break
+	case err = <-errorCh:
+		close(errorCh)
 
 		return err
 	}
@@ -484,29 +522,68 @@ func (c *moralisCrawler) Work(param crawler.WorkParam) error {
 		return fmt.Errorf("unsupported network: %s", chainType)
 	}
 
-	networkSymbol := chainType.GetNetworkSymbol()
+	var (
+		networkSymbol = chainType.GetNetworkSymbol()
+		owner         = rss3uri.NewAccountInstance(param.OwnerID, param.OwnerPlatformID.Symbol()).UriString()
+		author        = rss3uri.NewAccountInstance(param.Identity, constants.PlatformSymbolEthereum).UriString()
+		wg            sync.WaitGroup
+		errorCh       = make(chan error, 1)
+		doneCh        = make(chan bool)
+	)
 
-	// those two should be expected to be equal actually
-	owner := rss3uri.NewAccountInstance(param.OwnerID, param.OwnerPlatformID.Symbol()).UriString()
-	author := rss3uri.NewAccountInstance(param.Identity, constants.PlatformSymbolEthereum).UriString()
+	wg.Add(3)
 
-	err := c.setNFTTransfers(ctx, param, owner, author, networkSymbol, chainType)
-	if err != nil {
-		logger.Errorf("fail to set nft transfers in db: %v", err)
+	go func() {
+		defer wg.Done()
 
-		return err
-	}
+		err := c.setNFTTransfers(ctx, param, owner, author, networkSymbol, chainType)
+		if err != nil {
+			logger.Errorf("moralis.setNFTTransfers: fail to set nft transfers in db: %v", err)
 
-	err = c.setERC20(ctx, param, owner, author, networkSymbol, chainType)
-	if err != nil {
-		logger.Errorf("fail to set erc20 in db: %v", err)
+			if _, ok := <-errorCh; ok {
+				errorCh <- err
+			}
+		}
+	}()
 
-		return err
-	}
+	go func() {
+		defer wg.Done()
 
-	err = c.setNative(ctx, param, owner, author, networkSymbol, chainType)
-	if err != nil {
-		logger.Errorf("fail to set eth in db: %v", err)
+		err := c.setERC20(ctx, param, owner, author, networkSymbol, chainType)
+		if err != nil {
+			logger.Errorf("moralis.setERC20: fail to set erc20 in db: %v", err)
+
+			if _, ok := <-errorCh; ok {
+				errorCh <- err
+			}
+		}
+	}()
+
+	wg.Add(1)
+
+	go func() {
+		defer wg.Done()
+
+		err := c.setNative(ctx, param, owner, author, networkSymbol, chainType)
+		if err != nil {
+			logger.Errorf("moralis.setNative: fail to set eth in db: %v", err)
+
+			if _, ok := <-errorCh; ok {
+				errorCh <- err
+			}
+		}
+	}()
+
+	go func() {
+		wg.Wait()
+		close(doneCh)
+	}()
+
+	select {
+	case <-doneCh:
+		break
+	case err := <-errorCh:
+		close(errorCh)
 
 		return err
 	}
@@ -545,14 +622,6 @@ func (c *moralisCrawler) Work(param crawler.WorkParam) error {
 				j--
 			}
 		}
-	}
-
-	ctx, completeMimeTypeSpan := otel.Tracer("crawler_moralis").Start(ctx, "complete_mime_types_for_items")
-
-	defer completeMimeTypeSpan.End()
-
-	if err := utils.CompleteMimeTypesForItems(ctx, c.Notes, c.Assets, c.Profiles); err != nil {
-		logger.Error("moralis complete mime types error:", err)
 	}
 
 	return nil
