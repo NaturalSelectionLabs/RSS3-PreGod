@@ -485,6 +485,7 @@ func GetEthTransfers(userAddress string, chainType ChainType, fromDate string, a
 		wg            sync.WaitGroup
 		errorCh       = make(chan error, 1)
 		doneCh        = make(chan bool)
+		open          = true
 	)
 
 	wg.Add(2)
@@ -497,7 +498,7 @@ func GetEthTransfers(userAddress string, chainType ChainType, fromDate string, a
 			if err != nil {
 				logger.Errorf("get eth once error: %v", err)
 
-				if _, ok := <-errorCh; ok && offset > 0 {
+				if open && offset > 0 {
 					errorCh <- err
 				}
 
@@ -518,6 +519,8 @@ func GetEthTransfers(userAddress string, chainType ChainType, fromDate string, a
 		break
 	case err := <-errorCh:
 		close(errorCh)
+
+		open = false
 
 		return []ETHTransferItem{}, err
 	}
