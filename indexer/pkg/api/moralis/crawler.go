@@ -83,11 +83,11 @@ func (c *moralisCrawler) setNFTTransfers(
 
 	var (
 		wg           sync.WaitGroup
-		err          error
 		nftTransfers = NFTTransferResult{}
 		assets       = NFTResult{}
-		errorCh      = make(chan error, 1)
+		errorCh      = make(chan error)
 		doneCh       = make(chan bool)
+		open         = true
 	)
 
 	// nftTransfers for notes
@@ -96,11 +96,13 @@ func (c *moralisCrawler) setNFTTransfers(
 	go func() {
 		defer wg.Done()
 
+		var err error
+
 		nftTransfers, err = GetNFTTransfers(param.Identity, chainType, param.BlockHeight, param.Timestamp.String(), getApiKey())
 		if err != nil {
 			logger.Errorf("moralis.GetNFTTransfers: get nft transfers: %v", err)
 
-			if _, ok := <-errorCh; ok {
+			if open {
 				errorCh <- err
 			}
 		}
@@ -110,11 +112,13 @@ func (c *moralisCrawler) setNFTTransfers(
 	go func() {
 		defer wg.Done()
 
+		var err error
+
 		assets, err = GetNFTs(param.Identity, chainType, param.Timestamp.String(), getApiKey())
 		if err != nil {
 			logger.Errorf("moralis.GetNFTs: get nft: %v", err)
 
-			if _, ok := <-errorCh; ok {
+			if open {
 				errorCh <- err
 			}
 		}
@@ -128,8 +132,10 @@ func (c *moralisCrawler) setNFTTransfers(
 	select {
 	case <-doneCh:
 		break
-	case err = <-errorCh:
+	case err := <-errorCh:
 		close(errorCh)
+
+		open = false
 
 		return err
 	}
@@ -159,6 +165,8 @@ func (c *moralisCrawler) setNFTTransfers(
 		}
 
 		var theAsset NFTItem
+
+		var err error
 
 		for _, asset := range assets.Result {
 			if item.EqualsToToken(asset) && asset.MetaData != "" {
@@ -527,8 +535,9 @@ func (c *moralisCrawler) Work(param crawler.WorkParam) error {
 		owner         = rss3uri.NewAccountInstance(param.OwnerID, param.OwnerPlatformID.Symbol()).UriString()
 		author        = rss3uri.NewAccountInstance(param.Identity, constants.PlatformSymbolEthereum).UriString()
 		wg            sync.WaitGroup
-		errorCh       = make(chan error, 1)
+		errorCh       = make(chan error)
 		doneCh        = make(chan bool)
+		open          = true
 	)
 
 	wg.Add(3)
@@ -540,7 +549,7 @@ func (c *moralisCrawler) Work(param crawler.WorkParam) error {
 		if err != nil {
 			logger.Errorf("moralis.setNFTTransfers: fail to set nft transfers in db: %v", err)
 
-			if _, ok := <-errorCh; ok {
+			if open {
 				errorCh <- err
 			}
 		}
@@ -553,7 +562,7 @@ func (c *moralisCrawler) Work(param crawler.WorkParam) error {
 		if err != nil {
 			logger.Errorf("moralis.setERC20: fail to set erc20 in db: %v", err)
 
-			if _, ok := <-errorCh; ok {
+			if open {
 				errorCh <- err
 			}
 		}
@@ -566,7 +575,7 @@ func (c *moralisCrawler) Work(param crawler.WorkParam) error {
 		if err != nil {
 			logger.Errorf("moralis.setNative: fail to set eth in db: %v", err)
 
-			if _, ok := <-errorCh; ok {
+			if open {
 				errorCh <- err
 			}
 		}
@@ -582,6 +591,8 @@ func (c *moralisCrawler) Work(param crawler.WorkParam) error {
 		break
 	case err := <-errorCh:
 		close(errorCh)
+
+		open = false
 
 		return err
 	}
