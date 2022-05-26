@@ -382,27 +382,27 @@ func NewCreateClauses(updateAll bool, updateMetadata bool, updateAttachments boo
 		// clause.Returning{}
 	}
 
+	assignmentArrary := []string{}
+
 	if updateAll {
+		assignmentArrary = append(assignmentArrary, "updated_at")
+	}
+
+	if updateMetadata {
+		assignmentArrary = append(assignmentArrary, "metadata")
+	}
+
+	if updateAttachments {
+		assignmentArrary = append(assignmentArrary, "attachments")
+	}
+
+	if len(assignmentArrary) > 0 {
 		clauses = append(clauses, clause.OnConflict{
-			DoUpdates: clause.AssignmentColumns([]string{"updated_at"}),
+			DoUpdates: clause.AssignmentColumns(assignmentArrary),
 			UpdateAll: true,
 		})
 	} else {
 		clauses = append(clauses, clause.OnConflict{DoNothing: true})
-	}
-
-	if updateMetadata {
-		clauses = append(clauses, clause.OnConflict{
-			DoUpdates: clause.AssignmentColumns([]string{"metadata"}),
-			UpdateAll: true,
-		})
-	}
-
-	if updateAttachments {
-		clauses = append(clauses, clause.OnConflict{
-			DoUpdates: clause.AssignmentColumns([]string{"attachments"}),
-			UpdateAll: true,
-		})
 	}
 
 	return clauses

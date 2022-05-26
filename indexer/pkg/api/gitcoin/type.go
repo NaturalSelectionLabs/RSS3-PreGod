@@ -141,6 +141,6 @@ func (d DonationInfo) GetTxTo() string {
 
 type TokenMeta struct {
 	Address string `json:"address"`
-	Decimal int    `json:"decimal"`
+	Decimal int    `json:"decimals"`
 	Symbol  string `json:"symbol"`
 }
