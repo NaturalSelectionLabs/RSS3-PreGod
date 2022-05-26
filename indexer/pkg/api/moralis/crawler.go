@@ -342,7 +342,7 @@ func (c *moralisCrawler) setERC20(
 			Identifier: rss3uri.NewNoteInstance(proof, networkSymbol).UriString(),
 			Owner:      owner,
 			RelatedURLs: []string{
-				"https://etherscan.io/tx/" + item.TransactionHash,
+				GetTxHashURL(networkSymbol, item.TransactionHash),
 			},
 			Tags:            constants.ItemTagsToken.ToPqStringArray(),
 			Authors:         []string{author},
@@ -431,6 +431,7 @@ func (c *moralisCrawler) setETH(
 				"from":             strings.ToLower(item.FromAddress),
 				"to":               strings.ToLower(item.ToAddress),
 				"amount":           item.Value,
+				"decimal":          "18",
 				"token_standard":   "Native",
 				"token_symbol":     "ETH",
 				"transaction_hash": item.TransactionHash,
