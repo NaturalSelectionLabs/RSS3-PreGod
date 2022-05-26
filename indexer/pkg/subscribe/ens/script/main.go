@@ -3,16 +3,16 @@ package main
 import (
 	"fmt"
 
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/api/poap"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/crawler"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/crawler_handler"
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/util"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database/model"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/constants"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/logger"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/rss3uri"
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/api/poap"
-	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/util"
 )
 
 func MakeCrawlers[T constants.NetworkID | constants.PlatformID](network T) crawler.Crawler {
@@ -30,7 +30,7 @@ func MakeCrawlers[T constants.NetworkID | constants.PlatformID](network T) crawl
 	}
 }
 
-func Excute(pt *crawler_handler.GetItemsHandler)  (*crawler_handler.GetItemsResult, error) {
+func Excute(pt *crawler_handler.GetItemsHandler) (*crawler_handler.GetItemsResult, error) {
 	var c crawler.Crawler
 
 	var r *crawler.DefaultCrawler
@@ -88,7 +88,6 @@ func Excute(pt *crawler_handler.GetItemsHandler)  (*crawler_handler.GetItemsResu
 
 	return result, nil
 }
-
 
 func getOwnerFeed(instance rss3uri.Instance, owner string) {
 	networkIDs := constants.GetEthereumPlatformNetworks()

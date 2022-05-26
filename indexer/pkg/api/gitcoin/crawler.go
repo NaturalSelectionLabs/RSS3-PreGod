@@ -350,6 +350,7 @@ func setNote(
 	author := rss3uri.NewAccountInstance(donationInfo.Donor, constants.PlatformSymbolEthereum).UriString()
 	summary := util.SummarizeContent(projectInfo.Description, 400)
 	instanceKey, err := setNoteInstance(niBuilder, donationInfo.TxHash)
+	metadataNetwork := networkID.Symbol().String()
 
 	if err != nil {
 		return nil, fmt.Errorf("set note instance error: %s", err)
@@ -385,15 +386,16 @@ func setNote(
 			},
 		}),
 		Source:          constants.NoteSourceNameGitcoinContribution.String(),
-		MetadataNetwork: constants.NetworkSymbolEthereum.String(),
+		MetadataNetwork: metadataNetwork,
 		MetadataProof:   v.TxHash,
 		Metadata: database.MustWrapJSON(map[string]interface{}{
 			"from": v.Donor,
 			"to":   v.GetTxTo(),
 
+			"decimal":      v.Decimals,
 			"destination":  v.AdminAddress,
-			"value_amount": v.FormatedAmount.String(),
-			"value_symbol": v.Symbol,
+			"amount":       v.FormatedAmount.String(),
+			"token_symbol": v.Symbol,
 			"approach":     v.Approach,
 		}),
 		DateCreated: tsp,
