@@ -30,6 +30,8 @@ func main() {
 		offset = 0
 	}
 
+	logger.Debugf("offset:%d", offset)
+
 	// notes, err := internal.GetDataFromDB(1, int(offset))
 	// if err != nil {
 	// 	logger.Infof("get data from db err:%v", err)
@@ -79,7 +81,7 @@ func main() {
 
 		offset += GetNotesLimit
 
-		if offset > 3 {
+		if offset > 10 {
 			break
 		}
 
