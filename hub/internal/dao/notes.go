@@ -1,11 +1,13 @@
 package dao
 
 import (
+	"fmt"
 	"strings"
 
 	m "github.com/NaturalSelectionLabs/RSS3-PreGod/hub/internal/model"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database/model"
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/constants"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/rss3uri"
 	"github.com/lib/pq"
 )
@@ -16,7 +18,9 @@ func BatchGetNodeList(req m.BatchGetNodeListRequest) ([]model.Note, int64, error
 	ownerList := make([]string, 0)
 
 	for _, instance := range req.InstanceList {
-		ownerList = append(ownerList, strings.ToLower(rss3uri.New(instance).String()))
+		owner := strings.ToLower(rss3uri.New(instance).String())
+		unknownPlatform := fmt.Sprintf("%v@unknown", strings.Split(owner, "@")[0])
+		ownerList = append(ownerList, owner, unknownPlatform)
 	}
 
 	if req.Tags != nil && len(req.Tags) != 0 {
@@ -47,8 +51,35 @@ func BatchGetNodeList(req m.BatchGetNodeListRequest) ([]model.Note, int64, error
 			Where("identifier != ?", lastItem.Identifier)
 	}
 
+	// filter out user active transactions
+	ethNotes := make([]model.Note, 0)
+	ethMap := make(map[string]bool)
+
+	if err := internalDB.
+		Where("owner IN ?", ownerList).
+		Where("source = ?", constants.NoteSourceNameEthereumNFT).
+		Order("date_created DESC").
+		Find(&ethNotes).Error; err != nil {
+		return nil, 0, err
+	}
+
+	activeTxList := []string{}
+
+	for _, ethNote := range ethNotes {
+		h := strings.Split(ethNote.MetadataProof, "-")[0]
+		if ok := ethMap[h]; !ok {
+			activeTxList = append(activeTxList, h)
+			ethMap[h] = true
+		}
+	}
+
 	internalDB = internalDB.
 		Where("owner IN ?", ownerList).
+		Where("(source = ? AND (metadata ->> 'transaction_hash' IN ? OR tags && ?)) OR source != ?",
+			constants.NoteSourceNameEthereumNFT,
+			activeTxList,
+			pq.StringArray([]string{"POAP"}),
+			constants.NoteSourceNameEthereumNFT).
 		Order("date_created DESC").
 		Order("contract_address DESC").
 		Order("log_index DESC").

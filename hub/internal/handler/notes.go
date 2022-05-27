@@ -192,32 +192,52 @@ func getNoteListByInstance(c *gin.Context, instance rss3uri.Instance, request Ge
 		internalDB = internalDB.Where("metadata_network IN ?", request.Networks)
 	}
 
-	notes := make([]model.Note, 0)
+	// filter out user active transaction
+	owner := strings.ToLower(rss3uri.New(instance).String())
+	ethNotes := make([]model.Note, 0)
+	ethMap := make(map[string]bool)
+
 	if err := internalDB.
-		Where("owner = ?", strings.ToLower(rss3uri.New(instance).String())).
-		Limit(request.Limit).
+		Where("owner = ?", owner).
+		Where("source = ?", constants.NoteSourceNameEthereumNFT).
+		Order("date_created DESC").
+		Find(&ethNotes).Error; err != nil {
+		return nil, 0, err
+	}
+
+	activeTxList := []string{}
+
+	for _, ethNote := range ethNotes {
+		h := strings.Split(ethNote.MetadataProof, "-")[0]
+		if _, ok := ethMap[h]; !ok {
+			activeTxList = append(activeTxList, h)
+			ethMap[h] = true
+		}
+	}
+
+	internalDB = internalDB.
+		Where("owner = ?", owner).
+		Where("(source = ? AND (metadata ->> 'transaction_hash' IN ? OR tags && ?)) OR source != ?",
+			constants.NoteSourceNameEthereumNFT,
+			activeTxList,
+			pq.StringArray([]string{"POAP"}),
+			constants.NoteSourceNameEthereumNFT).
 		Order("date_created DESC").
 		Order("contract_address DESC").
 		Order("log_index DESC").
-		Order("token_id DESC").
-		Find(&notes).Error; err != nil {
-		return nil, 0, err
-	}
+		Order("token_id DESC")
 
 	var count int64
-
-	if err := internalDB.
-		Model(&model.Note{}).
-		Where("owner = ?", strings.ToLower(rss3uri.New(instance).String())).
-		Order("date_created DESC").
-		Order("contract_address DESC").
-		Order("log_index DESC").
-		Order("token_id DESC").
-		Count(&count).Error; err != nil {
+	if err := internalDB.Model(&model.Note{}).Count(&count).Error; err != nil {
 		return nil, 0, err
 	}
 
-	return notes, count, nil
+	noteList := make([]model.Note, 0)
+	if err := internalDB.Limit(request.Limit).Find(&noteList).Error; err != nil {
+		return nil, 0, err
+	}
+
+	return noteList, count, nil
 }
 
 // nolint:funlen,gocognit // TODO
@@ -335,27 +355,50 @@ func getNoteListsByLink(c *gin.Context, instance rss3uri.Instance, request GetNo
 	}
 
 	notes := make([]model.Note, 0)
+	ethNotes := make([]model.Note, 0)
+	ethMap := make(map[string]bool)
+
 	if err := internalDB.
 		Where("owner IN ?", owners).
-		Limit(request.Limit).
+		Where("source = ?", constants.NoteSourceNameEthereumNFT).
+		Order("date_created DESC").
+		Find(&ethNotes).Error; err != nil {
+		return nil, 0, err
+	}
+
+	activeTxList := []string{}
+
+	for _, ethNote := range ethNotes {
+		h := strings.Split(ethNote.MetadataProof, "-")[0]
+		if ok := ethMap[h]; !ok {
+			activeTxList = append(activeTxList, h)
+			ethMap[h] = true
+		}
+	}
+
+	internalDB = internalDB.
+		Where("owner IN ?", owners).
+		Where("(source = ? AND (metadata ->> 'transaction_hash' IN ? OR tags && ?)) OR source != ?",
+			constants.NoteSourceNameEthereumNFT,
+			activeTxList,
+			pq.StringArray([]string{"POAP"}),
+			constants.NoteSourceNameEthereumNFT).
 		Order("date_created DESC").
 		Order("contract_address DESC").
 		Order("log_index DESC").
-		Order("token_id DESC").
-		Find(&notes).Error; err != nil {
-		return nil, 0, err
-	}
+		Order("token_id DESC")
 
 	var count int64
 
 	if err := internalDB.
 		Model(&model.Note{}).
-		Where("owner IN ?", owners).
-		Order("date_created DESC").
-		Order("contract_address DESC").
-		Order("log_index DESC").
-		Order("token_id DESC").
 		Count(&count).Error; err != nil {
+		return nil, 0, err
+	}
+
+	if err := internalDB.
+		Limit(request.Limit).
+		Find(&notes).Error; err != nil {
 		return nil, 0, err
 	}
 
