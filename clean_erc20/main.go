@@ -17,8 +17,9 @@ func init() {
 	}
 }
 
-// const GetNotesLimit = 2000
-const GetNotesLimit = 1
+const GetNotesLimit = 2000
+
+// const GetNotesLimit = 1
 const platformID = constants.PlatformID(1300)
 const crawlerID = "erc20-recovery-script"
 const loopTime = 500 * time.Millisecond
@@ -67,7 +68,7 @@ func main() {
 		// tx := database.DB.Begin()
 		// defer tx.Rollback()
 
-		logger.Infof("notes[0].tags:%v", notes[0].Tags)
+		// logger.Infof("notes[0].tags:%v", notes[0].Tags)
 
 		if _, err := database.CreateNotes(database.DB, notes, true); err != nil {
 			logger.Errorf("err:%v", err)
