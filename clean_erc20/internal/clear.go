@@ -54,7 +54,7 @@ func ClearGitCoinData(notes []model.Note) {
 			GetTxHashURL(network, transactionHash),
 		}
 
-		logger.Infof("note[i]:%v", notes[i])
+		// logger.Infof("note[i]:%v", notes[i])
 	}
 }
 

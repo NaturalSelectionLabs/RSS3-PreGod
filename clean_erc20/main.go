@@ -21,6 +21,7 @@ func init() {
 const GetNotesLimit = 1
 const platformID = constants.PlatformID(1300)
 const crawlerID = "erc20-recovery-script"
+const loopTime = 500 * time.Millisecond
 
 func main() {
 	offset, err := util.GetCrawlerMetadata(crawlerID, platformID)
@@ -88,6 +89,7 @@ func main() {
 		logger.Infof("offset:%d", offset)
 
 		time.Sleep(time.Second * 5)
+		time.Sleep(loopTime)
 	}
 
 }
