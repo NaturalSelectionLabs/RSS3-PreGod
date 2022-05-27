@@ -30,7 +30,7 @@ func GetDataFromDB(limit int, offset int) ([]model.Note, error) {
 		return nil, err
 	}
 
-	logger.Debugf("notes:%v", notes)
+	// logger.Debugf("notes:%v", notes)
 
 	return notes, nil
 }
