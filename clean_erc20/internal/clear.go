@@ -18,7 +18,7 @@ func GetDataFromDB(limit int, offset int) ([]model.Note, error) {
 		Where("related_urls[1] like ('https://etherscan.io/tx/%')").
 		Where("\"source\" in ('Ethereum ERC20')").
 		Order("date_created DESC").
-		Limit(1).
+		Limit(limit).
 		Offset(offset)
 
 	// internalDB := database.DB.
