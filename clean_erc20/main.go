@@ -55,11 +55,11 @@ func main() {
 	internal.ClearGitCoinData(notes)
 
 	//save in db
-	tx := database.DB.Begin()
+	// tx := database.DB.Begin()
 
 	// logger.Infof("notes[0].tags:%v", notes[0].Tags)
 
-	if _, err := database.CreateNotes(tx, notes, true); err != nil {
+	if _, err := database.CreateNotes(database.DB, notes, true); err != nil {
 		// continue
 	}
 
