@@ -58,7 +58,7 @@ func main() {
 			logger.Infof("mission completed")
 		}
 
-		time.Sleep(time.Second * 5)
+		// time.Sleep(time.Second * 5)
 
 		// change db
 		internal.ClearGitCoinData(notes)
@@ -67,13 +67,15 @@ func main() {
 		// tx := database.DB.Begin()
 		// defer tx.Rollback()
 
-		// logger.Infof("notes[0].tags:%v", notes[0].Tags)
+		logger.Infof("notes[0].tags:%v", notes[0].Tags)
 
 		if _, err := database.CreateNotes(database.DB, notes, true); err != nil {
-			// continue
+			logger.Errorf("err:%v", err)
+
+			continue
 		}
 
-		logger.Debugf("note[0].RelatedURLs:%v", notes[0].RelatedURLs)
+		// logger.Debugf("note[0].RelatedURLs:%v", notes[0].RelatedURLs)
 
 		// set the current block height as the from height
 		if err := util.SetCrawlerMetadata(crawlerID, offset, platformID); err != nil {
@@ -82,14 +84,15 @@ func main() {
 
 		offset += GetNotesLimit
 
-		if offset > 10 {
-			break
-		}
+		// if offset > 10 {
+		// 	break
+		// }
 
-		logger.Infof("offset:%d", offset)
+		// logger.Infof("offset:%d", offset)
 
-		time.Sleep(time.Second * 5)
+		// time.Sleep(time.Second * 5)
+		logger.Infof("offset[%d]", offset)
+
 		time.Sleep(loopTime)
 	}
-
 }
