@@ -77,9 +77,13 @@ func (c *moralisCrawler) setNFTTransfers(
 	author string,
 	networkSymbol constants.NetworkSymbol,
 	chainType ChainType) error {
-	_, setNFTTransfersSpan := otel.Tracer("crawler_moralis").Start(ctx, "set_nft_transfers")
+	_, trace := otel.Tracer("crawler_moralis").Start(ctx, "setNFTTransfers")
+	trace.SetAttributes(
+		attribute.String("owner", owner),
+		attribute.String("param.Timestamp", param.Timestamp.String()),
+	)
 
-	defer setNFTTransfersSpan.End()
+	defer trace.End()
 
 	var (
 		wg           sync.WaitGroup
@@ -98,7 +102,7 @@ func (c *moralisCrawler) setNFTTransfers(
 
 		var err error
 
-		nftTransfers, err = GetNFTTransfers(param.Identity, chainType, param.BlockHeight, param.Timestamp.String(), getApiKey())
+		nftTransfers, err = GetNFTTransfers(ctx, param.Identity, chainType, param.BlockHeight, param.Timestamp.String(), getApiKey())
 		if err != nil {
 			logger.Errorf("moralis.GetNFTTransfers: get nft transfers: %v", err)
 
@@ -114,7 +118,7 @@ func (c *moralisCrawler) setNFTTransfers(
 
 		var err error
 
-		assets, err = GetNFTs(param.Identity, chainType, param.Timestamp.String(), getApiKey())
+		assets, err = GetNFTs(ctx, param.Identity, chainType, param.Timestamp.String(), getApiKey())
 		if err != nil {
 			logger.Errorf("moralis.GetNFTs: get nft: %v", err)
 
@@ -326,11 +330,15 @@ func (c *moralisCrawler) setERC20(
 	author string,
 	networkSymbol constants.NetworkSymbol,
 	chainType ChainType) error {
-	_, setERC20Span := otel.Tracer("crawler_moralis").Start(ctx, "set_erc20")
+	_, trace := otel.Tracer("crawler_moralis").Start(ctx, "setERC20")
+	trace.SetAttributes(
+		attribute.String("owner", owner),
+		attribute.String("param.Timestamp", param.Timestamp.String()),
+	)
 
-	defer setERC20Span.End()
+	defer trace.End()
 
-	result, err := GetErc20Transfers(param.Identity, chainType, param.Timestamp.String(), getApiKey())
+	result, err := GetErc20Transfers(ctx, param.Identity, chainType, param.Timestamp.String(), getApiKey())
 	if err != nil {
 		logger.Errorf("chain type[%s], get erc20 transfers: %v", chainType.GetNetworkSymbol().String(), err)
 
@@ -440,11 +448,15 @@ func (c *moralisCrawler) setNative(
 	author string,
 	networkSymbol constants.NetworkSymbol,
 	chainType ChainType) error {
-	_, setNative := otel.Tracer("crawler_moralis").Start(ctx, "set_native")
+	_, trace := otel.Tracer("crawler_moralis").Start(ctx, "setNative")
+	trace.SetAttributes(
+		attribute.String("owner", owner),
+		attribute.String("param.Timestamp", param.Timestamp.String()),
+	)
 
-	defer setNative.End()
+	defer trace.End()
 
-	result, err := GetEthTransfers(param.Identity, chainType, param.Timestamp.String(), getApiKey())
+	result, err := GetEthTransfers(ctx, param.Identity, chainType, param.Timestamp.String(), getApiKey())
 	if err != nil {
 		logger.Errorf("chain type[%s], get eth transfers: %v", chainType.GetNetworkSymbol().String(), err)
 
