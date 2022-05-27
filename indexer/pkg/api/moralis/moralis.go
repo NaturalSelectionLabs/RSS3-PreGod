@@ -158,27 +158,27 @@ func GetNFTByContract(userAddress string, contactAddress string, chainType Chain
 }
 
 // GetTxByToken is used by ENS indexer
-func GetTxByToken(tokenAddress string, tokenId string, chainType ChainType, apiKey string) (NFTTransferItem, error) {
+func GetTxByToken(tokenAddress string, tokenId string, chainType ChainType, apiKey string) (TransferItem, error) {
 	url := fmt.Sprintf("%s/api/v2/nft/%s/%s/transfers?chain=%s&format=decimal&limit=1",
 		endpoint, tokenAddress, tokenId, chainType)
 	response, err := requestMoralisApi(url, apiKey, true)
 
 	if err != nil {
-		return NFTTransferItem{}, err
+		return TransferItem{}, err
 	}
 
-	res := new(NFTTransferItem)
+	res := new(TransferItem)
 	SetMoralisAttributes(&res.MoralisAttributes, response)
 
 	parsedJson, err := parser.Parse(string(response.Body))
 	if err != nil {
 		logger.Errorf("GetTxByToken: %v", err)
 
-		return NFTTransferItem{}, err
+		return TransferItem{}, err
 	}
 
 	if err := jsoni.UnmarshalFromString(string(parsedJson.GetObject("result", "0").MarshalTo(nil)), &res); err != nil {
-		return NFTTransferItem{}, err
+		return TransferItem{}, err
 	}
 
 	return *res, nil

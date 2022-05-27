@@ -187,7 +187,8 @@ func (c *moralisCrawler) setNFTTransfers(
 		}
 
 		//convert to string
-		proof := item.TransactionHash + "-" + strconv.FormatInt(item.LogIndex, 10) + "-" + item.TokenId
+		proof := item.TransactionHash + "-" + item.LogIndex + "-" + item.TokenId
+		logIndex, _ := strconv.Atoi(item.LogIndex)
 		note := model.Note{
 			Identifier:      rss3uri.NewNoteInstance(proof, networkSymbol).UriString(),
 			Owner:           owner,
@@ -199,7 +200,7 @@ func (c *moralisCrawler) setNFTTransfers(
 			Attachments:     database.MustWrapJSON(utils.Meta2NoteAtt(m)),
 			Source:          constants.NoteSourceNameEthereumNFT.String(),
 			ContractAddress: item.TokenAddress,
-			LogIndex:        int(item.LogIndex),
+			LogIndex:        logIndex,
 			TokenID:         item.TokenId,
 			MetadataNetwork: networkSymbol.String(),
 			MetadataProof:   proof,
