@@ -13,16 +13,16 @@ func GetDataFromDB(limit int, offset int) ([]model.Note, error) {
 
 	logger.Debugf("GetDataFromDB")
 
-	// internalDB := database.DB.
-	// 	Where("identifier not like ('rss3://note:%@ethereum') ").
-	// 	Where("related_urls[1] like ('https://etherscan.io/tx/%')").
-	// 	Where("\"source\" in ('Ethereum ERC20')").
-	// 	Limit(limit)
-	// Limit(limit)
-	// Offset(offset)
-
 	internalDB := database.DB.
-		Where("\"identifier\" in ('rss3://note:0x5c170dfde06db67469eb32c7bbe40d5bfe987766279bde14d6906dd231b65825-0@bnb')")
+		Where("identifier not like ('rss3://note:%@ethereum') ").
+		Where("related_urls[1] like ('https://etherscan.io/tx/%')").
+		Where("\"source\" in ('Ethereum ERC20')").
+		Order("date_created DESC").
+		Limit(1).
+		Offset(offset)
+
+	// internalDB := database.DB.
+	// Where("\"identifier\" in ('rss3://note:0x5c170dfde06db67469eb32c7bbe40d5bfe987766279bde14d6906dd231b65825-0@bnb')")
 
 	logger.Debugf("Limit:%d, Offset:%d", limit, offset)
 

@@ -16,7 +16,8 @@ func init() {
 	}
 }
 
-const GetNotesLimit = 2000
+// const GetNotesLimit = 2000
+const GetNotesLimit = 10
 const platformID = constants.PlatformID(1300)
 const crawlerID = "erc20-recovery-script"
 
@@ -28,51 +29,58 @@ func main() {
 		offset = 0
 	}
 
-	notes, err := internal.GetDataFromDB(1, int(offset))
-	if err != nil {
-		logger.Infof("get data from db err:%v", err)
-
-		return
-	}
-
-	// logger.Infof("get %d notes", len(notes))
-	// logger.Debugf("notes:%v", notes)
-
-	// for {
-	// get data from db
-	// notes, err := clear.GetDataFromDB(GetNotesLimit, int(offset))
+	// notes, err := internal.GetDataFromDB(1, int(offset))
 	// if err != nil {
 	// 	logger.Infof("get data from db err:%v", err)
 
 	// 	return
 	// }
+	// logger.Infof("notes:%v", notes)
 
-	if len(notes) == 0 {
-		logger.Infof("mission completed")
+	// logger.Infof("get %d notes", len(notes))
+	// logger.Debugf("notes:%v", notes)
+
+	for {
+		// logger.Debugf("ttt")
+		// get data from db
+		notes, err := internal.GetDataFromDB(GetNotesLimit, int(offset))
+		if err != nil {
+			logger.Infof("get data from db err:%v", err)
+
+			return
+		}
+
+		if len(notes) == 0 {
+			logger.Infof("mission completed")
+		}
+
+		// change db
+		internal.ClearGitCoinData(notes)
+
+		//save in db
+		tx := database.DB.Begin()
+		defer tx.Rollback()
+
+		// logger.Infof("notes[0].tags:%v", notes[0].Tags)
+
+		if _, err := database.CreateNotes(tx, notes, true); err != nil {
+			// continue
+		}
+
+		logger.Debugf("note[0].RelatedURLs:%v", notes[0].RelatedURLs)
+
+		// set the current block height as the from height
+		if err := util.SetCrawlerMetadata(crawlerID, offset, platformID); err != nil {
+			logger.Errorf("create crawler metadata error: %v", err)
+		}
+
+		offset += GetNotesLimit
+
+		if offset > 30 {
+			break
+		}
+
+		logger.Infof("offset:%d", offset)
 	}
-
-	// change db
-	internal.ClearGitCoinData(notes)
-
-	//save in db
-	// tx := database.DB.Begin()
-
-	// logger.Infof("notes[0].tags:%v", notes[0].Tags)
-
-	if _, err := database.CreateNotes(database.DB, notes, true); err != nil {
-		// continue
-	}
-
-	logger.Debugf("note[0].RelatedURLs:%v", notes[0].RelatedURLs)
-
-	// set the current block height as the from height
-	if err := util.SetCrawlerMetadata(crawlerID, offset, platformID); err != nil {
-		logger.Errorf("create crawler metadata error: %v", err)
-	}
-
-	offset += GetNotesLimit
-
-	logger.Infof("offset:%d", offset)
-	// }
 
 }
