@@ -1,26 +1,27 @@
 package autoupdater_test
 
-import (
-	"context"
-	"log"
-
-	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database"
-	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/cache"
-	_ "github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/config"
-	_ "github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/logger"
-)
-
-func init() {
-	if err := cache.Setup(); err != nil {
-		log.Fatalf("cache.Setup err: %v", err)
-	}
-
-	cache.GetRedisClient().FlushDB(context.Background())
-
-	if err := database.Setup(); err != nil {
-		log.Fatalf("database.Setup err: %v", err)
-	}
-}
+//
+// import (
+// 	"context"
+// 	"log"
+//
+// 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database"
+// 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/cache"
+// 	_ "github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/config"
+// 	_ "github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/logger"
+// )
+//
+// func init() {
+// 	if err := cache.Setup(); err != nil {
+// 		log.Fatalf("cache.Setup err: %v", err)
+// 	}
+//
+// 	cache.GetRedisClient().FlushDB(context.Background())
+//
+// 	if err := database.Setup(); err != nil {
+// 		log.Fatalf("database.Setup err: %v", err)
+// 	}
+// }
 
 // func Test_Run(t *testing.T) {
 // 	ctx := context.Background()

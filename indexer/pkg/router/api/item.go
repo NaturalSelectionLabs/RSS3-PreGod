@@ -5,7 +5,6 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/autoupdater"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/crawler"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/crawler_handler"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/util"
@@ -101,20 +100,20 @@ func GetItemHandlerFunc(c *gin.Context) {
 	}
 }
 
-func addToRecentVisit(ctx context.Context, req *GetItemRequest) error {
-	param := &crawler.WorkParam{
-		Identity:        req.Identity,
-		NetworkID:       *req.NetworkID,
-		PlatformID:      *req.PlatformID,
-		Limit:           req.Limit,
-		Timestamp:       time.Unix(req.Timestamp, 0),
-		OwnerID:         req.OwnerID,
-		OwnerPlatformID: *req.OwnerPlatformID,
-		ProfileSourceID: *req.ProfileSourceID,
-	}
-
-	return autoupdater.AddToRecentVisitQueue(ctx, param)
-}
+// func addToRecentVisit(ctx context.Context, req *GetItemRequest) error {
+// 	param := &crawler.WorkParam{
+// 		Identity:        req.Identity,
+// 		NetworkID:       *req.NetworkID,
+// 		PlatformID:      *req.PlatformID,
+// 		Limit:           req.Limit,
+// 		Timestamp:       time.Unix(req.Timestamp, 0),
+// 		OwnerID:         req.OwnerID,
+// 		OwnerPlatformID: *req.OwnerPlatformID,
+// 		ProfileSourceID: *req.ProfileSourceID,
+// 	}
+//
+// 	return autoupdater.AddToRecentVisitQueue(ctx, param)
+// }
 
 func getItemsResultFromOneNetwork(
 	identity string,
@@ -191,7 +190,7 @@ func getItemsResult(ctx context.Context, request GetItemRequest) (*itemsResult, 
 		)
 	}
 
-	addToRecentVisit(ctx, &request)
+	// addToRecentVisit(ctx, &request)
 
 	return result, errorBase
 }
