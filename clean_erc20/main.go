@@ -17,7 +17,7 @@ func init() {
 }
 
 // const GetNotesLimit = 2000
-const GetNotesLimit = 10
+const GetNotesLimit = 1
 const platformID = constants.PlatformID(1300)
 const crawlerID = "erc20-recovery-script"
 
@@ -58,12 +58,12 @@ func main() {
 		internal.ClearGitCoinData(notes)
 
 		//save in db
-		tx := database.DB.Begin()
-		defer tx.Rollback()
+		// tx := database.DB.Begin()
+		// defer tx.Rollback()
 
 		// logger.Infof("notes[0].tags:%v", notes[0].Tags)
 
-		if _, err := database.CreateNotes(tx, notes, true); err != nil {
+		if _, err := database.CreateNotes(database.DB, notes, true); err != nil {
 			// continue
 		}
 
@@ -76,7 +76,7 @@ func main() {
 
 		offset += GetNotesLimit
 
-		if offset > 30 {
+		if offset > 3 {
 			break
 		}
 
