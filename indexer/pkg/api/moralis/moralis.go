@@ -322,15 +322,39 @@ func GetErc20TokenMetaData(chainType ChainType, addresses []string, apiKey strin
 
 	getErc20TokenMetaDataFromCache(addresses, res)
 
-	if len(res) == len(addresses) {
+	addrLen := len(addresses)
+
+	if len(res) == addrLen {
 		return res, nil
 	}
 
-	getErc20TokenMetaDataFromUrl(chainType, addresses, apiKey, res)
+	limit := 200
+
+	addressBatch := make([][]string, addrLen/limit+1)
+
+	for i := 0; i < addrLen; i += limit {
+		addressBatch = append(addressBatch, addresses[i:Min(i+limit, addrLen)])
+	}
+
+	lop.ForEach(addressBatch, func(batch []string, i int) {
+		batchRes := Erc20TokensMap{}
+		getErc20TokenMetaDataFromUrl(chainType, batch, apiKey, batchRes)
+
+		for _, item := range batchRes {
+			res[item.Address] = item
+		}
+	})
 
 	setErc20TokenMetaDataInCache(res)
 
 	return res, nil
+}
+
+func Min(x, y int) int {
+	if x < y {
+		return x
+	}
+	return y
 }
 
 func getErc20TokenMetaDataFromCache(addresses []string, res Erc20TokensMap) {
