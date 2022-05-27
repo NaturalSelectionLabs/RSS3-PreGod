@@ -2,6 +2,7 @@ package main
 
 import (
 	"log"
+	"time"
 
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/clean_erc20/internal"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/util"
@@ -54,6 +55,8 @@ func main() {
 			logger.Infof("mission completed")
 		}
 
+		time.Sleep(time.Second * 5)
+
 		// change db
 		internal.ClearGitCoinData(notes)
 
@@ -81,6 +84,8 @@ func main() {
 		}
 
 		logger.Infof("offset:%d", offset)
+
+		time.Sleep(time.Second * 5)
 	}
 
 }
