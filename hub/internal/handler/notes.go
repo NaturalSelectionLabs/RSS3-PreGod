@@ -31,6 +31,7 @@ type GetNoteListRequest struct {
 	Networks       []string `form:"networks"`
 	ProfileSources []string `form:"profile_sources"`
 	Latest         bool     `form:"latest"`
+	Cache          bool     `form:"cache"`
 }
 
 func GetNoteListHandlerFunc(c *gin.Context) {
@@ -140,8 +141,10 @@ func getNoteListByInstance(c *gin.Context, instance rss3uri.Instance, request Ge
 		return nil, 0, err
 	}
 
-	if err := indexer.GetItems(c.Request.URL.String(), instance, accounts, request.Latest); err != nil {
-		return nil, 0, err
+	if !request.Cache {
+		if err := indexer.GetItems(c.Request.URL.String(), instance, accounts, request.Latest); err != nil {
+			return nil, 0, err
+		}
 	}
 
 	// Get instance's notes
@@ -262,13 +265,14 @@ func getNoteListsByLink(c *gin.Context, instance rss3uri.Instance, request GetNo
 	accounts := make([]model.Account, 0)
 	if err := database.DB.
 		Where("profile_id IN ?", targets).
-		// TODO profile_platform
 		Find(&accounts).Error; err != nil {
 		return nil, 0, err
 	}
 
-	if err := indexer.GetItems(c.Request.URL.String(), instance, accounts, request.Latest); err != nil {
-		return nil, 0, err
+	if !request.Cache {
+		if err := indexer.GetItems(c.Request.URL.String(), instance, accounts, request.Latest); err != nil {
+			return nil, 0, err
+		}
 	}
 
 	owners := make([]string, len(links))
