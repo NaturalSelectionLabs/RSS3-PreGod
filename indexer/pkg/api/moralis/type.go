@@ -320,6 +320,8 @@ func GetTxHashURL(
 		return "https://avascan.info/blockchain/c/tx/" + (transactionHash)
 	case constants.NetworkSymbolFantom:
 		return "https://ftmscan.com/tx/" + (transactionHash)
+	case constants.NetworkSymbolZkSync:
+		return "https://zkscan.io/explorer/transactions/" + (transactionHash)
 	default:
 		return ""
 	}
