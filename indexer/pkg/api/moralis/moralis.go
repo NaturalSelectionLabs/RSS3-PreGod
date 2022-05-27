@@ -552,7 +552,10 @@ func GetEthTransfers(ctx context.Context, userAddress string, chainType ChainTyp
 
 	for offset := 0; offset < 1000; offset += 500 {
 		go func(offset int) {
-			defer wg.Done()
+			defer func() {
+				wg.Done()
+				recover()
+			}()
 
 			transfer, err := getETHOnce(ctx, userAddress, chainType, fromDate, apiKey, offset)
 			if err != nil {
@@ -578,9 +581,9 @@ func GetEthTransfers(ctx context.Context, userAddress string, chainType ChainTyp
 	case <-doneCh:
 		break
 	case err := <-errorCh:
-		close(errorCh)
-
 		open = false
+
+		close(errorCh)
 
 		return []ETHTransferItem{}, err
 	}

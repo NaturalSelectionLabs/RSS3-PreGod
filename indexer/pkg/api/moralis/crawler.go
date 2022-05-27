@@ -98,7 +98,10 @@ func (c *moralisCrawler) setNFTTransfers(
 	wg.Add(2)
 
 	go func() {
-		defer wg.Done()
+		defer func() {
+			wg.Done()
+			recover()
+		}()
 
 		var err error
 
@@ -114,7 +117,10 @@ func (c *moralisCrawler) setNFTTransfers(
 
 	// get nft for assets
 	go func() {
-		defer wg.Done()
+		defer func() {
+			wg.Done()
+			recover()
+		}()
 
 		var err error
 
@@ -137,9 +143,9 @@ func (c *moralisCrawler) setNFTTransfers(
 	case <-doneCh:
 		break
 	case err := <-errorCh:
-		close(errorCh)
-
 		open = false
+
+		close(errorCh)
 
 		return err
 	}
@@ -170,7 +176,7 @@ func (c *moralisCrawler) setNFTTransfers(
 
 		var theAsset NFTItem
 
-		var err error
+		// var err error
 
 		for _, asset := range assets.Result {
 			if item.EqualsToToken(asset) && asset.MetaData != "" {
@@ -178,12 +184,12 @@ func (c *moralisCrawler) setNFTTransfers(
 			}
 		}
 
-		if theAsset.MetaData == "" {
-			theAsset, err = GetMetadataByToken(item.TokenAddress, item.TokenId, chainType, getApiKey())
-			if err != nil {
-				logger.Warnf("fail to get metadata of token [" + item.String() + "] err[" + err.Error() + "]")
-			}
-		}
+		// if theAsset.MetaData == "" {
+		// 	theAsset, err = GetMetadataByToken(item.TokenAddress, item.TokenId, chainType, getApiKey())
+		// 	if err != nil {
+		// 		logger.Warnf("fail to get metadata of token [" + item.String() + "] err[" + err.Error() + "]")
+		// 	}
+		// }
 
 		m, parseErr := utils.ParseNFTMetadata(theAsset.MetaData)
 		if parseErr != nil {
@@ -556,7 +562,10 @@ func (c *moralisCrawler) Work(param crawler.WorkParam) error {
 	wg.Add(3)
 
 	go func() {
-		defer wg.Done()
+		defer func() {
+			wg.Done()
+			recover()
+		}()
 
 		err := c.setNFTTransfers(ctx, param, owner, author, networkSymbol, chainType)
 		if err != nil {
@@ -569,7 +578,10 @@ func (c *moralisCrawler) Work(param crawler.WorkParam) error {
 	}()
 
 	go func() {
-		defer wg.Done()
+		defer func() {
+			wg.Done()
+			recover()
+		}()
 
 		err := c.setERC20(ctx, param, owner, author, networkSymbol, chainType)
 		if err != nil {
@@ -582,7 +594,10 @@ func (c *moralisCrawler) Work(param crawler.WorkParam) error {
 	}()
 
 	go func() {
-		defer wg.Done()
+		defer func() {
+			wg.Done()
+			recover()
+		}()
 
 		err := c.setNative(ctx, param, owner, author, networkSymbol, chainType)
 		if err != nil {
@@ -603,9 +618,9 @@ func (c *moralisCrawler) Work(param crawler.WorkParam) error {
 	case <-doneCh:
 		break
 	case err := <-errorCh:
-		close(errorCh)
-
 		open = false
+
+		close(errorCh)
 
 		return err
 	}
