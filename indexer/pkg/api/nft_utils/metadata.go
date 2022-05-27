@@ -76,7 +76,7 @@ func FormatUrl(url string) string {
 	// 2. is ipfs?
 	if strings.HasPrefix(url, "ipfs://") {
 		cid := strings.Split(url, "ipfs://")[1]
-		ret := "https://rss3.infura-ipfs.io/ipfs/" + cid
+		ret := "https://ipfs.rss3.page/ipfs/" + cid
 
 		return ret
 	}
@@ -84,7 +84,7 @@ func FormatUrl(url string) string {
 	// TODO: need a smarter way to check if it is a ipfs gateway url
 	if strings.Contains(url, "/ipfs/") {
 		cid := strings.Split(url, "/ipfs/")[1]
-		ret := "https://rss3.infura-ipfs.io/ipfs/" + cid
+		ret := "https://ipfs.rss3.page/ipfs/" + cid
 
 		return ret
 	}
