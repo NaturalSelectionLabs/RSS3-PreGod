@@ -3,7 +3,7 @@ package main
 import (
 	"log"
 
-	clear "github.com/NaturalSelectionLabs/RSS3-PreGod/clean_gitcoin/internal"
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/clean_erc20/internal"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/util"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/constants"
@@ -18,7 +18,7 @@ func init() {
 
 const GetNotesLimit = 2000
 const platformID = constants.PlatformID(1300)
-const crawlerID = "gitcoin-recovery-script"
+const crawlerID = "erc20-recovery-script"
 
 func main() {
 	offset, err := util.GetCrawlerMetadata(crawlerID, platformID)
@@ -28,7 +28,7 @@ func main() {
 		offset = 0
 	}
 
-	notes, err := clear.GetDataFromDB(1, int(offset))
+	notes, err := internal.GetDataFromDB(1, int(offset))
 	if err != nil {
 		logger.Infof("get data from db err:%v", err)
 
@@ -52,15 +52,18 @@ func main() {
 	}
 
 	// change db
-	notes = clear.ClearGitCoinData(notes)
+	internal.ClearGitCoinData(notes)
 
 	//save in db
 	tx := database.DB.Begin()
 
-	logger.Infof("notes[0].tags:%v", notes[0].Tags)
-	if _, err := clear.CreateNotes(tx, notes, true); err != nil {
+	// logger.Infof("notes[0].tags:%v", notes[0].Tags)
+
+	if _, err := database.CreateNotes(tx, notes, true); err != nil {
 		// continue
 	}
+
+	logger.Debugf("note[0].RelatedURLs:%v", notes[0].RelatedURLs)
 
 	// set the current block height as the from height
 	if err := util.SetCrawlerMetadata(crawlerID, offset, platformID); err != nil {
@@ -68,6 +71,8 @@ func main() {
 	}
 
 	offset += GetNotesLimit
+
+	logger.Infof("offset:%d", offset)
 	// }
 
 }
