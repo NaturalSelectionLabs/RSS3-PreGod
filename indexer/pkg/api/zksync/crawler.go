@@ -217,7 +217,7 @@ func (crawler *crawler) setDB(zksyncInfo []*ZkSyncInfo, networkID constants.Netw
 	defer tx.Rollback()
 
 	if len(items) > 0 {
-		if _, dbErr := database.CreateNotes(tx, items, true); dbErr != nil {
+		if _, dbErr := database.CreateNotesDoNothing(tx, items); dbErr != nil {
 			return dbErr
 		}
 	}

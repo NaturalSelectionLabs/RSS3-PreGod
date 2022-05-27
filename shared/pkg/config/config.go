@@ -123,6 +123,10 @@ type TwitterStruct struct {
 type GatewayStruct struct {
 	Endpoint string `koanf:"endpoint"`
 }
+type InfuraStruct struct {
+	ProjectID string `koanf:"project_id"`
+}
+
 type IndexerStruct struct {
 	Server ServerStruct `koanf:"server"`
 
@@ -134,6 +138,7 @@ type IndexerStruct struct {
 	Twitter     TwitterStruct     `koanf:"twitter"`
 	Aribtrum    ArbitrumStruct    `koanf:"arbitrum"`
 	Gateway     GatewayStruct     `koanf:"gateway"`
+	Infura      InfuraStruct      `koanf:"infura"`
 }
 
 type HubStruct struct {

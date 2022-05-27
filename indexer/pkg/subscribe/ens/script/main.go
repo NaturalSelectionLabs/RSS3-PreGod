@@ -13,13 +13,15 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 )
 
-func getOwnerFeed(owner string) {
-	instance, err := rss3uri.NewInstance("account", owner, "ethereum")
-	if err != nil {
-		return
-	}
+var success int64
+var db = database.DB
+var total int64
 
-	networkIDs := constants.GetEthereumPlatformNetworks()
+func getOwnerFeed(instance rss3uri.Instance, owner string) {
+	var networkIDs = constants.GetEthereumPlatformNetworks()
+
+	var err error
+
 	for _, networkID := range networkIDs {
 		getItemHandler := crawler_handler.NewGetItemsHandler(crawler.WorkParam{
 			Identity:   instance.GetIdentity(),
@@ -30,10 +32,16 @@ func getOwnerFeed(owner string) {
 
 		_, err = getItemHandler.Excute()
 		if err != nil {
-			logger.Errorf("SubscribeEns: get item error, %v", err)
+			logger.Errorf("subscribe.script:: get item error, %v", err)
 
 			continue
 		}
+	}
+
+	if err == nil {
+		success += 1
+
+		logger.Infof("subscribe.script: success load user feed, count = %v", success)
 	}
 }
 
@@ -43,8 +51,6 @@ func main() {
 
 		return
 	}
-
-	db := database.DB
 
 	for {
 		domains := make([]model.Domains, 0)
@@ -68,20 +74,31 @@ func main() {
 		}
 
 		for _, ens := range domains {
+			total += 1
+
+			logger.Infof("total: ==== %v\n", total)
+
 			address := common.BytesToAddress(ens.AddressOwner).String()
+			instance, err := rss3uri.NewInstance("account", address, "ethereum")
+
+			if err != nil {
+				logger.Infof("get instance error: %v", err)
+
+				continue
+			}
 
 			// get cache feed
 			var count int64
-			if err := db.Where("owner = ?", address).Model(&model.Note{}).Count(&count).Error; err == nil && count > 0 {
+			if err := db.Where("owner = ?", instance.UriString()).Model(&model.Note{}).Count(&count).Error; err == nil && count > 0 {
+				logger.Infof("note already exists, owner = %v", instance.UriString())
+
 				continue
 			}
 
 			// get latest feed
-			go func() {
-				getOwnerFeed(address)
-			}()
+			getOwnerFeed(instance, address)
 
-			time.Sleep(30 * time.Second)
+			time.Sleep(10 * time.Second)
 		}
 
 		page += 1

@@ -369,7 +369,11 @@ func BatchGetNoteListHandlerFunc(c *gin.Context) {
 	}
 
 	if req.Limit <= 0 {
-		req.Limit = 100
+		req.Limit = middleware.DefaultListLimit
+	}
+
+	if req.Limit > middleware.MaxListLimit {
+		req.Limit = middleware.MaxListLimit
 	}
 
 	resp, errType, err := service.BatchGetNodeList(req)

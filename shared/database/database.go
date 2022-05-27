@@ -1,6 +1,7 @@
 package database
 
 import (
+	"encoding/json"
 	"strings"
 	"time"
 
@@ -63,6 +64,10 @@ func Setup() error {
 	// 	&model.Note{},
 	// 	&model.CrawlerMetadata{},
 	// ); err != nil {
+	// 	return err
+	// }
+
+	// if err := DB.Exec("CREATE INDEX IF NOT EXISTS index_note_owner_and_date_created ON note (owner, date_created);").Error; err != nil {
 	// 	return err
 	// }
 
@@ -183,7 +188,7 @@ func CreateNote(db *gorm.DB, note *model.Note, updateAll bool) (*model.Note, err
 	note.Identifier = strings.ToLower(note.Identifier)
 	note.Owner = strings.ToLower(note.Owner)
 
-	if err := db.Model(note).Clauses(NewCreateClauses(updateAll, true)...).Create(note).Error; err != nil {
+	if err := db.Model(note).Clauses(NewCreateClauses(updateAll, true, true)...).Create(note).Error; err != nil {
 		return nil, err
 	}
 
@@ -194,7 +199,7 @@ func CreateAsset(db *gorm.DB, asset *model.Asset, updateAll bool) (*model.Asset,
 	asset.Identifier = strings.ToLower(asset.Identifier)
 	asset.Owner = strings.ToLower(asset.Owner)
 
-	if err := db.Clauses(NewCreateClauses(updateAll, true)...).Create(asset).Error; err != nil {
+	if err := db.Clauses(NewCreateClauses(updateAll, true, true)...).Create(asset).Error; err != nil {
 		return nil, err
 	}
 
@@ -212,7 +217,24 @@ func CreateNotes(db *gorm.DB, notes []model.Note, updateAll bool) ([]model.Note,
 
 	}
 
-	if err := db.Clauses(NewCreateClauses(updateAll, true)...).Create(&notes).Error; err != nil {
+	if err := db.Clauses(NewCreateClauses(updateAll, true, true)...).Create(&notes).Error; err != nil {
+		return nil, err
+	}
+
+	return notes, nil
+}
+
+func CreateNotesDoNothing(db *gorm.DB, notes []model.Note) ([]model.Note, error) {
+	for i := range notes {
+		notes[i].Identifier = strings.ToLower(notes[i].Identifier)
+		notes[i].Owner = strings.ToLower(notes[i].Owner)
+
+		if notes[i].Metadata == nil {
+			notes[i].Metadata = []byte("{}")
+		}
+	}
+
+	if err := db.Clauses(clause.OnConflict{DoNothing: true}).Create(&notes).Error; err != nil {
 		return nil, err
 	}
 
@@ -229,7 +251,7 @@ func CreateAssets(db *gorm.DB, assets []model.Asset, updateAll bool) ([]model.As
 		}
 	}
 
-	if err := db.Clauses(NewCreateClauses(updateAll, true)...).Create(&assets).Error; err != nil {
+	if err := db.Clauses(NewCreateClauses(updateAll, true, true)...).Create(&assets).Error; err != nil {
 		return nil, err
 	}
 
@@ -316,7 +338,7 @@ func QueryNotes(db *gorm.DB, uris []string, lastTime *time.Time, limit int) ([]m
 }
 
 func CreateProfile(db *gorm.DB, profile *model.Profile, updateAll bool) (*model.Profile, error) {
-	if err := db.Clauses(NewCreateClauses(updateAll, true)...).Create(profile).Error; err != nil {
+	if err := db.Clauses(NewCreateClauses(updateAll, true, true)...).Create(profile).Error; err != nil {
 		return nil, err
 	}
 
@@ -324,7 +346,7 @@ func CreateProfile(db *gorm.DB, profile *model.Profile, updateAll bool) (*model.
 }
 
 func CreateProfiles(db *gorm.DB, profiles []model.Profile, updateAll bool) ([]model.Profile, error) {
-	if err := db.Clauses(NewCreateClauses(updateAll, true)...).Create(&profiles).Error; err != nil {
+	if err := db.Clauses(NewCreateClauses(updateAll, true, true)...).Create(&profiles).Error; err != nil {
 		return nil, err
 	}
 
@@ -332,7 +354,7 @@ func CreateProfiles(db *gorm.DB, profiles []model.Profile, updateAll bool) ([]mo
 }
 
 func CreateCrawlerMetadata(db *gorm.DB, crawler *model.CrawlerMetadata, updateAll bool) (*model.CrawlerMetadata, error) {
-	if err := db.Clauses(NewCreateClauses(updateAll, false)...).Create(&crawler).Error; err != nil {
+	if err := db.Clauses(NewCreateClauses(updateAll, false, false)...).Create(&crawler).Error; err != nil {
 		return nil, err
 	}
 
@@ -357,25 +379,65 @@ func QueryCrawlerMetadata(db *gorm.DB, identity string, platformId constants.Pla
 	return &crawler, nil
 }
 
-func NewCreateClauses(updateAll bool, updateMetadata bool) []clause.Expression {
+func QueryCache(db *gorm.DB, key, network, source string) (json.RawMessage, error) {
+	cache := model.Cache{}
+
+	if err := db.
+		Model((*model.Cache)(nil)).
+		Where(map[string]interface{}{
+			"key":     key,
+			"network": network,
+			"source":  source,
+		}).
+		First(&cache).
+		Error; err != nil {
+		return nil, err
+	}
+
+	return cache.Data, nil
+}
+
+func CreateCache(db *gorm.DB, key, network, source string, data json.RawMessage) error {
+	return db.
+		Model((*model.Cache)(nil)).
+		Clauses(clause.OnConflict{
+			DoNothing: true,
+		}).
+		Create(&model.Cache{
+			Key:     key,
+			Network: network,
+			Source:  source,
+			Data:    data,
+		}).
+		Error
+}
+
+func NewCreateClauses(updateAll bool, updateMetadata bool, updateAttachments bool) []clause.Expression {
 	clauses := []clause.Expression{
 		// clause.Returning{}
 	}
 
+	assignmentArrary := []string{}
+
 	if updateAll {
+		assignmentArrary = append(assignmentArrary, "updated_at")
+	}
+
+	if updateMetadata {
+		assignmentArrary = append(assignmentArrary, "metadata")
+	}
+
+	if updateAttachments {
+		assignmentArrary = append(assignmentArrary, "attachments")
+	}
+
+	if len(assignmentArrary) > 0 {
 		clauses = append(clauses, clause.OnConflict{
-			DoUpdates: clause.AssignmentColumns([]string{"updated_at"}),
+			DoUpdates: clause.AssignmentColumns(assignmentArrary),
 			UpdateAll: true,
 		})
 	} else {
 		clauses = append(clauses, clause.OnConflict{DoNothing: true})
-	}
-
-	if updateMetadata {
-		clauses = append(clauses, clause.OnConflict{
-			DoUpdates: clause.AssignmentColumns([]string{"metadata"}),
-			UpdateAll: true,
-		})
 	}
 
 	return clauses

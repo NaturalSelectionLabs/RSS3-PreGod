@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	utils "github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/api/nft_utils"
@@ -20,6 +21,21 @@ import (
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 )
+
+var nativeMap = map[constants.NetworkSymbol]string{
+	constants.NetworkSymbolEthereum:       "ETH",
+	constants.NetworkSymbolCrossbell:      "CSB",
+	constants.NetworkSymbolBNBChain:       "BNB",
+	constants.NetworkSymbolPolygon:        "MATIC",
+	constants.NetworkSymbolArbitrum:       "ETH",
+	constants.NetworkSymbolAvalanche:      "AVAX",
+	constants.NetworkSymbolFantom:         "FTM",
+	constants.NetworkSymbolGnosisMainnet:  "xDAI",
+	constants.NetworkSymbolSolanaMainet:   "SOL",
+	constants.NetworkSymbolFlowMainnet:    "FLOW",
+	constants.NetworkSymbolArweaveMainnet: "AR",
+	constants.NetworkSymbolZkSync:         "ETH",
+}
 
 type moralisCrawler struct {
 	crawler.DefaultCrawler
@@ -65,18 +81,61 @@ func (c *moralisCrawler) setNFTTransfers(
 
 	defer setNFTTransfersSpan.End()
 
-	// nftTransfers for notes
-	nftTransfers, err := GetNFTTransfers(param.Identity, chainType, param.BlockHeight, getApiKey())
-	if err != nil {
-		logger.Errorf("get nft transfers: %v", err)
+	var (
+		wg           sync.WaitGroup
+		nftTransfers = NFTTransferResult{}
+		assets       = NFTResult{}
+		errorCh      = make(chan error)
+		doneCh       = make(chan bool)
+		open         = true
+	)
 
-		return err
-	}
+	// nftTransfers for notes
+	wg.Add(2)
+
+	go func() {
+		defer wg.Done()
+
+		var err error
+
+		nftTransfers, err = GetNFTTransfers(param.Identity, chainType, param.BlockHeight, param.Timestamp.String(), getApiKey())
+		if err != nil {
+			logger.Errorf("moralis.GetNFTTransfers: get nft transfers: %v", err)
+
+			if open {
+				errorCh <- err
+			}
+		}
+	}()
 
 	// get nft for assets
-	assets, err := GetNFTs(param.Identity, chainType, getApiKey())
-	if err != nil {
-		logger.Errorf("get nft: %v", err)
+	go func() {
+		defer wg.Done()
+
+		var err error
+
+		assets, err = GetNFTs(param.Identity, chainType, param.Timestamp.String(), getApiKey())
+		if err != nil {
+			logger.Errorf("moralis.GetNFTs: get nft: %v", err)
+
+			if open {
+				errorCh <- err
+			}
+		}
+	}()
+
+	go func() {
+		wg.Wait()
+		close(doneCh)
+	}()
+
+	select {
+	case <-doneCh:
+		break
+	case err := <-errorCh:
+		close(errorCh)
+
+		open = false
 
 		return err
 	}
@@ -106,6 +165,8 @@ func (c *moralisCrawler) setNFTTransfers(
 		}
 
 		var theAsset NFTItem
+
+		var err error
 
 		for _, asset := range assets.Result {
 			if item.EqualsToToken(asset) && asset.MetaData != "" {
@@ -268,7 +329,7 @@ func (c *moralisCrawler) setERC20(
 
 	defer setERC20Span.End()
 
-	result, err := GetErc20Transfers(param.Identity, chainType, getApiKey())
+	result, err := GetErc20Transfers(param.Identity, chainType, param.Timestamp.String(), getApiKey())
 	if err != nil {
 		logger.Errorf("chain type[%s], get erc20 transfers: %v", chainType.GetNetworkSymbol().String(), err)
 
@@ -342,7 +403,7 @@ func (c *moralisCrawler) setERC20(
 			Identifier: rss3uri.NewNoteInstance(proof, networkSymbol).UriString(),
 			Owner:      owner,
 			RelatedURLs: []string{
-				"https://etherscan.io/tx/" + item.TransactionHash,
+				GetTxHashURL(networkSymbol, item.TransactionHash),
 			},
 			Tags:            constants.ItemTagsToken.ToPqStringArray(),
 			Authors:         []string{author},
@@ -365,24 +426,24 @@ func (c *moralisCrawler) setERC20(
 			DateUpdated: tsp,
 		}
 
-		c.Notes = append(c.Notes, note)
+		c.Erc20Notes = append(c.Erc20Notes, note)
 	}
 
 	return nil
 }
 
-func (c *moralisCrawler) setETH(
+func (c *moralisCrawler) setNative(
 	ctx context.Context,
 	param crawler.WorkParam,
 	owner string,
 	author string,
 	networkSymbol constants.NetworkSymbol,
 	chainType ChainType) error {
-	_, setETH := otel.Tracer("crawler_moralis").Start(ctx, "set_eth")
+	_, setNative := otel.Tracer("crawler_moralis").Start(ctx, "set_native")
 
-	defer setETH.End()
+	defer setNative.End()
 
-	result, err := GetEthTransfers(param.Identity, chainType, getApiKey())
+	result, err := GetEthTransfers(param.Identity, chainType, param.Timestamp.String(), getApiKey())
 	if err != nil {
 		logger.Errorf("chain type[%s], get eth transfers: %v", chainType.GetNetworkSymbol().String(), err)
 
@@ -431,8 +492,9 @@ func (c *moralisCrawler) setETH(
 				"from":             strings.ToLower(item.FromAddress),
 				"to":               strings.ToLower(item.ToAddress),
 				"amount":           item.Value,
+				"decimal":          18,
 				"token_standard":   "Native",
-				"token_symbol":     "ETH",
+				"token_symbol":     nativeMap[networkSymbol],
 				"transaction_hash": item.TransactionHash,
 			}),
 			DateCreated: tsp,
@@ -468,29 +530,69 @@ func (c *moralisCrawler) Work(param crawler.WorkParam) error {
 		return fmt.Errorf("unsupported network: %s", chainType)
 	}
 
-	networkSymbol := chainType.GetNetworkSymbol()
+	var (
+		networkSymbol = chainType.GetNetworkSymbol()
+		owner         = rss3uri.NewAccountInstance(param.OwnerID, param.OwnerPlatformID.Symbol()).UriString()
+		author        = rss3uri.NewAccountInstance(param.Identity, constants.PlatformSymbolEthereum).UriString()
+		wg            sync.WaitGroup
+		errorCh       = make(chan error)
+		doneCh        = make(chan bool)
+		open          = true
+	)
 
-	// those two should be expected to be equal actually
-	owner := rss3uri.NewAccountInstance(param.OwnerID, param.OwnerPlatformID.Symbol()).UriString()
-	author := rss3uri.NewAccountInstance(param.Identity, constants.PlatformSymbolEthereum).UriString()
+	wg.Add(3)
 
-	err := c.setNFTTransfers(ctx, param, owner, author, networkSymbol, chainType)
-	if err != nil {
-		logger.Errorf("fail to set nft transfers in db: %v", err)
+	go func() {
+		defer wg.Done()
 
-		return err
-	}
+		err := c.setNFTTransfers(ctx, param, owner, author, networkSymbol, chainType)
+		if err != nil {
+			logger.Errorf("moralis.setNFTTransfers: fail to set nft transfers in db: %v", err)
 
-	err = c.setERC20(ctx, param, owner, author, networkSymbol, chainType)
-	if err != nil {
-		logger.Errorf("fail to set erc20 in db: %v", err)
+			if open {
+				errorCh <- err
+			}
+		}
+	}()
 
-		return err
-	}
+	go func() {
+		defer wg.Done()
 
-	err = c.setETH(ctx, param, owner, author, networkSymbol, chainType)
-	if err != nil {
-		logger.Errorf("fail to set eth in db: %v", err)
+		err := c.setERC20(ctx, param, owner, author, networkSymbol, chainType)
+		if err != nil {
+			logger.Errorf("moralis.setERC20: fail to set erc20 in db: %v", err)
+
+			if open {
+				errorCh <- err
+			}
+		}
+	}()
+
+	go func() {
+		defer wg.Done()
+
+		err := c.setNative(ctx, param, owner, author, networkSymbol, chainType)
+		if err != nil {
+			logger.Errorf("moralis.setNative: fail to set eth in db: %v", err)
+
+			if open {
+				errorCh <- err
+			}
+		}
+	}()
+
+	go func() {
+		wg.Wait()
+		close(doneCh)
+	}()
+
+	select {
+	case <-doneCh:
+		break
+	case err := <-errorCh:
+		close(errorCh)
+
+		open = false
 
 		return err
 	}
@@ -520,12 +622,15 @@ func (c *moralisCrawler) Work(param crawler.WorkParam) error {
 		}
 	}
 
-	ctx, completeMimeTypeSpan := otel.Tracer("crawler_moralis").Start(ctx, "complete_mime_types_for_items")
-
-	defer completeMimeTypeSpan.End()
-
-	if err := utils.CompleteMimeTypesForItems(ctx, c.Notes, c.Assets, c.Profiles); err != nil {
-		logger.Error("moralis complete mime types error:", err)
+	// check duplicates in Erc20Notes
+	for i := 0; i < len(c.Erc20Notes); i++ {
+		for j := i + 1; j < len(c.Erc20Notes); j++ {
+			if c.Erc20Notes[i].Identifier == c.Erc20Notes[j].Identifier {
+				logger.Errorf("Duplicate note found: %v!!! This is temporarily removed.", c.Notes[i].Identifier)
+				c.Erc20Notes = append(c.Erc20Notes[:j], c.Erc20Notes[j+1:]...)
+				j--
+			}
+		}
 	}
 
 	return nil

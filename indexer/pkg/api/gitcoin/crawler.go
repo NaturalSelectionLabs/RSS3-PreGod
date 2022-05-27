@@ -183,7 +183,7 @@ func (property *zksyncCrawlerProperty) run() error {
 	}
 
 	if len(zkSyncDonations.Donations) > 0 {
-		err := setDB(zkSyncDonations.Donations, constants.NetworkIDEthereum, zkSyncDonations.AdminAddresses)
+		err := setDB(zkSyncDonations.Donations, constants.NetworkIDZkSync, zkSyncDonations.AdminAddresses)
 		if err != nil {
 			logger.Errorf("set db error: %v", err)
 
@@ -272,7 +272,12 @@ func (property *xscanRunCrawlerProperty) run() error {
 	}
 
 	if len(ethDonationsResult.Donations) > 0 {
-		setDB(ethDonationsResult.Donations, property.networkID, ethDonationsResult.AdminAddresses)
+		err := setDB(ethDonationsResult.Donations, property.networkID, ethDonationsResult.AdminAddresses)
+		if err != nil {
+			logger.Errorf("set db error: %v", err)
+
+			return err
+		}
 	}
 
 	logger.Infof("Getting [%s] donations, from [%d] to [%d], the latest confirmed block height [%d]",
@@ -350,6 +355,7 @@ func setNote(
 	author := rss3uri.NewAccountInstance(donationInfo.Donor, constants.PlatformSymbolEthereum).UriString()
 	summary := util.SummarizeContent(projectInfo.Description, 400)
 	instanceKey, err := setNoteInstance(niBuilder, donationInfo.TxHash)
+	metadataNetwork := networkID.Symbol().String()
 
 	if err != nil {
 		return nil, fmt.Errorf("set note instance error: %s", err)
@@ -385,15 +391,16 @@ func setNote(
 			},
 		}),
 		Source:          constants.NoteSourceNameGitcoinContribution.String(),
-		MetadataNetwork: constants.NetworkSymbolEthereum.String(),
+		MetadataNetwork: metadataNetwork,
 		MetadataProof:   v.TxHash,
 		Metadata: database.MustWrapJSON(map[string]interface{}{
 			"from": v.Donor,
 			"to":   v.GetTxTo(),
 
+			"decimal":      v.Decimals,
 			"destination":  v.AdminAddress,
-			"value_amount": v.FormatedAmount.String(),
-			"value_symbol": v.Symbol,
+			"amount":       v.FormatedAmount.String(),
+			"token_symbol": v.Symbol,
 			"approach":     v.Approach,
 		}),
 		DateCreated: tsp,
@@ -452,7 +459,12 @@ func setDB(
 
 	// TODO: make insert db a general method @Zerber
 	tx := database.DB.Begin()
-	defer tx.Rollback()
+	defer func() {
+		err := tx.Rollback().Error
+		if err != nil {
+			logger.Errorf("CreateNotes error: %v", err)
+		}
+	}()
 
 	if len(items) > 0 {
 		if _, dbErr := database.CreateNotes(tx, items, true); dbErr != nil {
