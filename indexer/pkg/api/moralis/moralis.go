@@ -91,16 +91,39 @@ func GetNFTs(ctx context.Context, userAddress string, chainType ChainType, fromD
 		attribute.Int("responseSize", len(response.Body)),
 	)
 
-	lop.ForEach(res.Result, func(item NFTItem, i int) {
+	var wg sync.WaitGroup
+
+	for i, item := range res.Result {
 		if item.MetaData == "" && item.TokenURI != "" {
-			url := nft_utils.FormatUrl(item.TokenURI)
-			if metadataRes, err := httpx.Get(url, nil); err != nil {
-				logger.Warnf("http get nft metadata error with url '%s': [%v], moralis token uri: %v", url, err, item.TokenURI)
-			} else {
-				res.Result[i].MetaData = string(metadataRes.Body)
-			}
+			wg.Add(1)
+
+			go func(item NFTItem, i int) {
+				defer wg.Done()
+
+				done := make(chan bool, 1)
+
+				go func() {
+					url := nft_utils.FormatUrl(item.TokenURI)
+					if metadataRes, err := httpx.Get(url, nil); err != nil {
+						logger.Warnf("http get nft metadata error with url '%s': [%v], moralis token uri: %v", url, err, item.TokenURI)
+					} else {
+						res.Result[i].MetaData = string(metadataRes.Body)
+					}
+
+					close(done)
+				}()
+
+				select {
+				case <-done:
+					return
+				case <-time.After(time.Second * 5):
+					return
+				}
+			}(item, i)
 		}
-	})
+	}
+
+	wg.Wait()
 
 	return *res, nil
 }
@@ -569,7 +592,7 @@ func GetEthTransfers(ctx context.Context, userAddress string, chainType ChainTyp
 		transferItems = make([]ETHTransferItem, 0)
 		wg            sync.WaitGroup
 		errorCh       = make(chan error, 1)
-		doneCh        = make(chan bool)
+		doneCh        = make(chan bool, 1)
 		open          = true
 	)
 

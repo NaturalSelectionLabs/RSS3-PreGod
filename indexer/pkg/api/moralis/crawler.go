@@ -89,8 +89,8 @@ func (c *moralisCrawler) setNFTTransfers(
 		wg           sync.WaitGroup
 		nftTransfers = NFTTransferResult{}
 		assets       = NFTResult{}
-		errorCh      = make(chan error)
-		doneCh       = make(chan bool)
+		errorCh      = make(chan error, 1)
+		doneCh       = make(chan bool, 1)
 		open         = true
 	)
 
@@ -555,8 +555,8 @@ func (c *moralisCrawler) Work(param crawler.WorkParam) error {
 		owner         = rss3uri.NewAccountInstance(param.OwnerID, param.OwnerPlatformID.Symbol()).UriString()
 		author        = rss3uri.NewAccountInstance(param.Identity, constants.PlatformSymbolEthereum).UriString()
 		wg            sync.WaitGroup
-		errorCh       = make(chan error)
-		doneCh        = make(chan bool)
+		errorCh       = make(chan error, 1)
+		doneCh        = make(chan bool, 1)
 		open          = true
 	)
 
