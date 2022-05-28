@@ -328,7 +328,7 @@ func GetErc20TokenMetaData(chainType ChainType, addresses []string, apiKey strin
 		return res, nil
 	}
 
-	limit := 200
+	limit := 150
 
 	addressBatch := make([][]string, addrLen/limit+1)
 
