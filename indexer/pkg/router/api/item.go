@@ -8,7 +8,6 @@ import (
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/crawler"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/crawler_handler"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/util"
-	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database/model"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/constants"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/logger"
 	"github.com/gin-gonic/gin"
@@ -27,21 +26,14 @@ type GetItemRequest struct {
 	ProfileSourceID *constants.ProfileSourceID `form:"profile_source_id" binding:"required"`
 }
 
-type itemsResult struct {
-	NoteItems  []model.Note  `json:"note"`
-	AssetItems []model.Asset `json:"asset"`
-}
-
 type GetItemResponse struct {
 	util.ErrorBase `json:"error"`
-	ItemsResult    itemsResult `json:"data"`
 }
 
 func GetItemHandlerFunc(c *gin.Context) {
 	request := GetItemRequest{}
 	response := GetItemResponse{
 		util.ErrorBase{},
-		itemsResult{},
 	}
 
 	// bind request
@@ -85,7 +77,7 @@ func GetItemHandlerFunc(c *gin.Context) {
 	}
 
 	// get items from crawler
-	_, errorBase := getItemsResult(c.Request.Context(), request)
+	errorBase := getItemsResult(c.Request.Context(), request)
 	response.ErrorBase = errorBase
 
 	if response.ErrorBase.ErrorCode == 0 {
@@ -124,7 +116,7 @@ func getItemsResultFromOneNetwork(
 	ownerID string,
 	ownerPlatformID constants.PlatformID,
 	profileSourceID constants.ProfileSourceID,
-) (*itemsResult, util.ErrorBase) {
+) util.ErrorBase {
 	getItemHandler := crawler_handler.NewGetItemsHandler(crawler.WorkParam{
 		Identity:        identity,
 		PlatformID:      platformID,
@@ -140,35 +132,29 @@ func getItemsResultFromOneNetwork(
 	if err != nil {
 		logger.Errorf("get items from crawler error: %s", err.Error())
 
-		return nil, util.GetErrorBase(util.ErrorCodeNotFoundData)
+		return util.GetErrorBase(util.ErrorCodeNotFoundData)
 	}
 
 	if handlerResult == nil || handlerResult.Result == nil {
-		return nil, util.GetErrorBase(util.ErrorCodeNotFoundData)
+		return util.GetErrorBase(util.ErrorCodeNotFoundData)
 	}
 
 	if handlerResult.Error.ErrorCode != util.ErrorCodeSuccess {
 		logger.Errorf("[%s] get item error", identity)
 
-		return nil, util.GetErrorBase(handlerResult.Error.ErrorCode)
+		return util.GetErrorBase(handlerResult.Error.ErrorCode)
 	}
 
-	return &itemsResult{
-		NoteItems:  handlerResult.Result.Notes,
-		AssetItems: handlerResult.Result.Assets,
-	}, util.GetErrorBase(util.ErrorCodeSuccess)
+	return util.GetErrorBase(util.ErrorCodeSuccess)
 }
 
-func getItemsResult(ctx context.Context, request GetItemRequest) (*itemsResult, util.ErrorBase) {
-	result := new(itemsResult)
-	result.AssetItems = make([]model.Asset, 0)
-	result.NoteItems = make([]model.Note, 0)
+func getItemsResult(ctx context.Context, request GetItemRequest) util.ErrorBase {
 	errorBase := util.GetErrorBase(util.ErrorCodeSuccess)
 
 	if *request.NetworkID == constants.NetworkIDUnknown {
 		networkIDs := constants.GetEthereumPlatformNetworks()
 		for _, networkID := range networkIDs {
-			currResult, currErrorBase := getItemsResultFromOneNetwork(
+			currErrorBase := getItemsResultFromOneNetwork(
 				request.Identity, *request.PlatformID, networkID,
 				request.Limit, time.Unix(request.Timestamp, 0),
 				request.OwnerID, *request.OwnerPlatformID, *request.ProfileSourceID,
@@ -178,12 +164,9 @@ func getItemsResult(ctx context.Context, request GetItemRequest) (*itemsResult, 
 				logger.Errorf("[%s] get item error, network[%s],error reason:%s",
 					request.Identity, networkID.Symbol(), currErrorBase.ErrorMsg)
 			}
-
-			result.AssetItems = append(result.AssetItems, currResult.AssetItems...)
-			result.NoteItems = append(result.NoteItems, currResult.NoteItems...)
 		}
 	} else {
-		result, errorBase = getItemsResultFromOneNetwork(
+		errorBase = getItemsResultFromOneNetwork(
 			request.Identity, *request.PlatformID, *request.NetworkID,
 			request.Limit, time.Unix(request.Timestamp, 0),
 			request.OwnerID, *request.OwnerPlatformID, *request.ProfileSourceID,
@@ -192,5 +175,5 @@ func getItemsResult(ctx context.Context, request GetItemRequest) (*itemsResult, 
 
 	// addToRecentVisit(ctx, &request)
 
-	return result, errorBase
+	return errorBase
 }
