@@ -37,7 +37,7 @@ type Note struct {
 }
 
 func (Note) TableName() string {
-	return "note2"
+	return "note3"
 }
 
 func (n Note) String() string {

@@ -18,29 +18,32 @@ import (
 const (
 	MaxLimit = 100
 	Trigger  = `
+-- CREATE FUNCTION
 CREATE OR REPLACE FUNCTION serial_transaction_log_index() RETURNS TRIGGER AS
 $$
 DECLARE
     _transaction_log_index int;
 BEGIN
     _transaction_log_index := (SELECT COALESCE(MAX(transaction_log_index), -1)
-                               FROM note2
+                               FROM note3
                                WHERE transaction_hash = NEW.transaction_hash);
-
     IF NEW.transaction_log_index = -1 THEN
         NEW.transaction_log_index = _transaction_log_index + 1;
     END IF;
-
     RETURN NEW;
 END;
 $$ LANGUAGE PLPGSQL;
 
-DROP TRIGGER IF EXISTS trigger_transaction_log_index on "note2";
+-- CREATE TRIGGER
+BEGIN;
+DROP TRIGGER IF EXISTS trigger_transaction_log_index ON note3;
+
 CREATE TRIGGER trigger_transaction_log_index
     BEFORE INSERT
-    ON note2
+    ON note3
     FOR EACH ROW
 EXECUTE FUNCTION serial_transaction_log_index();
+END;
 `
 )
 
@@ -81,25 +84,25 @@ func Setup() error {
 		return err
 	}
 
-	if err := DB.AutoMigrate(
-		// &model.Profile{},
-		// &model.Account{},
-		// &model.Link{},
-		// &model.Asset{},
-		&model.Note{},
-		// &model.CrawlerMetadata{},
-		// &model.Cache{},
-	); err != nil {
-		return err
-	}
+	// if err := DB.AutoMigrate(
+	// 	&model.Profile{},
+	// 	&model.Account{},
+	// 	&model.Link{},
+	// 	&model.Asset{},
+	// 	&model.Note{},
+	// 	&model.CrawlerMetadata{},
+	// 	&model.Cache{},
+	// ); err != nil {
+	// 	return err
+	// }
 
 	// if err := DB.Exec("CREATE INDEX IF NOT EXISTS index_note_owner_and_date_created ON note (owner, date_created);").Error; err != nil {
 	// 	return err
 	// }
 
-	if err := DB.Exec(Trigger).Error; err != nil {
-		return err
-	}
+	// if err := DB.Exec(Trigger).Error; err != nil {
+	// 	return err
+	// }
 
 	return nil
 }

@@ -79,7 +79,7 @@ func getItem(client *resty.Client, account model.Account, networkID constants.Ne
 	if err := database.DB.
 		Raw(
 			`WITH "timestamp" AS (SELECT date_created AS "timestamp"
-                     FROM note2
+                     FROM note3
                      WHERE owner = ?
                      ORDER BY date_created DESC
                      LIMIT 1)
