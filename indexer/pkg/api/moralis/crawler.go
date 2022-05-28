@@ -204,16 +204,13 @@ func (c *moralisCrawler) setNFTTransfers(
 			Owner:               owner,
 			RelatedURLs:         GetTxRelatedURLs(networkSymbol, item.TokenAddress, item.TokenId, &item.TransactionHash),
 			TransactionHash:     item.TransactionHash,
-			TransactionLogIndex: -1,
+			TransactionLogIndex: logIndex,
 			Tags:                constants.ItemTagsNFT.ToPqStringArray(),
 			Authors:             []string{author},
 			Title:               m.Name,
 			Summary:             m.Description,
 			Attachments:         database.MustWrapJSON(utils.Meta2NoteAtt(m)),
 			Source:              constants.NoteSourceNameEthereumNFT.String(),
-			ContractAddress:     item.TokenAddress,
-			LogIndex:            logIndex,
-			TokenID:             item.TokenId,
 			MetadataNetwork:     networkSymbol.String(),
 			MetadataProof:       proof,
 			Metadata: database.MustWrapJSON(map[string]interface{}{
@@ -427,7 +424,6 @@ func (c *moralisCrawler) setERC20(
 			Tags:                constants.ItemTagsToken.ToPqStringArray(),
 			Authors:             []string{author},
 			Source:              constants.NoteSourceNameEthereumERC20.String(),
-			ContractAddress:     item.TokenAddress,
 			MetadataNetwork:     networkSymbol.String(),
 			MetadataProof:       proof,
 			Metadata: database.MustWrapJSON(map[string]interface{}{
@@ -509,7 +505,6 @@ func (c *moralisCrawler) setNative(
 			Tags:                constants.ItemTagsETH.ToPqStringArray(), // will be change
 			Authors:             []string{author},
 			Source:              constants.NoteSourceNameEthereumETH.String(),
-			ContractAddress:     "0x0",
 			MetadataNetwork:     networkSymbol.String(),
 			MetadataProof:       proof,
 			Metadata: database.MustWrapJSON(map[string]interface{}{
