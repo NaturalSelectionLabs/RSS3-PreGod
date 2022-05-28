@@ -8,7 +8,7 @@ import (
 	"github.com/valyala/fastjson"
 )
 
-func GetDataFromDB(limit int, offset int) ([]model.Note, error) {
+func GetDataFromDB(limit int) ([]model.Note, error) {
 	var notes []model.Note
 
 	logger.Debugf("GetDataFromDB")
@@ -17,14 +17,12 @@ func GetDataFromDB(limit int, offset int) ([]model.Note, error) {
 		Where("identifier not like ('rss3://note:%@ethereum') ").
 		Where("related_urls[1] like ('https://etherscan.io/tx/%')").
 		Where("\"source\" in ('Ethereum ERC20')").
-		Order("date_created DESC").
-		Limit(limit).
-		Offset(offset)
+		Order("date_created DESC")
 
-	// internalDB := database.DB.
-	// Where("\"identifier\" in ('rss3://note:0x5c170dfde06db67469eb32c7bbe40d5bfe987766279bde14d6906dd231b65825-0@bnb')")
+		// internalDB := database.DB.
+		// Where("\"identifier\" in ('rss3://note:0x5c170dfde06db67469eb32c7bbe40d5bfe987766279bde14d6906dd231b65825-0@bnb')")
 
-	logger.Debugf("Limit:%d, Offset:%d", limit, offset)
+		// logger.Debugf("Limit:%d, Offset:%d", limit, offset)
 
 	if err := internalDB.Find(&notes).Error; err != nil {
 		return nil, err
