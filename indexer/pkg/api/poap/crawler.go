@@ -108,8 +108,6 @@ func (pc *poapCrawler) Work(param crawler.WorkParam) error {
 
 		pc.Assets = append(pc.Assets, model.Asset{
 			Identifier:      asset.Identifier,
-			ContractAddress: asset.ContractAddress,
-			TokenID:         asset.TokenID,
 			Owner:           asset.Owner,
 			ProfileSourceID: asset.ProfileSourceID,
 			RelatedURLs:     asset.RelatedURLs,
