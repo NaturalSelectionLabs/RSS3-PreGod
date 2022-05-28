@@ -74,12 +74,8 @@ func GetNoteListHandlerFunc(c *gin.Context) {
 
 	var lastItem *protocol.Item
 
-	for _, item := range noteList {
-		internalItem := item
-
-		if lastItem == nil || lastItem.DateCreated.Time().After(internalItem.DateCreated.Time()) {
-			lastItem = &internalItem
-		}
+	if noteList != nil && len(noteList) > 0 {
+		lastItem = &noteList[len(noteList)-1]
 	}
 
 	identifierNext := ""
