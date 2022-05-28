@@ -116,7 +116,7 @@ func GetNFTs(ctx context.Context, userAddress string, chainType ChainType, fromD
 				select {
 				case <-done:
 					return
-				case <-time.After(time.Second * 3):
+				case <-time.After(time.Second * 5):
 					return
 				}
 			}(item, i)
@@ -351,7 +351,7 @@ func GetErc20TokenMetaData(chainType ChainType, addresses []string, apiKey strin
 		return res, nil
 	}
 
-	limit := 200
+	limit := 150
 
 	addressBatch := make([][]string, addrLen/limit+1)
 
