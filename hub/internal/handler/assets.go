@@ -117,7 +117,7 @@ func GetAssetListHandlerFunc(c *gin.Context) {
 
 	var lastItem *protocol.Item
 
-	if assetList != nil && len(assetList) > 0 {
+	if len(assetList) > 0 {
 		lastItem = &assetList[len(assetList)-1]
 	}
 

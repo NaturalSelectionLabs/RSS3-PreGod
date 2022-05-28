@@ -74,7 +74,7 @@ func GetNoteListHandlerFunc(c *gin.Context) {
 
 	var lastItem *protocol.Item
 
-	if noteList != nil && len(noteList) > 0 {
+	if len(noteList) > 0 {
 		lastItem = &noteList[len(noteList)-1]
 	}
 
@@ -156,7 +156,11 @@ func getNoteListByInstance(c *gin.Context, instance rss3uri.Instance, request Ge
 
 		internalDB = internalDB.
 			Where("date_created <= ?", lastItem.DateCreated).
-			Where("identifier != ?", lastItem.Identifier)
+			Where("identifier != ?", lastItem.Identifier).
+			Where(
+				"(transaction_hash != ?) OR (transaction_hash = ? AND transaction_log_index < ?)",
+				lastItem.TransactionHash, lastItem.TransactionHash, lastItem.TransactionLogIndex,
+			)
 	}
 
 	if request.Tags != nil && len(request.Tags) != 0 {
@@ -296,7 +300,11 @@ func getNoteListsByLink(c *gin.Context, instance rss3uri.Instance, request GetNo
 
 		internalDB = internalDB.
 			Where("date_created <= ?", lastItem.DateCreated).
-			Where("identifier != ?", lastItem.Identifier)
+			Where("identifier != ?", lastItem.Identifier).
+			Where(
+				"(transaction_hash != ?) OR (transaction_hash = ? AND transaction_log_index < ?)",
+				lastItem.TransactionHash, lastItem.TransactionHash, lastItem.TransactionLogIndex,
+			)
 	}
 
 	if request.Tags != nil && len(request.Tags) != 0 {
