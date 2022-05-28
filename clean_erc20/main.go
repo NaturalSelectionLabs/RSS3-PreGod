@@ -67,7 +67,7 @@ func main() {
 		// tx := database.DB.Begin()
 		// defer tx.Rollback()
 
-		logger.Infof("notes[0].tags:%v", notes[0].Tags)
+		logger.Infof("notes[0]: %v", notes[0])
 
 		if _, err := database.CreateNotes(database.DB, notes, true); err != nil {
 			logger.Errorf("err:%v", err)
