@@ -197,9 +197,8 @@ func getNoteListByInstance(c *gin.Context, instance rss3uri.Instance, request Ge
 		Where("owner = ?", strings.ToLower(rss3uri.New(instance).String())).
 		Limit(request.Limit).
 		Order("date_created DESC").
-		Order("contract_address DESC").
-		Order("log_index DESC").
-		Order("token_id DESC").
+		Order("transaction_hash DESC").
+		Order("transaction_log_index DESC").
 		Find(&notes).Error; err != nil {
 		return nil, 0, err
 	}
@@ -210,9 +209,8 @@ func getNoteListByInstance(c *gin.Context, instance rss3uri.Instance, request Ge
 		Model(&model.Note{}).
 		Where("owner = ?", strings.ToLower(rss3uri.New(instance).String())).
 		Order("date_created DESC").
-		Order("contract_address DESC").
-		Order("log_index DESC").
-		Order("token_id DESC").
+		Order("transaction_hash DESC").
+		Order("transaction_log_index DESC").
 		Count(&count).Error; err != nil {
 		return nil, 0, err
 	}
@@ -339,9 +337,8 @@ func getNoteListsByLink(c *gin.Context, instance rss3uri.Instance, request GetNo
 		Where("owner IN ?", owners).
 		Limit(request.Limit).
 		Order("date_created DESC").
-		Order("contract_address DESC").
-		Order("log_index DESC").
-		Order("token_id DESC").
+		Order("transaction_hash DESC").
+		Order("transaction_log_index DESC").
 		Find(&notes).Error; err != nil {
 		return nil, 0, err
 	}
@@ -352,9 +349,8 @@ func getNoteListsByLink(c *gin.Context, instance rss3uri.Instance, request GetNo
 		Model(&model.Note{}).
 		Where("owner IN ?", owners).
 		Order("date_created DESC").
-		Order("contract_address DESC").
-		Order("log_index DESC").
-		Order("token_id DESC").
+		Order("transaction_hash DESC").
+		Order("transaction_log_index DESC").
 		Count(&count).Error; err != nil {
 		return nil, 0, err
 	}

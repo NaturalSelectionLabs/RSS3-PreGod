@@ -368,10 +368,12 @@ func setNote(
 			moralis.GetTxHashURL(networkID.Symbol(), v.TxHash),
 			"https://gitcoin.co/grants" + strconv.Itoa(projectInfo.Id) + "/" + projectInfo.Slug,
 		},
-		Tags:    constants.ItemTagsDonationGitcoin.ToPqStringArray(),
-		Authors: []string{author},
-		Title:   projectInfo.Title,
-		Summary: summary,
+		TransactionHash:     donationInfo.TxHash,
+		TransactionLogIndex: -1,
+		Tags:                constants.ItemTagsDonationGitcoin.ToPqStringArray(),
+		Authors:             []string{author},
+		Title:               projectInfo.Title,
+		Summary:             summary,
 		Attachments: database.MustWrapJSON(datatype.Attachments{
 			{
 				Type:     "title",
