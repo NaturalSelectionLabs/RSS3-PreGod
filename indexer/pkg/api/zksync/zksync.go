@@ -1,8 +1,11 @@
 package zksync
 
 import (
+	"encoding/json"
 	"fmt"
 
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database"
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/constants"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/httpx"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/logger"
 	jsoniter "github.com/json-iterator/go"
@@ -59,6 +62,25 @@ func GetTokens() ([]Token, error) {
 }
 
 func GetTxsByBlock(blockHeight int64) ([]ZKTransaction, error) {
+	var zkTxs []ZKTransaction
+	var err error
+
+	zkTxs, err = getTxsByDb(blockHeight)
+	if err == nil && len(zkTxs) > 0 {
+		return zkTxs, nil
+	} else if err != nil {
+		logger.Warnf("zksync getTxsByDb error: %v", err)
+	}
+
+	if err = database.CreateCache(database.DB, fmt.Sprint(blockHeight),
+		constants.NetworkSymbolZkSync.String(), endpoint, json.RawMessage(response.Body)); err != nil {
+		logger.Errorf("zksync create cache error: %v", err)
+	}
+
+	return zkTxs, nil
+}
+
+func getGetTxsByBlockByUrl(blockHeight int64) ([]ZKTransaction, httpx.Response, error) {
 	url := fmt.Sprintf("%s/api/v0.1/blocks/%d/transactions", endpoint, blockHeight)
 	response, err := httpx.Get(url, nil)
 
@@ -68,6 +90,21 @@ func GetTxsByBlock(blockHeight int64) ([]ZKTransaction, error) {
 
 	var zkTxs []ZKTransaction
 	if err = jsoni.UnmarshalFromString(string(response.Body), &zkTxs); err != nil {
+		return nil, fmt.Errorf("GetTokens UnmarshalFromString error: [%v]", err)
+	}
+
+	return zkTxs, nil
+}
+
+func getTxsByDb(blockHeight int64) ([]ZKTransaction, error) {
+	resp, err := database.QueryCache(database.DB, fmt.Sprint(blockHeight), constants.NetworkSymbolZkSync.String(), endpoint)
+
+	if err != nil {
+		return nil, err
+	}
+
+	var zkTxs []ZKTransaction
+	if err = jsoni.UnmarshalFromString(string(resp), &zkTxs); err != nil {
 		return nil, fmt.Errorf("GetTokens UnmarshalFromString error: [%v]", err)
 	}
 

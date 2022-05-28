@@ -200,16 +200,19 @@ func GetZkSyncDonations(fromBlock int64, toBlock int64) (*ZkSyncDonationResult, 
 	ethDonationsResult := NewZkSyncDonationResult()
 
 	for i := fromBlock; i <= toBlock; i++ {
+		var trxs []zksync.ZKTransaction
+
+		var err error
+
 		// get from cache
-		// if db.QueryCache(database.DB, database.ZkSyncDonationTable, i) != nil {
+		trxs, err = zksync.GetTxsByDb(i)
+		if err != nil || trxs == nil {
+			trxs, err = zksync.GetTxsByBlock(i)
+			if err != nil {
+				logger.Errorf("get txs by block error: [%v]", err)
 
-		// }
-
-		trxs, err := zksync.GetTxsByBlock(i)
-		if err != nil {
-			logger.Errorf("get txs by block error: [%v]", err)
-
-			return nil, err
+				return nil, err
+			}
 		}
 
 		// set cache
