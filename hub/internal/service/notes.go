@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 
@@ -18,7 +19,7 @@ import (
 // parse the address list into instance list
 // query database
 // format data
-func BatchGetNodeList(req m.BatchGetNodeListRequest) (protocol.File, error, error) {
+func BatchGetNodeList(ctx context.Context, req m.BatchGetNodeListRequest) (protocol.File, error, error) {
 	req.InstanceList = []rss3uri.Instance{}
 	for _, address := range req.AddressList {
 		uri, err := rss3uri.Parse(address)

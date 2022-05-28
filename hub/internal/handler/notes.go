@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"strings"
@@ -16,6 +17,13 @@ import (
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/rss3uri"
 	"github.com/gin-gonic/gin"
 	"github.com/lib/pq"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/codes"
+)
+
+const (
+	TracerNameGetNoteLists     = "get_note_lists"
+	TracerNameBatchGetNoteList = "batch_get_note_list"
 )
 
 type GetNoteListRequest struct {
@@ -30,8 +38,17 @@ type GetNoteListRequest struct {
 }
 
 func GetNoteListHandlerFunc(c *gin.Context) {
+	tracer := otel.Tracer(TracerNameGetNoteLists)
+
+	ctx, httpSnap := tracer.Start(c.Request.Context(), "http_handler")
+
+	defer httpSnap.End()
+
 	instance, err := middleware.GetPlatformInstance(c)
 	if err != nil {
+		httpSnap.RecordError(err)
+		httpSnap.SetStatus(codes.Error, err.Error())
+
 		api.SetError(c, api.ErrorInvalidParams, err)
 
 		return
@@ -39,12 +56,15 @@ func GetNoteListHandlerFunc(c *gin.Context) {
 
 	request := GetNoteListRequest{}
 	if err = c.ShouldBindQuery(&request); err != nil {
+		httpSnap.RecordError(err)
+		httpSnap.SetStatus(codes.Error, err.Error())
+
 		api.SetError(c, api.ErrorInvalidParams, err)
 
 		return
 	}
 
-	noteModels, total, err := getNoteListByInstance(c, instance, request)
+	noteModels, total, err := getNoteListByInstance(ctx, c, instance, request)
 
 	if err != nil {
 		api.SetError(c, api.ErrorIndexer, err)
@@ -87,12 +107,28 @@ func GetNoteListHandlerFunc(c *gin.Context) {
 	})
 }
 
-func getNoteListByInstance(c *gin.Context, instance rss3uri.Instance, request GetNoteListRequest) ([]model.Note, int64, error) {
+// nolint:funlen // TODO
+func getNoteListByInstance(ctx context.Context, c *gin.Context, instance rss3uri.Instance, request GetNoteListRequest) ([]model.Note, int64, error) {
+	tracer := otel.Tracer(TracerNameGetNoteLists)
+
+	ctx, indexerSnap := tracer.Start(ctx, "indexer")
+
 	if len(request.LastIdentifier) == 0 {
 		if err := indexer.GetItems(c.Request.URL.String(), instance, request.Latest); err != nil {
+			indexerSnap.RecordError(err)
+			indexerSnap.SetStatus(codes.Error, err.Error())
+
 			return nil, 0, err
 		}
 	}
+
+	indexerSnap.End()
+
+	ctx, databaseSnap := tracer.Start(ctx, "database")
+
+	defer databaseSnap.End()
+
+	ctx, databaseSelectSnap := tracer.Start(ctx, "database_select")
 
 	// Get instance's notes
 	internalDB := database.DB
@@ -102,6 +138,9 @@ func getNoteListByInstance(c *gin.Context, instance rss3uri.Instance, request Ge
 		if err := database.DB.Where(&model.Note{
 			Identifier: strings.ToLower(request.LastIdentifier),
 		}).First(&lastItem).Error; err != nil {
+			databaseSnap.RecordError(err)
+			databaseSnap.SetStatus(codes.Error, err.Error())
+
 			return nil, 0, err
 		}
 
@@ -138,8 +177,15 @@ func getNoteListByInstance(c *gin.Context, instance rss3uri.Instance, request Ge
 		Order("transaction_hash DESC").
 		Order("transaction_log_index DESC").
 		Find(&notes).Error; err != nil {
+		databaseSnap.RecordError(err)
+		databaseSnap.SetStatus(codes.Error, err.Error())
+
 		return nil, 0, err
 	}
+
+	databaseSelectSnap.End()
+
+	_, databaseCountSnap := tracer.Start(ctx, "database_count")
 
 	var count int64
 
@@ -150,17 +196,31 @@ func getNoteListByInstance(c *gin.Context, instance rss3uri.Instance, request Ge
 		Order("transaction_hash DESC").
 		Order("transaction_log_index DESC").
 		Count(&count).Error; err != nil {
+		databaseSnap.RecordError(err)
+		databaseSnap.SetStatus(codes.Error, err.Error())
+
 		return nil, 0, err
 	}
+
+	databaseCountSnap.End()
 
 	return notes, count, nil
 }
 
 // BatchGetNoteListHandlerFunc can batch query notes by request body.
 func BatchGetNoteListHandlerFunc(c *gin.Context) {
+	tracer := otel.Tracer(TracerNameBatchGetNoteList)
+
+	ctx, httpSnap := tracer.Start(c.Request.Context(), "http_handler")
+
+	defer httpSnap.End()
+
 	req := m.BatchGetNodeListRequest{}
 
 	if err := c.ShouldBindJSON(&req); err != nil {
+		httpSnap.RecordError(err)
+		httpSnap.SetStatus(codes.Error, err.Error())
+
 		api.SetError(c, api.ErrorInvalidParams, err)
 
 		return
@@ -174,8 +234,11 @@ func BatchGetNoteListHandlerFunc(c *gin.Context) {
 		req.Limit = middleware.MaxListLimit
 	}
 
-	resp, errType, err := service.BatchGetNodeList(req)
+	resp, errType, err := service.BatchGetNodeList(ctx, req)
 	if err != nil {
+		httpSnap.RecordError(err)
+		httpSnap.SetStatus(codes.Error, err.Error())
+
 		api.SetError(c, errType, err)
 
 		return
