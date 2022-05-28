@@ -1,6 +1,7 @@
 package gitcoin
 
 import (
+	"context"
 	"fmt"
 	"strconv"
 	"time"
@@ -15,6 +16,7 @@ import (
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/constants"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/logger"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/rss3uri"
+	"go.opentelemetry.io/otel"
 )
 
 type crawler interface {
@@ -227,6 +229,12 @@ func (property *xscanRunCrawlerProperty) start() error {
 }
 
 func (property *xscanRunCrawlerProperty) run() error {
+	tracer := otel.Tracer(TracerNameCrawlerGitCoin)
+
+	ctx, runSnap := tracer.Start(context.Background(), "run")
+
+	defer runSnap.End()
+
 	config := property.config
 
 	latestConfirmedBlockHeight, err := xscan.GetLatestBlockHeightWithConfirmations(property.networkID, config.Confirmations)
@@ -247,7 +255,7 @@ func (property *xscanRunCrawlerProperty) run() error {
 		return nil
 	}
 
-	ethDonationsResult, err := GetEthDonations(config.FromHeight, endBlockHeight, property.platform)
+	ethDonationsResult, err := GetEthDonations(ctx, config.FromHeight, endBlockHeight, property.platform)
 	if err != nil { // nolint:nestif // i don't want to change
 		if err.Error() == "getLogs error: [StatusCode [429]]" {
 			if ethDonationsResult.MinRateLimit > 0 {

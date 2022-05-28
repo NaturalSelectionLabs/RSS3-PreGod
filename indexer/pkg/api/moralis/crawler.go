@@ -376,7 +376,7 @@ func (c *moralisCrawler) setERC20(
 	}
 
 	// get the token metadata
-	erc20Tokens, err := GetErc20TokenMetaData(chainType, tokenAddresses, getApiKey())
+	erc20Tokens, err := GetErc20TokenMetaData(ctx, chainType, tokenAddresses, getApiKey())
 	if err != nil {
 		logger.Errorf("chain type[%s], get erc20 token metadata [%v]",
 			chainType.GetNetworkSymbol().String(), err)

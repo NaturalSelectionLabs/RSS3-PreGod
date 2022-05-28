@@ -34,7 +34,13 @@ var (
 	endpoint    = "https://deep-index.moralis.io"
 )
 
-func requestMoralisApi(url string, apiKey string, isCache bool) (httpx.Response, error) {
+func requestMoralisApi(ctx context.Context, url string, apiKey string, isCache bool) (httpx.Response, error) {
+	tracer := otel.Tracer(TracerNameCrawlerMoralis)
+
+	_, moralisSnap := tracer.Start(ctx, "moralis")
+
+	defer moralisSnap.End()
+
 	var headers = map[string]string{
 		"accept":    "application/json",
 		"X-API-Key": apiKey,
@@ -68,7 +74,7 @@ func requestMoralisApi(url string, apiKey string, isCache bool) (httpx.Response,
 func GetNFTs(ctx context.Context, userAddress string, chainType ChainType, fromDate string, apiKey string) (NFTResult, error) {
 	tracer := otel.Tracer(TracerNameCrawlerMoralis)
 
-	_, getNFTListSnap := tracer.Start(ctx, "get_nft_list")
+	ctx, getNFTListSnap := tracer.Start(ctx, "get_nft_list")
 	getNFTListSnap.SetAttributes(
 		attribute.String("user_address", userAddress),
 		attribute.String("from_date", fromDate),
@@ -81,7 +87,7 @@ func GetNFTs(ctx context.Context, userAddress string, chainType ChainType, fromD
 		endpoint, userAddress, chainType, url.QueryEscape(fromDate),
 	)
 
-	response, err := requestMoralisApi(requestURL, apiKey, true)
+	response, err := requestMoralisApi(ctx, requestURL, apiKey, true)
 
 	if err != nil {
 		getNFTListSnap.RecordError(err)
@@ -172,7 +178,7 @@ func GetNFTTransfers(
 	requestURL := fmt.Sprintf("%s/api/v2/%s/nft/transfers?chain=%s&from_block=%d&format=decimal&direction=both&from_date=%s",
 		endpoint, userAddress, chainType, blockHeight, url.QueryEscape(fromDate),
 	)
-	response, err := requestMoralisApi(requestURL, apiKey, true)
+	response, err := requestMoralisApi(ctx, requestURL, apiKey, true)
 
 	if err != nil {
 		return NFTTransferResult{}, err
@@ -193,13 +199,21 @@ func GetNFTTransfers(
 	return *res, nil
 }
 
-func GetLogs(fromBlock int64, toBlock int64, address string, topic string, chainType ChainType, apiKey string) (GetLogsResult, error) {
+func GetLogs(
+	ctx context.Context, fromBlock int64, toBlock int64, address string, topic string, chainType ChainType, apiKey string,
+) (GetLogsResult, error) {
+	tracer := otel.Tracer(TracerNameCrawlerMoralis)
+
+	ctx, getLogListSnap := tracer.Start(ctx, "get_erc20_token_metadata_data_from_url")
+
+	defer getLogListSnap.End()
+
 	url := fmt.Sprintf(
 		"%s/api/v2/%s/logs?chain=%s&from_block=%d&to_block=%d&topic0=%s",
 		endpoint, address, string(chainType), fromBlock, toBlock, topic,
 	)
 
-	response, err := requestMoralisApi(url, apiKey, false)
+	response, err := requestMoralisApi(ctx, url, apiKey, false)
 
 	if err != nil {
 		return GetLogsResult{}, err
@@ -219,12 +233,18 @@ func GetLogs(fromBlock int64, toBlock int64, address string, topic string, chain
 }
 
 // Gets all NFT items of user
-func GetNFTByContract(userAddress string, contactAddress string, chainType ChainType, apiKey string) (NFTResult, error) {
+func GetNFTByContract(ctx context.Context, userAddress string, contactAddress string, chainType ChainType, apiKey string) (NFTResult, error) {
+	tracer := otel.Tracer(TracerNameCrawlerMoralis)
+
+	ctx, getNFTByContractSnap := tracer.Start(ctx, "get_nft_by_contract")
+
+	defer getNFTByContractSnap.End()
+
 	// this function is used by ENS indexer.
 	url := fmt.Sprintf("%s/api/v2/%s/nft?chain=%s&format=decimal&token_addresses=%s",
 		endpoint, userAddress, chainType, contactAddress)
 
-	response, err := requestMoralisApi(url, apiKey, true)
+	response, err := requestMoralisApi(ctx, url, apiKey, true)
 
 	if err != nil {
 		return NFTResult{}, err
@@ -242,10 +262,16 @@ func GetNFTByContract(userAddress string, contactAddress string, chainType Chain
 }
 
 // GetTxByToken is used by ENS indexer
-func GetTxByToken(tokenAddress string, tokenId string, chainType ChainType, apiKey string) (TransferItem, error) {
+func GetTxByToken(ctx context.Context, tokenAddress string, tokenId string, chainType ChainType, apiKey string) (TransferItem, error) {
+	tracer := otel.Tracer(TracerNameCrawlerMoralis)
+
+	ctx, getTxByTokenSnap := tracer.Start(ctx, "get_tx_by_token")
+
+	defer getTxByTokenSnap.End()
+
 	url := fmt.Sprintf("%s/api/v2/nft/%s/%s/transfers?chain=%s&format=decimal&limit=1",
 		endpoint, tokenAddress, tokenId, chainType)
-	response, err := requestMoralisApi(url, apiKey, true)
+	response, err := requestMoralisApi(ctx, url, apiKey, true)
 
 	if err != nil {
 		return TransferItem{}, err
@@ -268,10 +294,16 @@ func GetTxByToken(tokenAddress string, tokenId string, chainType ChainType, apiK
 	return *res, nil
 }
 
-func GetMetadataByToken(tokenAddress string, tokenId string, chainType ChainType, apiKey string) (NFTItem, error) {
+func GetMetadataByToken(ctx context.Context, tokenAddress string, tokenId string, chainType ChainType, apiKey string) (NFTItem, error) {
+	tracer := otel.Tracer(TracerNameCrawlerMoralis)
+
+	ctx, getMetadataByTokenSnap := tracer.Start(ctx, "get_metadata_by_token")
+
+	defer getMetadataByTokenSnap.End()
+
 	url := fmt.Sprintf("%s/api/v2/nft/%s/%s?chain=%s&format=decimal&limit=1",
 		endpoint, tokenAddress, tokenId, chainType)
-	response, err := requestMoralisApi(url, apiKey, true)
+	response, err := requestMoralisApi(ctx, url, apiKey, true)
 
 	if err != nil {
 		return NFTItem{}, err
@@ -332,7 +364,8 @@ func GetErc20Transfers(ctx context.Context, userAddress string, chainType ChainT
 }
 
 func getErc20Once(ctx context.Context, userAddress string, chainType ChainType, fromDate string, apiKey string, offest int) (*ERC20Transfer, error) {
-	ctx, trace := otel.Tracer(TracerNameCrawlerMoralis).Start(ctx, "get_erc20_once")
+	_, trace := otel.Tracer(TracerNameCrawlerMoralis).Start(ctx, "get_erc20_once")
+
 	trace.SetAttributes(
 		attribute.String("from_date", fromDate),
 	)
@@ -343,7 +376,7 @@ func getErc20Once(ctx context.Context, userAddress string, chainType ChainType, 
 		endpoint, userAddress, chainType, 0, offest, url.QueryEscape(fromDate),
 	)
 
-	response, err := requestMoralisApi(requestURL, apiKey, true)
+	response, err := requestMoralisApi(ctx, requestURL, apiKey, true)
 
 	if err != nil {
 		return nil, err
@@ -363,7 +396,13 @@ func getErc20Once(ctx context.Context, userAddress string, chainType ChainType, 
 	return res, nil
 }
 
-func GetErc20TokenMetaData(chainType ChainType, addresses []string, apiKey string) (Erc20TokensMap, error) {
+func GetErc20TokenMetaData(ctx context.Context, chainType ChainType, addresses []string, apiKey string) (Erc20TokensMap, error) {
+	tracer := otel.Tracer(TracerNameCrawlerMoralis)
+
+	ctx, getEER20TokenMetadataSnap := tracer.Start(ctx, "get_erc20_token_metadata")
+
+	defer getEER20TokenMetadataSnap.End()
+
 	if len(addresses) <= 0 {
 		return Erc20TokensMap{}, fmt.Errorf("addresss is empty")
 	}
@@ -388,7 +427,7 @@ func GetErc20TokenMetaData(chainType ChainType, addresses []string, apiKey strin
 
 	lop.ForEach(addressBatch, func(batch []string, i int) {
 		batchRes := Erc20TokensMap{}
-		getErc20TokenMetaDataFromUrl(chainType, batch, apiKey, batchRes)
+		getErc20TokenMetaDataFromUrl(ctx, chainType, batch, apiKey, batchRes)
 
 		for _, item := range batchRes {
 			res[item.Address] = item
@@ -416,7 +455,13 @@ func getErc20TokenMetaDataFromCache(addresses []string, res Erc20TokensMap) {
 	}
 }
 
-func getErc20TokenMetaDataFromUrl(chainType ChainType, addresses []string, apiKey string, res Erc20TokensMap) error {
+func getErc20TokenMetaDataFromUrl(ctx context.Context, chainType ChainType, addresses []string, apiKey string, res Erc20TokensMap) error {
+	tracer := otel.Tracer(TracerNameCrawlerMoralis)
+
+	ctx, getEER20TokenMetadataFromURLSnap := tracer.Start(ctx, "get_erc20_token_metadata_data_from_url")
+
+	defer getEER20TokenMetadataFromURLSnap.End()
+
 	url := fmt.Sprintf("%s/api/v2/erc20/metadata?chain=%s",
 		endpoint, chainType)
 
@@ -424,7 +469,7 @@ func getErc20TokenMetaDataFromUrl(chainType ChainType, addresses []string, apiKe
 		url += fmt.Sprintf("&addresses=%s", address)
 	}
 
-	response, err := requestMoralisApi(url, apiKey, true)
+	response, err := requestMoralisApi(ctx, url, apiKey, true)
 
 	if err != nil {
 		return err
@@ -462,7 +507,13 @@ func setErc20TokenMetaDataInCache(res Erc20TokensMap) {
  */
 
 // returns a list of ENS domains with non-empty text records
-func GetENSList(address string) ([]ENSTextRecord, error) {
+func GetENSList(ctx context.Context, address string) ([]ENSTextRecord, error) {
+	tracer := otel.Tracer(TracerNameCrawlerMoralis)
+
+	ctx, getENSListSnap := tracer.Start(ctx, "get_ens_list")
+
+	defer getENSListSnap.End()
+
 	getGatewayClient()
 
 	result := []ENSTextRecord{}
@@ -479,7 +530,7 @@ func GetENSList(address string) ([]ENSTextRecord, error) {
 		Domain: domain,
 	}
 
-	err = getENSDetail(address, &record)
+	err = getENSDetail(ctx, address, &record)
 
 	if err != nil {
 		return nil, err
@@ -536,8 +587,14 @@ func getENSTextValue(domain string, record *ENSTextRecord) error {
 }
 
 // returns ENS details from moralis
-func getENSDetail(address string, record *ENSTextRecord) error {
-	ensList, err := GetNFTByContract(address, ensContract, ETH, getApiKey())
+func getENSDetail(ctx context.Context, address string, record *ENSTextRecord) error {
+	tracer := otel.Tracer(TracerNameCrawlerMoralis)
+
+	ctx, getENSDetailSnap := tracer.Start(ctx, "get_erc20_token_metadata_data_from_url")
+
+	defer getENSDetailSnap.End()
+
+	ensList, err := GetNFTByContract(ctx, address, ensContract, ETH, getApiKey())
 
 	if err != nil {
 		logger.Errorf("getENSDetail GetNFTByContract: %v", err)
@@ -572,7 +629,7 @@ func getENSDetail(address string, record *ENSTextRecord) error {
 
 				record.Avatar = avatar
 
-				return getENSTransaction(ens, record)
+				return getENSTransaction(ctx, ens, record)
 			}
 		}
 	}
@@ -580,9 +637,15 @@ func getENSDetail(address string, record *ENSTextRecord) error {
 	return nil
 }
 
-func getENSTransaction(ens NFTItem, record *ENSTextRecord) error {
+func getENSTransaction(ctx context.Context, ens NFTItem, record *ENSTextRecord) error {
+	tracer := otel.Tracer(TracerNameCrawlerMoralis)
+
+	ctx, getENSTransactionSnap := tracer.Start(ctx, "get_ens_transaction")
+
+	defer getENSTransactionSnap.End()
+
 	// get TxHash and Tsp with TokenId from Moralis
-	t, err := GetTxByToken(ens.TokenAddress, ens.TokenId, ETH, getApiKey())
+	t, err := GetTxByToken(ctx, ens.TokenAddress, ens.TokenId, ETH, getApiKey())
 
 	if err != nil {
 		logger.Errorf("getENSDetail transaction: %v", err)
@@ -679,7 +742,7 @@ func getETHOnce(ctx context.Context, userAddress string, chainType ChainType, fr
 		endpoint, userAddress, chainType, 0, offest, url.QueryEscape(fromDate),
 	)
 
-	response, err := requestMoralisApi(requestURL, apiKey, true)
+	response, err := requestMoralisApi(ctx, requestURL, apiKey, true)
 
 	if err != nil {
 		return nil, err
