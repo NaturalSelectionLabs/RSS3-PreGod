@@ -72,6 +72,8 @@ func GetTxsByBlock(blockHeight int64) ([]ZKTransaction, error) {
 		logger.Warnf("zksync getTxsByDb error: %v", err)
 	}
 
+	zkTxs, err = getGetTxsByBlockByUrl(blockHeight)
+
 	if err = database.CreateCache(database.DB, fmt.Sprint(blockHeight),
 		constants.NetworkSymbolZkSync.String(), endpoint, json.RawMessage(response.Body)); err != nil {
 		logger.Errorf("zksync create cache error: %v", err)

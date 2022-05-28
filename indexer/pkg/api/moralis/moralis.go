@@ -168,6 +168,8 @@ func GetLogs(fromBlock int64, toBlock int64, address string, topic string, chain
 	return *res, nil
 }
 
+func GetLogs
+
 // Gets all NFT items of user
 func GetNFTByContract(userAddress string, contactAddress string, chainType ChainType, apiKey string) (NFTResult, error) {
 	// this function is used by ENS indexer.
