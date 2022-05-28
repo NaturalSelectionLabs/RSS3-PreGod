@@ -87,7 +87,6 @@ func GetNoteListHandlerFunc(c *gin.Context) {
 	})
 }
 
-// nolint:funlen,gocognit // TODO
 func getNoteListByInstance(c *gin.Context, instance rss3uri.Instance, request GetNoteListRequest) ([]model.Note, int64, error) {
 	if len(request.LastIdentifier) == 0 {
 		if err := indexer.GetItems(c.Request.URL.String(), instance, request.Latest); err != nil {

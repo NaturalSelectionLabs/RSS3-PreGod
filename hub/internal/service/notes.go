@@ -30,7 +30,7 @@ func BatchGetNodeList(req m.BatchGetNodeListRequest) (protocol.File, error, erro
 
 		// get item
 		if len(req.LastIdentifier) == 0 {
-			if err := indexer.GetItems("batch_get_node_list", uri.Instance, nil, req.Latest); err != nil {
+			if err := indexer.GetItems("batch_get_node_list", uri.Instance, req.Latest); err != nil {
 				return protocol.File{
 					List: make([]protocol.Item, 0),
 				}, api.ErrorIndexer, err

@@ -129,7 +129,6 @@ func GetAssetListHandlerFunc(c *gin.Context) {
 	})
 }
 
-// nolint:funlen,gocognit // TODO
 func getAssetListByInstance(c *gin.Context, instance rss3uri.Instance, request GetAssetListRequest) ([]model.Asset, int64, error) {
 	if len(request.LastIdentifier) == 0 {
 		if err := indexer.GetItems(c.Request.URL.String(), instance, request.Latest); err != nil {
