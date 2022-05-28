@@ -53,13 +53,15 @@ func (pc *poapCrawler) Work(param crawler.WorkParam) error {
 
 		id := ContractAddress + "-" + item.TokenId
 		note := model.Note{
-			Identifier:  rss3uri.NewNoteInstance(id, constants.NetworkSymbolGnosisMainnet).UriString(),
-			Owner:       owner,
-			RelatedURLs: []string{fmt.Sprintf("https://app.poap.xyz/token/%s", item.TokenId)},
-			Tags:        constants.ItemTagsNFTPOAP.ToPqStringArray(),
-			Authors:     []string{author},
-			Title:       item.PoapEventInfo.Name,
-			Summary:     item.PoapEventInfo.Description,
+			Identifier:          rss3uri.NewNoteInstance(id, constants.NetworkSymbolGnosisMainnet).UriString(),
+			Owner:               owner,
+			RelatedURLs:         []string{fmt.Sprintf("https://app.poap.xyz/token/%s", item.TokenId)},
+			TransactionHash:     item.TokenId,
+			TransactionLogIndex: -1,
+			Tags:                constants.ItemTagsNFTPOAP.ToPqStringArray(),
+			Authors:             []string{author},
+			Title:               item.PoapEventInfo.Name,
+			Summary:             item.PoapEventInfo.Description,
 			Attachments: database.MustWrapJSON(datatype.Attachments{
 				{
 					Type:     "preview",

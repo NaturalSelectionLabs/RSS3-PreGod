@@ -49,18 +49,20 @@ func (tc *twitterCrawler) Work(param crawler.WorkParam) error {
 		}
 
 		note := model.Note{
-			Identifier:      rss3uri.NewNoteInstance(item.Hash, constants.NetworkSymbolTwitter).UriString(),
-			Owner:           owner,
-			RelatedURLs:     []string{item.Link},
-			Tags:            constants.ItemTagsTweet.ToPqStringArray(),
-			Authors:         []string{owner, author},
-			Summary:         item.PreContent,
-			Attachments:     database.MustWrapJSON(item.Attachments),
-			Source:          constants.NoteSourceNameTwitterTweet.String(),
-			MetadataNetwork: constants.NetworkSymbolTwitter.String(),
-			MetadataProof:   item.Hash,
-			DateCreated:     tsp,
-			DateUpdated:     tsp, // TODO: does twitter support updating tweets?
+			Identifier:          rss3uri.NewNoteInstance(item.Hash, constants.NetworkSymbolTwitter).UriString(),
+			Owner:               owner,
+			RelatedURLs:         []string{item.Link},
+			TransactionHash:     item.Hash,
+			TransactionLogIndex: -1,
+			Tags:                constants.ItemTagsTweet.ToPqStringArray(),
+			Authors:             []string{owner, author},
+			Summary:             item.PreContent,
+			Attachments:         database.MustWrapJSON(item.Attachments),
+			Source:              constants.NoteSourceNameTwitterTweet.String(),
+			MetadataNetwork:     constants.NetworkSymbolTwitter.String(),
+			MetadataProof:       item.Hash,
+			DateCreated:         tsp,
+			DateUpdated:         tsp, // TODO: does twitter support updating tweets?
 		}
 
 		tc.Notes = append(tc.Notes, note)

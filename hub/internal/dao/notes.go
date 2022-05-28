@@ -44,15 +44,18 @@ func BatchGetNodeList(req m.BatchGetNodeListRequest) ([]model.Note, int64, error
 		}
 
 		internalDB = internalDB.Where("date_created <= ?", lastItem.DateCreated).
+			Where(
+				"(transaction_hash = ? and transaction_log_index < ?) or (transaction_hash < ?)",
+				lastItem.TransactionHash, lastItem.TransactionLogIndex, lastItem.TransactionLogIndex,
+			).
 			Where("identifier != ?", lastItem.Identifier)
 	}
 
 	internalDB = internalDB.
 		Where("owner IN ?", ownerList).
 		Order("date_created DESC").
-		Order("contract_address DESC").
-		Order("log_index DESC").
-		Order("token_id DESC")
+		Order("transaction_hash DESC").
+		Order("transaction_log_index DESC")
 
 	var count int64
 	if err := internalDB.Model(&model.Note{}).Count(&count).Error; err != nil {

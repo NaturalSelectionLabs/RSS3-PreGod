@@ -4,11 +4,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"math/big"
 	"net/http"
 	"strconv"
 	"strings"
 	"time"
 
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database/model"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/cache"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/config"
@@ -71,6 +73,25 @@ func getItems(instance rss3uri.Instance, accounts []model.Account) error {
 }
 
 func getItem(client *resty.Client, account model.Account, networkID constants.NetworkID) error {
+	// Get the timestamp of the latest data to avoid duplicate pulls whenever possible.
+	var timestamp time.Time
+
+	if err := database.DB.
+		Raw(
+			`WITH "timestamp" AS (SELECT date_created AS "timestamp"
+                     FROM note3
+                     WHERE owner = ?
+                     ORDER BY date_created DESC
+                     LIMIT 1)
+SELECT COALESCE("timestamp".timestamp, TIMESTAMPTZ 'epoch') AS "timestamp"
+FROM "timestamp";`,
+			rss3uri.New(rss3uri.NewAccountInstance(account.Identity, constants.PlatformID(account.ProfilePlatform).Symbol())).String(),
+		).
+		Scan(&timestamp).
+		Error; err != nil {
+		return err
+	}
+
 	request := client.NewRequest()
 	params := map[string]string{
 		"proof":             strings.ToLower(account.Identity),
@@ -79,6 +100,7 @@ func getItem(client *resty.Client, account model.Account, networkID constants.Ne
 		"profile_source_id": strconv.Itoa(account.Source),
 		"owner_id":          strings.ToLower(account.ProfileID),
 		"owner_platform_id": strconv.Itoa(account.ProfilePlatform),
+		"timestamp":         big.NewInt(timestamp.Unix()).String(),
 	}
 	result := Response{}
 

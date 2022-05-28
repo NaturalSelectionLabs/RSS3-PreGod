@@ -139,8 +139,8 @@ type NFTTransferItem struct {
 	BlockTimestamp   string `json:"block_timestamp"`
 	BlockHash        string `json:"block_hash"`
 	TransactionHash  string `json:"transaction_hash"`
-	TransactionIndex int64  `json:"transaction_index"`
-	LogIndex         int64  `json:"log_index"`
+	TransactionIndex string `json:"transaction_index"`
+	LogIndex         string `json:"log_index"`
 	Value            string `json:"value"`
 	ContractType     string `json:"contract_type"`
 	TransactionType  string `json:"transaction_type"`
@@ -162,6 +162,27 @@ type NFTTransferResult struct {
 	Result      []NFTTransferItem `json:"result"`
 	Cursor      string            `json:"cursor"`
 	BlockExists bool              `json:"block_exists"`
+}
+
+type TransferItem struct {
+	MoralisAttributes
+
+	BlockNumber      string `json:"block_number"`
+	BlockTimestamp   string `json:"block_timestamp"`
+	BlockHash        string `json:"block_hash"`
+	TransactionHash  string `json:"transaction_hash"`
+	TransactionIndex int64  `json:"transaction_index"`
+	LogIndex         int64  `json:"log_index"`
+	Value            string `json:"value"`
+	ContractType     string `json:"contract_type"`
+	TransactionType  string `json:"transaction_type"`
+	TokenAddress     string `json:"token_address"`
+	TokenId          string `json:"token_id"`
+	FromAddress      string `json:"from_address"`
+	ToAddress        string `json:"to_address"`
+	Amount           string `json:"amount"`
+	Verified         int64  `json:"verified"`
+	Operator         string `json:"operator"`
 }
 
 func (i NFTTransferItem) String() string {
@@ -299,6 +320,8 @@ func GetTxHashURL(
 		return "https://avascan.info/blockchain/c/tx/" + (transactionHash)
 	case constants.NetworkSymbolFantom:
 		return "https://ftmscan.com/tx/" + (transactionHash)
+	case constants.NetworkSymbolZkSync:
+		return "https://zkscan.io/explorer/transactions/" + (transactionHash)
 	default:
 		return ""
 	}

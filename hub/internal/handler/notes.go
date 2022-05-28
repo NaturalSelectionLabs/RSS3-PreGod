@@ -31,6 +31,7 @@ type GetNoteListRequest struct {
 	Networks       []string `form:"networks"`
 	ProfileSources []string `form:"profile_sources"`
 	Latest         bool     `form:"latest"`
+	Cache          bool     `form:"cache"`
 }
 
 func GetNoteListHandlerFunc(c *gin.Context) {
@@ -73,12 +74,8 @@ func GetNoteListHandlerFunc(c *gin.Context) {
 
 	var lastItem *protocol.Item
 
-	for _, item := range noteList {
-		internalItem := item
-
-		if lastItem == nil || lastItem.DateCreated.Time().After(internalItem.DateCreated.Time()) {
-			lastItem = &internalItem
-		}
+	if len(noteList) > 0 {
+		lastItem = &noteList[len(noteList)-1]
 	}
 
 	identifierNext := ""
@@ -140,8 +137,10 @@ func getNoteListByInstance(c *gin.Context, instance rss3uri.Instance, request Ge
 		return nil, 0, err
 	}
 
-	if err := indexer.GetItems(c.Request.URL.String(), instance, accounts, request.Latest); err != nil {
-		return nil, 0, err
+	if !request.Cache {
+		if err := indexer.GetItems(c.Request.URL.String(), instance, accounts, request.Latest); err != nil {
+			return nil, 0, err
+		}
 	}
 
 	// Get instance's notes
@@ -157,7 +156,11 @@ func getNoteListByInstance(c *gin.Context, instance rss3uri.Instance, request Ge
 
 		internalDB = internalDB.
 			Where("date_created <= ?", lastItem.DateCreated).
-			Where("identifier != ?", lastItem.Identifier)
+			Where("identifier != ?", lastItem.Identifier).
+			Where(
+				"(transaction_hash != ?) OR (transaction_hash = ? AND transaction_log_index < ?)",
+				lastItem.TransactionHash, lastItem.TransactionHash, lastItem.TransactionLogIndex,
+			)
 	}
 
 	if request.Tags != nil && len(request.Tags) != 0 {
@@ -194,9 +197,8 @@ func getNoteListByInstance(c *gin.Context, instance rss3uri.Instance, request Ge
 		Where("owner = ?", strings.ToLower(rss3uri.New(instance).String())).
 		Limit(request.Limit).
 		Order("date_created DESC").
-		Order("contract_address DESC").
-		Order("log_index DESC").
-		Order("token_id DESC").
+		Order("transaction_hash DESC").
+		Order("transaction_log_index DESC").
 		Find(&notes).Error; err != nil {
 		return nil, 0, err
 	}
@@ -207,9 +209,8 @@ func getNoteListByInstance(c *gin.Context, instance rss3uri.Instance, request Ge
 		Model(&model.Note{}).
 		Where("owner = ?", strings.ToLower(rss3uri.New(instance).String())).
 		Order("date_created DESC").
-		Order("contract_address DESC").
-		Order("log_index DESC").
-		Order("token_id DESC").
+		Order("transaction_hash DESC").
+		Order("transaction_log_index DESC").
 		Count(&count).Error; err != nil {
 		return nil, 0, err
 	}
@@ -262,13 +263,14 @@ func getNoteListsByLink(c *gin.Context, instance rss3uri.Instance, request GetNo
 	accounts := make([]model.Account, 0)
 	if err := database.DB.
 		Where("profile_id IN ?", targets).
-		// TODO profile_platform
 		Find(&accounts).Error; err != nil {
 		return nil, 0, err
 	}
 
-	if err := indexer.GetItems(c.Request.URL.String(), instance, accounts, request.Latest); err != nil {
-		return nil, 0, err
+	if !request.Cache {
+		if err := indexer.GetItems(c.Request.URL.String(), instance, accounts, request.Latest); err != nil {
+			return nil, 0, err
+		}
 	}
 
 	owners := make([]string, len(links))
@@ -298,7 +300,11 @@ func getNoteListsByLink(c *gin.Context, instance rss3uri.Instance, request GetNo
 
 		internalDB = internalDB.
 			Where("date_created <= ?", lastItem.DateCreated).
-			Where("identifier != ?", lastItem.Identifier)
+			Where("identifier != ?", lastItem.Identifier).
+			Where(
+				"(transaction_hash != ?) OR (transaction_hash = ? AND transaction_log_index < ?)",
+				lastItem.TransactionHash, lastItem.TransactionHash, lastItem.TransactionLogIndex,
+			)
 	}
 
 	if request.Tags != nil && len(request.Tags) != 0 {
@@ -335,9 +341,8 @@ func getNoteListsByLink(c *gin.Context, instance rss3uri.Instance, request GetNo
 		Where("owner IN ?", owners).
 		Limit(request.Limit).
 		Order("date_created DESC").
-		Order("contract_address DESC").
-		Order("log_index DESC").
-		Order("token_id DESC").
+		Order("transaction_hash DESC").
+		Order("transaction_log_index DESC").
 		Find(&notes).Error; err != nil {
 		return nil, 0, err
 	}
@@ -348,9 +353,8 @@ func getNoteListsByLink(c *gin.Context, instance rss3uri.Instance, request GetNo
 		Model(&model.Note{}).
 		Where("owner IN ?", owners).
 		Order("date_created DESC").
-		Order("contract_address DESC").
-		Order("log_index DESC").
-		Order("token_id DESC").
+		Order("transaction_hash DESC").
+		Order("transaction_log_index DESC").
 		Count(&count).Error; err != nil {
 		return nil, 0, err
 	}

@@ -6,6 +6,7 @@ import (
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/crawler"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/util"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database"
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/logger"
 )
 
 type GetItemsHandler struct {
@@ -34,7 +35,6 @@ func NewGetItemsResult() *GetItemsResult {
 	}
 }
 
-// nolint:gocognit // TODO
 func (pt *GetItemsHandler) Excute() (*GetItemsResult, error) {
 	var c crawler.Crawler
 
@@ -66,19 +66,10 @@ func (pt *GetItemsHandler) Excute() (*GetItemsResult, error) {
 
 	r = c.GetResult()
 
-	tx := database.DB.Begin()
-	defer tx.Rollback()
-
-	if r.Assets != nil && len(r.Assets) > 0 {
-		if dbAssets, err := database.CreateAssets(tx, r.Assets, true); err != nil {
-			return result, err
-		} else {
-			r.Assets = dbAssets
-		}
-	}
+	db := database.DB
 
 	if r.Notes != nil && len(r.Notes) > 0 {
-		if dbNotes, err := database.CreateNotes(tx, r.Notes, true); err != nil {
+		if dbNotes, err := database.CreateNotes(db, r.Notes, true); err != nil {
 			return result, err
 		} else {
 			r.Notes = dbNotes
@@ -86,34 +77,22 @@ func (pt *GetItemsHandler) Excute() (*GetItemsResult, error) {
 	}
 
 	if r.Erc20Notes != nil && len(r.Erc20Notes) > 0 {
-		if dbNotes, err := database.CreateNotesDoNothing(tx, r.Erc20Notes); err != nil {
+		if dbNotes, err := database.CreateNotesDoNothing(db, r.Erc20Notes); err != nil {
 			return result, err
 		} else {
 			r.Erc20Notes = dbNotes
 		}
 	}
 
-	if r.Profiles != nil && len(r.Profiles) > 0 {
-		if dbProfiles, err := database.CreateProfiles(tx, r.Profiles, true); err != nil {
-			return result, err
-		} else {
-			r.Profiles = dbProfiles
+	go func() {
+		if r.Assets != nil && len(r.Assets) > 0 {
+			if _, err := database.CreateAssets(db, r.Assets, true); err != nil {
+				logger.Errorf("database.CreateAssets error: %v", err)
+			}
 		}
-	}
-
-	if err := tx.Commit().Error; err != nil {
-		return result, err
-	}
+	}()
 
 	result.Result = r
-
-	// stores the crawler last worked metadata
-	//if _, err := database.CreateCrawlerMetadata(database.DB, &model.CrawlerMetadata{
-	//	AccountInstance: pt.WorkParam.OwnerID,
-	//	PlatformID:      pt.WorkParam.PlatformID,
-	//}, true); err != nil {
-	//	return result, err
-	//}
 
 	return result, nil
 }

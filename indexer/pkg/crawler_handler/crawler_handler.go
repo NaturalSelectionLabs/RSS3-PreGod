@@ -1,11 +1,8 @@
 package crawler_handler
 
 import (
-	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/api/jike"
-	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/api/misskey"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/api/moralis"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/api/poap"
-	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/api/twitter"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/crawler"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/util"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/constants"
@@ -35,15 +32,8 @@ func MakeCrawlers[T constants.NetworkID | constants.PlatformID](network T) crawl
 		case constants.NetworkIDEthereum,
 			constants.NetworkIDBNBChain,
 			constants.NetworkIDAvalanche,
-			constants.NetworkIDFantom,
 			constants.NetworkIDPolygon:
 			return moralis.NewMoralisCrawler()
-		case constants.NetworkIDJike:
-			return jike.NewJikeCrawler()
-		case constants.NetworkIDTwitter:
-			return twitter.NewTwitterCrawler()
-		case constants.NetworkIDMisskey:
-			return misskey.NewMisskeyCrawler()
 		case constants.NetworkIDGnosisMainnet:
 			return poap.NewPoapCrawler()
 		default:
@@ -54,12 +44,6 @@ func MakeCrawlers[T constants.NetworkID | constants.PlatformID](network T) crawl
 		switch constants.PlatformID(network) {
 		case constants.PlatformIDEthereum:
 			return moralis.NewMoralisCrawler()
-		case constants.PlatformIDJike:
-			return jike.NewJikeCrawler()
-		case constants.PlatformIDTwitter:
-			return twitter.NewTwitterCrawler()
-		case constants.PlatformIDMisskey:
-			return misskey.NewMisskeyCrawler()
 		default:
 			return nil
 		}

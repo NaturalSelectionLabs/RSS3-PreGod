@@ -11,6 +11,7 @@ type BatchGetNodeListRequest struct {
 	ItemSources    []string `json:"item_sources"`
 	Networks       []string `json:"networks"`
 	Latest         bool     `json:"latest"`
+	Cache          bool     `form:"cache"`
 
 	InstanceList []rss3uri.Instance `json:"-"` // parsed from address list
 }
