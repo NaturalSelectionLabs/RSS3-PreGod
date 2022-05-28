@@ -19,6 +19,11 @@ import (
 	goens "github.com/wealdtech/go-ens/v3"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/codes"
+)
+
+const (
+	TracerNameCrawlerMoralis = "crawler_moralis"
 )
 
 var (
@@ -59,14 +64,17 @@ func requestMoralisApi(url string, apiKey string, isCache bool) (httpx.Response,
  * About nft handler
  */
 
+// nolint:funlen // TODO
 func GetNFTs(ctx context.Context, userAddress string, chainType ChainType, fromDate string, apiKey string) (NFTResult, error) {
-	_, trace := otel.Tracer("crawler_moralis").Start(ctx, "GetNFTs")
-	trace.SetAttributes(
-		attribute.String("userAddress", userAddress),
-		attribute.String("fromDate", fromDate),
+	tracer := otel.Tracer(TracerNameCrawlerMoralis)
+
+	_, getNFTListSnap := tracer.Start(ctx, "get_nft_list")
+	getNFTListSnap.SetAttributes(
+		attribute.String("user_address", userAddress),
+		attribute.String("from_date", fromDate),
 	)
 
-	defer trace.End()
+	defer getNFTListSnap.End()
 
 	// Gets all NFT items of user
 	requestURL := fmt.Sprintf("%s/api/v2/%s/nft?chain=%s&format=decimal&from_date=%s",
@@ -76,6 +84,9 @@ func GetNFTs(ctx context.Context, userAddress string, chainType ChainType, fromD
 	response, err := requestMoralisApi(requestURL, apiKey, true)
 
 	if err != nil {
+		getNFTListSnap.RecordError(err)
+		getNFTListSnap.SetStatus(codes.Error, err.Error())
+
 		return NFTResult{}, err
 	}
 
@@ -84,11 +95,14 @@ func GetNFTs(ctx context.Context, userAddress string, chainType ChainType, fromD
 
 	err = jsoni.Unmarshal(response.Body, &res)
 	if err != nil {
+		getNFTListSnap.RecordError(err)
+		getNFTListSnap.SetStatus(codes.Error, err.Error())
+
 		return NFTResult{}, err
 	}
 
-	trace.SetAttributes(
-		attribute.Int("responseSize", len(response.Body)),
+	getNFTListSnap.SetAttributes(
+		attribute.Int("response_size", len(response.Body)),
 	)
 
 	var wg sync.WaitGroup
@@ -98,13 +112,23 @@ func GetNFTs(ctx context.Context, userAddress string, chainType ChainType, fromD
 			wg.Add(1)
 
 			go func(item NFTItem, i int) {
-				defer wg.Done()
+				_, getNFTItemSnap := tracer.Start(ctx, "get_nft_item")
+
+				defer func() {
+					wg.Done()
+
+					getNFTItemSnap.End()
+				}()
 
 				done := make(chan bool, 1)
 
 				go func() {
 					url := nft_utils.FormatUrl(item.TokenURI)
+
 					if metadataRes, err := httpx.Get(url, nil); err != nil {
+						getNFTListSnap.RecordError(err)
+						getNFTListSnap.SetStatus(codes.Error, err.Error())
+
 						logger.Warnf("http get nft metadata error with url '%s': [%v], moralis token uri: %v", url, err, item.TokenURI)
 					} else {
 						res.Result[i].MetaData = string(metadataRes.Body)
@@ -136,10 +160,10 @@ func GetNFTTransfers(
 	fromDate string,
 	apiKey string,
 ) (NFTTransferResult, error) {
-	_, trace := otel.Tracer("crawler_moralis").Start(ctx, "GetNFTTransfers")
+	ctx, trace := otel.Tracer(TracerNameCrawlerMoralis).Start(ctx, "get_nft_transfer_list")
 	trace.SetAttributes(
-		attribute.String("userAddress", userAddress),
-		attribute.String("fromDate", fromDate),
+		attribute.String("user_address", userAddress),
+		attribute.String("from_date", fromDate),
 	)
 
 	defer trace.End()
@@ -158,7 +182,7 @@ func GetNFTTransfers(
 	SetMoralisAttributes(&res.MoralisAttributes, response)
 
 	trace.SetAttributes(
-		attribute.Int("responseSize", len(response.Body)),
+		attribute.Int("response_size", len(response.Body)),
 	)
 
 	err = jsoni.Unmarshal(response.Body, &res)
@@ -170,8 +194,11 @@ func GetNFTTransfers(
 }
 
 func GetLogs(fromBlock int64, toBlock int64, address string, topic string, chainType ChainType, apiKey string) (GetLogsResult, error) {
-	url := fmt.Sprintf("%s/api/v2/%s/logs?chain=%s&from_block=%d&to_block=%d&topic0=%s",
-		endpoint, address, string(chainType), fromBlock, toBlock, topic)
+	url := fmt.Sprintf(
+		"%s/api/v2/%s/logs?chain=%s&from_block=%d&to_block=%d&topic0=%s",
+		endpoint, address, string(chainType), fromBlock, toBlock, topic,
+	)
+
 	response, err := requestMoralisApi(url, apiKey, false)
 
 	if err != nil {
@@ -270,9 +297,9 @@ type Erc20TokensMap map[string]Erc20TokenMetaDataItem
 var erc20TokensCache = Erc20TokensMap{}
 
 func GetErc20Transfers(ctx context.Context, userAddress string, chainType ChainType, fromDate string, apiKey string) ([]ERC20TransferItem, error) {
-	_, trace := otel.Tracer("crawler_moralis").Start(ctx, "setERC20")
+	ctx, trace := otel.Tracer(TracerNameCrawlerMoralis).Start(ctx, "get_erc20_transfer_list")
 	trace.SetAttributes(
-		attribute.String("fromDate", fromDate),
+		attribute.String("from_date", fromDate),
 	)
 
 	defer trace.End()
@@ -305,9 +332,9 @@ func GetErc20Transfers(ctx context.Context, userAddress string, chainType ChainT
 }
 
 func getErc20Once(ctx context.Context, userAddress string, chainType ChainType, fromDate string, apiKey string, offest int) (*ERC20Transfer, error) {
-	_, trace := otel.Tracer("crawler_moralis").Start(ctx, "setERC20")
+	ctx, trace := otel.Tracer(TracerNameCrawlerMoralis).Start(ctx, "get_erc20_once")
 	trace.SetAttributes(
-		attribute.String("fromDate", fromDate),
+		attribute.String("from_date", fromDate),
 	)
 
 	defer trace.End()
@@ -323,7 +350,7 @@ func getErc20Once(ctx context.Context, userAddress string, chainType ChainType, 
 	}
 
 	trace.SetAttributes(
-		attribute.Int("responseSize", len(response.Body)),
+		attribute.Int("response_size", len(response.Body)),
 	)
 
 	res := new(ERC20Transfer)
@@ -580,10 +607,10 @@ func getENSTransaction(ens NFTItem, record *ENSTextRecord) error {
  */
 
 func GetEthTransfers(ctx context.Context, userAddress string, chainType ChainType, fromDate string, apiKey string) ([]ETHTransferItem, error) {
-	_, trace := otel.Tracer("crawler_moralis").Start(ctx, "GetEthTransfers")
+	ctx, trace := otel.Tracer(TracerNameCrawlerMoralis).Start(ctx, "get_eth_transfer_list")
 	trace.SetAttributes(
-		attribute.String("userAddress", userAddress),
-		attribute.String("fromDate", fromDate),
+		attribute.String("user_address", userAddress),
+		attribute.String("from_date", fromDate),
 	)
 
 	defer trace.End()
@@ -640,10 +667,10 @@ func GetEthTransfers(ctx context.Context, userAddress string, chainType ChainTyp
 }
 
 func getETHOnce(ctx context.Context, userAddress string, chainType ChainType, fromDate string, apiKey string, offest int) (*ETHTransfer, error) {
-	_, trace := otel.Tracer("crawler_moralis").Start(ctx, "getETHOnce")
+	ctx, trace := otel.Tracer(TracerNameCrawlerMoralis).Start(ctx, "get_eth_once")
 	trace.SetAttributes(
-		attribute.String("userAddress", userAddress),
-		attribute.String("fromDate", fromDate),
+		attribute.String("user_address", userAddress),
+		attribute.String("from_date", fromDate),
 	)
 
 	defer trace.End()
@@ -659,7 +686,7 @@ func getETHOnce(ctx context.Context, userAddress string, chainType ChainType, fr
 	}
 
 	trace.SetAttributes(
-		attribute.Int("responseSize", len(response.Body)),
+		attribute.Int("response_size", len(response.Body)),
 	)
 
 	res := new(ETHTransfer)
