@@ -1,6 +1,7 @@
 package moralis_test
 
 import (
+	"context"
 	"testing"
 	"time"
 
@@ -19,7 +20,9 @@ var (
 func TestGetNFT(t *testing.T) {
 	t.Parallel()
 
-	result, err := moralis.GetNFTs(
+	ctx := context.Background()
+
+	result, err := moralis.GetNFTs(ctx,
 		"0x3b6d02a24df681ffdf621d35d70aba7adaac07c1", "eth", time.Unix(0, 0).String(), config.Config.Indexer.Moralis.ApiKey,
 	)
 	assert.NotEmpty(t, result.Result)
@@ -30,7 +33,9 @@ func TestGetNFT(t *testing.T) {
 func TestGetNFTTransfers(t *testing.T) {
 	t.Parallel()
 
-	result, err := moralis.GetNFTTransfers(
+	ctx := context.Background()
+
+	result, err := moralis.GetNFTTransfers(ctx,
 		"0x3b6d02a24df681ffdf621d35d70aba7adaac07c1", "eth", 0, time.Unix(0, 0).String(), config.Config.Indexer.Moralis.ApiKey,
 	)
 

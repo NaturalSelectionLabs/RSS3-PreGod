@@ -117,12 +117,8 @@ func GetAssetListHandlerFunc(c *gin.Context) {
 
 	var lastItem *protocol.Item
 
-	for _, item := range assetList {
-		internalItem := item
-
-		if lastItem == nil || lastItem.DateCreated.Time().After(internalItem.DateCreated.Time()) {
-			lastItem = &internalItem
-		}
+	if len(assetList) > 0 {
+		lastItem = &assetList[len(assetList)-1]
 	}
 
 	identifierNext := ""

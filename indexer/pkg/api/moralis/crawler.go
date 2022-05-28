@@ -69,7 +69,7 @@ func getGatewayClient() {
 	client = c
 }
 
-//nolint:funlen,gocognit // disable line length check
+//nolint:funlen,gocognit,maintidx // disable line length check
 func (c *moralisCrawler) setNFTTransfers(
 	ctx context.Context,
 	param crawler.WorkParam,
@@ -77,9 +77,13 @@ func (c *moralisCrawler) setNFTTransfers(
 	author string,
 	networkSymbol constants.NetworkSymbol,
 	chainType ChainType) error {
-	_, setNFTTransfersSpan := otel.Tracer("crawler_moralis").Start(ctx, "set_nft_transfers")
+	_, trace := otel.Tracer("crawler_moralis").Start(ctx, "setNFTTransfers")
+	trace.SetAttributes(
+		attribute.String("owner", owner),
+		attribute.String("param.Timestamp", param.Timestamp.String()),
+	)
 
-	defer setNFTTransfersSpan.End()
+	defer trace.End()
 
 	var (
 		wg           sync.WaitGroup
@@ -94,11 +98,14 @@ func (c *moralisCrawler) setNFTTransfers(
 	wg.Add(2)
 
 	go func() {
-		defer wg.Done()
+		defer func() {
+			wg.Done()
+			recover()
+		}()
 
 		var err error
 
-		nftTransfers, err = GetNFTTransfers(param.Identity, chainType, param.BlockHeight, param.Timestamp.String(), getApiKey())
+		nftTransfers, err = GetNFTTransfers(ctx, param.Identity, chainType, param.BlockHeight, param.Timestamp.String(), getApiKey())
 		if err != nil {
 			logger.Errorf("moralis.GetNFTTransfers: get nft transfers: %v", err)
 
@@ -110,11 +117,14 @@ func (c *moralisCrawler) setNFTTransfers(
 
 	// get nft for assets
 	go func() {
-		defer wg.Done()
+		defer func() {
+			wg.Done()
+			recover()
+		}()
 
 		var err error
 
-		assets, err = GetNFTs(param.Identity, chainType, param.Timestamp.String(), getApiKey())
+		assets, err = GetNFTs(ctx, param.Identity, chainType, param.Timestamp.String(), getApiKey())
 		if err != nil {
 			logger.Errorf("moralis.GetNFTs: get nft: %v", err)
 
@@ -133,9 +143,9 @@ func (c *moralisCrawler) setNFTTransfers(
 	case <-doneCh:
 		break
 	case err := <-errorCh:
-		close(errorCh)
-
 		open = false
+
+		close(errorCh)
 
 		return err
 	}
@@ -166,7 +176,7 @@ func (c *moralisCrawler) setNFTTransfers(
 
 		var theAsset NFTItem
 
-		var err error
+		// var err error
 
 		for _, asset := range assets.Result {
 			if item.EqualsToToken(asset) && asset.MetaData != "" {
@@ -174,12 +184,12 @@ func (c *moralisCrawler) setNFTTransfers(
 			}
 		}
 
-		if theAsset.MetaData == "" {
-			theAsset, err = GetMetadataByToken(item.TokenAddress, item.TokenId, chainType, getApiKey())
-			if err != nil {
-				logger.Warnf("fail to get metadata of token [" + item.String() + "] err[" + err.Error() + "]")
-			}
-		}
+		// if theAsset.MetaData == "" {
+		// 	theAsset, err = GetMetadataByToken(item.TokenAddress, item.TokenId, chainType, getApiKey())
+		// 	if err != nil {
+		// 		logger.Warnf("fail to get metadata of token [" + item.String() + "] err[" + err.Error() + "]")
+		// 	}
+		// }
 
 		m, parseErr := utils.ParseNFTMetadata(theAsset.MetaData)
 		if parseErr != nil {
@@ -187,22 +197,25 @@ func (c *moralisCrawler) setNFTTransfers(
 		}
 
 		//convert to string
-		proof := item.TransactionHash + "-" + strconv.FormatInt(item.LogIndex, 10) + "-" + item.TokenId
+		proof := item.TransactionHash + "-" + item.LogIndex + "-" + item.TokenId
+		logIndex, _ := strconv.Atoi(item.LogIndex)
 		note := model.Note{
-			Identifier:      rss3uri.NewNoteInstance(proof, networkSymbol).UriString(),
-			Owner:           owner,
-			RelatedURLs:     GetTxRelatedURLs(networkSymbol, item.TokenAddress, item.TokenId, &item.TransactionHash),
-			Tags:            constants.ItemTagsNFT.ToPqStringArray(),
-			Authors:         []string{author},
-			Title:           m.Name,
-			Summary:         m.Description,
-			Attachments:     database.MustWrapJSON(utils.Meta2NoteAtt(m)),
-			Source:          constants.NoteSourceNameEthereumNFT.String(),
-			ContractAddress: item.TokenAddress,
-			LogIndex:        int(item.LogIndex),
-			TokenID:         item.TokenId,
-			MetadataNetwork: networkSymbol.String(),
-			MetadataProof:   proof,
+			Identifier:          rss3uri.NewNoteInstance(proof, networkSymbol).UriString(),
+			Owner:               owner,
+			RelatedURLs:         GetTxRelatedURLs(networkSymbol, item.TokenAddress, item.TokenId, &item.TransactionHash),
+			TransactionHash:     item.TransactionHash,
+			TransactionLogIndex: -1,
+			Tags:                constants.ItemTagsNFT.ToPqStringArray(),
+			Authors:             []string{author},
+			Title:               m.Name,
+			Summary:             m.Description,
+			Attachments:         database.MustWrapJSON(utils.Meta2NoteAtt(m)),
+			Source:              constants.NoteSourceNameEthereumNFT.String(),
+			ContractAddress:     item.TokenAddress,
+			LogIndex:            logIndex,
+			TokenID:             item.TokenId,
+			MetadataNetwork:     networkSymbol.String(),
+			MetadataProof:       proof,
 			Metadata: database.MustWrapJSON(map[string]interface{}{
 				"from":               strings.ToLower(item.FromAddress),
 				"to":                 strings.ToLower(item.ToAddress),
@@ -325,11 +338,15 @@ func (c *moralisCrawler) setERC20(
 	author string,
 	networkSymbol constants.NetworkSymbol,
 	chainType ChainType) error {
-	_, setERC20Span := otel.Tracer("crawler_moralis").Start(ctx, "set_erc20")
+	_, trace := otel.Tracer("crawler_moralis").Start(ctx, "setERC20")
+	trace.SetAttributes(
+		attribute.String("owner", owner),
+		attribute.String("param.Timestamp", param.Timestamp.String()),
+	)
 
-	defer setERC20Span.End()
+	defer trace.End()
 
-	result, err := GetErc20Transfers(param.Identity, chainType, param.Timestamp.String(), getApiKey())
+	result, err := GetErc20Transfers(ctx, param.Identity, chainType, param.Timestamp.String(), getApiKey())
 	if err != nil {
 		logger.Errorf("chain type[%s], get erc20 transfers: %v", chainType.GetNetworkSymbol().String(), err)
 
@@ -405,12 +422,14 @@ func (c *moralisCrawler) setERC20(
 			RelatedURLs: []string{
 				GetTxHashURL(networkSymbol, item.TransactionHash),
 			},
-			Tags:            constants.ItemTagsToken.ToPqStringArray(),
-			Authors:         []string{author},
-			Source:          constants.NoteSourceNameEthereumERC20.String(),
-			ContractAddress: item.TokenAddress,
-			MetadataNetwork: networkSymbol.String(),
-			MetadataProof:   proof,
+			TransactionHash:     item.TransactionHash,
+			TransactionLogIndex: -1,
+			Tags:                constants.ItemTagsToken.ToPqStringArray(),
+			Authors:             []string{author},
+			Source:              constants.NoteSourceNameEthereumERC20.String(),
+			ContractAddress:     item.TokenAddress,
+			MetadataNetwork:     networkSymbol.String(),
+			MetadataProof:       proof,
 			Metadata: database.MustWrapJSON(map[string]interface{}{
 				"network":          networkSymbol.String(),
 				"from":             strings.ToLower(item.FromAddress),
@@ -439,11 +458,15 @@ func (c *moralisCrawler) setNative(
 	author string,
 	networkSymbol constants.NetworkSymbol,
 	chainType ChainType) error {
-	_, setNative := otel.Tracer("crawler_moralis").Start(ctx, "set_native")
+	_, trace := otel.Tracer("crawler_moralis").Start(ctx, "setNative")
+	trace.SetAttributes(
+		attribute.String("owner", owner),
+		attribute.String("param.Timestamp", param.Timestamp.String()),
+	)
 
-	defer setNative.End()
+	defer trace.End()
 
-	result, err := GetEthTransfers(param.Identity, chainType, param.Timestamp.String(), getApiKey())
+	result, err := GetEthTransfers(ctx, param.Identity, chainType, param.Timestamp.String(), getApiKey())
 	if err != nil {
 		logger.Errorf("chain type[%s], get eth transfers: %v", chainType.GetNetworkSymbol().String(), err)
 
@@ -481,12 +504,14 @@ func (c *moralisCrawler) setNative(
 			RelatedURLs: []string{
 				"https://etherscan.io/tx/" + item.TransactionHash,
 			},
-			Tags:            constants.ItemTagsETH.ToPqStringArray(), // will be change
-			Authors:         []string{author},
-			Source:          constants.NoteSourceNameEthereumETH.String(),
-			ContractAddress: "0x0",
-			MetadataNetwork: networkSymbol.String(),
-			MetadataProof:   proof,
+			TransactionHash:     item.TransactionHash,
+			TransactionLogIndex: -1,
+			Tags:                constants.ItemTagsETH.ToPqStringArray(), // will be change
+			Authors:             []string{author},
+			Source:              constants.NoteSourceNameEthereumETH.String(),
+			ContractAddress:     "0x0",
+			MetadataNetwork:     networkSymbol.String(),
+			MetadataProof:       proof,
 			Metadata: database.MustWrapJSON(map[string]interface{}{
 				"network":          networkSymbol.String(),
 				"from":             strings.ToLower(item.FromAddress),
@@ -507,7 +532,7 @@ func (c *moralisCrawler) setNative(
 	return nil
 }
 
-// nolint:funlen // TODO
+// nolint:funlen,gocognit // TODO
 func (c *moralisCrawler) Work(param crawler.WorkParam) error {
 	ctx, workSpan := otel.Tracer("crawler_moralis").Start(context.Background(), "work")
 
@@ -543,7 +568,10 @@ func (c *moralisCrawler) Work(param crawler.WorkParam) error {
 	wg.Add(3)
 
 	go func() {
-		defer wg.Done()
+		defer func() {
+			wg.Done()
+			recover()
+		}()
 
 		err := c.setNFTTransfers(ctx, param, owner, author, networkSymbol, chainType)
 		if err != nil {
@@ -556,7 +584,10 @@ func (c *moralisCrawler) Work(param crawler.WorkParam) error {
 	}()
 
 	go func() {
-		defer wg.Done()
+		defer func() {
+			wg.Done()
+			recover()
+		}()
 
 		err := c.setERC20(ctx, param, owner, author, networkSymbol, chainType)
 		if err != nil {
@@ -569,7 +600,10 @@ func (c *moralisCrawler) Work(param crawler.WorkParam) error {
 	}()
 
 	go func() {
-		defer wg.Done()
+		defer func() {
+			wg.Done()
+			recover()
+		}()
 
 		err := c.setNative(ctx, param, owner, author, networkSymbol, chainType)
 		if err != nil {
@@ -590,9 +624,9 @@ func (c *moralisCrawler) Work(param crawler.WorkParam) error {
 	case <-doneCh:
 		break
 	case err := <-errorCh:
-		close(errorCh)
-
 		open = false
+
+		close(errorCh)
 
 		return err
 	}

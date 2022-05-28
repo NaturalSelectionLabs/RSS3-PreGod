@@ -32,7 +32,6 @@ func MakeCrawlers[T constants.NetworkID | constants.PlatformID](network T) crawl
 		case constants.NetworkIDEthereum,
 			constants.NetworkIDBNBChain,
 			constants.NetworkIDAvalanche,
-			constants.NetworkIDFantom,
 			constants.NetworkIDPolygon:
 			return moralis.NewMoralisCrawler()
 		case constants.NetworkIDGnosisMainnet:
