@@ -22,7 +22,7 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
-func GetItems(requestURL string, instance rss3uri.Instance, accounts []model.Account, latest bool) error {
+func GetItems(requestURL string, instance rss3uri.Instance, latest bool) error {
 	lockerKey := fmt.Sprintf("hub %s", requestURL)
 
 	if _, err := cache.GetRaw(context.Background(), lockerKey); err != nil && errors.Is(err, redis.Nil) {
@@ -31,11 +31,11 @@ func GetItems(requestURL string, instance rss3uri.Instance, accounts []model.Acc
 		}
 
 		if latest {
-			return getItems(instance, accounts)
+			return getItems(instance)
 		}
 
 		go func() {
-			if err := getItems(instance, accounts); err != nil {
+			if err := getItems(instance); err != nil {
 				logger.Error(err)
 			}
 		}()
@@ -44,29 +44,22 @@ func GetItems(requestURL string, instance rss3uri.Instance, accounts []model.Acc
 	return nil
 }
 
-func getItems(instance rss3uri.Instance, accounts []model.Account) error {
+func getItems(instance rss3uri.Instance) error {
 	eg := errgroup.Group{}
 
-	// Add self
-	accounts = append(accounts, model.Account{
-		Identity:        strings.ToLower(instance.GetIdentity()),
-		Platform:        constants.PlatformSymbol(instance.GetSuffix()).ID().Int(),
-		ProfileID:       strings.ToLower(instance.GetIdentity()),
-		ProfilePlatform: constants.PlatformSymbol(instance.GetSuffix()).ID().Int(),
-		Source:          int(constants.NetworkIDCrossbell),
-	})
+	for _, networkID := range constants.GetNetworkList(constants.PlatformIDEthereum) {
+		networkID := networkID
+		client := resty.New()
 
-	for _, account := range accounts {
-		account := account
-
-		for _, networkID := range constants.GetNetworkList(constants.PlatformID(account.Platform)) {
-			networkID := networkID
-			client := resty.New()
-
-			eg.Go(func() error {
-				return getItem(client, account, networkID)
-			})
-		}
+		eg.Go(func() error {
+			return getItem(client, model.Account{
+				Identity:        strings.ToLower(instance.GetIdentity()),
+				Platform:        constants.PlatformSymbol(instance.GetSuffix()).ID().Int(),
+				ProfileID:       strings.ToLower(instance.GetIdentity()),
+				ProfilePlatform: constants.PlatformSymbol(instance.GetSuffix()).ID().Int(),
+				Source:          int(constants.NetworkIDCrossbell),
+			}, networkID)
+		})
 	}
 
 	return eg.Wait()
