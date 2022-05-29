@@ -9,6 +9,11 @@ import (
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/logger"
 )
 
+type NodeUnit struct {
+	Note         model.Note
+	TokenAddress string
+}
+
 func GetOneTokenSymbolEmptyIdentifier(chainType moralis.ChainType) (string, error) {
 	// var owner string
 	var note model.Note
@@ -27,10 +32,10 @@ func GetOneTokenSymbolEmptyIdentifier(chainType moralis.ChainType) (string, erro
 	return note.Owner, nil
 }
 
-func GetAllNotesAboutErc20ByIdentifier(identifier string, chainType moralis.ChainType) (map[string]model.Note, error) {
+func GetAllNotesAboutErc20ByIdentifier(identifier string, chainType moralis.ChainType) (map[string]NodeUnit, error) {
 	var notes []model.Note
 
-	var noteMap = map[string]model.Note{}
+	var noteMap = map[string]NodeUnit{}
 
 	internalDB := database.DB.
 		Where("owner in (?)", identifier).
@@ -45,17 +50,7 @@ func GetAllNotesAboutErc20ByIdentifier(identifier string, chainType moralis.Chai
 	}
 
 	for i := range notes {
-		noteMap[notes[i].Identifier] = notes[i]
-	}
-
-	return noteMap, nil
-}
-
-func ChangeNotesTokenSymbolMsg(notesMap map[string]model.Note, tokensMap moralis.Erc20TokensMap) ([]model.Note, error) {
-	var notes = []model.Note{}
-
-	for _, note := range notesMap {
-		noteMetadata, unwrapErr := database.UnwrapJSON[map[string]interface{}](note.Metadata)
+		noteMetadata, unwrapErr := database.UnwrapJSON[map[string]interface{}](notes[i].Metadata)
 		if unwrapErr != nil {
 			logger.Warnf("unwrap metadata err:%v", unwrapErr)
 
@@ -64,16 +59,45 @@ func ChangeNotesTokenSymbolMsg(notesMap map[string]model.Note, tokensMap moralis
 
 		tokenAddress, ok := noteMetadata["token_address"].(string)
 		if !ok {
-			logger.Warnf("Identifier [%s] token_address not found", note.Identifier)
+			logger.Warnf("Identifier [%s] token_address not found", notes[i].Identifier)
 
 			continue
 		}
 
-		noteMetadata["token_symbol"] = tokensMap[tokenAddress].Symbol
-		note.Metadata = database.MustWrapJSON(noteMetadata)
-		notes = append(notes, note)
+		nodeUnit := NodeUnit{
+			Note:         notes[i],
+			TokenAddress: tokenAddress,
+		}
 
-		logger.Debugf("tokenAddress:%s, token_symbol:%s", tokenAddress, tokensMap[tokenAddress].Symbol)
+		noteMap[notes[i].Identifier] = nodeUnit
+	}
+
+	return noteMap, nil
+}
+
+func ChangeNotesTokenSymbolMsg(notesMap map[string]NodeUnit, tokensMap moralis.Erc20TokensMap) ([]model.Note, error) {
+	var notes = []model.Note{}
+
+	for _, noteUnit := range notesMap {
+		noteMetadata, unwrapErr := database.UnwrapJSON[map[string]interface{}](noteUnit.Note.Metadata)
+		if unwrapErr != nil {
+			logger.Warnf("unwrap metadata err:%v", unwrapErr)
+
+			continue
+		}
+
+		tokenSymbol, ok := tokensMap[noteUnit.TokenAddress]
+		if !ok {
+			logger.Warnf("token symbol not found for token address:%s", noteUnit.TokenAddress)
+
+			continue
+		}
+
+		noteMetadata["token_symbol"] = tokenSymbol
+		noteUnit.Note.Metadata = database.MustWrapJSON(noteMetadata)
+		notes = append(notes, noteUnit.Note)
+
+		logger.Debugf("tokenAddress:%s, token_symbol:%s", noteUnit.TokenAddress, tokenSymbol)
 	}
 
 	logger.Debugf("len(notes):%d", len(notes))

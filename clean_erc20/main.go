@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"log"
 	"strings"
 	"time"
@@ -108,22 +107,22 @@ func RunFixEmptyTokenSymbol(cmd *cobra.Command, args []string) error {
 		// logger.Debugf("notesMap:%v", notesMap)
 
 		// get this one msg from api
-		result, err := moralis.GetErc20Transfers(context.Background(), account, chainType, "", getApiKey())
-		if err != nil {
-			logger.Warnf("get erc20 transfers err[%v]", err)
+		// result, err := moralis.GetErc20Transfers(context.Background(), account, chainType, "", getApiKey())
+		// if err != nil {
+		// 	logger.Warnf("get erc20 transfers err[%v]", err)
 
-			continue
-		}
+		// 	continue
+		// }
 
-		if len(result) == 0 {
-			continue
-		}
+		// if len(result) == 0 {
+		// 	continue
+		// }
 
 		tokenAddressSet := mapset.NewSet()
 		tokenAddresses := []string{}
 
-		for _, item := range result {
-			tokenAddressSet.Add(item.TokenAddress)
+		for _, note := range notesMap {
+			tokenAddressSet.Add(note.TokenAddress)
 		}
 
 		for _, tokenAddress := range tokenAddressSet.ToSlice() {
