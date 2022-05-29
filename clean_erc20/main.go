@@ -75,16 +75,18 @@ func RunFixEmptyTokenSymbol(cmd *cobra.Command, args []string) error {
 
 	for {
 		// get one err account
-		identifier, err := internal.GetOneTokenSymbolEmptyIdentifier(chainType)
-		if err != nil {
-			logger.Errorf("get one token symbol empty account err[%v], account[%s]", err, identifier)
+		// identifier, err := internal.GetOneTokenSymbolEmptyIdentifier(chainType)
+		// if err != nil {
+		// 	logger.Errorf("get one token symbol empty account err[%v], account[%s]", err, identifier)
 
-			continue
-		}
+		// 	continue
+		// }
 
-		if identifier == "" {
-			break
-		}
+		// if identifier == "" {
+		// 	break
+		// }
+
+		identifier := "rss3://account:0x639090cdd215010fe54c36a49bbd1604f034e1d4@ethereum"
 
 		logger.Debugf("identifier:%s", identifier)
 
