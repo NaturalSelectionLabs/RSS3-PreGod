@@ -323,6 +323,7 @@ func GetErc20TokenMetaData(chainType ChainType, addresses []string, apiKey strin
 	getErc20TokenMetaDataFromCache(addresses, res)
 
 	addrLen := len(addresses)
+	logger.Infof("addresss length: %d", addrLen)
 
 	if len(res) == addrLen {
 		return res, nil
@@ -331,9 +332,11 @@ func GetErc20TokenMetaData(chainType ChainType, addresses []string, apiKey strin
 	limit := 200
 
 	addressBatch := make([][]string, addrLen/limit+1)
+	logger.Debugf("sss:%d", addrLen/limit+1)
 
 	for i := 0; i < addrLen; i += limit {
 		addressBatch = append(addressBatch, addresses[i:Min(i+limit, addrLen)])
+		logger.Infof("len(addressBatch): %v", len(addressBatch))
 	}
 
 	lop.ForEach(addressBatch, func(batch []string, i int) {
@@ -373,6 +376,8 @@ func getErc20TokenMetaDataFromUrl(chainType ChainType, addresses []string, apiKe
 	for _, address := range addresses {
 		url += fmt.Sprintf("&addresses=%s", address)
 	}
+
+	logger.Debugf("url: %s", url)
 
 	response, err := requestMoralisApi(url, apiKey, true)
 

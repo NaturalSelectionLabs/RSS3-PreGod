@@ -11,8 +11,6 @@ import (
 func GetDataFromDB(limit int) ([]model.Note, error) {
 	var notes []model.Note
 
-	logger.Debugf("GetDataFromDB")
-
 	internalDB := database.DB.
 		Where("identifier not like ('rss3://note:%@ethereum') ").
 		Where("related_urls[1] like ('https://etherscan.io/tx/%')").
@@ -29,12 +27,10 @@ func GetDataFromDB(limit int) ([]model.Note, error) {
 		return nil, err
 	}
 
-	// logger.Debugf("notes:%v", notes)
-
 	return notes, nil
 }
 
-func ClearGitCoinData(notes []model.Note) {
+func ReplaceEndpoint(notes []model.Note) {
 	// get projects
 	for i := range notes {
 		var parser fastjson.Parser
