@@ -29,7 +29,7 @@ func BatchGetNodeList(req m.BatchGetNodeListRequest) (protocol.File, error, erro
 		req.InstanceList = append(req.InstanceList, uri.Instance)
 
 		// get item
-		if !req.Cache {
+		if len(req.LastIdentifier) == 0 {
 			if err := indexer.GetItems("batch_get_node_list", uri.Instance, nil, req.Latest); err != nil {
 				return protocol.File{
 					List: make([]protocol.Item, 0),
