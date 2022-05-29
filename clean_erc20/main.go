@@ -146,6 +146,8 @@ func RunFixEmptyTokenSymbol(cmd *cobra.Command, args []string) error {
 			continue
 		}
 
+		logger.Debugf("0xa58a4f5c4bb043d2cc1e170613b74e767c94189b symbol:", erc20Tokens["0xa58a4f5c4bb043d2cc1e170613b74e767c94189b"])
+
 		// logger.Debugf("erc20Tokens:%v", erc20Tokens)
 
 		// get resp ,update notes
