@@ -72,6 +72,8 @@ func ChangeNotesTokenSymbolMsg(notesMap map[string]model.Note, tokensMap moralis
 		noteMetadata["token_symbol"] = tokensMap[tokenAddress].Symbol
 		note.Metadata = database.MustWrapJSON(noteMetadata)
 		notes = append(notes, note)
+
+		logger.Debugf("token_symbol:%s", tokensMap[tokenAddress].Symbol)
 	}
 
 	logger.Debugf("len(notes):%d", len(notes))
