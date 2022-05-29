@@ -71,57 +71,19 @@ func RunReplaceWrongEThEndpoint(cmd *cobra.Command, args []string) error {
 // nolint:funlen // TODO
 func RunFixEmptyTokenSymbol(cmd *cobra.Command, args []string) error {
 	logger.Debugf("start")
+
 	var chainType = moralis.ChainType(moralis.ETH)
 
 	for {
-		// get one err account
-		// identifier, err := internal.GetOneTokenSymbolEmptyIdentifier(chainType)
-		// if err != nil {
-		// 	logger.Errorf("get one token symbol empty account err[%v], account[%s]", err, identifier)
-
-		// 	continue
-		// }
-
-		// if identifier == "" {
-		// 	break
-		// }
-
-		identifier := "rss3://account:0x639090cdd215010fe54c36a49bbd1604f034e1d4@ethereum"
-
-		logger.Debugf("identifier:%s", identifier)
-
-		account, err := internal.GetAccountByIdentifier(identifier)
-		if err != nil {
-			logger.Warnf("get account by identifier err[%v], identifier[%s]", err, identifier)
-
-			continue
-		}
-
-		logger.Debugf("account:%v", account)
-
 		// get this one all err notes
-		notesMap, err := internal.GetAllNotesAboutErc20ByIdentifier(identifier, chainType)
+		notesMap, err := internal.GetNotesAboutErc20ByIdentifier(chainType, 1000)
 		if err != nil {
-			logger.Warnf("get all notes about erc20 by account err[%v], account[%s]", err, account)
+			logger.Warnf("get all notes about erc20 by account err[%v]", err)
 
 			continue
 		}
 
 		logger.Debugf("len(notesMap):%d", len(notesMap))
-
-		// logger.Debugf("notesMap:%v", notesMap)
-
-		// get this one msg from api
-		// result, err := moralis.GetErc20Transfers(context.Background(), account, chainType, "", getApiKey())
-		// if err != nil {
-		// 	logger.Warnf("get erc20 transfers err[%v]", err)
-
-		// 	continue
-		// }
-
-		// if len(result) == 0 {
-		// 	continue
-		// }
 
 		tokenAddressSet := mapset.NewSet()
 		tokenAddresses := []string{}

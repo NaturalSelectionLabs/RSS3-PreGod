@@ -32,18 +32,18 @@ func GetOneTokenSymbolEmptyIdentifier(chainType moralis.ChainType) (string, erro
 	return note.Owner, nil
 }
 
-func GetAllNotesAboutErc20ByIdentifier(identifier string, chainType moralis.ChainType) (map[string]NodeUnit, error) {
+func GetNotesAboutErc20ByIdentifier(chainType moralis.ChainType, pagSize int) (map[string]NodeUnit, error) {
 	var notes []model.Note
 
 	var noteMap = map[string]NodeUnit{}
 
 	internalDB := database.DB.
-		Where("owner in (?)", identifier).
 		Where("(metadata->>'token_symbol')=''").
 		Where("(metadata->>'token_address')!='' ").
 		Where("\"source\" in ('Ethereum ERC20')").
 		Where("\"metadata_network\"=?", chainType.GetNetworkSymbol()).
-		Where("tags[1] like ('Token')")
+		Where("tags[1] like ('Token')").
+		Limit(pagSize)
 
 	if err := internalDB.Find(&notes).Error; err != nil {
 		return nil, err
