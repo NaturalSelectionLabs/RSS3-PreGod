@@ -77,7 +77,9 @@ func (c *moralisCrawler) setNFTTransfers(
 	author string,
 	networkSymbol constants.NetworkSymbol,
 	chainType ChainType) error {
-	_, trace := otel.Tracer("crawler_moralis").Start(ctx, "setNFTTransfers")
+	tracer := otel.Tracer(TracerNameCrawlerMoralis)
+
+	ctx, trace := tracer.Start(ctx, "set_nft_transfer_list")
 	trace.SetAttributes(
 		attribute.String("owner", owner),
 		attribute.String("param.Timestamp", param.Timestamp.String()),
@@ -89,8 +91,8 @@ func (c *moralisCrawler) setNFTTransfers(
 		wg           sync.WaitGroup
 		nftTransfers = NFTTransferResult{}
 		assets       = NFTResult{}
-		errorCh      = make(chan error)
-		doneCh       = make(chan bool)
+		errorCh      = make(chan error, 1)
+		doneCh       = make(chan bool, 1)
 		open         = true
 	)
 
@@ -335,7 +337,7 @@ func (c *moralisCrawler) setERC20(
 	author string,
 	networkSymbol constants.NetworkSymbol,
 	chainType ChainType) error {
-	_, trace := otel.Tracer("crawler_moralis").Start(ctx, "setERC20")
+	ctx, trace := otel.Tracer(TracerNameCrawlerMoralis).Start(ctx, "set_erc20")
 	trace.SetAttributes(
 		attribute.String("owner", owner),
 		attribute.String("param.Timestamp", param.Timestamp.String()),
@@ -374,7 +376,7 @@ func (c *moralisCrawler) setERC20(
 	}
 
 	// get the token metadata
-	erc20Tokens, err := GetErc20TokenMetaData(chainType, tokenAddresses, getApiKey())
+	erc20Tokens, err := GetErc20TokenMetaData(ctx, chainType, tokenAddresses, getApiKey())
 	if err != nil {
 		logger.Errorf("chain type[%s], get erc20 token metadata [%v]",
 			chainType.GetNetworkSymbol().String(), err)
@@ -454,13 +456,16 @@ func (c *moralisCrawler) setNative(
 	author string,
 	networkSymbol constants.NetworkSymbol,
 	chainType ChainType) error {
-	_, trace := otel.Tracer("crawler_moralis").Start(ctx, "setNative")
-	trace.SetAttributes(
+	tracer := otel.Tracer(TracerNameCrawlerMoralis)
+
+	ctx, setNativeSnap := tracer.Start(ctx, "set_native")
+
+	setNativeSnap.SetAttributes(
 		attribute.String("owner", owner),
 		attribute.String("param.Timestamp", param.Timestamp.String()),
 	)
 
-	defer trace.End()
+	defer setNativeSnap.End()
 
 	result, err := GetEthTransfers(ctx, param.Identity, chainType, param.Timestamp.String(), getApiKey())
 	if err != nil {
@@ -529,7 +534,9 @@ func (c *moralisCrawler) setNative(
 
 // nolint:funlen,gocognit // TODO
 func (c *moralisCrawler) Work(param crawler.WorkParam) error {
-	ctx, workSpan := otel.Tracer("crawler_moralis").Start(context.Background(), "work")
+	tracer := otel.Tracer(TracerNameCrawlerMoralis)
+
+	ctx, workSpan := tracer.Start(context.Background(), "work")
 
 	workSpan.SetAttributes(
 		attribute.String("identity", param.Identity),
@@ -555,8 +562,8 @@ func (c *moralisCrawler) Work(param crawler.WorkParam) error {
 		owner         = rss3uri.NewAccountInstance(param.OwnerID, param.OwnerPlatformID.Symbol()).UriString()
 		author        = rss3uri.NewAccountInstance(param.Identity, constants.PlatformSymbolEthereum).UriString()
 		wg            sync.WaitGroup
-		errorCh       = make(chan error)
-		doneCh        = make(chan bool)
+		errorCh       = make(chan error, 1)
+		doneCh        = make(chan bool, 1)
 		open          = true
 	)
 
