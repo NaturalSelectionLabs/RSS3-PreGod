@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"log"
 	"strings"
 	"time"
@@ -137,7 +138,7 @@ func RunFixEmptyTokenSymbol(cmd *cobra.Command, args []string) error {
 		}
 
 		// get the token metadata
-		erc20Tokens, err := moralis.GetErc20TokenMetaData(chainType, tokenAddresses, getApiKey())
+		erc20Tokens, err := moralis.GetErc20TokenMetaData(context.Background(), chainType, tokenAddresses, getApiKey())
 		if err != nil {
 			logger.Errorf("chain type[%s], get erc20 token metadata [%v]",
 				chainType.GetNetworkSymbol().String(), err)
