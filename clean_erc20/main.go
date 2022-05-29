@@ -107,6 +107,8 @@ func RunFixEmptyTokenSymbol(cmd *cobra.Command, args []string) error {
 			continue
 		}
 
+		logger.Debugf("len(notesMap):%d", len(notesMap))
+
 		// logger.Debugf("notesMap:%v", notesMap)
 
 		// get this one msg from api
