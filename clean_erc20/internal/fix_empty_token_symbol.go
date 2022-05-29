@@ -32,10 +32,10 @@ func GetAllNotesAboutErc20ByIdentifier(identifier string, chainType moralis.Chai
 
 	var noteMap = map[string]model.Note{}
 
-	// Where("(metadata->>'token_symbol')=''").
-	// Where("(metadata->>'token_address')!='' ").
 	internalDB := database.DB.
 		Where("owner in (?)", identifier).
+		Where("(metadata->>'token_symbol')=''").
+		Where("(metadata->>'token_address')!='' ").
 		Where("\"source\" in ('Ethereum ERC20')").
 		Where("\"metadata_network\"=?", chainType.GetNetworkSymbol()).
 		Where("tags[1] like ('Token')")
