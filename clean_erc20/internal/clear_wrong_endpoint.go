@@ -15,6 +15,7 @@ func GetDataFromDB(limit int) ([]model.Note, error) {
 		Where("identifier not like ('rss3://note:%@ethereum') ").
 		Where("related_urls[1] like ('https://etherscan.io/tx/%')").
 		Where("\"source\" in ('Ethereum ERC20')").
+		Where("tags[1] like ('Token')").
 		Order("date_created ASC").
 		Limit(limit)
 

@@ -48,22 +48,25 @@ func RunReplaceWrongEThEndpoint(cmd *cobra.Command, args []string) error {
 
 		if len(notes) == 0 {
 			logger.Infof("mission completed")
+			break
 		}
 
 		// change db
-		internal.ReplaceEndpoint(notes)
+		newnotes := internal.ReplaceEndpoint(notes)
 
 		// logger.Infof("notes[0]: %v", notes[0])
 
-		if _, err := database.CreateNotes(database.DB, notes, true); err != nil {
+		if _, err := database.CreateNotes(database.DB, newnotes, true); err != nil {
 			logger.Errorf("err:%v", err)
 
 			continue
 		}
 
-		// break
+		break
 		time.Sleep(loopTime)
 	}
+
+	return nil
 }
 
 func RunFixEmptyTokenSymbol(cmd *cobra.Command, args []string) error {
