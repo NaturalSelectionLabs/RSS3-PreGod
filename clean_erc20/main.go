@@ -72,8 +72,10 @@ func RunFixEmptyTokenSymbol(cmd *cobra.Command, args []string) error {
 	logger.Debugf("start")
 
 	var chainType = moralis.ChainType(moralis.ETH)
+
 	var isCountLessThanSize = false
-	var pageSize = 1000
+
+	var pageSize = 10
 
 	for {
 		if isCountLessThanSize {
@@ -92,7 +94,8 @@ func RunFixEmptyTokenSymbol(cmd *cobra.Command, args []string) error {
 			isCountLessThanSize = true
 		}
 
-		logger.Debugf("len(notesMap):%d", len(notesMap))
+		// logger.Debugf("len(notesMap):%d", len(notesMap))
+		// logger.Debugf("notesMap:%v", notesMap)
 
 		tokenAddressSet := mapset.NewSet()
 		tokenAddresses := []string{}
@@ -138,8 +141,8 @@ func RunFixEmptyTokenSymbol(cmd *cobra.Command, args []string) error {
 			continue
 		}
 		/**/
-		// break
-		time.Sleep(loopTime)
+		break
+		// time.Sleep(loopTime)
 	}
 
 	return nil
