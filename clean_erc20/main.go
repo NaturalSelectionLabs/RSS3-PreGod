@@ -68,19 +68,28 @@ func RunReplaceWrongEThEndpoint(cmd *cobra.Command, args []string) error {
 	}
 }
 
-// nolint:funlen // TODO
 func RunFixEmptyTokenSymbol(cmd *cobra.Command, args []string) error {
 	logger.Debugf("start")
 
 	var chainType = moralis.ChainType(moralis.ETH)
+	var isCountLessThanSize = false
+	var pageSize = 1000
 
 	for {
+		if isCountLessThanSize {
+			break
+		}
+
 		// get this one all err notes
-		notesMap, err := internal.GetNotesAboutErc20ByIdentifier(chainType, 1000)
+		notesMap, err := internal.GetNotesAboutErc20ByIdentifier(chainType, pageSize)
 		if err != nil {
 			logger.Warnf("get all notes about erc20 by account err[%v]", err)
 
 			continue
+		}
+
+		if len(notesMap) < pageSize {
+			isCountLessThanSize = true
 		}
 
 		logger.Debugf("len(notesMap):%d", len(notesMap))
@@ -112,8 +121,6 @@ func RunFixEmptyTokenSymbol(cmd *cobra.Command, args []string) error {
 			continue
 		}
 
-		logger.Debugf("0xa58a4f5c4bb043d2cc1e170613b74e767c94189b symbol:", erc20Tokens["0xa58a4f5c4bb043d2cc1e170613b74e767c94189b"])
-
 		// logger.Debugf("erc20Tokens:%v", erc20Tokens)
 
 		// get resp ,update notes
@@ -131,7 +138,8 @@ func RunFixEmptyTokenSymbol(cmd *cobra.Command, args []string) error {
 			continue
 		}
 		/**/
-		break
+		// break
+		time.Sleep(loopTime)
 	}
 
 	return nil
