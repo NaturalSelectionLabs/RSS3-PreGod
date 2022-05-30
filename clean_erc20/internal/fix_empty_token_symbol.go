@@ -43,6 +43,7 @@ func GetNotesAboutErc20ByIdentifier(chainType moralis.ChainType, pagSize int) (m
 		Where("\"source\" in ('Ethereum ERC20')").
 		Where("\"metadata_network\"=?", chainType.GetNetworkSymbol()).
 		Where("tags[1] like ('Token')").
+		Order("date_created ASC").
 		Limit(pagSize)
 
 	if err := internalDB.Find(&notes).Error; err != nil {
