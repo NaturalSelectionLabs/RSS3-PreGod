@@ -25,7 +25,7 @@ DECLARE
     _transaction_log_index int;
 BEGIN
     _transaction_log_index := (SELECT COALESCE(MAX(transaction_log_index), -1)
-                               FROM note3
+                               FROM note4
                                WHERE transaction_hash = NEW.transaction_hash);
     IF NEW.transaction_log_index = -1 THEN
         NEW.transaction_log_index = _transaction_log_index + 1;
@@ -36,11 +36,11 @@ $$ LANGUAGE PLPGSQL;
 
 -- CREATE TRIGGER
 BEGIN;
-DROP TRIGGER IF EXISTS trigger_transaction_log_index ON note3;
+DROP TRIGGER IF EXISTS trigger_transaction_log_index ON note4;
 
 CREATE TRIGGER trigger_transaction_log_index
     BEFORE INSERT
-    ON note3
+    ON note4
     FOR EACH ROW
 EXECUTE FUNCTION serial_transaction_log_index();
 END;
