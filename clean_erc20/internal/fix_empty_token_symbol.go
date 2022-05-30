@@ -94,7 +94,7 @@ func ChangeNotesTokenSymbolMsg(notesMap map[string]NodeUnit, tokensMap moralis.E
 			continue
 		}
 
-		noteMetadata["token_symbol"] = tokenSymbol.Name
+		noteMetadata["token_symbol"] = tokenSymbol.Symbol
 		noteUnit.Note.Metadata = database.MustWrapJSON(noteMetadata)
 		notes = append(notes, copyNote(noteUnit.Note))
 
