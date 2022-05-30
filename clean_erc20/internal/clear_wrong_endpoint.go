@@ -15,7 +15,7 @@ func GetDataFromDB(limit int) ([]model.Note, error) {
 		Where("identifier not like ('rss3://note:%@ethereum') ").
 		Where("related_urls[1] like ('https://etherscan.io/tx/%')").
 		Where("\"source\" in ('Ethereum ERC20')").
-		Order("date_created DESC").
+		Order("date_created ASC").
 		Limit(limit)
 
 		// internalDB := database.DB.
@@ -30,7 +30,9 @@ func GetDataFromDB(limit int) ([]model.Note, error) {
 	return notes, nil
 }
 
-func ReplaceEndpoint(notes []model.Note) {
+func ReplaceEndpoint(notes []model.Note) []model.Note {
+	newNotes := []model.Note{}
+
 	// get projects
 	for i := range notes {
 		var parser fastjson.Parser
@@ -45,11 +47,14 @@ func ReplaceEndpoint(notes []model.Note) {
 		transactionHash := string(parsedJson.GetStringBytes("transaction_hash"))
 		network := constants.NetworkSymbol(parsedJson.GetStringBytes("network"))
 
-		notes[i].RelatedURLs = []string{
+		newNote := CopyNote(notes[i])
+		newNote.RelatedURLs = []string{
 			GetTxHashURL(network, transactionHash),
 		}
-		// logger.Infof("note[i]:%v", notes[i])
+		newNotes = append(newNotes, newNote)
 	}
+
+	return newNotes
 }
 
 func GetTxHashURL(
@@ -75,4 +80,28 @@ func GetTxHashURL(
 	default:
 		return ""
 	}
+}
+
+func CopyNote(note model.Note) model.Note {
+	newNote := model.Note{
+		Identifier:          note.Identifier,
+		TransactionHash:     note.TransactionHash,
+		TransactionLogIndex: note.TransactionLogIndex,
+		Owner:               note.Owner,
+		ProfileSourceID:     note.ProfileSourceID,
+		RelatedURLs:         note.RelatedURLs,
+		Tags:                note.Tags,
+		Authors:             note.Authors,
+		Title:               note.Title,
+		Summary:             note.Summary,
+		Attachments:         note.Attachments,
+		Source:              note.Source,
+		MetadataNetwork:     note.MetadataNetwork,
+		MetadataProof:       note.MetadataProof,
+		Metadata:            note.Metadata,
+		DateCreated:         note.DateCreated,
+		DateUpdated:         note.DateUpdated,
+	}
+
+	return newNote
 }

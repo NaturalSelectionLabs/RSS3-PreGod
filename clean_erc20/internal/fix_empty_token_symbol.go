@@ -96,7 +96,7 @@ func ChangeNotesTokenSymbolMsg(notesMap map[string]NodeUnit, tokensMap moralis.E
 
 		noteMetadata["token_symbol"] = tokenSymbol.Symbol
 		noteUnit.Note.Metadata = database.MustWrapJSON(noteMetadata)
-		notes = append(notes, copyNote(noteUnit.Note))
+		notes = append(notes, CopyNote(noteUnit.Note))
 
 		// logger.Debugf("tokenAddress:%s, token_symbol:%s", noteUnit.TokenAddress, tokenSymbol)
 	}
@@ -115,28 +115,4 @@ func GetAccountByIdentifier(identifier string) (string, error) {
 	}
 
 	return "", nil
-}
-
-func copyNote(note model.Note) model.Note {
-	newNote := model.Note{
-		Identifier:          note.Identifier,
-		TransactionHash:     note.TransactionHash,
-		TransactionLogIndex: note.TransactionLogIndex,
-		Owner:               note.Owner,
-		ProfileSourceID:     note.ProfileSourceID,
-		RelatedURLs:         note.RelatedURLs,
-		Tags:                note.Tags,
-		Authors:             note.Authors,
-		Title:               note.Title,
-		Summary:             note.Summary,
-		Attachments:         note.Attachments,
-		Source:              note.Source,
-		MetadataNetwork:     note.MetadataNetwork,
-		MetadataProof:       note.MetadataProof,
-		Metadata:            note.Metadata,
-		DateCreated:         note.DateCreated,
-		DateUpdated:         note.DateUpdated,
-	}
-
-	return newNote
 }

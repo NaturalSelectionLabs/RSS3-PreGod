@@ -22,9 +22,6 @@ func init() {
 	}
 }
 
-// const GetNotesLimit = 20000
-
-const GetNotesLimit = 1
 const loopTime = 500 * time.Millisecond
 
 var jsoni = jsoniter.ConfigCompatibleWithStandardLibrary
@@ -39,6 +36,8 @@ func getApiKey() string {
 }
 
 func RunReplaceWrongEThEndpoint(cmd *cobra.Command, args []string) error {
+	GetNotesLimit := 1
+
 	for {
 		notes, err := internal.GetDataFromDB(GetNotesLimit)
 		if err != nil {
@@ -51,12 +50,10 @@ func RunReplaceWrongEThEndpoint(cmd *cobra.Command, args []string) error {
 			logger.Infof("mission completed")
 		}
 
-		time.Sleep(time.Second * 5)
-
 		// change db
 		internal.ReplaceEndpoint(notes)
 
-		logger.Infof("notes[0]: %v", notes[0])
+		// logger.Infof("notes[0]: %v", notes[0])
 
 		if _, err := database.CreateNotes(database.DB, notes, true); err != nil {
 			logger.Errorf("err:%v", err)
@@ -64,6 +61,7 @@ func RunReplaceWrongEThEndpoint(cmd *cobra.Command, args []string) error {
 			continue
 		}
 
+		// break
 		time.Sleep(loopTime)
 	}
 }
@@ -75,7 +73,7 @@ func RunFixEmptyTokenSymbol(cmd *cobra.Command, args []string) error {
 
 	var isCountLessThanSize = false
 
-	var pageSize = 10
+	var pageSize = 20000
 
 	for {
 		if isCountLessThanSize {
@@ -141,8 +139,8 @@ func RunFixEmptyTokenSymbol(cmd *cobra.Command, args []string) error {
 			continue
 		}
 		/**/
-		break
-		// time.Sleep(loopTime)
+		// break
+		time.Sleep(loopTime)
 	}
 
 	return nil
