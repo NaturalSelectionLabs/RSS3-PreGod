@@ -23,7 +23,7 @@ func TestGetTokens(t *testing.T) {
 }
 
 func TestGetTxsByBlock(t *testing.T) {
-	res, err := zksync.GetTxsByBlock(1000)
+	res, err := zksync.GetTxsByBlock(1000, true)
 
 	assert.Nil(t, err)
 	assert.True(t, len(res) > 0)

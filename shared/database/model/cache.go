@@ -7,10 +7,11 @@ import (
 )
 
 type Cache struct {
-	Key     string          `gorm:"column:key;primaryKey"`
-	Network string          `gorm:"column:network;primaryKey"`
-	Source  string          `gorm:"column:source;primaryKey"`
-	Data    json.RawMessage `gorm:"column:data;type:jsonb"`
+	Key      string          `gorm:"column:key;primaryKey"`
+	Network  string          `gorm:"column:network;primaryKey"`
+	Source   string          `gorm:"column:source;primaryKey"`
+	BlockNum int64           `gorm:"column:block_num;index:index_block_num"`
+	Data     json.RawMessage `gorm:"column:data;type:jsonb"`
 
 	common.Table
 }
