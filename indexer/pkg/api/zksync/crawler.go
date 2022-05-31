@@ -206,7 +206,7 @@ func (crawler *crawler) setDB(zksyncInfo []*ZkSyncInfo, networkID constants.Netw
 		}
 
 		note, err := crawler.setNote(zksync, networkID, tsp, niBuilder)
-		if err != nil {
+		if err != nil || note == nil {
 			continue
 		}
 
@@ -266,7 +266,7 @@ func (crawler *crawler) setNote(zksyncInfo *ZkSyncInfo, networkID constants.Netw
 	}
 
 	if strings.Contains(strings.ToUpper(zksyncInfo.Type), "NFT") {
-		note.Tags = constants.ItemTagsNFT.ToPqStringArray()
+		return nil, nil
 	}
 
 	return &note, nil
