@@ -65,7 +65,7 @@ func GetTokens() ([]Token, error) {
 func GetTxsByBlock(blockHeight int64, isSaveDB bool) ([]ZKTransaction, error) {
 	var zkTxs []ZKTransaction
 
-	zkTxs, err := getTxsByDb(blockHeight)
+	zkTxs, err := getTxsFromDb(blockHeight)
 	if err == nil && len(zkTxs) > 0 {
 		return zkTxs, nil
 	} else if err != nil {
@@ -84,7 +84,7 @@ func GetTxsByBlock(blockHeight int64, isSaveDB bool) ([]ZKTransaction, error) {
 	if isSaveDB {
 		err = saveTxsInDb(zkTxs, blockHeight)
 		if err != nil {
-			logger.Errorf("zksync save txs in db error: %v", err)
+			logger.Warnf("zksync save txs in db error: %v", err)
 		}
 	}
 
@@ -107,7 +107,7 @@ func getTxsByBlockByUrl(blockHeight int64) ([]ZKTransaction, error) {
 	return zkTxs, nil
 }
 
-func getTxsByDb(blockHeight int64) ([]ZKTransaction, error) {
+func getTxsFromDb(blockHeight int64) ([]ZKTransaction, error) {
 	caches, err := database.QueryCaches(
 		database.DB, constants.NetworkSymbolZkSync.String(), endpoint, blockHeight, blockHeight)
 
@@ -120,7 +120,7 @@ func getTxsByDb(blockHeight int64) ([]ZKTransaction, error) {
 	for _, cache := range caches {
 		zkTx := ZKTransaction{}
 		if err = jsoni.UnmarshalFromString(string(cache.Data), &zkTx); err != nil {
-			return nil, fmt.Errorf("GetTokens UnmarshalFromString error: [%v]", err)
+			return nil, fmt.Errorf("get tokens unmarshal from string error: %v", err)
 		}
 
 		zkTxs = append(zkTxs, zkTx)

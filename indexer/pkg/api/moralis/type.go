@@ -272,6 +272,12 @@ type GetLogsResult struct {
 	Result   []GetLogsItem `json:"result"`
 }
 
+type LogsResult struct {
+	MoralisAttributes
+
+	Result []GetLogsItem `json:"result"`
+}
+
 // Returns related urls based on the network and contract tx hash.
 func GetTxRelatedURLs(
 	network constants.NetworkSymbol,
