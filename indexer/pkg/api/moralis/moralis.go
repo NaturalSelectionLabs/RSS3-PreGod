@@ -419,7 +419,7 @@ func GetErc20TokenMetaData(ctx context.Context, chainType ChainType, addresses [
 
 	limit := 150
 
-	addressBatch := make([][]string, addrLen/limit+1)
+	addressBatch := make([][]string, 0)
 
 	for i := 0; i < addrLen; i += limit {
 		addressBatch = append(addressBatch, addresses[i:Min(i+limit, addrLen)])
