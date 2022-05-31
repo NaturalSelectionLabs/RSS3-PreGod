@@ -82,7 +82,7 @@ func GetTxsByBlock(blockHeight int64, isSaveDB bool) ([]ZKTransaction, error) {
 	}
 
 	if isSaveDB {
-		err = saveTxsInDb(zkTxs, blockHeight)
+		err = saveTxsInDB(zkTxs, blockHeight)
 		if err != nil {
 			logger.Warnf("zksync save txs in db error: %v", err)
 		}
@@ -129,7 +129,7 @@ func getTxsFromDb(blockHeight int64) ([]ZKTransaction, error) {
 	return zkTxs, nil
 }
 
-func saveTxsInDb(zkTxs []ZKTransaction, blockHeight int64) error {
+func saveTxsInDB(zkTxs []ZKTransaction, blockHeight int64) error {
 	caches := []model.Cache{}
 
 	for _, zkTx := range zkTxs {
@@ -145,6 +145,7 @@ func saveTxsInDb(zkTxs []ZKTransaction, blockHeight int64) error {
 			Network:  constants.NetworkSymbolZkSync.String(),
 			Source:   endpoint,
 			BlockNum: blockHeight,
+			LogIndex: -1,
 			Data:     zkTxJson,
 		}
 
