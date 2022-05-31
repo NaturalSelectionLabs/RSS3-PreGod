@@ -9,6 +9,7 @@ import (
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database/datatype"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database/model"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/httpx"
+	"github.com/ipfs/go-cid"
 	lop "github.com/samber/lo/parallel"
 	"github.com/valyala/fastjson"
 	"golang.org/x/sync/errgroup"
@@ -89,7 +90,12 @@ func FormatUrl(url string) string {
 		return ret
 	}
 
-	// 3. normal url
+	// 3. check cid
+	if _, err := cid.Decode(url); err == nil {
+		return "https://ipfs.rss3.page/ipfs/" + url
+	}
+
+	// 4. normal url
 	return url
 }
 
