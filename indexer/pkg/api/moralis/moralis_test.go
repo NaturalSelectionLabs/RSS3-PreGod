@@ -48,6 +48,7 @@ func TestGetLogs(t *testing.T) {
 	t.Parallel()
 
 	result, err := moralis.GetLogs(
+		context.Background(),
 		12605342,
 		12605343,
 		"0x7d655c57f71464B6f83811C55D84009Cd9f5221C",
@@ -68,6 +69,7 @@ func TestGetTxByToken(t *testing.T) {
 	t.Parallel()
 
 	result, err := moralis.GetTxByToken(
+		context.Background(),
 		tokenAddress, tokenId,
 		"eth",
 		config.Config.Indexer.Moralis.ApiKey)
@@ -82,6 +84,7 @@ func TestGetNFTByContract(t *testing.T) {
 	t.Parallel()
 
 	result, err := moralis.GetNFTByContract(
+		context.Background(),
 		"0x827431510a5D249cE4fdB7F00C83a3353F471848", ensContract,
 		"eth",
 		config.Config.Indexer.Moralis.ApiKey)

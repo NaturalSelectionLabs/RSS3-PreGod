@@ -44,7 +44,6 @@ func InitRouter() *gin.Engine {
 	})
 
 	r.GET("/item", api.GetItemHandlerFunc)
-	r.GET("/bio", api.GetBioHandlerFunc)
 	r.GET("/debug/statsviz/*filepath", monitor.Statsviz)
 
 	return r

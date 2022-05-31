@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 
@@ -18,7 +19,7 @@ import (
 // parse the address list into instance list
 // query database
 // format data
-func BatchGetNodeList(req m.BatchGetNodeListRequest) (protocol.File, error, error) {
+func BatchGetNodeList(ctx context.Context, req m.BatchGetNodeListRequest) (protocol.File, error, error) {
 	req.InstanceList = []rss3uri.Instance{}
 	for _, address := range req.AddressList {
 		uri, err := rss3uri.Parse(address)
@@ -29,8 +30,8 @@ func BatchGetNodeList(req m.BatchGetNodeListRequest) (protocol.File, error, erro
 		req.InstanceList = append(req.InstanceList, uri.Instance)
 
 		// get item
-		if !req.Cache {
-			if err := indexer.GetItems("batch_get_node_list", uri.Instance, nil, req.Latest); err != nil {
+		if len(req.LastIdentifier) == 0 {
+			if err := indexer.GetItems("batch_get_node_list", uri.Instance, req.Latest); err != nil {
 				return protocol.File{
 					List: make([]protocol.Item, 0),
 				}, api.ErrorIndexer, err

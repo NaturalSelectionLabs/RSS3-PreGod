@@ -56,10 +56,6 @@ func Initialize() *gin.Engine {
 
 		apiRouter.Use(middleware.ListLimit())
 
-		apiRouter.GET("/:instance", instanceMiddleware, handler.GetInstanceHandlerFunc)
-		apiRouter.GET("/:instance/profiles", instanceMiddleware, handler.GetProfileListHandlerFunc)
-		apiRouter.GET("/:instance/links", instanceMiddleware, handler.GetLinkListHandlerFunc)
-		apiRouter.GET("/:instance/backlinks", instanceMiddleware, handler.GetBackLinkListHandlerFunc)
 		apiRouter.GET("/:instance/assets", instanceMiddleware, handler.GetAssetListHandlerFunc)
 		apiRouter.GET("/:instance/notes", instanceMiddleware, handler.GetNoteListHandlerFunc)
 		apiRouter.POST("/notes", handler.BatchGetNoteListHandlerFunc)

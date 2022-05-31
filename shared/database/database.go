@@ -25,7 +25,7 @@ DECLARE
     _transaction_log_index int;
 BEGIN
     _transaction_log_index := (SELECT COALESCE(MAX(transaction_log_index), -1)
-                               FROM note3
+                               FROM note4
                                WHERE transaction_hash = NEW.transaction_hash);
     IF NEW.transaction_log_index = -1 THEN
         NEW.transaction_log_index = _transaction_log_index + 1;
@@ -36,11 +36,11 @@ $$ LANGUAGE PLPGSQL;
 
 -- CREATE TRIGGER
 BEGIN;
-DROP TRIGGER IF EXISTS trigger_transaction_log_index ON note3;
+DROP TRIGGER IF EXISTS trigger_transaction_log_index ON note4;
 
 CREATE TRIGGER trigger_transaction_log_index
     BEFORE INSERT
-    ON note3
+    ON note4
     FOR EACH ROW
 EXECUTE FUNCTION serial_transaction_log_index();
 END;
@@ -84,17 +84,16 @@ func Setup() error {
 		return err
 	}
 
-	// if err := DB.AutoMigrate(
-	// 	&model.Profile{},
-	// 	&model.Account{},
-	// 	&model.Link{},
-	// 	&model.Asset{},
-	// 	&model.Note{},
-	// 	&model.CrawlerMetadata{},
-	// 	&model.Cache{},
-	// ); err != nil {
-	// 	return err
-	// }
+	//if err := DB.AutoMigrate(
+	//	&model.Profile{},
+	//	&model.Account{},
+	//	&model.Asset{},
+	//	&model.Note{},
+	//	&model.CrawlerMetadata{},
+	//	&model.Cache{},
+	//); err != nil {
+	//	return err
+	//}
 
 	// if err := DB.Exec("CREATE INDEX IF NOT EXISTS index_note_owner_and_date_created ON note (owner, date_created);").Error; err != nil {
 	// 	return err
@@ -105,116 +104,6 @@ func Setup() error {
 	// }
 
 	return nil
-}
-
-func QueryInstance(db *gorm.DB, id string, platform int) error {
-	_, err := QueryProfiles(db, id, platform, []int{})
-
-	return err
-}
-
-func QueryProfiles(db *gorm.DB, id string, platform int, profileSources []int) ([]model.Profile, error) {
-	var profiles []model.Profile
-
-	internalDB := db.Where(&model.Profile{
-		ID:       id,
-		Platform: platform,
-	})
-
-	if len(profileSources) > 0 {
-		internalDB.Where("source IN ?", profileSources)
-	}
-
-	if err := internalDB.Find(&profiles).Error; err != nil {
-		return nil, err
-	}
-
-	return profiles, nil
-}
-
-func QueryAccounts(db *gorm.DB, profileID string, profilePlatform int, source int) ([]model.Account, error) {
-	var accounts []model.Account
-	if err := db.Where(&model.Account{
-		ProfileID:       profileID,
-		ProfilePlatform: profilePlatform,
-		Source:          source,
-	}).Find(&accounts).Error; err != nil {
-		return nil, err
-	}
-
-	return accounts, nil
-}
-
-func QueryLinks(db *gorm.DB, _type *int, form string, linkSources []int, profileSources []int, lastTime *time.Time, limit int) ([]model.Link, error) {
-	var links []model.Link
-
-	internalDB := db.Where(&model.Link{
-		From: form,
-	})
-
-	if _type != nil {
-		internalDB = internalDB.Where("type = ?", *_type)
-	}
-
-	if len(linkSources) > 0 {
-		internalDB = internalDB.Where("source IN ?", linkSources)
-	}
-
-	if lastTime != nil {
-		internalDB = internalDB.Where("created_at < ?", *lastTime)
-	}
-
-	if limit > 0 {
-		if limit > MaxLimit {
-			limit = MaxLimit
-		}
-	} else {
-		limit = MaxLimit
-	}
-
-	internalDB = internalDB.Limit(limit)
-
-	if err := internalDB.Order("created_at DESC").Find(&links).Error; err != nil {
-		return nil, err
-	}
-
-	return links, nil
-}
-
-func QueryLinksByTo(db *gorm.DB, _type *int, to string, linkSources []int, lastTime *time.Time, limit int) ([]model.Link, error) {
-	var links []model.Link
-
-	internalDB := db.Where(&model.Link{
-		To: to,
-	})
-
-	if _type != nil {
-		internalDB = internalDB.Where("type = ?", *_type)
-	}
-
-	if len(linkSources) > 0 {
-		internalDB = internalDB.Where("source IN ?", linkSources)
-	}
-
-	if lastTime != nil {
-		internalDB = internalDB.Where("created_at < ?", *lastTime)
-	}
-
-	if limit > 0 {
-		if limit > MaxLimit {
-			limit = MaxLimit
-		}
-	} else {
-		limit = MaxLimit
-	}
-
-	internalDB = internalDB.Limit(limit)
-
-	if err := internalDB.Order("created_at DESC").Find(&links).Error; err != nil {
-		return nil, err
-	}
-
-	return links, nil
 }
 
 func CreateNote(db *gorm.DB, note *model.Note, updateAll bool) (*model.Note, error) {
@@ -367,22 +256,6 @@ func QueryNotes(db *gorm.DB, uris []string, lastTime *time.Time, limit int) ([]m
 	}
 
 	return notes, nil
-}
-
-func CreateProfile(db *gorm.DB, profile *model.Profile, updateAll bool) (*model.Profile, error) {
-	if err := db.Clauses(NewCreateClauses(updateAll, true, true)...).Create(profile).Error; err != nil {
-		return nil, err
-	}
-
-	return profile, nil
-}
-
-func CreateProfiles(db *gorm.DB, profiles []model.Profile, updateAll bool) ([]model.Profile, error) {
-	if err := db.Clauses(NewCreateClauses(updateAll, true, true)...).Create(&profiles).Error; err != nil {
-		return nil, err
-	}
-
-	return profiles, nil
 }
 
 func CreateCrawlerMetadata(db *gorm.DB, crawler *model.CrawlerMetadata, updateAll bool) (*model.CrawlerMetadata, error) {

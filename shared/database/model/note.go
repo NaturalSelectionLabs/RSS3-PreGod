@@ -13,11 +13,8 @@ var _ schema.Tabler = &Note{}
 
 type Note struct {
 	Identifier          string         `gorm:"column:identifier;primaryKey"`
-	ContractAddress     string         `gorm:"column:contract_address;index"`
 	TransactionHash     string         `gorm:"column:transaction_hash;index:index_note_hash_index"`
 	TransactionLogIndex int            `gorm:"column:transaction_log_index;index:index_note_hash_index"`
-	LogIndex            int            `gorm:"column:log_index"`
-	TokenID             string         `gorm:"column:token_id;index"`
 	Owner               string         `gorm:"colum:owner;index:index_note_owner"`
 	ProfileSourceID     int            `gorm:"colum:profile_source_id;index:index_note_profile_source_id"`
 	RelatedURLs         pq.StringArray `gorm:"column:related_urls;type:text[]"`
@@ -37,7 +34,7 @@ type Note struct {
 }
 
 func (Note) TableName() string {
-	return "note3"
+	return "note4"
 }
 
 func (n Note) String() string {

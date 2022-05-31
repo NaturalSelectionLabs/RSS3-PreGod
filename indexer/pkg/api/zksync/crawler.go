@@ -248,7 +248,6 @@ func (crawler *crawler) setNote(zksyncInfo *ZkSyncInfo, networkID constants.Netw
 		Owner:               author,
 		Tags:                constants.ItemTagsToken.ToPqStringArray(),
 		Authors:             []string{author},
-		ContractAddress:     zksyncInfo.TokenAddress,
 		Source:              constants.NoteSourceNameEthereumERC20.String(),
 		MetadataNetwork:     constants.NetworkSymbolZkSync.String(),
 		MetadataProof:       instanceKey,

@@ -1,6 +1,7 @@
 package gitcoin
 
 import (
+	"context"
 	"fmt"
 	"math/big"
 	"strings"
@@ -12,6 +13,7 @@ import (
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/httpx"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/logger"
 	jsoniter "github.com/json-iterator/go"
+	"go.opentelemetry.io/otel"
 	"gorm.io/gorm"
 )
 
@@ -19,6 +21,10 @@ const gitCoinTokensUrl = "https://gitcoin.co/api/v1/tokens"
 const donationSentTopic = "0x3bb7428b25f9bdad9bd2faa4c6a7a9e5d5882657e96c1d24cc41c1d6c1910a98"
 const bulkCheckoutAddressETH = "0x7d655c57f71464B6f83811C55D84009Cd9f5221C"
 const bulkCheckoutAddressPolygon = "0xb99080b9407436eBb2b8Fe56D45fFA47E9bb8877"
+
+const (
+	TracerNameCrawlerGitCoin = "crawler_gitcoin"
+)
 
 type tokenMeta struct {
 	decimal int
@@ -81,7 +87,14 @@ func NewEthDonationsResult() *EthDonationsResult {
 }
 
 // GetEthDonations returns donations from ethereum and polygon
-func GetEthDonations(fromBlock int64, toBlock int64, chainType GitcoinPlatform) (*EthDonationsResult, error) {
+// nolint:funlen // TODO
+func GetEthDonations(ctx context.Context, fromBlock int64, toBlock int64, chainType GitcoinPlatform) (*EthDonationsResult, error) {
+	tracer := otel.Tracer(TracerNameCrawlerGitCoin)
+
+	ctx, getEER20TokenMetadataFromURLSnap := tracer.Start(ctx, "get_eth_donations")
+
+	defer getEER20TokenMetadataFromURLSnap.End()
+
 	var checkoutAddress string
 
 	var donationApproach DonationApproach
@@ -105,7 +118,7 @@ func GetEthDonations(fromBlock int64, toBlock int64, chainType GitcoinPlatform) 
 	}
 
 	// at most 1000 results in one response. But our default step is only 50, safe.
-	logs, err := moralis.GetLogs(fromBlock, toBlock, checkoutAddress, donationSentTopic,
+	logs, err := moralis.GetLogs(ctx, fromBlock, toBlock, checkoutAddress, donationSentTopic,
 		moralis.ChainType(chainType), config.Config.Indexer.Moralis.ApiKey)
 	ethDonationsResult.MinRateLimit = logs.MinRateLimit
 	ethDonationsResult.MinRateLimitUsed = logs.MinRateLimitUsed
