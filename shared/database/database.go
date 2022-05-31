@@ -314,15 +314,15 @@ func QueryCaches(db *gorm.DB, network, source string, from_block int64, to_block
 
 	if from_block < to_block {
 		internalDB = db.
-			Where("network IN ?", network).
-			Where("source IN ?", source).
-			Where("block_number >= ?", from_block).
-			Where("block_number < ?", to_block+1)
+			Where("network IN (?)", network).
+			Where("source IN (?)", source).
+			Where("block_num >= ?", from_block).
+			Where("block_num < ?", to_block+1)
 	} else if from_block == to_block {
 		internalDB = db.
-			Where("network IN ?", network).
-			Where("source IN ?", source).
-			Where("block_number = ?", from_block)
+			Where("network IN (?)", network).
+			Where("source IN (?)", source).
+			Where("block_num = ?", from_block)
 	}
 
 	if err := internalDB.Find(&caches).Error; err != nil {
@@ -348,7 +348,7 @@ func CreateCache(db *gorm.DB, key, network, source string, data json.RawMessage)
 }
 
 func CreateCaches(db *gorm.DB, caches []model.Cache, updateAll bool) error {
-	if err := db.Clauses(NewCreateClauses(updateAll, true, true)...).Create(&caches).Error; err != nil {
+	if err := db.Clauses(NewCreateClauses(updateAll, false, false)...).Create(&caches).Error; err != nil {
 		return err
 	}
 
