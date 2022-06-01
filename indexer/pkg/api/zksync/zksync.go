@@ -145,7 +145,7 @@ func saveTxsInDB(zkTxs []ZKTransaction, blockHeight int64) error {
 			Network:  constants.NetworkSymbolZkSync.String(),
 			Source:   endpoint,
 			BlockNum: blockHeight,
-			LogIndex: -1,
+			LogIndex: 0,
 			Data:     zkTxJson,
 		}
 

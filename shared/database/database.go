@@ -348,7 +348,7 @@ func CreateCache(db *gorm.DB, key, network, source string, data json.RawMessage)
 }
 
 func CreateCaches(db *gorm.DB, caches []model.Cache, updateAll bool) error {
-	if err := db.Clauses(NewCreateClauses(updateAll, false, false)...).Create(&caches).Error; err != nil {
+	if err := db.Clauses(clause.OnConflict{DoNothing: true}).Create(&caches).Error; err != nil {
 		return err
 	}
 

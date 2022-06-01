@@ -21,7 +21,7 @@ const gitCoinTokensUrl = "https://gitcoin.co/api/v1/tokens"
 const donationSentTopic = "0x3bb7428b25f9bdad9bd2faa4c6a7a9e5d5882657e96c1d24cc41c1d6c1910a98"
 const bulkCheckoutAddressETH = "0x7d655c57f71464B6f83811C55D84009Cd9f5221C"
 const bulkCheckoutAddressPolygon = "0xb99080b9407436eBb2b8Fe56D45fFA47E9bb8877"
-const moralisLogsCacheSource = "gitcoin"
+const moralisLogsCacheSource = "moralis-gitcoin"
 
 const (
 	TracerNameCrawlerGitCoin = "crawler_gitcoin"
@@ -220,9 +220,6 @@ func GetZkSyncDonations(fromBlock int64, toBlock int64) (*ZkSyncDonationResult, 
 
 			return nil, err
 		}
-
-		// set cache
-		// db.CreateCache
 
 		for _, tx := range trxs {
 			if tx.Op.Type != "Transfer" || !tx.Success {

@@ -215,7 +215,7 @@ func GetLogs(
 	logsResult := LogsResult{}
 	networkSymbol := chainType.GetNetworkSymbol().String()
 
-	results, err := getLogsFromDB(fromBlock, toBlock, source)
+	results, err := getLogsFromDB(fromBlock, toBlock, source, networkSymbol)
 	if err == nil && len(results) > 0 {
 		logsResult.Result = results
 
@@ -237,9 +237,9 @@ func GetLogs(
 	return logsResult, nil
 }
 
-func getLogsFromDB(from_block int64, to_block int64, source string) ([]GetLogsItem, error) {
+func getLogsFromDB(from_block int64, to_block int64, source string, network string) ([]GetLogsItem, error) {
 	caches, err := database.QueryCaches(
-		database.DB, constants.NetworkSymbolZkSync.String(), source, from_block, to_block)
+		database.DB, network, source, from_block, to_block)
 
 	if err != nil {
 		return nil, err
@@ -304,6 +304,9 @@ func saveLogsInDB(
 	network string) error {
 	caches := []model.Cache{}
 
+
+	countMap := map[string]int{}
+
 	for _, item := range items {
 		itemJson, err := jsoni.Marshal(item)
 		if err != nil {
@@ -312,11 +315,19 @@ func saveLogsInDB(
 			continue
 		}
 
+		count, ok := countMap[item.TransactionHash]
+		if !ok {
+			countMap[item.TransactionHash] = 0
+		} else {
+			countMap[item.TransactionHash] = count + 1
+		}
+
 		cache := model.Cache{
 			Key:      item.TransactionHash,
 			Network:  network,
 			Source:   source,
 			BlockNum: from_block,
+			LogIndex: countMap[item.TransactionHash],
 			Data:     itemJson,
 		}
 
