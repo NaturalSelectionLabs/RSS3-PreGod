@@ -303,7 +303,6 @@ func saveLogsInDB(
 	network string) error {
 	caches := []model.Cache{}
 
-
 	countMap := map[string]int{}
 
 	for _, item := range items {
