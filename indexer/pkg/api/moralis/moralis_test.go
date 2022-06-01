@@ -55,7 +55,7 @@ func TestGetLogs(t *testing.T) {
 		"0x3bb7428b25f9bdad9bd2faa4c6a7a9e5d5882657e96c1d24cc41c1d6c1910a98",
 		"eth",
 		config.Config.Indexer.Moralis.ApiKey,
-		"gitcoin")
+		"moralis-gitcoin")
 	// assert for nil
 	assert.Nil(t, err)
 
