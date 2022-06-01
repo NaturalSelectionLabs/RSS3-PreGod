@@ -11,7 +11,6 @@ import (
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database/datatype"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database/model"
-	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/constants"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/httpx"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/logger"
 	"github.com/ethereum/go-ethereum/common"
