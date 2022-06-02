@@ -2,10 +2,12 @@ package moralis_test
 
 import (
 	"context"
+	"log"
 	"testing"
 	"time"
 
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/api/moralis"
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/config"
 	_ "github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/logger"
 	"github.com/stretchr/testify/assert"
@@ -16,6 +18,12 @@ var (
 	tokenAddress = "0x57f1887a8bf19b14fc0df6fd9b2acc9af147ea85"
 	ensContract  = "0x57f1887a8bf19b14fc0df6fd9b2acc9af147ea85"
 )
+
+func init() {
+	if err := database.Setup(); err != nil {
+		log.Fatalf("database.Setup err: %v", err)
+	}
+}
 
 func TestGetNFT(t *testing.T) {
 	t.Parallel()
