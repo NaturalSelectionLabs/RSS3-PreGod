@@ -233,6 +233,8 @@ func GetLogs(
 		logger.Warnf("network[%s], save logs to db error: %v", networkSymbol, err)
 	}
 
+	logsResult.Result = urlLogsResult.Result
+
 	return logsResult, nil
 }
 
@@ -276,6 +278,7 @@ func getLogsFromUrl(
 		"%s/api/v2/%s/logs?chain=%s&from_block=%d&to_block=%d&topic0=%s",
 		endpoint, address, string(chainType), fromBlock, toBlock, topic,
 	)
+	logger.Debugf("url: %s", url)
 
 	response, err := requestMoralisApi(ctx, url, apiKey, false)
 
