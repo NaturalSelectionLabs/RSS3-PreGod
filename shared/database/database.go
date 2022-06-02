@@ -85,16 +85,16 @@ func Setup() error {
 		return err
 	}
 
-	//if err := DB.AutoMigrate(
+	// if err := DB.AutoMigrate(
 	//	&model.Profile{},
 	//	&model.Account{},
 	//	&model.Asset{},
 	//	&model.Note{},
 	//	&model.CrawlerMetadata{},
-	//	&model.Cache{},
-	//); err != nil {
-	//	return err
-	//}
+	// 	&model.Cache{},
+	// ); err != nil {
+	// 	return err
+	// }
 
 	// if err := DB.Exec("CREATE INDEX IF NOT EXISTS index_note_owner_and_date_created ON note (owner, date_created);").Error; err != nil {
 	// 	return err

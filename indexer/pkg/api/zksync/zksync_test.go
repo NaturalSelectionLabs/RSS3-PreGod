@@ -6,11 +6,18 @@ import (
 
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/api/zksync"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database"
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database/model"
 	"github.com/stretchr/testify/assert"
 )
 
 func init() {
 	if err := database.Setup(); err != nil {
+		log.Fatalf("database.Setup err: %v", err)
+	}
+
+	if err := database.DB.AutoMigrate(
+		&model.Cache{},
+	); err != nil {
 		log.Fatalf("database.Setup err: %v", err)
 	}
 }

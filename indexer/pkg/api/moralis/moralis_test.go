@@ -8,6 +8,7 @@ import (
 
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/api/moralis"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database"
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database/model"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/config"
 	_ "github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/logger"
 	"github.com/stretchr/testify/assert"
@@ -21,6 +22,12 @@ var (
 
 func init() {
 	if err := database.Setup(); err != nil {
+		log.Fatalf("database.Setup err: %v", err)
+	}
+
+	if err := database.DB.AutoMigrate(
+		&model.Cache{},
+	); err != nil {
 		log.Fatalf("database.Setup err: %v", err)
 	}
 }
