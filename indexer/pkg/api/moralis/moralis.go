@@ -336,43 +336,46 @@ func GetErc20Transfers(ctx context.Context, userAddress string, chainType ChainT
 
 	defer trace.End()
 
-	offset := 0
-	// transferItems := make([]ERC20TransferItem, 0)
+	var (
+		transferItems = make([]ERC20TransferItem, 0)
+		count         = 0
+		cursor        = ""
+	)
 
-	// for {
-	// 	transfer, err := getErc20Once(ctx, userAddress, chainType, fromDate, apiKey, offset)
-	// 	if err != nil {
-	// 		logger.Errorf("get erc20 once error: %v", err)
+	for {
+		// Pull up to 500 at a time
+		if count == 5 {
+			break
+		}
 
-	// 		return nil, err
-	// 	}
+		transfer, err := getErc20Once(ctx, userAddress, chainType, fromDate, apiKey, cursor)
+		if err != nil {
+			logger.Errorf("get erc20 once error: %v", err)
 
-	// 	transferItems = append(transferItems, transfer.Result...)
+			return nil, err
+		}
 
-	// 	if len(transferItems) >= 1000 {
-	// 		break
-	// 	}
+		transferItems = append(transferItems, transfer.Result...)
 
-	// 	if len(transfer.Result) < transfer.PageSize {
-	// 		break
-	// 	}
+		if transfer.Cursor == "" {
+			break
+		}
 
-	// 	offset += transfer.PageSize
-	// }
+		cursor = transfer.Cursor
 
-	transfer, err := getErc20Once(ctx, userAddress, chainType, fromDate, apiKey, offset)
-	if err != nil {
-		logger.Errorf("get erc20 once error: %v", err)
-
-		return nil, err
+		count += 1
 	}
 
-	// return transferItems, nil
-
-	return transfer.Result, nil
+	return transferItems, nil
 }
 
-func getErc20Once(ctx context.Context, userAddress string, chainType ChainType, fromDate string, apiKey string, offest int) (*ERC20Transfer, error) {
+func getErc20Once(
+	ctx context.Context,
+	userAddress string,
+	chainType ChainType,
+	fromDate string,
+	apiKey string,
+	cursor string) (*ERC20Transfer, error) {
 	_, trace := otel.Tracer(TracerNameCrawlerMoralis).Start(ctx, "get_erc20_once")
 
 	trace.SetAttributes(
@@ -385,8 +388,8 @@ func getErc20Once(ctx context.Context, userAddress string, chainType ChainType, 
 	// 	endpoint, userAddress, chainType, 0, offest, url.QueryEscape(fromDate),
 	// )
 
-	requestURL := fmt.Sprintf("%s/api/v2/%s/erc20/transfers?chain=%s&from_block=%d&from_date=%s",
-		endpoint, userAddress, chainType, 0, url.QueryEscape(fromDate))
+	requestURL := fmt.Sprintf("%s/api/v2/%s/erc20/transfers?chain=%s&from_block=%d&from_date=%s&cursor=%s",
+		endpoint, userAddress, chainType, 0, url.QueryEscape(fromDate), cursor)
 
 	response, err := requestMoralisApi(ctx, requestURL, apiKey, true)
 
@@ -690,43 +693,46 @@ func GetEthTransfers(ctx context.Context, userAddress string, chainType ChainTyp
 
 	defer trace.End()
 
-	// var (
-	// 	transferItems = make([]ETHTransferItem, 0)
-	// 	wg            sync.WaitGroup
-	// )
+	var (
+		transferItems = make([]ETHTransferItem, 0)
+		count         = 0
+		cursor        = ""
+	)
 
-	// wg.Add(2)
+	for {
+		// Pull up to 500 at a time
+		if count == 5 {
+			break
+		}
 
-	// for offset := 0; offset < 1000; offset += 500 {
-	// 	go func(offset int) {
-	// 		defer func() {
-	// 			wg.Done()
-	// 			recover()
-	// 		}()
+		transfer, err := getETHOnce(ctx, userAddress, chainType, fromDate, apiKey, cursor)
+		if err != nil {
+			logger.Errorf("get eth once error: %v", err)
 
-	// 		transfer, err := getETHOnce(ctx, userAddress, chainType, fromDate, apiKey, offset)
-	// 		if err != nil {
-	// 			logger.Errorf("get eth once error: %v", err)
+			break
+		}
 
-	// 			return
-	// 		}
+		transferItems = append(transferItems, transfer.Result...)
 
-	// 		transferItems = append(transferItems, transfer.Result...)
-	// 	}(offset)
-	// }
+		if transfer.Cursor == "" {
+			break
+		}
 
-	transfer, err := getETHOnce(ctx, userAddress, chainType, fromDate, apiKey, 0)
+		cursor = transfer.Cursor
 
-	if err != nil {
-		logger.Errorf("get eth once error: %v", err)
+		count += 1
 	}
 
-	// wg.Wait()
-
-	return transfer.Result, nil
+	return transferItems, nil
 }
 
-func getETHOnce(ctx context.Context, userAddress string, chainType ChainType, fromDate string, apiKey string, offest int) (*ETHTransfer, error) {
+func getETHOnce(
+	ctx context.Context,
+	userAddress string,
+	chainType ChainType,
+	fromDate string,
+	apiKey string,
+	cursor string) (*ETHTransfer, error) {
 	ctx, trace := otel.Tracer(TracerNameCrawlerMoralis).Start(ctx, "get_eth_once")
 	trace.SetAttributes(
 		attribute.String("user_address", userAddress),
@@ -735,8 +741,8 @@ func getETHOnce(ctx context.Context, userAddress string, chainType ChainType, fr
 
 	defer trace.End()
 
-	requestURL := fmt.Sprintf("%s/api/v2/%s?chain=%s&from_block=%d&from_date=%s",
-		endpoint, userAddress, chainType, 0, url.QueryEscape(fromDate))
+	requestURL := fmt.Sprintf("%s/api/v2/%s?chain=%s&from_block=%d&from_date=%s&cursor=%s",
+		endpoint, userAddress, chainType, 0, url.QueryEscape(fromDate), cursor)
 
 	response, err := requestMoralisApi(ctx, requestURL, apiKey, true)
 

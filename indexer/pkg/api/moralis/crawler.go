@@ -69,7 +69,7 @@ func getGatewayClient() {
 	client = c
 }
 
-//nolint:funlen,gocognit,maintidx // disable line length check
+//nolint:funlen,gocognit // disable line length check
 func (c *moralisCrawler) setNFTTransfers(
 	ctx context.Context,
 	param crawler.WorkParam,
@@ -511,7 +511,7 @@ func (c *moralisCrawler) setNative(
 	return nil
 }
 
-// nolint:funlen,gocognit // TODO
+//nolint:funlen // disable line length check
 func (c *moralisCrawler) Work(param crawler.WorkParam) error {
 	tracer := otel.Tracer(TracerNameCrawlerMoralis)
 
