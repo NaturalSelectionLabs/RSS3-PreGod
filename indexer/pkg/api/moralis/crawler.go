@@ -91,9 +91,6 @@ func (c *moralisCrawler) setNFTTransfers(
 		wg           sync.WaitGroup
 		nftTransfers = NFTTransferResult{}
 		assets       = NFTResult{}
-		errorCh      = make(chan error, 1)
-		doneCh       = make(chan bool, 1)
-		open         = true
 	)
 
 	// nftTransfers for notes
@@ -111,9 +108,7 @@ func (c *moralisCrawler) setNFTTransfers(
 		if err != nil {
 			logger.Errorf("moralis.GetNFTTransfers: get nft transfers: %v", err)
 
-			if open {
-				errorCh <- err
-			}
+			return
 		}
 	}()
 
@@ -130,27 +125,11 @@ func (c *moralisCrawler) setNFTTransfers(
 		if err != nil {
 			logger.Errorf("moralis.GetNFTs: get nft: %v", err)
 
-			if open {
-				errorCh <- err
-			}
+			return
 		}
 	}()
 
-	go func() {
-		wg.Wait()
-		close(doneCh)
-	}()
-
-	select {
-	case <-doneCh:
-		break
-	case err := <-errorCh:
-		open = false
-
-		close(errorCh)
-
-		return err
-	}
+	wg.Wait()
 
 	// check if each asset has a proof (only for logging issues)
 	for _, asset := range assets.Result {
@@ -562,9 +541,6 @@ func (c *moralisCrawler) Work(param crawler.WorkParam) error {
 		owner         = rss3uri.NewAccountInstance(param.OwnerID, param.OwnerPlatformID.Symbol()).UriString()
 		author        = rss3uri.NewAccountInstance(param.Identity, constants.PlatformSymbolEthereum).UriString()
 		wg            sync.WaitGroup
-		errorCh       = make(chan error, 1)
-		doneCh        = make(chan bool, 1)
-		open          = true
 	)
 
 	wg.Add(3)
@@ -579,9 +555,7 @@ func (c *moralisCrawler) Work(param crawler.WorkParam) error {
 		if err != nil {
 			logger.Errorf("moralis.setNFTTransfers: fail to set nft transfers in db: %v", err)
 
-			if open {
-				errorCh <- err
-			}
+			return
 		}
 	}()
 
@@ -595,9 +569,7 @@ func (c *moralisCrawler) Work(param crawler.WorkParam) error {
 		if err != nil {
 			logger.Errorf("moralis.setERC20: fail to set erc20 in db: %v", err)
 
-			if open {
-				errorCh <- err
-			}
+			return
 		}
 	}()
 
@@ -611,27 +583,11 @@ func (c *moralisCrawler) Work(param crawler.WorkParam) error {
 		if err != nil {
 			logger.Errorf("moralis.setNative: fail to set eth in db: %v", err)
 
-			if open {
-				errorCh <- err
-			}
+			return
 		}
 	}()
 
-	go func() {
-		wg.Wait()
-		close(doneCh)
-	}()
-
-	select {
-	case <-doneCh:
-		break
-	case err := <-errorCh:
-		open = false
-
-		close(errorCh)
-
-		return err
-	}
+	wg.Wait()
 
 	// Duplication is not expected. But just in case, we double check it
 	// and leave some debug info for future analysis.

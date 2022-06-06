@@ -681,9 +681,6 @@ func GetEthTransfers(ctx context.Context, userAddress string, chainType ChainTyp
 	var (
 		transferItems = make([]ETHTransferItem, 0)
 		wg            sync.WaitGroup
-		errorCh       = make(chan error, 1)
-		doneCh        = make(chan bool, 1)
-		open          = true
 	)
 
 	wg.Add(2)
@@ -699,10 +696,6 @@ func GetEthTransfers(ctx context.Context, userAddress string, chainType ChainTyp
 			if err != nil {
 				logger.Errorf("get eth once error: %v", err)
 
-				if open && offset > 0 {
-					errorCh <- err
-				}
-
 				return
 			}
 
@@ -710,21 +703,7 @@ func GetEthTransfers(ctx context.Context, userAddress string, chainType ChainTyp
 		}(offset)
 	}
 
-	go func() {
-		wg.Wait()
-		close(doneCh)
-	}()
-
-	select {
-	case <-doneCh:
-		break
-	case err := <-errorCh:
-		open = false
-
-		close(errorCh)
-
-		return []ETHTransferItem{}, err
-	}
+	wg.Wait()
 
 	return transferItems, nil
 }
