@@ -90,21 +90,21 @@ func (crawler *crawler) run() error {
 	}
 
 	// get and format zksync metadata
-	zksyncInfos, err := crawler.formatZkSyncMetadata(config.FromHeight, endBlockHeight)
-	if err != nil {
-		logger.Errorf("zksync get info error: %v", err)
+	crawler.formatZkSyncMetadata(config.FromHeight, endBlockHeight)
+	// if err != nil {
+	// 	logger.Errorf("zksync get info error: %v", err)
 
-		return err
-	}
+	// 	return err
+	// }
 
-	if len(zksyncInfos) > 0 {
-		err := crawler.setDB(zksyncInfos, constants.NetworkIDEthereum)
-		if err != nil {
-			logger.Errorf("set db error: %v", err)
+	// if len(zksyncInfos) > 0 {
+	// 	err := crawler.setDB(zksyncInfos, constants.NetworkIDEthereum)
+	// 	if err != nil {
+	// 		logger.Errorf("set db error: %v", err)
 
-			return err
-		}
-	}
+	// 		return err
+	// 	}
+	// }
 
 	logger.Infof("zksync: from [%d] to [%d], the latest confirmed block height [%d]",
 		config.FromHeight, endBlockHeight, latestConfirmedBlockHeight)

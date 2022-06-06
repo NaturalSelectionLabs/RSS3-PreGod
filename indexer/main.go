@@ -6,12 +6,10 @@ import (
 	_ "net/http/pprof"
 	"os"
 
-	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/api/arweave"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/api/gitcoin"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/api/zksync"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/autoupdater"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/router"
-	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/subscribe/ens"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/cache"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/config"
@@ -113,18 +111,18 @@ func RunAutoCrawler(cmd *cobra.Command, args []string) error {
 	// gitcoin crawler
 	go gitcoin.Start(gitcoin.Polygon)
 	go gitcoin.Start(gitcoin.ETH)
-	go gitcoin.Start(gitcoin.ZkSync)
+	// go gitcoin.Start(gitcoin.ZkSync)
 	logger.Info("Start crawling arweave")
 
 	// subscribe ens
-	go ens.Run()
+	// go ens.Run()
 
 	//arweave crawler
-	ar := arweave.NewCrawler(arweave.MirrorUploader, arweave.DefaultCrawlConfig)
+	// ar := arweave.NewCrawler(arweave.MirrorUploader, arweave.DefaultCrawlConfig)
 
-	if err := ar.Start(); err != nil {
-		logger.Errorf("arweave crawler start error: %v", err)
-	}
+	// if err := ar.Start(); err != nil {
+	// 	logger.Errorf("arweave crawler start error: %v", err)
+	// }
 
 	srv.Start()
 

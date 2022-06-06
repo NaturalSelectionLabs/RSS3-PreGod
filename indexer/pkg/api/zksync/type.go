@@ -133,7 +133,7 @@ var (
 		config:           DefaultZksyncConfig,
 		platform:         ZkSync,
 		networkID:        constants.NetworkIDZkSync,
-		platformID:       constants.PlatformID(1010),
+		platformID:       constants.PlatformID(2000),
 		metadataIdentity: "zksync",
 	}
 )

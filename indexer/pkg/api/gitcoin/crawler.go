@@ -59,7 +59,7 @@ var (
 			config:           DefaultEthConfig,
 			platform:         ETH,
 			networkID:        constants.NetworkIDEthereum,
-			platformID:       constants.PlatformID(1003),
+			platformID:       constants.PlatformID(2001),
 			metadataIdentity: string("gitcoin-" + ETH),
 		},
 	}
@@ -69,7 +69,7 @@ var (
 			config:           DefaultPolygonConfig,
 			platform:         Polygon,
 			networkID:        constants.NetworkIDPolygon,
-			platformID:       constants.PlatformID(1004),
+			platformID:       constants.PlatformID(2002),
 			metadataIdentity: string("gitcoin-" + Polygon),
 		},
 	}
@@ -279,14 +279,14 @@ func (property *xscanRunCrawlerProperty) run() error {
 		return err
 	}
 
-	if len(ethDonationsResult.Donations) > 0 {
-		err := setDB(ethDonationsResult.Donations, property.networkID, ethDonationsResult.AdminAddresses)
-		if err != nil {
-			logger.Errorf("set db error: %v", err)
+	// if len(ethDonationsResult.Donations) > 0 {
+	// 	err := setDB(ethDonationsResult.Donations, property.networkID, ethDonationsResult.AdminAddresses)
+	// 	if err != nil {
+	// 		logger.Errorf("set db error: %v", err)
 
-			return err
-		}
-	}
+	// 		return err
+	// 	}
+	// }
 
 	logger.Infof("Getting [%s] donations, from [%d] to [%d], the latest confirmed block height [%d]",
 		property.platform, config.FromHeight, endBlockHeight, latestConfirmedBlockHeight)
