@@ -8,7 +8,9 @@ import (
 	"time"
 
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/api/nft_utils"
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database/datatype"
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database/model"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/httpx"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/logger"
 	"github.com/ethereum/go-ethereum/common"
@@ -200,8 +202,72 @@ func GetNFTTransfers(
 }
 
 func GetLogs(
-	ctx context.Context, fromBlock int64, toBlock int64, address string, topic string, chainType ChainType, apiKey string,
-) (GetLogsResult, error) {
+	ctx context.Context,
+	fromBlock int64,
+	toBlock int64,
+	address string,
+	topic string,
+	chainType ChainType,
+	apiKey string,
+	source string,
+) (LogsResult, error) {
+	logsResult := LogsResult{}
+	networkSymbol := chainType.GetNetworkSymbol().String()
+
+	results, err := getLogsFromDB(fromBlock, toBlock, source, networkSymbol)
+	if err == nil && len(results) > 0 {
+		logsResult.Result = results
+
+		return logsResult, nil
+	} else if err != nil {
+		logger.Warnf("network[%s], get logs from db error: %v", networkSymbol, err)
+	}
+
+	urlLogsResult, err := getLogsFromUrl(ctx, fromBlock, toBlock, address, topic, chainType, apiKey)
+	if err != nil {
+		return logsResult, fmt.Errorf("network[%s] get logs from usrl err: %v", networkSymbol, err)
+	}
+
+	err = saveLogsInDB(urlLogsResult.Result, fromBlock, source, networkSymbol)
+	if err != nil {
+		logger.Warnf("network[%s], save logs to db error: %v", networkSymbol, err)
+	}
+
+	logsResult.Result = urlLogsResult.Result
+
+	return logsResult, nil
+}
+
+func getLogsFromDB(from_block int64, to_block int64, source string, network string) ([]GetLogsItem, error) {
+	caches, err := database.QueryCaches(
+		database.DB, network, source, from_block, to_block)
+
+	if err != nil {
+		return nil, err
+	}
+
+	var items = []GetLogsItem{}
+
+	for _, cache := range caches {
+		item := GetLogsItem{}
+		if err = jsoni.UnmarshalFromString(string(cache.Data), &item); err != nil {
+			return nil, fmt.Errorf("get logs from db unmarshal from string error: %v", err)
+		}
+
+		items = append(items, item)
+	}
+
+	return items, nil
+}
+
+func getLogsFromUrl(
+	ctx context.Context,
+	fromBlock int64,
+	toBlock int64,
+	address string,
+	topic string,
+	chainType ChainType,
+	apiKey string) (GetLogsResult, error) {
 	tracer := otel.Tracer(TracerNameCrawlerMoralis)
 
 	ctx, getLogListSnap := tracer.Start(ctx, "get_erc20_token_metadata_data_from_url")
@@ -212,6 +278,7 @@ func GetLogs(
 		"%s/api/v2/%s/logs?chain=%s&from_block=%d&to_block=%d&topic0=%s",
 		endpoint, address, string(chainType), fromBlock, toBlock, topic,
 	)
+	logger.Debugf("url: %s", url)
 
 	response, err := requestMoralisApi(ctx, url, apiKey, false)
 
@@ -219,17 +286,60 @@ func GetLogs(
 		return GetLogsResult{}, err
 	}
 
-	res := new(GetLogsResult)
+	res := GetLogsResult{}
 	SetMoralisAttributes(&res.MoralisAttributes, response)
 
 	err = jsoni.Unmarshal(response.Body, &res)
 	if err != nil {
 		logger.Errorf("unmarshal error: [%v]", err)
 
-		return *res, err
+		return GetLogsResult{}, err
 	}
 
-	return *res, nil
+	return res, nil
+}
+
+func saveLogsInDB(
+	items []GetLogsItem,
+	from_block int64,
+	source string,
+	network string) error {
+	caches := []model.Cache{}
+
+	countMap := map[string]int{}
+
+	for _, item := range items {
+		itemJson, err := jsoni.Marshal(item)
+		if err != nil {
+			logger.Warnf("save logs in db marshal error: %v, network: %s", err, network)
+
+			continue
+		}
+
+		count, ok := countMap[item.TransactionHash]
+		if !ok {
+			countMap[item.TransactionHash] = 0
+		} else {
+			countMap[item.TransactionHash] = count + 1
+		}
+
+		cache := model.Cache{
+			Key:      item.TransactionHash,
+			Network:  network,
+			Source:   source,
+			BlockNum: from_block,
+			LogIndex: countMap[item.TransactionHash],
+			Data:     itemJson,
+		}
+
+		caches = append(caches, cache)
+	}
+
+	if err := database.CreateCaches(database.DB, caches, true); err != nil {
+		return fmt.Errorf("network[%s] logs height[%d] save item in db error: %v", network, from_block, err)
+	}
+
+	return nil
 }
 
 // Gets all NFT items of user

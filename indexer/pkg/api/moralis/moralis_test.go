@@ -2,10 +2,13 @@ package moralis_test
 
 import (
 	"context"
+	"log"
 	"testing"
 	"time"
 
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/indexer/pkg/api/moralis"
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database"
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database/model"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/config"
 	_ "github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/logger"
 	"github.com/stretchr/testify/assert"
@@ -16,6 +19,18 @@ var (
 	tokenAddress = "0x57f1887a8bf19b14fc0df6fd9b2acc9af147ea85"
 	ensContract  = "0x57f1887a8bf19b14fc0df6fd9b2acc9af147ea85"
 )
+
+func init() {
+	if err := database.Setup(); err != nil {
+		log.Fatalf("database.Setup err: %v", err)
+	}
+
+	if err := database.DB.AutoMigrate(
+		&model.Cache{},
+	); err != nil {
+		log.Fatalf("database.Setup err: %v", err)
+	}
+}
 
 func TestGetNFT(t *testing.T) {
 	t.Parallel()
@@ -54,7 +69,8 @@ func TestGetLogs(t *testing.T) {
 		"0x7d655c57f71464B6f83811C55D84009Cd9f5221C",
 		"0x3bb7428b25f9bdad9bd2faa4c6a7a9e5d5882657e96c1d24cc41c1d6c1910a98",
 		"eth",
-		config.Config.Indexer.Moralis.ApiKey)
+		config.Config.Indexer.Moralis.ApiKey,
+		"moralis-gitcoin")
 	// assert for nil
 	assert.Nil(t, err)
 

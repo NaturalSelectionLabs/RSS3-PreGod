@@ -2,6 +2,7 @@ package database
 
 import (
 	"encoding/json"
+	"fmt"
 	"strings"
 	"time"
 
@@ -84,16 +85,16 @@ func Setup() error {
 		return err
 	}
 
-	//if err := DB.AutoMigrate(
+	// if err := DB.AutoMigrate(
 	//	&model.Profile{},
 	//	&model.Account{},
 	//	&model.Asset{},
 	//	&model.Note{},
 	//	&model.CrawlerMetadata{},
-	//	&model.Cache{},
-	//); err != nil {
-	//	return err
-	//}
+	// 	&model.Cache{},
+	// ); err != nil {
+	// 	return err
+	// }
 
 	// if err := DB.Exec("CREATE INDEX IF NOT EXISTS index_note_owner_and_date_created ON note (owner, date_created);").Error; err != nil {
 	// 	return err
@@ -302,6 +303,35 @@ func QueryCache(db *gorm.DB, key, network, source string) (json.RawMessage, erro
 	return cache.Data, nil
 }
 
+func QueryCaches(db *gorm.DB, network, source string, from_block int64, to_block int64) ([]model.Cache, error) {
+	if to_block < from_block {
+		return nil, fmt.Errorf("to_block must be greater than from_block")
+	}
+
+	var caches []model.Cache
+
+	var internalDB *gorm.DB
+
+	if from_block < to_block {
+		internalDB = db.
+			Where("network IN (?)", network).
+			Where("source IN (?)", source).
+			Where("block_num >= ?", from_block).
+			Where("block_num < ?", to_block+1)
+	} else if from_block == to_block {
+		internalDB = db.
+			Where("network IN (?)", network).
+			Where("source IN (?)", source).
+			Where("block_num = ?", from_block)
+	}
+
+	if err := internalDB.Find(&caches).Error; err != nil {
+		return nil, err
+	}
+
+	return caches, nil
+}
+
 func CreateCache(db *gorm.DB, key, network, source string, data json.RawMessage) error {
 	return db.
 		Model((*model.Cache)(nil)).
@@ -315,6 +345,14 @@ func CreateCache(db *gorm.DB, key, network, source string, data json.RawMessage)
 			Data:    data,
 		}).
 		Error
+}
+
+func CreateCaches(db *gorm.DB, caches []model.Cache, updateAll bool) error {
+	if err := db.Clauses(clause.OnConflict{DoNothing: true}).Create(&caches).Error; err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func NewCreateClauses(updateAll bool, updateMetadata bool, updateAttachments bool) []clause.Expression {

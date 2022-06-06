@@ -1,8 +1,12 @@
 package zksync
 
 import (
+	"encoding/json"
 	"fmt"
 
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database"
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/database/model"
+	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/constants"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/httpx"
 	"github.com/NaturalSelectionLabs/RSS3-PreGod/shared/pkg/logger"
 	jsoniter "github.com/json-iterator/go"
@@ -58,7 +62,36 @@ func GetTokens() ([]Token, error) {
 	return tokens, nil
 }
 
-func GetTxsByBlock(blockHeight int64) ([]ZKTransaction, error) {
+func GetTxsByBlock(blockHeight int64, isSaveDB bool) ([]ZKTransaction, error) {
+	var zkTxs []ZKTransaction
+
+	zkTxs, err := getTxsFromDb(blockHeight)
+	if err == nil && len(zkTxs) > 0 {
+		return zkTxs, nil
+	} else if err != nil {
+		logger.Warnf("zksync get txs by db error: %v", err)
+	}
+
+	zkTxs, err = getTxsByBlockByUrl(blockHeight)
+	if err != nil {
+		logger.Warnf("get txs By block by url error: %v", err)
+	}
+
+	if len(zkTxs) == 0 {
+		return zkTxs, nil
+	}
+
+	if isSaveDB {
+		err = saveTxsInDB(zkTxs, blockHeight)
+		if err != nil {
+			logger.Warnf("zksync save txs in db error: %v", err)
+		}
+	}
+
+	return zkTxs, nil
+}
+
+func getTxsByBlockByUrl(blockHeight int64) ([]ZKTransaction, error) {
 	url := fmt.Sprintf("%s/api/v0.1/blocks/%d/transactions", endpoint, blockHeight)
 	response, err := httpx.Get(url, nil)
 
@@ -72,6 +105,58 @@ func GetTxsByBlock(blockHeight int64) ([]ZKTransaction, error) {
 	}
 
 	return zkTxs, nil
+}
+
+func getTxsFromDb(blockHeight int64) ([]ZKTransaction, error) {
+	caches, err := database.QueryCaches(
+		database.DB, constants.NetworkSymbolZkSync.String(), endpoint, blockHeight, blockHeight)
+
+	if err != nil {
+		return nil, err
+	}
+
+	var zkTxs = []ZKTransaction{}
+
+	for _, cache := range caches {
+		zkTx := ZKTransaction{}
+		if err = jsoni.UnmarshalFromString(string(cache.Data), &zkTx); err != nil {
+			return nil, fmt.Errorf("get tokens unmarshal from string error: %v", err)
+		}
+
+		zkTxs = append(zkTxs, zkTx)
+	}
+
+	return zkTxs, nil
+}
+
+func saveTxsInDB(zkTxs []ZKTransaction, blockHeight int64) error {
+	caches := []model.Cache{}
+
+	for _, zkTx := range zkTxs {
+		zkTxJson, err := json.Marshal(zkTx)
+		if err != nil {
+			logger.Warnf("zksync[%s] save txs in db error: %v", zkTx.TxHash, err)
+
+			continue
+		}
+
+		cache := model.Cache{
+			Key:      zkTx.TxHash,
+			Network:  constants.NetworkSymbolZkSync.String(),
+			Source:   endpoint,
+			BlockNum: blockHeight,
+			LogIndex: 0,
+			Data:     zkTxJson,
+		}
+
+		caches = append(caches, cache)
+	}
+
+	if err := database.CreateCaches(database.DB, caches, true); err != nil {
+		return fmt.Errorf("zksync block height[%d] save txs in db error: %v", blockHeight, err)
+	}
+
+	return nil
 }
 
 func UpdateZksToken() error {

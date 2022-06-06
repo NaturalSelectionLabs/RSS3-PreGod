@@ -151,7 +151,7 @@ func (crawler *crawler) formatZkSyncMetadata(fromBlock int64, toBlock int64) ([]
 	zksyncInfos := []*ZkSyncInfo{}
 
 	for i := fromBlock; i <= toBlock; i++ {
-		trxs, err := GetTxsByBlock(i)
+		trxs, err := GetTxsByBlock(i, true)
 		if err != nil {
 			logger.Errorf("get txs by block error: [%v]", err)
 

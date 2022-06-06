@@ -21,6 +21,7 @@ const gitCoinTokensUrl = "https://gitcoin.co/api/v1/tokens"
 const donationSentTopic = "0x3bb7428b25f9bdad9bd2faa4c6a7a9e5d5882657e96c1d24cc41c1d6c1910a98"
 const bulkCheckoutAddressETH = "0x7d655c57f71464B6f83811C55D84009Cd9f5221C"
 const bulkCheckoutAddressPolygon = "0xb99080b9407436eBb2b8Fe56D45fFA47E9bb8877"
+const moralisLogsCacheSource = "moralis-gitcoin"
 
 const (
 	TracerNameCrawlerGitCoin = "crawler_gitcoin"
@@ -118,17 +119,17 @@ func GetEthDonations(ctx context.Context, fromBlock int64, toBlock int64, chainT
 	}
 
 	// at most 1000 results in one response. But our default step is only 50, safe.
-	logs, err := moralis.GetLogs(ctx, fromBlock, toBlock, checkoutAddress, donationSentTopic,
-		moralis.ChainType(chainType), config.Config.Indexer.Moralis.ApiKey)
-	ethDonationsResult.MinRateLimit = logs.MinRateLimit
-	ethDonationsResult.MinRateLimitUsed = logs.MinRateLimitUsed
+	result, err := moralis.GetLogs(ctx, fromBlock, toBlock, checkoutAddress, donationSentTopic,
+		moralis.ChainType(chainType), config.Config.Indexer.Moralis.ApiKey, moralisLogsCacheSource)
+	ethDonationsResult.MinRateLimit = result.MinRateLimit
+	ethDonationsResult.MinRateLimitUsed = result.MinRateLimitUsed
 
 	if err != nil {
 		// MinRateLimit must be sent here
 		return ethDonationsResult, fmt.Errorf("getLogs error: [%v]", err)
 	}
 
-	for _, item := range logs.Result {
+	for _, item := range result.Result {
 		donor := "0x" + item.Topic3[26:]
 		tokenAddress := "0x" + item.Topic1[26:]
 		adminAddress := "0x" + item.Data[26:]
@@ -213,7 +214,7 @@ func GetZkSyncDonations(fromBlock int64, toBlock int64) (*ZkSyncDonationResult, 
 	ethDonationsResult := NewZkSyncDonationResult()
 
 	for i := fromBlock; i <= toBlock; i++ {
-		trxs, err := zksync.GetTxsByBlock(i)
+		trxs, err := zksync.GetTxsByBlock(i, false)
 		if err != nil {
 			logger.Errorf("get txs by block error: [%v]", err)
 
