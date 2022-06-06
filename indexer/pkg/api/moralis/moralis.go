@@ -337,30 +337,39 @@ func GetErc20Transfers(ctx context.Context, userAddress string, chainType ChainT
 	defer trace.End()
 
 	offset := 0
-	transferItems := make([]ERC20TransferItem, 0)
+	// transferItems := make([]ERC20TransferItem, 0)
 
-	for {
-		transfer, err := getErc20Once(ctx, userAddress, chainType, fromDate, apiKey, offset)
-		if err != nil {
-			logger.Errorf("get erc20 once error: %v", err)
+	// for {
+	// 	transfer, err := getErc20Once(ctx, userAddress, chainType, fromDate, apiKey, offset)
+	// 	if err != nil {
+	// 		logger.Errorf("get erc20 once error: %v", err)
 
-			return nil, err
-		}
+	// 		return nil, err
+	// 	}
 
-		transferItems = append(transferItems, transfer.Result...)
+	// 	transferItems = append(transferItems, transfer.Result...)
 
-		if len(transferItems) >= 1000 {
-			break
-		}
+	// 	if len(transferItems) >= 1000 {
+	// 		break
+	// 	}
 
-		if len(transfer.Result) < transfer.PageSize {
-			break
-		}
+	// 	if len(transfer.Result) < transfer.PageSize {
+	// 		break
+	// 	}
 
-		offset += transfer.PageSize
+	// 	offset += transfer.PageSize
+	// }
+
+	transfer, err := getErc20Once(ctx, userAddress, chainType, fromDate, apiKey, offset)
+	if err != nil {
+		logger.Errorf("get erc20 once error: %v", err)
+
+		return nil, err
 	}
 
-	return transferItems, nil
+	// return transferItems, nil
+
+	return transfer.Result, nil
 }
 
 func getErc20Once(ctx context.Context, userAddress string, chainType ChainType, fromDate string, apiKey string, offest int) (*ERC20Transfer, error) {
@@ -372,9 +381,12 @@ func getErc20Once(ctx context.Context, userAddress string, chainType ChainType, 
 
 	defer trace.End()
 
-	requestURL := fmt.Sprintf("%s/api/v2/%s/erc20/transfers?chain=%s&from_block=%d&offset=%d&from_date=%s",
-		endpoint, userAddress, chainType, 0, offest, url.QueryEscape(fromDate),
-	)
+	// requestURL := fmt.Sprintf("%s/api/v2/%s/erc20/transfers?chain=%s&from_block=%d&offset=%d&from_date=%s",
+	// 	endpoint, userAddress, chainType, 0, offest, url.QueryEscape(fromDate),
+	// )
+
+	requestURL := fmt.Sprintf("%s/api/v2/%s/erc20/transfers?chain=%s&from_block=%d&from_date=%s",
+		endpoint, userAddress, chainType, 0, url.QueryEscape(fromDate))
 
 	response, err := requestMoralisApi(ctx, requestURL, apiKey, true)
 
@@ -678,34 +690,40 @@ func GetEthTransfers(ctx context.Context, userAddress string, chainType ChainTyp
 
 	defer trace.End()
 
-	var (
-		transferItems = make([]ETHTransferItem, 0)
-		wg            sync.WaitGroup
-	)
+	// var (
+	// 	transferItems = make([]ETHTransferItem, 0)
+	// 	wg            sync.WaitGroup
+	// )
 
-	wg.Add(2)
+	// wg.Add(2)
 
-	for offset := 0; offset < 1000; offset += 500 {
-		go func(offset int) {
-			defer func() {
-				wg.Done()
-				recover()
-			}()
+	// for offset := 0; offset < 1000; offset += 500 {
+	// 	go func(offset int) {
+	// 		defer func() {
+	// 			wg.Done()
+	// 			recover()
+	// 		}()
 
-			transfer, err := getETHOnce(ctx, userAddress, chainType, fromDate, apiKey, offset)
-			if err != nil {
-				logger.Errorf("get eth once error: %v", err)
+	// 		transfer, err := getETHOnce(ctx, userAddress, chainType, fromDate, apiKey, offset)
+	// 		if err != nil {
+	// 			logger.Errorf("get eth once error: %v", err)
 
-				return
-			}
+	// 			return
+	// 		}
 
-			transferItems = append(transferItems, transfer.Result...)
-		}(offset)
+	// 		transferItems = append(transferItems, transfer.Result...)
+	// 	}(offset)
+	// }
+
+	transfer, err := getETHOnce(ctx, userAddress, chainType, fromDate, apiKey, 0)
+
+	if err != nil {
+		logger.Errorf("get eth once error: %v", err)
 	}
 
-	wg.Wait()
+	// wg.Wait()
 
-	return transferItems, nil
+	return transfer.Result, nil
 }
 
 func getETHOnce(ctx context.Context, userAddress string, chainType ChainType, fromDate string, apiKey string, offest int) (*ETHTransfer, error) {
@@ -717,9 +735,8 @@ func getETHOnce(ctx context.Context, userAddress string, chainType ChainType, fr
 
 	defer trace.End()
 
-	requestURL := fmt.Sprintf("%s/api/v2/%s?chain=%s&from_block=%d&offset=%d&from_date=%s",
-		endpoint, userAddress, chainType, 0, offest, url.QueryEscape(fromDate),
-	)
+	requestURL := fmt.Sprintf("%s/api/v2/%s?chain=%s&from_block=%d&from_date=%s",
+		endpoint, userAddress, chainType, 0, url.QueryEscape(fromDate))
 
 	response, err := requestMoralisApi(ctx, requestURL, apiKey, true)
 
