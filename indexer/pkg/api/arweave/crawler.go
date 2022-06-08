@@ -60,6 +60,9 @@ func (ar *crawler) run() error {
 		}
 
 		endBlockHeight := startBlockHeight + ar.cfg.step - 1
+		if endBlockHeight < 0 {
+			endBlockHeight = startBlockHeight + 1
+		}
 
 		// check latest confirmed block height
 		latestConfirmedBlockHeight, err := GetLatestBlockHeightWithConfirmations(ar.cfg.confirmations)
@@ -88,12 +91,12 @@ func (ar *crawler) run() error {
 			goto end
 		}
 
+		startBlockHeight = endBlockHeight + 1
+
 		// set the current block height as the from height
-		if err := util.SetCrawlerMetadata(crawlerMetadataId, endBlockHeight, constants.PlatformIDArweave); err != nil {
+		if err := util.SetCrawlerMetadata(crawlerMetadataId, startBlockHeight, constants.PlatformIDArweave); err != nil {
 			logger.Errorf("create crawler metadata error: %v", err)
 		}
-
-		startBlockHeight = endBlockHeight + ar.cfg.step
 
 	end:
 		// sleep 0.5 second per round
