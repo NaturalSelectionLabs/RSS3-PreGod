@@ -84,6 +84,8 @@ func (ar *crawler) run() error {
 
 		if err := ar.parseMirrorArticles(startBlockHeight, endBlockHeight, ar.identity); err != nil {
 			logger.Errorf("parse mirror articles error: %v", err)
+
+			goto end
 		}
 
 		// set the current block height as the from height
@@ -91,6 +93,7 @@ func (ar *crawler) run() error {
 			logger.Errorf("create crawler metadata error: %v", err)
 		}
 
+	end:
 		// sleep 0.5 second per round
 		time.Sleep(500 * time.Millisecond)
 	}
