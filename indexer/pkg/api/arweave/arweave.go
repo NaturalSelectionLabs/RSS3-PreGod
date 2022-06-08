@@ -203,7 +203,7 @@ func parseGraphqlNode(node GraphqlResultEdges) (*MirrorContent, error) {
 	// title
 	article.Title = originalMirrorContent.Content.Title
 	// timestamp
-	article.Timestamp = originalMirrorContent.Content.Timestamp
+	article.Timestamp = originalMirrorContent.Content.Timestamp.IntPart()
 	// content
 	article.Content = originalMirrorContent.Content.Body
 	// txHash
