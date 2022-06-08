@@ -42,24 +42,24 @@ func NewCrawler(identity ArAccount, crawlCfg *crawlConfig) *crawler {
 }
 
 func (ar *crawler) run() error {
+	crawlerMetadataId := "mirror_start_height"
+
+	// get start block height from database
+	startBlockHeight := ar.cfg.fromHeight
+
+	if lastBlock, err := util.GetCrawlerMetadata(crawlerMetadataId, constants.PlatformIDArweave); err != nil {
+		logger.Errorf("crawler metadata not found, using the default one")
+	} else {
+		startBlockHeight = lastBlock
+	}
+
 	for {
 		// handle interrupt
 		if ar.gotInterrupt() {
 			return ErrInterrupt
 		}
 
-		crawlerMetadataId := "mirror_start_height"
-
-		// get start block height from database
-		startBlockHeight := ar.cfg.fromHeight
-
-		if lastBlock, err := util.GetCrawlerMetadata(crawlerMetadataId, constants.PlatformIDArweave); err != nil {
-			logger.Errorf("crawler metadata not found, using the default one")
-		} else {
-			startBlockHeight = lastBlock
-		}
-
-		endBlockHeight := startBlockHeight + ar.cfg.step
+		endBlockHeight := startBlockHeight + ar.cfg.step - 1
 
 		// check latest confirmed block height
 		latestConfirmedBlockHeight, err := GetLatestBlockHeightWithConfirmations(ar.cfg.confirmations)
@@ -84,6 +84,8 @@ func (ar *crawler) run() error {
 
 		if err := ar.parseMirrorArticles(startBlockHeight, endBlockHeight, ar.identity); err != nil {
 			logger.Errorf("parse mirror articles error: %v", err)
+
+			goto end
 		}
 
 		// set the current block height as the from height
@@ -91,6 +93,9 @@ func (ar *crawler) run() error {
 			logger.Errorf("create crawler metadata error: %v", err)
 		}
 
+		startBlockHeight = endBlockHeight + ar.cfg.step
+
+	end:
 		// sleep 0.5 second per round
 		time.Sleep(500 * time.Millisecond)
 	}

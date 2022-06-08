@@ -62,10 +62,11 @@ func GetContentByTxHash(hash string) ([]byte, error) {
 // GetTransactions gets all transactions using filters.
 func GetTransactions(from, to int64, owner ArAccount, cursor string) ([]byte, error) {
 	var headers = map[string]string{
-		"Accept-Encoding": "gzip, deflate, br",
-		"Content-Type":    "application/json",
-		"Accept":          "application/json",
-		"Origin":          "https://arweave.net",
+		"content-type": "application/json",
+		"accept":       "*/*",
+		"origin":       "https://arweave.net",
+		"referer":      "https://arweave.net/graphql",
+		"user-agent":   "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/102.0.5005.61 Safari/537.3",
 	}
 
 	queryString := `query {
@@ -202,7 +203,7 @@ func parseGraphqlNode(node GraphqlResultEdges) (*MirrorContent, error) {
 	// title
 	article.Title = originalMirrorContent.Content.Title
 	// timestamp
-	article.Timestamp = originalMirrorContent.Content.Timestamp
+	article.Timestamp = originalMirrorContent.Content.Timestamp.IntPart()
 	// content
 	article.Content = originalMirrorContent.Content.Body
 	// txHash

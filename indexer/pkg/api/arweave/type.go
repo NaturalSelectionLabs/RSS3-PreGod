@@ -1,6 +1,10 @@
 package arweave
 
-import "fmt"
+import (
+	"fmt"
+
+	"github.com/shopspring/decimal"
+)
 
 type ArLatestBlockResult struct {
 	Network          string `json:"network"`
@@ -38,9 +42,9 @@ type GraphqlResult struct {
 
 type OriginalMirrorContent struct {
 	Content struct {
-		Body      string `json:"body"`
-		Timestamp int64  `json:"timestamp"`
-		Title     string `json:"title"`
+		Body      string          `json:"body"`
+		Timestamp decimal.Decimal `json:"timestamp"`
+		Title     string          `json:"title"`
 	} `json:"content"`
 	Digest     string `json:"digest"`
 	Authorship struct {
