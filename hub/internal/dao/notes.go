@@ -46,7 +46,7 @@ func BatchGetNodeList(req m.BatchGetNodeListRequest) ([]model.Note, int64, error
 		internalDB = internalDB.Where("date_created <= ?", lastItem.DateCreated).
 			Where(
 				"(transaction_hash = ? and transaction_log_index < ?) or (transaction_hash < ?)",
-				lastItem.TransactionHash, lastItem.TransactionLogIndex, lastItem.TransactionLogIndex,
+				lastItem.TransactionHash, lastItem.TransactionLogIndex, lastItem.TransactionHash,
 			).
 			Where("identifier != ?", lastItem.Identifier)
 	}
