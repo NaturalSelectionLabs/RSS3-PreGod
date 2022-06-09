@@ -40,7 +40,7 @@ func TestGetNFT(t *testing.T) {
 	result, err := moralis.GetNFTs(ctx,
 		"0x3b6d02a24df681ffdf621d35d70aba7adaac07c1", "eth", time.Unix(0, 0).String(), config.Config.Indexer.Moralis.ApiKey,
 	)
-	assert.NotEmpty(t, result.Result)
+	assert.NotEmpty(t, result)
 	// assert for nil
 	assert.Nil(t, err)
 }
@@ -54,7 +54,7 @@ func TestGetNFTTransfers(t *testing.T) {
 		"0x3b6d02a24df681ffdf621d35d70aba7adaac07c1", "eth", 0, time.Unix(0, 0).String(), config.Config.Indexer.Moralis.ApiKey,
 	)
 
-	assert.NotEmpty(t, result.Result)
+	assert.NotEmpty(t, result)
 	// assert for nil
 	assert.Nil(t, err)
 }
