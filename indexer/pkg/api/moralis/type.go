@@ -118,6 +118,7 @@ type NFTResult struct {
 	Total    int64     `json:"total"`
 	Page     int64     `json:"page"`
 	PageSize int64     `json:"page_size"`
+	Cursor   string    `json:"cursor"`
 	Result   []NFTItem `json:"result"`
 	Status   string    `json:"status"`
 }

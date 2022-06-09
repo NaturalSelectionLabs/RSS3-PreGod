@@ -89,8 +89,8 @@ func (c *moralisCrawler) setNFTTransfers(
 
 	var (
 		wg           sync.WaitGroup
-		nftTransfers = NFTTransferResult{}
-		assets       = NFTResult{}
+		nftTransfers = []NFTTransferItem{}
+		assets       = []NFTItem{}
 	)
 
 	// nftTransfers for notes
@@ -132,10 +132,10 @@ func (c *moralisCrawler) setNFTTransfers(
 	wg.Wait()
 
 	// check if each asset has a proof (only for logging issues)
-	for _, asset := range assets.Result {
+	for _, asset := range assets {
 		hasProof := false
 
-		for _, nftTransfer := range nftTransfers.Result {
+		for _, nftTransfer := range nftTransfers {
 			if nftTransfer.EqualsToToken(asset) {
 				hasProof = true
 			}
@@ -147,7 +147,7 @@ func (c *moralisCrawler) setNFTTransfers(
 	}
 
 	// complete the note list
-	for _, item := range nftTransfers.Result {
+	for _, item := range nftTransfers {
 		tsp, tspErr := GetTsp(item.BlockTimestamp)
 		if tspErr != nil {
 			logger.Warnf("asset: %s fails at GetTsp(): %v", item.String(), tspErr)
@@ -159,7 +159,7 @@ func (c *moralisCrawler) setNFTTransfers(
 
 		// var err error
 
-		for _, asset := range assets.Result {
+		for _, asset := range assets {
 			if item.EqualsToToken(asset) && asset.MetaData != "" {
 				theAsset = asset
 			}
@@ -213,7 +213,7 @@ func (c *moralisCrawler) setNFTTransfers(
 	}
 
 	// complete the asset list
-	for _, asset := range assets.Result {
+	for _, asset := range assets {
 		m, parseErr := utils.ParseNFTMetadata(asset.MetaData)
 		if parseErr != nil {
 			logger.Warnf("%v", parseErr)

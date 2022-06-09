@@ -73,10 +73,106 @@ func requestMoralisApi(ctx context.Context, url string, apiKey string, isCache b
  */
 
 // nolint:funlen // TODO
-func GetNFTs(ctx context.Context, userAddress string, chainType ChainType, fromDate string, apiKey string) (NFTResult, error) {
+func GetNFTs(
+	ctx context.Context,
+	userAddress string,
+	chainType ChainType,
+	fromDate string,
+	apiKey string) ([]NFTItem, error) {
 	tracer := otel.Tracer(TracerNameCrawlerMoralis)
+	ctx, getNFTsSnap := tracer.Start(ctx, "get_nfts")
+	getNFTsSnap.SetAttributes(
+		attribute.String("from_date", fromDate),
+	)
 
-	ctx, getNFTListSnap := tracer.Start(ctx, "get_nft_list")
+	defer getNFTsSnap.End()
+
+	var (
+		transferItems = make([]NFTItem, 0)
+		count         = 0
+		cursor        = ""
+	)
+
+	for {
+		// Pull up to 500 at a time
+		if count == 5 {
+			break
+		}
+
+		transfer, err := getNFTsOnce(ctx, userAddress, chainType, fromDate, apiKey, cursor)
+		if err != nil {
+			logger.Errorf("get erc20 once error: %v", err)
+
+			return nil, err
+		}
+
+		transferItems = append(transferItems, transfer.Result...)
+
+		if transfer.Cursor == "" {
+			break
+		}
+
+		cursor = transfer.Cursor
+
+		count += 1
+	}
+
+	var wg sync.WaitGroup
+
+	for i, item := range transferItems {
+		if item.MetaData == "" && item.TokenURI != "" {
+			wg.Add(1)
+
+			go func(item NFTItem, i int) {
+				_, getNFTItemSnap := tracer.Start(ctx, "get_nft_item")
+
+				defer func() {
+					wg.Done()
+
+					getNFTItemSnap.End()
+				}()
+
+				done := make(chan bool, 1)
+
+				go func() {
+					url := nft_utils.FormatUrl(item.TokenURI)
+
+					if metadataRes, err := httpx.Get(url, nil); err != nil {
+						getNFTsSnap.RecordError(err)
+						getNFTsSnap.SetStatus(codes.Error, err.Error())
+
+						logger.Warnf("http get nft metadata error with url '%s': [%v], moralis token uri: %v", url, err, item.TokenURI)
+					} else {
+						transferItems[i].MetaData = string(metadataRes.Body)
+					}
+
+					close(done)
+				}()
+
+				select {
+				case <-done:
+					return
+				case <-time.After(time.Second * 5):
+					return
+				}
+			}(item, i)
+		}
+	}
+
+	wg.Wait()
+
+	return transferItems, nil
+}
+
+func getNFTsOnce(
+	ctx context.Context,
+	userAddress string,
+	chainType ChainType,
+	fromDate string,
+	apiKey string,
+	cursor string) (NFTResult, error) {
+	_, getNFTListSnap := otel.Tracer(TracerNameCrawlerMoralis).Start(ctx, "get_nfts_list_once")
+
 	getNFTListSnap.SetAttributes(
 		attribute.String("user_address", userAddress),
 		attribute.String("from_date", fromDate),
@@ -85,9 +181,8 @@ func GetNFTs(ctx context.Context, userAddress string, chainType ChainType, fromD
 	defer getNFTListSnap.End()
 
 	// Gets all NFT items of user
-	requestURL := fmt.Sprintf("%s/api/v2/%s/nft?chain=%s&format=decimal&from_date=%s",
-		endpoint, userAddress, chainType, url.QueryEscape(fromDate),
-	)
+	requestURL := fmt.Sprintf("%s/api/v2/%s/nft?chain=%s&format=decimal&from_date=%s&cursor=%s",
+		endpoint, userAddress, chainType, url.QueryEscape(fromDate), cursor)
 
 	response, err := requestMoralisApi(ctx, requestURL, apiKey, true)
 
@@ -113,50 +208,6 @@ func GetNFTs(ctx context.Context, userAddress string, chainType ChainType, fromD
 		attribute.Int("response_size", len(response.Body)),
 	)
 
-	var wg sync.WaitGroup
-
-	for i, item := range res.Result {
-		if item.MetaData == "" && item.TokenURI != "" {
-			wg.Add(1)
-
-			go func(item NFTItem, i int) {
-				_, getNFTItemSnap := tracer.Start(ctx, "get_nft_item")
-
-				defer func() {
-					wg.Done()
-
-					getNFTItemSnap.End()
-				}()
-
-				done := make(chan bool, 1)
-
-				go func() {
-					url := nft_utils.FormatUrl(item.TokenURI)
-
-					if metadataRes, err := httpx.Get(url, nil); err != nil {
-						getNFTListSnap.RecordError(err)
-						getNFTListSnap.SetStatus(codes.Error, err.Error())
-
-						logger.Warnf("http get nft metadata error with url '%s': [%v], moralis token uri: %v", url, err, item.TokenURI)
-					} else {
-						res.Result[i].MetaData = string(metadataRes.Body)
-					}
-
-					close(done)
-				}()
-
-				select {
-				case <-done:
-					return
-				case <-time.After(time.Second * 5):
-					return
-				}
-			}(item, i)
-		}
-	}
-
-	wg.Wait()
-
 	return *res, nil
 }
 
@@ -167,7 +218,7 @@ func GetNFTTransfers(
 	blockHeight int64,
 	fromDate string,
 	apiKey string,
-) (NFTTransferResult, error) {
+) ([]NFTTransferItem, error) {
 	ctx, trace := otel.Tracer(TracerNameCrawlerMoralis).Start(ctx, "get_nft_transfer_list")
 	trace.SetAttributes(
 		attribute.String("user_address", userAddress),
@@ -176,10 +227,59 @@ func GetNFTTransfers(
 
 	defer trace.End()
 
-	// Gets all NFT transfers of user
-	requestURL := fmt.Sprintf("%s/api/v2/%s/nft/transfers?chain=%s&from_block=%d&format=decimal&direction=both&from_date=%s",
-		endpoint, userAddress, chainType, blockHeight, url.QueryEscape(fromDate),
+	var (
+		transferItems = make([]NFTTransferItem, 0)
+		count         = 0
+		cursor        = ""
 	)
+
+	for {
+		// Pull up to 500 at a time
+		if count == 5 {
+			break
+		}
+
+		transfer, err := getNFTTransfersOnce(ctx, userAddress, chainType, blockHeight, fromDate, apiKey, cursor)
+		if err != nil {
+			logger.Errorf("get nft once error: %v", err)
+
+			break
+		}
+
+		transferItems = append(transferItems, transfer.Result...)
+
+		if transfer.Cursor == "" {
+			break
+		}
+
+		cursor = transfer.Cursor
+
+		count += 1
+	}
+
+	return transferItems, nil
+}
+
+func getNFTTransfersOnce(
+	ctx context.Context,
+	userAddress string,
+	chainType ChainType,
+	blockHeight int64,
+	fromDate string,
+	apiKey string,
+	cursor string,
+) (NFTTransferResult, error) {
+	ctx, trace := otel.Tracer(TracerNameCrawlerMoralis).Start(ctx, "get_nft_transfer_once")
+	trace.SetAttributes(
+		attribute.String("user_address", userAddress),
+		attribute.String("from_date", fromDate),
+	)
+
+	defer trace.End()
+
+	// Gets all NFT transfers of user
+	requestURL := fmt.Sprintf("%s/api/v2/%s/nft/transfers?chain=%s&from_block=%d&format=decimal&direction=both&from_date=%s&cursor=%s",
+		endpoint, userAddress, chainType, blockHeight, url.QueryEscape(fromDate), cursor)
 	response, err := requestMoralisApi(ctx, requestURL, apiKey, true)
 
 	if err != nil {
@@ -493,10 +593,6 @@ func getErc20Once(
 	)
 
 	defer trace.End()
-
-	// requestURL := fmt.Sprintf("%s/api/v2/%s/erc20/transfers?chain=%s&from_block=%d&offset=%d&from_date=%s",
-	// 	endpoint, userAddress, chainType, 0, offest, url.QueryEscape(fromDate),
-	// )
 
 	requestURL := fmt.Sprintf("%s/api/v2/%s/erc20/transfers?chain=%s&from_block=%d&from_date=%s&cursor=%s",
 		endpoint, userAddress, chainType, 0, url.QueryEscape(fromDate), cursor)
