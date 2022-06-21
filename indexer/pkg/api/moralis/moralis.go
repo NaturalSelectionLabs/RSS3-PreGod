@@ -947,8 +947,8 @@ func getETHOnce(
 
 	defer trace.End()
 
-	requestURL := fmt.Sprintf("%s/api/v2/%s?chain=%s&from_block=%d&from_date=%s&cursor=%s",
-		endpoint, userAddress, chainType, 0, url.QueryEscape(fromDate), cursor)
+	requestURL := fmt.Sprintf("%s/api/v2/%s?chain=%s&from_block=%d&cursor=%s",
+		endpoint, userAddress, chainType, 0, cursor)
 
 	response, err := requestMoralisApi(ctx, requestURL, apiKey, true)
 
