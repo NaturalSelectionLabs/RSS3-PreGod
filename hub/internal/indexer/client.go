@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"math/big"
 	"net/http"
 	"strconv"
 	"strings"
@@ -93,8 +92,11 @@ FROM "timestamp";`,
 		"profile_source_id": strconv.Itoa(account.Source),
 		"owner_id":          strings.ToLower(account.ProfileID),
 		"owner_platform_id": strconv.Itoa(account.ProfilePlatform),
-		"timestamp":         big.NewInt(timestamp.Unix()).String(),
+		// "timestamp":         big.NewInt(timestamp.Unix()).String(),
 	}
+
+	logger.Infof("%+v", params)
+
 	result := Response{}
 
 	response, err := request.
