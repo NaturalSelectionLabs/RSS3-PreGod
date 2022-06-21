@@ -482,7 +482,7 @@ func (c *moralisCrawler) setNative(
 			Identifier: rss3uri.NewNoteInstance(proof, networkSymbol).UriString() + "#eth",
 			Owner:      owner,
 			RelatedURLs: []string{
-				"https://etherscan.io/tx/" + item.TransactionHash,
+				GetTxHashURL(networkSymbol, item.TransactionHash),
 			},
 			TransactionHash:     item.TransactionHash,
 			TransactionLogIndex: -1,
