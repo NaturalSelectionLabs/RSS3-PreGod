@@ -8,14 +8,14 @@ spec:
   - web
   routes:
   - kind: Rule
-    match: Host(`test-pregod.rss3.dev`) && PathPrefix(`/`) && Headers(`NOLIMITHEADER`, `NOLIMITVALUE`)
+    match: Host(`test-pregod.rss3.dev`) && PathPrefix(`/v0.4.0`) && Headers(`NOLIMITHEADER`, `NOLIMITVALUE`)
     services:
     - name: pregod-hub-api
       port: 8080
     middlewares:
       - name: pregod-hub-cors
   - kind: Rule
-    match: Host(`test-pregod.rss3.dev`) && PathPrefix(`/`)
+    match: Host(`test-pregod.rss3.dev`) && PathPrefix(`/v0.4.0`)
     services:
     - name: pregod-hub-api
       port: 8080
